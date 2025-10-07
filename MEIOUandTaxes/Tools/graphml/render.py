@@ -1,6 +1,6 @@
 from typing import Any, List, Dict
 
-from compare_development_roadmaps import IS_DEBUG
+from auxiliary import IS_DEBUG
 
 
 def _get_debug_info(text: str) -> str:
@@ -41,34 +41,45 @@ def print_elements(added_edge_ids: List[Any],
 	"""
 	Generate the diff output for the added/removed/common nodes/edges
 	"""
+
+	found_differences = False
 	if removed_node_ids:
 		_print_section_header("Removed nodes")
 		_print_nodes(removed_node_ids, nodes_first, "-")
+		found_differences = True
 
 	if added_node_ids:
 		_print_section_header("Added nodes")
 		_print_nodes(added_node_ids, nodes_second, "+")
+		found_differences = True
 
 	if removed_edge_ids:
 		_print_section_header("Removed edges")
 		_print_edges(removed_edge_ids, edges_first, nodes_first, "-")
+		found_differences = True
 
 	if added_edge_ids:
 		_print_section_header("Added edges")
 		_print_edges(added_edge_ids, edges_second, nodes_second, "+")
+		found_differences = True
 
-	if common_node_ids:
+	if any(nodes_first[node_id] != nodes_second[node_id] for node_id in common_node_ids):
 		_print_section_header("Changed nodes")
 		for node_id in common_node_ids:
 			if nodes_first[node_id] != nodes_second[node_id]:
 				_print_nodes([node_id], nodes_first, "-")
 				_print_nodes([node_id], nodes_second, "+")
+				found_differences = True
 				print()
 
-	if common_edge_ids:
+	if any(edges_first[edge_id] != edges_second[edge_id] for edge_id in common_edge_ids):
 		_print_section_header("Changed edges")
 		for edge_id in common_edge_ids:
 			if edges_first[edge_id] != edges_second[edge_id]:
 				_print_edges([edge_id], edges_first, nodes_first, "-")
 				_print_edges([edge_id], edges_second, nodes_second, "+")
+				found_differences = True
 				print()
+
+	if not found_differences:
+		print ('The files are identical')
