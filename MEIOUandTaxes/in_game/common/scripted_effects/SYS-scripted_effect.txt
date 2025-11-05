@@ -1,0 +1,176 @@
+﻿run_logging = {
+    every_in_global_list = {
+        variable = strategic_regs
+        # print_pop_information = yes
+        # print_buildings = yes
+    }
+    debug_log = "LOGGING COMPLETE"
+}
+
+print_building_type = {
+    set_local_variable = {
+        name = bldg_count
+
+        value = {
+            every_scope_state = {
+                every_scope_building = {
+                    limit = { is_building_type = building_$BLDG_TYPE$ }
+                    add = level
+                }
+            }
+        }
+    }
+    if = {
+        limit = { local_var:bldg_count > 0 }
+        debug_log = "::[GetGlobalVariable('year').GetValue]:[THIS.GetStrategicRegion.GetNameNoFormatting]: $BLDG_TYPE$ = [SCOPE.GetLocalVariable('bldg_count').GetValue]"
+    }
+}
+
+print_pop_information = {
+    #get_wealth = {  VAR = wealth }
+    get_sol = {  VAR = sol }
+
+    #debug_log = "::[GetGlobalVariable('year').GetValue]:[THIS.GetStrategicRegion.GetNameNoFormatting]: Wealth [SCOPE.GetLocalVariable('wealth').GetValue]"
+    debug_log = "::[GetGlobalVariable('year').GetValue]:[THIS.GetStrategicRegion.GetNameNoFormatting]: SoL [SCOPE.GetLocalVariable('sol').GetValue]"
+}
+
+get_sol = {
+    set_local_variable = {
+        name = $VAR$
+
+        value = {
+            every_scope_state = {
+                add = average_sol
+                # divide = state_population #TODO: Wrong
+            }
+        }
+    }
+    remove_local_variable = $VAR$
+}
+get_wealth = {
+    set_local_variable = {
+        name = $VAR$
+
+        value = {
+            every_scope_state = {
+                every_scope_pop = {
+                    add = {
+                        value = wealth
+                        multiply = total_size
+                    }
+                }
+                divide = state_population
+            }
+        }
+    }
+    remove_local_variable = $VAR$
+}
+
+print_buildings = {
+    print_building_type = { BLDG_TYPE = urban_center }
+    print_building_type = { BLDG_TYPE = textile_mills }
+    print_building_type = { BLDG_TYPE = furniture_manufacturies }
+    print_building_type = { BLDG_TYPE = glassworks }
+    print_building_type = { BLDG_TYPE = tooling_workshops }
+    print_building_type = { BLDG_TYPE = paper_mills }
+    print_building_type = { BLDG_TYPE = chemical_plants }
+    print_building_type = { BLDG_TYPE = explosives_factory }
+    print_building_type = { BLDG_TYPE = steel_mills }
+    print_building_type = { BLDG_TYPE = motor_industry }
+    print_building_type = { BLDG_TYPE = shipyards }
+    print_building_type = { BLDG_TYPE = military_shipyards }
+    print_building_type = { BLDG_TYPE = automotive_industry }
+    print_building_type = { BLDG_TYPE = electrics_industry }
+    print_building_type = { BLDG_TYPE = arms_industry }
+    print_building_type = { BLDG_TYPE = artillery_foundries }
+    print_building_type = { BLDG_TYPE = munition_plants }
+}
+
+prepare_strategic_regions = {
+
+    add_strategic_region = { SR = anatolia }
+    add_strategic_region = { SR = arabic }
+    # add_strategic_region = { SR = arctic_russia }
+    # add_strategic_region = { SR = balkans }
+    # add_strategic_region = { SR = belarus }
+    # add_strategic_region = { SR = bengal }
+    # add_strategic_region = { SR = bombay }
+    # add_strategic_region = { SR = brazil }
+    # add_strategic_region = { SR = canada }
+    # add_strategic_region = { SR = caribbean }
+    # add_strategic_region = { SR = caucasus }
+    # add_strategic_region = { SR = central_america }
+    # add_strategic_region = { SR = central_asia }
+    # add_strategic_region = { SR = central_india }
+    # add_strategic_region = { SR = congo }
+    # add_strategic_region = { SR = danubia}
+    # add_strategic_region = { SR = punjab}
+    # add_strategic_region = { SR = dixie}
+    # add_strategic_region = { SR = dnieper}
+    # add_strategic_region = { SR = east_siberia }
+    # add_strategic_region = { SR = england }
+    # add_strategic_region = { SR = ethiopia }
+    # add_strategic_region = { SR = finland }
+    # add_strategic_region = { SR = france }
+    # add_strategic_region = { SR = gran_colombia }
+    # add_strategic_region = { SR = great_plains }
+    # add_strategic_region = { SR = himalayas }
+    # add_strategic_region = { SR = iberia }
+    # add_strategic_region = { SR = indochina }
+    # add_strategic_region = { SR = indonesia }
+    # add_strategic_region = { SR = italy }
+    # add_strategic_region = { SR = japan }
+    # add_strategic_region = { SR = la_plata }
+    # add_strategic_region = { SR = baltic_states }
+    # add_strategic_region = { SR = madras }
+    # add_strategic_region = { SR = manchuria }
+    # add_strategic_region = { SR = mexico }
+    # add_strategic_region = { SR = new_england }
+    # add_strategic_region = { SR = niger }
+    # add_strategic_region = { SR = nile_basin }
+    # add_strategic_region = { SR = north_africa }
+    # add_strategic_region = { SR = north_china }
+    # add_strategic_region = { SR = north_germany }
+    # add_strategic_region = { SR = north_sea_coast }
+    # add_strategic_region = { SR = occitania }
+    # add_strategic_region = { SR = oceania }
+    # add_strategic_region = { SR = pacific_coast }
+    # add_strategic_region = { SR = persia }
+    # add_strategic_region = { SR = poland }
+    # add_strategic_region = { SR = rhine }
+    # add_strategic_region = { SR = russia }
+    # add_strategic_region = { SR = baltic }
+    # add_strategic_region = { SR = senegal }
+    # add_strategic_region = { SR = south_china }
+    # add_strategic_region = { SR = south_germany }
+    # add_strategic_region = { SR = southern_africa }
+    # add_strategic_region = { SR = andes }
+    # add_strategic_region = { SR = the_midwest }
+    # add_strategic_region = { SR = urals }
+    # add_strategic_region = { SR = west_siberia }
+    # add_strategic_region = { SR = zanj }
+}
+
+count_states_in_strategic_regions = {
+    every_in_global_list = {
+        variable = strategic_regs
+        set_variable = { name = state_count value = 0 }
+        every_state = {
+            if = {  limit = {  this.region = prev  }  }
+            change_variable = { name = state_count add = 1 }
+        }
+    }
+    # Printing
+    # set_local_variable = { name = index value = 0 }
+    ordered_in_global_list = {
+        variable = strategic_regs
+
+        debug_log = "[THIS.GetStrategicRegion.GetNameNoFormatting]: [THIS.Var('state_count').GetValue]"
+    }
+}
+
+
+add_strategic_region = {
+    add_to_global_variable_list = { name = strategic_regs target = sr:region_$SR$ }
+    set_variable = { name = count_$SR$ value = 0 }
+}
