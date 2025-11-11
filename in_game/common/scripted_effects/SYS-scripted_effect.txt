@@ -1,0 +1,55 @@
+#TODO: for every region & good, get prices
+
+run_logging = {
+    # print_building_types = yes
+    # print_population = yes
+    # print_prices = yes
+}
+
+print_population = {
+    every_region = {
+        debug_log = "::POP:[THIS.GetRegion.GetNameWithNoTooltip]:[THIS.GetRegion.GetTotalPopulation]"
+    }
+}
+
+print_prices = {
+    every_goods = {
+        set_local_variable = { name = good_curr value = this }
+        every_region = {
+            set_local_variable = {
+                name = avg_cost
+                value = {
+                    every_location_in_region = {
+                        add = "market.market_price(local_var:good_curr)"
+                    }
+                }
+            }
+            debug_log = "::GP:[PREV.GetGoods.GetNameWithNoTooltip]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('avg_cost').GetValue]"
+        }
+    }
+}
+
+print_building_types = {
+    every_building_type = {
+        set_local_variable = { name = bldg_curr value = this }
+        every_region = {
+            set_local_variable = {
+                name = bldg_count
+                value = {
+                    every_location_in_region = {
+                        every_buildings_in_location = {
+                            limit = { building_type = local_var:bldg_curr }
+                            add = building_level
+                        }
+
+                    }
+                }
+            }
+
+            if = {
+                limit = { local_var:bldg_count > 0 }
+                debug_log = "::BT:[GetGlobalVariable('month').GetValue]:[SCOPE.GetLocalVariable('bldg_curr').GetBuildingType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('bldg_count').GetValue]:[THIS.GetRegion.GetNameWithNoTooltip]"
+            }
+        }
+    }
+}
