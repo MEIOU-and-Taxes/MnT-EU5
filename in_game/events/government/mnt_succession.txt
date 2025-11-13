@@ -868,3 +868,224 @@ succession.105 = {
 		}
 	}
 }
+
+
+succession.106 = {
+	type = country_event
+	title = succession.103.title
+	desc = succession.103.desc
+	
+	option = { 
+		name = succession.103.a
+		
+	## morning Wednesday 
+	# Version 4, full province ceding, corner selection by distance corner-to-corner corner-to-capital
+	# province ceding by proximity to corner, not to new capital
+	
+	#clean-up for using in the script testing window
+	every_location_in_the_world = {
+		remove_from_list = starting_locations_for_new_tags
+		remove_from_list = potential_capitals_for_target1
+		remove_from_list = potential_capitals_for_target2
+		remove_from_list = potential_capitals_for_target3
+		remove_from_list = potential_capitals_for_target4
+	}
+
+	capital = { 
+		add_to_list = corner_locations 
+		save_scope_as = original_capital 
+	}
+
+	#amount of countries post-split: this will be dynamic, now we are assuming 4 new countries being created
+	set_variable = {
+		name = num_countries_post_split
+		value = 5
+	}
+
+	#when adding provinces, we will stop when new tag already has that many locations
+	set_variable = {
+		name = num_locations_allowed
+		value = {
+			add = num_locations
+			divide = var:num_countries_post_split
+			multiply = 0.9
+			ceiling = no
+		}
+	}
+
+
+	#find corners
+	#1
+	ordered_owned_location = {
+	limit = {
+		NOT = {is_in_list = starting_locations_for_new_tags}
+	}
+	order_by = { value = "distance_to(scope:original_capital)"}
+	max = 1
+	save_scope_as = corner_location1
+	add_to_list = corner_locations
+	}
+	#2
+	ordered_owned_location = {
+	limit = {NOT = {is_in_list = starting_locations_for_new_tags}}
+	order_by = { 
+		value = "distance_to(scope:original_capital)" 
+		multiply = 0.5
+		add = "distance_to(scope:corner_location1)"
+	}
+	max = 1
+	save_scope_as = corner_location2
+	add_to_list = corner_locations
+	}
+	#3
+	ordered_owned_location = {
+	limit = {NOT = {is_in_list = starting_locations_for_new_tags}}
+	order_by = { 
+		value = "distance_to(scope:original_capital)" 
+		multiply = 0.5
+		add = "distance_to(scope:corner_location1)" 
+		add = "distance_to(scope:corner_location2)"
+	}
+	max = 1
+	save_scope_as = corner_location3
+	add_to_list = corner_locations
+	}
+	#4
+	ordered_owned_location = {
+	limit = {NOT = {is_in_list = starting_locations_for_new_tags}}
+	order_by = { 
+		value = "distance_to(scope:original_capital)" 
+		multiply = 0.5
+		add = "distance_to(scope:corner_location1)" 
+		add = "distance_to(scope:corner_location2)" 
+		add = "distance_to(scope:corner_location3)"
+	}
+	max = 1
+	save_scope_as = corner_location4
+	add_to_list = corner_locations
+	}
+
+	#for each of corner locations do floodfill_locations, add_to_list and from that list, find best capital
+	#1
+	scope:corner_location1 = {
+		floodfill_locations = {
+			limit = { 
+				owner ?= root
+				"this.distance_to(scope:corner_location1)" <"this.distance_to(scope:original_capital)"
+				"this.distance_to(scope:corner_location1)" <"this.distance_to(scope:corner_location2)"
+				"this.distance_to(scope:corner_location1)" <"this.distance_to(scope:corner_location3)"
+				"this.distance_to(scope:corner_location1)" <"this.distance_to(scope:corner_location4)"
+			}
+			add_to_list = potential_capitals_for_target1 
+		}
+	}
+	ordered_owned_location = {
+		limit = { is_in_list = potential_capitals_for_target1 is_province_capital = yes }
+		order_by = population
+		max = 1
+		#add_to_list = starting_locations_for_new_tags
+		province = { create_location_country_from_province = { save_scope_as = target1_country } }
+	}
+	scope:corner_location1 = { change_location_owner = scope:target1_country }
+		
+	#2
+	scope:corner_location2 = {
+		floodfill_locations = {
+			limit = { 
+				owner ?= root
+				"this.distance_to(scope:corner_location2)" <"this.distance_to(scope:original_capital)"
+				"this.distance_to(scope:corner_location2)" <"this.distance_to(scope:corner_location1)"
+				"this.distance_to(scope:corner_location2)" <"this.distance_to(scope:corner_location3)"
+				"this.distance_to(scope:corner_location2)" <"this.distance_to(scope:corner_location4)"
+			}
+			add_to_list = potential_capitals_for_target2
+		}
+	}
+	ordered_owned_location = {
+		limit = { is_in_list = potential_capitals_for_target2 is_province_capital = yes }
+		order_by = population
+		max = 1
+		#add_to_list = starting_locations_for_new_tags
+		province = { create_location_country_from_province = { save_scope_as = target2_country } }
+	}
+	scope:corner_location2 = { change_location_owner = scope:target2_country }
+
+	#3
+	scope:corner_location3 = {
+		add_to_list = potential_capitals_for_target3
+		floodfill_locations = {
+			limit = { 
+				owner ?= root
+				"this.distance_to(scope:corner_location3)" <"this.distance_to(scope:original_capital)"
+				"this.distance_to(scope:corner_location3)" <"this.distance_to(scope:corner_location1)"
+				"this.distance_to(scope:corner_location3)" <"this.distance_to(scope:corner_location2)"
+				"this.distance_to(scope:corner_location3)" <"this.distance_to(scope:corner_location4)"
+			}
+			add_to_list = potential_capitals_for_target3
+		}
+	}
+	ordered_owned_location = {
+		limit = { is_in_list = potential_capitals_for_target3 is_province_capital = yes }
+		order_by = population
+		max = 1
+		#add_to_list = starting_locations_for_new_tags
+		province = { create_location_country_from_province = { save_scope_as = target3_country } }
+	}
+	scope:corner_location3 = { change_location_owner = scope:target3_country }
+	
+	#4
+	scope:corner_location4 = {
+		floodfill_locations = {
+			limit = { 
+				owner ?= root
+				"this.distance_to(scope:corner_location4)" <"this.distance_to(scope:original_capital)"
+				"this.distance_to(scope:corner_location4)" <"this.distance_to(scope:corner_location1)"
+				"this.distance_to(scope:corner_location4)" <"this.distance_to(scope:corner_location2)"
+				"this.distance_to(scope:corner_location4)" <"this.distance_to(scope:corner_location3)"
+			}
+			add_to_list = potential_capitals_for_target4 
+		}
+	}
+	ordered_owned_location = {
+		limit = { is_in_list = potential_capitals_for_target4 is_province_capital = yes }
+		order_by = population
+		max = 1
+		#add_to_list = starting_locations_for_new_tags
+		province = { create_location_country_from_province = { save_scope_as = target4_country } }
+	}
+	scope:corner_location4 = { change_location_owner = scope:target4_country }
+
+	#assign provinces to their new owners
+	every_owned_location = {
+		limit = { is_province_capital = yes }
+		save_scope_as = location_verified
+
+		this.continent = {
+		ordered_location_in_continent = {
+			limit = { is_in_list = corner_locations}
+					order_by = { 
+						value = "distance_to(scope:location_verified)"
+						multiply = -1
+					}
+					max = 1
+					save_scope_as = location_from_best_owner
+				}
+
+				if = {
+					limit = {
+						scope:location_from_best_owner.owner.num_locations < scope:location_verified.owner.var:num_locations_allowed
+					}
+					scope:location_verified.province = {
+						change_province_owner = scope:location_from_best_owner.owner
+					}
+				}
+				else_if = {
+				limit = { NOT = { scope:location_from_best_owner.owner = root } }
+					scope:location_from_best_owner = {
+						remove_from_list = corner_locations
+					}
+				}
+			}
+		}
+	}
+}
