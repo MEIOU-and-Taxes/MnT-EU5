@@ -1,0 +1,64 @@
+﻿run_logging = {
+	if = {
+		limit = { has_global_variable = is_logging_enabled}
+		print_building_types = yes        # characters at start: 147,474
+		print_population = yes            # characters at start:   9,505
+		print_prices = yes                # characters at start: 765,974
+		debug_log = "::Done logging for this year"
+	}
+}
+
+print_population = {
+    every_region = {
+        debug_log = "::POP::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[THIS.GetRegion.GetTotalPopulation]"
+    }
+}
+
+print_prices = {
+	every_goods = {
+		# limit = { this = goods:wheat }
+		save_scope_as = good_curr
+		every_region = {
+			set_local_variable = {
+				name = avg_cost
+				value = {
+					every_location_in_region = {
+						limit = { is_land = yes }
+						add = "market.market_price(scope:good_curr)"
+					}
+					divide = location_counter
+				}
+
+			}
+			if = {
+				limit = { location_counter > 0 }
+				debug_log = "::GP::[GetCurrentYear]:[PREV.GetGoods.GetNameWithNoTooltip]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('avg_cost').GetValue]"
+			}
+		}
+	}
+}
+
+print_building_types = {
+    every_building_type = {
+        set_local_variable = { name = bldg_curr value = this }
+        every_region = {
+            set_local_variable = {
+                name = bldg_count
+                value = {
+                    every_location_in_region = {
+                        every_buildings_in_location = {
+                            limit = { building_type = local_var:bldg_curr }
+                            add = building_level
+                        }
+
+                    }
+                }
+            }
+
+            if = {
+                limit = { local_var:bldg_count > 0 }
+                debug_log = "::BT:[GetCurrentYear]:[SCOPE.GetLocalVariable('bldg_curr').GetBuildingType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('bldg_count').GetValue]:[THIS.GetRegion.GetNameWithNoTooltip]"
+            }
+        }
+    }
+}
