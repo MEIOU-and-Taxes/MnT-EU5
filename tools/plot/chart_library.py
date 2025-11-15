@@ -6,10 +6,12 @@ from PyQt6.QtWidgets import QLabel, QComboBox
 
 from tools.plot.custom_widgets import RightClickableComboBox
 from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population
+from matplotlib.ticker import MaxNLocator
 
-FIRST_MONTH = 5 # Makes FIRST_MONTH-1 not have 0 buildings in all regions
+IS_LOGGING_YEARLY = True
+FIRST_MOMENT = 1 + 1337 if IS_LOGGING_YEARLY else 4 # Makes FIRST_MOMENT-1 not have 0 buildings in all regions
 
-STR_ALL_MONTHS = "All months"
+STR_ALL_MOMENTS = "All moments"
 STR_ALL_BUILDINGS = "All buildings"
 STR_ALL_REGIONS = "All regions"
 STR_ALL_GOODS = "All goods"
@@ -42,11 +44,11 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	ComboBoxClass = RightClickableComboBox if config.get("use_right_click_combo", True) else QComboBox
 
 	# --- Create Interactive PyQt Widgets ---
-	lbl_month = QLabel("Month:")
-	combo_month = ComboBoxClass()
-	all_months = sorted(list(set(item['month'] for item in all_data)))
-	combo_month.addItem(STR_ALL_MONTHS)
-	combo_month.addItems([str(m) for m in all_months])
+	lbl_moment = QLabel("Time:")
+	combo_moment = ComboBoxClass()
+	all_moments = sorted(list(set(item['moment'] for item in all_data)))
+	combo_moment.addItem(STR_ALL_MOMENTS)
+	combo_moment.addItems([str(m) for m in all_moments])
 
 	lbl_category = QLabel(category_label_str)
 	combo_category = ComboBoxClass()
@@ -61,19 +63,19 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	combo_region.addItems(all_regions)
 
 	# Add widgets to the layout
-	filter_layout.addWidget(lbl_month, 0, 0)
-	filter_layout.addWidget(combo_month, 0, 1)
+	filter_layout.addWidget(lbl_moment, 0, 0)
+	filter_layout.addWidget(combo_moment, 0, 1)
 	filter_layout.addWidget(lbl_category, 0, 2)
 	filter_layout.addWidget(combo_category, 0, 3)
 	filter_layout.addWidget(lbl_region, 0, 4)
 	filter_layout.addWidget(combo_region, 0, 5)
 	filter_layout.setColumnStretch(6, 1)
 
-	filter_widgets_list.extend([lbl_month, combo_month, lbl_category, combo_category, lbl_region, combo_region])
+	filter_widgets_list.extend([lbl_moment, combo_moment, lbl_category, combo_category, lbl_region, combo_region])
 
 	def update_plot():
 		on_plot_cleared()
-		filter_month_str = combo_month.currentText()
+		filter_moment_str = combo_moment.currentText()
 		filter_category_type = combo_category.currentText()
 		filter_region = combo_region.currentText()
 		ax.clear()
@@ -86,7 +88,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 
 		filtered_data = [
 			item for item in all_data
-			if (filter_month_str == STR_ALL_MONTHS or item['month'] == int(filter_month_str)) and
+			if (filter_moment_str == STR_ALL_MOMENTS or item['moment'] == int(filter_moment_str)) and
 			   (filter_category_type == all_category_str or filter_category_type == item[category_key]) and
 			   (filter_region == STR_ALL_REGIONS or filter_region == item['region'])
 		]
@@ -96,45 +98,55 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			ax.figure.canvas.draw_idle()
 			return
 
-		is_month_all = filter_month_str == STR_ALL_MONTHS
+		is_moment_all = filter_moment_str == STR_ALL_MOMENTS
 		is_category_picked = filter_category_type != all_category_str
 		is_region_picked = filter_region != STR_ALL_REGIONS
 		prop_cycle = plt.rcParams['axes.prop_cycle']
 		colors = cycle(prop_cycle.by_key()['color'])
 
 		# --- Line Graph Logic ---
-		if is_month_all and (is_category_picked or is_region_picked):
+		if is_moment_all and (is_category_picked or is_region_picked):
 			plot_category_key = category_key if is_region_picked else 'region'
 			data_to_plot = {}
 			for item in filtered_data:
 				key = item[plot_category_key]
 				if key not in data_to_plot:
-					data_to_plot[key] = {'months': [], 'values': []}
-				data_to_plot[key]['months'].append(item['month'])
+					data_to_plot[key] = {'moments': [], 'values': []}
+				data_to_plot[key]['moments'].append(item['moment'])
 				data_to_plot[key]['values'].append(item[value_key])
 
-			if add_zero_start:
+
+			if add_zero_start and data_to_plot:
+				# First, find the earliest moment across ALL lines being plotted.
+				all_moments = [moment for v in data_to_plot.values() for moment in v['moments']]
+				if not all_moments: return # Should not happen if data_to_plot is not empty, but safe to have
+
+				overall_min_moment = min(all_moments)
+
+				# Now, add a zero-point only if a line starts AFTER that earliest moment.
 				for _, values in data_to_plot.items():
-					if not values['months']: continue
-					min_month = min(values['months'])
-					if min_month != FIRST_MONTH:
-						values['months'].append(min_month - 1)
+					if not values['moments']: continue
+
+					line_min_moment = min(values['moments'])
+					if line_min_moment > overall_min_moment:
+						values['moments'].append(line_min_moment - 1)
 						values['values'].append(0)
 
-			ax.set_xlabel("Month")
+			ax.set_xlabel("Time")
+			ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 			ax.set_ylabel(value_label_str)
 			title_text = f"{value_label_str}s for: {filter_category_type}" if is_category_picked else f"{value_label_str}s in: {filter_region}"
 			ax.set_title(title_text)
 
 			for name, values in sorted(data_to_plot.items()):
-				if not values['months']: continue
-				sorted_points = sorted(zip(values['months'], values['values']))
-				months_sorted, values_sorted = zip(*sorted_points)
-				ax.plot(months_sorted, values_sorted, marker='o', linestyle='-', label=name, color=next(colors))
+				if not values['moments']: continue
+				sorted_points = sorted(zip(values['moments'], values['values']))
+				moments_sorted, values_sorted = zip(*sorted_points)
+				ax.plot(moments_sorted, values_sorted, marker='o', linestyle='-', label=name, color=next(colors))
 
 			if data_to_plot:
-				min_x = min(min(v['months']) for v in data_to_plot.values() if v['months'])
-				max_x = max(max(v['months']) for v in data_to_plot.values() if v['months'])
+				min_x = min(min(v['moments']) for v in data_to_plot.values() if v['moments'])
+				max_x = max(max(v['moments']) for v in data_to_plot.values() if v['moments'])
 				ax.set_xlim(min_x, max_x)
 
 			if SHOW_LEGEND and data_to_plot:
@@ -143,7 +155,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			on_lines_plotted()
 
 		# --- Bar Graph Logic ---
-		elif not is_month_all and (is_category_picked or is_region_picked):
+		elif not is_moment_all and (is_category_picked or is_region_picked):
 			coloring_key = category_key if is_region_picked else 'region'
 			unique_items = sorted(list(set(item[coloring_key] for item in filtered_data)))
 			color_map = {name: next(colors) for name in unique_items}
@@ -153,7 +165,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 
 			ax.bar(labels, values, color=bar_colors)
 			ax.set_ylabel(value_label_str)
-			ax.set_title(f"{value_label_str}s for Month: {filter_month_str}")
+			ax.set_title(f"{value_label_str}s for Month: {filter_moment_str}")
 			plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
 			if unique_items:
@@ -164,7 +176,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			ax.text(0.5, 0.5, "Please select a filter to display a graph.", ha='center', va='center')
 		ax.figure.canvas.draw_idle()
 
-	combo_month.currentIndexChanged.connect(update_plot)
+	combo_moment.currentIndexChanged.connect(update_plot)
 	combo_category.currentIndexChanged.connect(update_plot)
 	combo_region.currentIndexChanged.connect(update_plot)
 	update_plot()
@@ -213,23 +225,24 @@ def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plot
 		for item in filtered_data:
 			key = item['region']
 			if key not in data_to_plot:
-				data_to_plot[key] = {'months': [], 'populations': []}
-			data_to_plot[key]['months'].append(item['month'])
+				data_to_plot[key] = {'moments': [], 'populations': []}
+			data_to_plot[key]['moments'].append(item['moment'])
 			data_to_plot[key]['populations'].append(item['population'])
 
-		ax.set_xlabel("Month")
+		ax.set_xlabel("Time")
+		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 		ax.set_ylabel("Population")
 		ax.set_title("Population Over Time")
 
 		for name, values in sorted(data_to_plot.items()):
-			if not values['months']: continue
-			sorted_points = sorted(zip(values['months'], values['populations']))
-			months_sorted, pop_sorted = zip(*sorted_points)
-			ax.plot(months_sorted, pop_sorted, marker='o', linestyle='-', label=name, color=next(colors))
+			if not values['moments']: continue
+			sorted_points = sorted(zip(values['moments'], values['populations']))
+			moments_sorted, pop_sorted = zip(*sorted_points)
+			ax.plot(moments_sorted, pop_sorted, marker='o', linestyle='-', label=name, color=next(colors))
 
 		if data_to_plot:
-			min_x = min(min(v['months']) for v in data_to_plot.values() if v['months'])
-			max_x = max(max(v['months']) for v in data_to_plot.values() if v['months'])
+			min_x = min(min(v['moments']) for v in data_to_plot.values() if v['moments'])
+			max_x = max(max(v['moments']) for v in data_to_plot.values() if v['moments'])
 			ax.set_xlim(min_x, max_x)
 
 		if SHOW_LEGEND and data_to_plot:

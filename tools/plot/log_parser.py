@@ -16,7 +16,7 @@ def parse_data_building_types(data):
 	print("Parsing building data for the first time...")
 	pattern = re.compile(r"::BT:(\d+):(.*?):(\d+):(.*)")
 	parsed_data = [
-		{"month": int(m.group(1)), "building": m.group(2).strip(),
+		{"moment": int(m.group(1)), "building": m.group(2).strip(),
 		 "count": int(m.group(3)), "region": m.group(4).strip()}
 		for m in pattern.finditer(data)
 	]
@@ -35,7 +35,7 @@ def parse_data_goods_prices(data):
 		return gp_data_cache
 
 	print("Parsing goods price data for the first time...")
-	# Regex to capture: 1:Month, 2:Good, 3:Region, 4:Price
+	# Regex to capture: 1:Moment, 2:Good, 3:Region, 4:Price
 	pattern = re.compile(r"::GP::(\d+):(.+?):(.+?):([\d.-]+)")
 
 	parsed_data = []
@@ -46,7 +46,7 @@ def parse_data_goods_prices(data):
 			continue
 
 		parsed_data.append({
-			"month": int(m.group(1)),
+			"moment": int(m.group(1)),
 			"good": m.group(2).strip(),
 			"region": region_name,
 			"price": float(m.group(4))
@@ -76,7 +76,7 @@ def parse_data_population(data):
 		return pop_data_cache
 
 	print("Parsing population data for the first time...")
-	# Regex to capture: 1:Month, 2:Region, 3:Population String
+	# Regex to capture: 1:Moment, 2:Region, 3:Population String
 	pattern = re.compile(r"::POP::(\d+):(.+?):([\d.,MK]+)")
 
 	parsed_data = []
@@ -84,7 +84,7 @@ def parse_data_population(data):
 		try:
 			population_value = _parse_population_value(m.group(3))
 			parsed_data.append({
-				"month": int(m.group(1)),
+				"moment": int(m.group(1)),
 				"region": m.group(2).strip(),
 				"population": population_value
 			})
