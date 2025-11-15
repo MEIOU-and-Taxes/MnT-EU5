@@ -156,7 +156,7 @@ class InteractiveLineTooltip:
 
 		# Dynamic positioning with vertical alignment
 		y_min, y_max = self.ax.get_ylim()
-		y_mid = (y_min + y_max) * 0.4
+		y_mid = y_min + (y_max - y_min) * 0.4
 
 		# If cursor is in the top half, place tooltip below the anchor point
 		# The offset will push the text box down
@@ -169,7 +169,7 @@ class InteractiveLineTooltip:
 
 		# Horizontal positioning logic
 		x_min, x_max = self.ax.get_xlim()
-		x_mid = (x_min + x_max) * 0.7
+		x_mid = x_min + (x_max - x_min) * 0.7
 		# If cursor is on the right, align text to the right and use a negative offset
 		if event.xdata > x_mid:
 			self.annot.set_horizontalalignment('right')
