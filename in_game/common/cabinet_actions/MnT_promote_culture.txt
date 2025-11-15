@@ -9,6 +9,14 @@
 	
 	allow = {
 		cultural_unity < 1.0
+		NAND = {
+			top_overlord ?= { 
+				culture = {
+					is_primary_in = root
+				}
+			}
+			has_limited_diplomacy = yes
+		}
 	}
 	
 	select_trigger = {
@@ -67,7 +75,6 @@
 
 	select_trigger = {
 		looking_for_a = province
-		source = actor
 		target_flag = target_1
 		name = "promote_culture_select_province"
 		none_available_msg_key = "promote_culture_no_provinces"
@@ -83,16 +90,25 @@
 		default_sort = province_culture_percentage
 		visible = {
 			any_location_in_province = {
-				OR = {
-					NOT = { dominant_culture = owner.culture }
-					local_cultural_unity < 1.0
+				owner ?= {
+					OR = {
+						this = scope:actor
+						AND = {
+							is_subject_or_below_of = scope:actor 
+							has_limited_diplomacy = yes
+						}
+					}
+				}
+				NAND = {
+					dominant_culture = scope:target
+					local_cultural_unity >= 1.0
 				}
 			}
 			scope:actor = {
 				not = {
 					any_cabinet = {
 						has_cabinet_action = yes
-						cabinet_action = cabinet_action:promote_culture
+						cabinet_action ?= cabinet_action:promote_culture
 						interaction_target:target_1 ?= root
 					}
 				}
