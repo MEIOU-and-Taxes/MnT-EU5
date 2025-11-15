@@ -1,0 +1,637 @@
+﻿# starting_technology_level is only relevant in age of traditions, where advances with higher value than the countries value starts as unresearched
+
+#Written Alphabet
+written_alphabet = {
+	age = age_1_traditions
+	icon = abacus_advance
+	depth = 0
+	research_cost = 2.0
+	
+	
+	global_max_literacy = 5
+	global_monthly_literacy = 0.01
+	
+	starting_technology_level = 2
+	
+}
+
+cultural_traditions_law_advance = {
+	age = age_1_traditions
+	requires = written_alphabet
+	unlock_law = cultural_traditions_law
+	starting_technology_level = 2
+}
+
+cultural_acceptance_advance = {
+	age = age_1_traditions
+	icon = cultural_acceptance_advance
+	cultures_capacity = 1
+	starting_technology_level = 3
+	requires = cultural_traditions_law_advance
+}
+
+mapmaking = {
+	age = age_1_traditions
+	icon = maritime_advance_age_4
+	requires = written_alphabet
+	
+	research_cost = 1.0
+	may_explore = yes
+	unlock_law = immigration_law
+}
+
+colonies = {
+	age = age_1_traditions
+	icon = colonies
+	requires = mapmaking
+	
+	research_cost = 1.0
+	can_colonize = yes
+}
+
+codified_laws = {
+	age = age_1_traditions
+	icon = scholasticism
+	
+	requires = written_alphabet
+	
+	research_cost = 2.0
+	has_codified_laws = yes
+	allow_council_parliament = yes
+	
+	starting_technology_level = 2
+}
+
+distribution_of_power_advance = {
+	age = age_1_traditions
+	unlock_law = distribution_of_power_law
+
+	requires = codified_laws
+}
+
+subjects_advance = {
+	age = age_1_traditions
+	icon = diplomatic_influence
+	research_cost = 2.5
+	
+	allow_subjects = yes
+	unlock_subject_type = vassal
+	
+	requires = codified_laws
+}
+
+taxation_advance = {
+	age = age_1_traditions
+	icon = genoese_banking_traditions
+	research_cost = 2.5
+	enable_taxation = yes
+	has_stability_investment = yes
+	
+	
+	requires = codified_laws
+}
+
+state_administration_advance = {
+	age = age_1_traditions
+	research_cost = 2.5
+	unlock_law = administrative_system
+	
+	requires = taxation_advance
+
+	potential = {
+		has_tribal_government = no
+	}
+}
+
+#####################################
+# Legalism
+#####################################
+legalism_advance = {
+	age = age_1_traditions
+	icon = legalism_advance
+		
+	stability_cost = -0.1
+	
+	requires = codified_laws
+	
+	allow = { has_embraced_institution = institution:legalism }
+}
+
+
+medieval_administration  = {
+	age = age_1_traditions
+	icon = scholasticism
+
+	requires = legalism_advance
+
+	government_reform_slots = 1
+}
+
+pest_house_advance = {
+	age = age_1_traditions
+	requires = medieval_administration
+	unlock_building = pest_house
+}
+
+banking_country_traditions = {
+	potential = {
+		has_reform =government_reform:banking_country
+	}
+
+	age = age_1_traditions
+	icon = banking_advance
+	
+	
+	unlock_country_interaction = take_over_loan
+	minting_income_factor = 0.10
+	total_loan_capacity_modifier = 0.5 
+		
+	requires = medieval_administration
+	
+}
+
+hospital_advance = {
+	age = age_1_traditions
+	requires = pest_house_advance
+	unlock_building = hospital
+}
+
+#Agriculture
+agriculture_advance = {
+	age = age_1_traditions
+	research_cost = 2.0
+	can_extract_wheat = yes
+	can_extract_maize = yes
+	can_extract_potato = yes
+	can_extract_rice = yes
+	can_extract_millet = yes
+	can_extract_legumes = yes
+
+	depth = 0
+
+	allow = {
+	}
+	
+	starting_technology_level = 1
+}
+
+windmills_advance = {
+	age = age_1_traditions
+	unlock_building = windmill
+	requires = agriculture_advance
+}
+
+alchemy_advance = {
+	age = age_1_traditions
+	icon = alchemy_advance
+	requires = windmills_advance
+
+	global_life_expectancy = 3
+	global_disease_resistance = 0.05
+	
+	starting_technology_level = 3
+}
+
+apothecary_advance = {
+	age = age_1_traditions
+	requires = alchemy_advance
+	
+	unlock_building = apothecary
+}
+
+city_building_advance = {
+	age = age_1_traditions
+	icon = city_building_advance
+	research_cost = 2.0
+	can_build_cities = yes
+
+	requires = agriculture_advance
+}
+
+
+
+ranching = {
+	age = age_1_traditions
+	icon = finest_of_horses
+	starting_technology_level = 1
+	requires = windmills_advance
+	
+	allow = { 
+		OR = {
+			has_embraced_institution = institution:feudalism
+			capital ?= { continent = continent:europe }
+			capital ?= { continent = continent:asia }
+			capital ?= { sub_continent = sub_continent:north_africa }
+			capital ?= { sub_continent = sub_continent:west_africa }
+			
+			capital ?= {
+				market ?= { 
+					OR = {
+						is_produced_in_market = goods:horses 
+						is_traded_in_market = goods:horses 
+					}
+				} 
+			}
+		}
+	}
+	can_extract_horses = yes
+}
+
+horse_riding_advance = {
+	age = age_1_traditions
+	research_cost = 2.0
+	requires = ranching
+
+	unlock_levy = levy_noble_cavalry
+	unlock_levy = levy_tribal_cavalry
+
+	
+	starting_technology_level = 1
+}
+
+#####################################
+# Feudalism
+#####################################
+
+feudalism_advance = {
+	age = age_1_traditions
+	icon = feudalism_advance
+
+	unlock_subject_type = fiefdom
+	unlock_government_reform = feudal_nobility
+	unlock_government_reform = margraviate
+	requires = horse_riding_advance
+	
+	global_nobles_max_literacy = 20
+	allow_estate_parliament = yes
+	military_tactics = 1.0
+	
+	allow = { has_embraced_institution = institution:feudalism }
+}
+
+trade_caravans = {
+	age = age_1_traditions
+	icon = trade_caravans
+	research_cost = 2.0
+
+	requires = horse_riding_advance
+	
+	trade_land_movement_cost_modifier = -0.33
+
+	potential = {
+		capital ?= { sub_continent = sub_continent:central_asia }
+	}
+	
+	starting_technology_level = 1
+}
+
+#Mining
+mining_advance = {
+	age = age_1_traditions
+	icon = efficient_mining
+
+	starting_technology_level = 1
+	depth = 0
+	research_cost = 2.0
+	can_extract_stone = yes
+	can_extract_marble = yes
+}
+
+metallurgy  = {
+	age = age_1_traditions
+	
+	requires = mining_advance
+	research_cost = 2.0
+	
+	unlock_building = tools_guild
+
+}
+
+mining_law_advance = {
+	age = age_1_traditions
+	icon = laws
+	requires = mining_advance
+	starting_technology_level = 1
+
+	unlock_law = mining_law
+}
+
+bronze_working = {
+	age = age_1_traditions
+	icon = serbian_mining
+	requires = metallurgy
+	research_cost = 2.0
+	
+	can_extract_copper = yes
+	can_extract_tin = yes
+	can_extract_lead = yes
+
+}
+
+iron_working = {
+	icon = efficient_mining
+	age = age_1_traditions
+	requires = metallurgy
+	research_cost = 2.0
+	starting_technology_level = 1
+	
+	allow = { 
+		has_embraced_institution = institution:feudalism
+	}
+	
+	can_extract_coal = yes
+	can_extract_iron = yes
+	unlock_building = bog_iron_smelter
+}
+
+local_smelters_advance = {
+	age = age_1_traditions
+	requires = iron_working
+	unlock_building = local_smelters
+}
+
+advanced_mining  = {
+	age = age_1_traditions
+	icon = serbian_mining
+	requires = iron_working
+	research_cost = 2.0
+	
+	can_extract_saltpeter = yes
+	can_extract_alum = yes
+
+}
+
+fine_metals_mining = {
+	age = age_1_traditions
+	requires = bronze_working
+	research_cost = 2.0
+	
+	can_extract_goods_gold = yes
+	can_extract_silver = yes
+	can_extract_mercury = yes
+}
+
+faster_levy_recruitment  = {
+	age = age_1_traditions
+	icon = offensive_army
+	requires = iron_working
+
+	global_levy_recruitment_speed_modifier = 0.2
+}
+
+#Shipbuilding
+ship_building_advance = {
+	age = age_1_traditions
+	icon = ship_building_advance
+	research_cost = 2.0
+	
+	ship_build_speed = 0.1
+	depth = 0
+	
+	starting_technology_level = 2
+}
+
+trade_advance_age_of_trad = {
+	age = age_1_traditions
+	icon = merchant_power_from_maritime_reformation_advance
+	
+	requires = ship_building_advance
+	
+	trade_efficiency = small_trade_efficiency_bonus
+	
+	starting_technology_level = 3
+}
+
+
+
+more_merchants_age_of_trad = {
+	age = age_1_traditions
+	icon = merchants_and_trade
+	
+	requires = trade_advance_age_of_trad
+	
+	global_merchant_capacity_modifier = 0.05
+	
+	starting_technology_level = 3
+}
+slave_raid_advance = {
+	age = age_1_traditions
+	icon = slavery_before_death
+
+	potential = { 
+		OR = {
+			has_or_had_tag = MOR
+			has_or_had_tag = TUN
+			has_or_had_tag = TLE
+			has_or_had_tag = TRP
+			
+			AND = {
+				num_locations > 0
+				capital = { region = region:maghreb_region }
+			}
+		}
+		
+	}
+	
+	allow_privateers_slave_raid = yes
+	can_hire_privateers = yes
+	
+	requires = trade_advance_age_of_trad
+}
+
+#Organized Religion
+organized_religion = {
+	age = age_1_traditions
+	
+	global_clergy_city_desired_pop = 0.05
+	global_clergy_max_literacy = 5
+
+	depth = 0
+	starting_technology_level = 4
+	
+}
+scholasticism = {
+	age = age_1_traditions
+	icon = scholasticism
+	requires = organized_religion
+	
+	global_institution_growth_modifier = 0.20
+
+	ai_weight = { add = 2 }
+}
+
+guilds = {
+	age = age_1_traditions
+	icon = guilds
+	requires = organized_religion
+
+	global_burghers_city_desired_pop = 0.1
+	global_burghers_max_literacy = 5
+}
+
+peasant_connections_advance = {
+	age = age_1_traditions
+	icon = road_building
+
+	requires = guilds
+
+	food_purchase_cost = -0.1
+}
+
+construction_speed_traditions = {
+	age = age_1_traditions
+	icon = legalism_advance
+
+	requires = peasant_connections_advance
+	global_construction_speed = 0.05
+}
+
+diplomatic_capacity_traditions = {
+	age = age_1_traditions
+	icon = diplomatic_influence
+
+	requires = guilds
+	diplomatic_capacity_modifier = 0.2
+}
+
+rural_rgo_traditions = {
+	age = age_1_traditions
+	icon = laws
+
+	requires = peasant_connections_advance
+	global_max_rgo_size_modifier_in_rural = 0.1
+}
+
+
+
+#####################################
+# Meritocracy
+#####################################
+
+meritocracy_advance = {
+	age = age_1_traditions
+	icon = meritocracy
+		
+	country_cabinet_efficiency = 0.05
+	
+	depth = 0
+
+
+	allow = { has_embraced_institution = institution:meritocracy }
+}
+
+educated_bureaucrats = {
+	age = age_1_traditions
+	icon = scholasticism
+	requires = meritocracy_advance
+
+	global_monthly_literacy = 0.01
+}
+
+efficient_bureaucracy = {
+	age = age_1_traditions
+	icon = scholasticism
+	requires = educated_bureaucrats
+
+	legislative_efficiency = 0.05
+}
+
+right_to_rule = {
+	age = age_1_traditions
+	icon = renaissance_advance
+	requires = efficient_bureaucracy
+
+	num_possible_artists = 1
+}
+
+smooth_administration = {
+	age = age_1_traditions
+	icon = smooth_administration
+	requires = right_to_rule
+
+	stability_cost = -0.05
+}
+
+efficient_logistics = {
+	age = age_1_traditions
+	icon = road_building
+	requires = efficient_bureaucracy
+
+	build_gravel_road_cost_modifier = -0.05
+}
+
+province_governors = {
+	age = age_1_traditions
+	icon = glorious_arms
+	requires = efficient_logistics
+
+	global_integration_speed_modifier = 0.02
+}
+
+appointed_chain_of_command = {
+	age = age_1_traditions
+	icon = glorious_arms
+	requires = efficient_logistics
+	potential = {
+		capital ?= { sub_continent = sub_continent:east_asia }
+	}
+	
+	levy_combat_efficiency_modifier = 0.1
+}
+
+temporary_appointments = {
+	age = age_1_traditions
+	icon = genoese_banking_traditions
+	requires = efficient_bureaucracy
+	
+	set_cabinet_member_cost_modifier = -0.1
+	replace_cabinet_member_cost_modifier = -0.1
+}
+
+non_inheritable_offices = {
+	age = age_1_traditions
+	icon = improve_relation_impact_renaissance
+	requires = temporary_appointments
+
+	estate_power_from_cabinet = -0.1
+}
+
+abacus_advance = {
+	age = age_1_traditions
+	icon = abacus_advance
+	requires = meritocracy_advance
+
+	tax_income_efficiency = small_tax_income_efficiency_bonus
+}
+
+power_projection_advance_1 = {
+	age = age_1_traditions
+	icon = crown_power_advance_renaissance
+	requires = abacus_advance
+	power_projection = 10
+}
+
+
+ledgers_double_checking = {
+	age = age_1_traditions
+	icon = court_accounting
+	requires = abacus_advance
+
+	estate_enrichment = -0.05
+}
+
+talented_traders = {
+	age = age_1_traditions
+	icon = merchants_and_trade
+	requires = abacus_advance
+
+	trade_efficiency = small_trade_efficiency_bonus
+}
+
+government_sanctioned_celebrations = {
+	age = age_1_traditions
+	icon = grand_banquets
+	requires = educated_bureaucrats
+
+	cultural_tradition_modifier = 0.1
+}

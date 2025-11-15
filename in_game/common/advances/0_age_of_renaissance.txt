@@ -1,0 +1,1224 @@
+﻿###########################
+# The new Tree
+##############################
+#Viewed from Center 
+
+#Tree 0
+grant_privilege_cost_modifier_renaissance_advance = {
+	age = age_2_renaissance
+
+	grant_privilege_cost_modifier = -0.1
+	
+	depth = 0
+}
+renaissance_development = {
+	age = age_2_renaissance
+	icon = offensive_army
+	
+	requires = grant_privilege_cost_modifier_renaissance_advance
+	
+	embrace_institution_cost_modifier = -0.10
+	revoke_privilege_cost_modifier = -0.05
+
+}
+renaissance_city_rights = {
+	icon = religious_toleration
+	age = age_2_renaissance
+	requires = renaissance_development
+	
+	city_upgrade_cost_modifier = -0.1
+	town_upgrade_cost_modifier = -0.1
+}
+#Tree -1
+food_advance_renaissance = {
+	age = age_2_renaissance
+	icon = expanded_supply_trains
+
+	requires = renaissance_city_rights
+	
+	global_monthly_food_modifier = 0.10
+}
+
+rgo_size_advance_renaissance = {
+	age = age_2_renaissance
+
+	requires = food_advance_renaissance
+	
+	global_max_rgo_size_modifier = 0.10
+}
+
+renaissance_urbanisation = {
+	age = age_2_renaissance
+	requires = rgo_size_advance_renaissance
+
+
+	global_max_rgo_size_modifier_in_non_rural = 0.1
+}
+
+construction_speed_renaissance = {
+	icon = efficient_mining
+	age = age_2_renaissance
+	
+	requires = renaissance_urbanisation
+	
+	global_construction_speed = 0.1
+}
+
+rgo_construction_ren = {
+	age = age_2_renaissance
+	icon = efficient_mining
+	
+	requires = construction_speed_renaissance
+	
+	global_rgo_build_time = -0.1
+}
+state_efficiency = {
+	age = age_2_renaissance
+	icon = road_building
+	for = adm
+	
+	
+	requires = rgo_construction_ren
+	global_distance_from_capital_cost_modifier = -0.025
+}
+
+#Tree +1
+law_making_renaissance = {
+	age = age_2_renaissance
+	
+	requires = renaissance_city_rights
+	
+	change_policy_cost_modifier = -0.05
+}
+empiricism = {
+	age = age_2_renaissance
+	icon = scholasticism
+
+	requires = law_making_renaissance
+	
+	legislative_efficiency = 0.10
+}
+paper_guild_cloth_maintenance_advance = {
+	age = age_2_renaissance
+	
+	unlock_production_method = paper_guild_cloth_maintenance
+	
+	requires = empiricism
+}
+bureaucracy_law_advance = {
+	age = age_2_renaissance
+	requires = paper_guild_cloth_maintenance_advance
+	unlock_law = bureaucracy_law
+}
+chancery_records = {
+	age = age_2_renaissance
+	icon = smooth_administration
+	
+	chancery_cap_level = 1
+	
+	requires = bureaucracy_law_advance
+	allow_children = no
+}
+#Tree -2
+late_feudal_relations = {
+	age = age_2_renaissance
+	icon = late_feudal_relations
+
+	requires = grant_privilege_cost_modifier_renaissance_advance
+	
+	subject_loyalty = 10
+
+	ai_weight = {
+		if = {
+			limit = {
+				root = {
+					subjects_relative_power > 0.25
+				}
+			}
+			add = 1
+		}
+	}
+}
+subject_integration = {
+	icon = glorious_arms
+	age = age_2_renaissance
+	
+	requires = late_feudal_relations
+	
+	diplomatic_annexation_cost = -0.1
+}
+pound_lock_canals_advance = {
+	age = age_2_renaissance
+	
+	requires = rgo_construction_ren
+
+	starting_technology_level = 3
+	unlock_building = pound_lock_canal_infrastructure
+}
+
+#Tree +2
+#Tree -3
+war_no_cb_cost_modifier_renaissance_advance = {
+	age = age_2_renaissance
+	icon = expansionism
+	requires = subject_integration
+
+	war_no_cb_cost_modifier = -0.1
+}
+recruitment_improvements_renaissance = {
+	age = age_2_renaissance
+	icon = recruitment_improvements_renaissance
+
+	requires = war_no_cb_cost_modifier_renaissance_advance	
+
+	regiment_recruit_speed = 0.2
+}
+drill_army_advance = {
+	age = age_2_renaissance
+	icon = drill_army_advance
+	
+	unlock_ability = drill_army
+	
+	requires = recruitment_improvements_renaissance
+}
+correct_box_advance_renaissance = {
+	age = age_2_renaissance
+			
+	correct_box_chance = 0.1
+		
+	requires = drill_army_advance
+}
+armory_advance = {
+	age = age_2_renaissance
+	
+	unlock_building = armory
+	
+	requires = drill_army_advance
+	ai_weight = { add = 2000 }
+}
+supply_depot_advance_age_2_renaissance = {
+	age = age_2_renaissance
+			
+	supply_depot_capacity = 25
+		
+	requires = armory_advance
+}
+unlock_supply_carts = {
+	age = age_2_renaissance
+	unlock_unit = a_supply_carts
+	
+	requires = supply_depot_advance_age_2_renaissance
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_supply_carts)"
+	}
+}
+unlock_cavalry_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_cavalrymen
+	
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_cavalrymen)"
+	}
+
+	requires = unlock_supply_carts
+}
+unlock_heavy_cavalry_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_heavy_cavalrymen
+	
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_heavy_cavalrymen)"
+	}
+
+	requires = unlock_cavalry_advance
+}
+#Tree +3
+global_clergy_max_literacy_advance = {
+	age = age_2_renaissance
+	requires = renaissance_development
+
+	global_clergy_max_literacy = 10
+}
+standardized_coins = {
+	age = age_2_renaissance
+	icon = standardized_coins
+	
+	minting_inflation_threshold = 0.01
+	
+	ai_weight = { add = 1 }
+	
+	requires = law_making_renaissance
+	allow = { has_embraced_institution = institution:banking }
+}
+
+trade_range_advance_age_2 = {
+	age = age_2_renaissance
+	icon = zmw_merchant_taxes
+
+	requires = standardized_coins
+	
+	trade_range	= 250
+}
+#Tree -4
+unlock_peasant_levy_advance = {
+	age = age_2_renaissance
+	unlock_levy = levy_a_peasant_levy
+	
+	requires = recruitment_improvements_renaissance
+}
+spy_construction_renaissance = {
+	age = age_2_renaissance
+
+	requires = war_no_cb_cost_modifier_renaissance_advance
+
+	spy_network_construction = 0.1
+}
+unlock_men_at_arms_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_men_at_arms
+	unlock_levy = levy_a_men_at_arms
+	
+	requires = drill_army_advance
+	
+	allow = {
+		any_market_present_in_country = { 
+			OR = {
+				is_produced_in_market = goods:tools 
+				is_traded_in_market = goods:tools 
+			} 
+		} 
+	}
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_men_at_arms)"
+	}
+}
+regiment_reinforcement_speed_renaissance = {
+	age = age_2_renaissance
+	icon = regiment_reinforcement_speed_renaissance
+
+	requires = recruitment_improvements_renaissance
+
+	regiment_reinforcement_speed = 0.1
+}
+medieval_military = {
+	age = age_2_renaissance
+	land_morale = 0.25
+	
+	requires = regiment_reinforcement_speed_renaissance
+}
+army_initiative_ren = {
+	icon = professional_armies_advance
+	age = age_2_renaissance
+	
+	requires = medieval_military
+	
+	army_initiative = 0.2
+}
+finest_of_horses = {
+	age = age_2_renaissance
+	icon = finest_of_horses
+	for = mil
+
+	army_cavalry_power = 0.1
+	
+	requires = unlock_cavalry_advance
+}
+enforced_service = {
+	age = age_2_renaissance
+	icon = offensive_army
+	for = mil
+	
+	requires = correct_box_advance_renaissance
+
+	global_levy_size_modifier = 0.1
+}
+regular_levy_training = {
+	age = age_2_renaissance
+	icon = drill_army_advance
+	for = mil
+
+	levy_combat_efficiency_modifier = 0.10
+	
+	requires = enforced_service
+}
+battlefield_commisions = {
+	age = age_2_renaissance
+	icon = expansionism
+	for = mil
+	
+	requires = regular_levy_training
+
+	army_tradition_from_battle = 1.0
+}
+experienced_diplomats  = {
+	age = age_2_renaissance
+	for = dip
+	
+	requires = correct_box_advance_renaissance
+	
+	diplomatic_reputation = diplomatic_reputation_mild_bonus
+}
+unlock_reformed_crusader_knights_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_late_crusader_knights
+	unlock_levy = levy_late_crusader_knights
+
+	requires = recruitment_improvements_renaissance
+
+	potential = {
+		OR = {
+			has_reform = government_reform:military_order_reform
+			has_estate_privilege = estate_privilege:clergy_military_orders
+		}
+	}
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_late_crusader_knights)"
+	}
+}
+land_morale_recovery_renaissance_advance = {
+	icon = offensive_army
+	age = age_2_renaissance
+	
+	land_morale_recovery = 0.01
+	
+	requires = armory_advance
+}
+#Tree +4
+church_attendance_duty = {
+	age = age_2_renaissance
+	icon = smooth_administration
+	for = adm
+	
+	requires = global_clergy_max_literacy_advance
+	
+	ai_weight = { add = 5 }
+	stability_investment = small_stability_investment
+}
+
+deus_vult = {
+	age = age_2_renaissance
+	icon = teu_crusader_discipline
+	for = adm
+	
+	requires = church_attendance_duty
+
+	unlock_casus_belli = cb_deus_vult
+}
+banking_advance = {
+	age = age_2_renaissance
+	icon = banking_advance
+			
+	bank_interest = -0.02
+	total_loan_capacity_modifier = 0.5
+	requires = trade_range_advance_age_2	
+}
+entrepot_advance = {
+	age = age_2_renaissance
+	
+	requires = banking_advance
+	
+	unlock_building = entrepot
+
+	ai_weight = { 
+		if = {
+			limit = {
+				has_markets = yes
+			}
+
+			add = 250
+		}
+	}
+}
+counting_house_advance = {
+	age = age_2_renaissance
+	
+	unlock_building = counting_house
+	requires = entrepot_advance
+	ai_weight = { add = 100 }
+}
+diplomatic_range_age_1 = {
+	age = age_2_renaissance
+	icon = diplomatic_range_age_1
+	
+	requires = standardized_coins
+	
+	diplomatic_range_modifier = 0.33
+}
+#Tree -5
+renaissance_subject_opinions_advance = {	
+	age = age_2_renaissance
+
+	requires = late_feudal_relations
+
+	subject_opinions = 10
+
+	ai_weight = {
+		if = {
+			limit = {
+				root = {
+					subjects_relative_power > 0.25
+				}
+			}
+			add = 1
+		}
+	}
+}
+
+crown_power_advance_renaissance = {
+	age = age_2_renaissance
+	icon = crown_power_advance_renaissance
+
+	global_crown_estate_power = 0.10
+	ai_weight = { add = 2 }
+	requires = renaissance_subject_opinions_advance
+}
+local_nobility = {
+	age = age_2_renaissance
+	government = monarchy
+	requires = crown_power_advance_renaissance
+
+	nobles_estate_target_satisfaction = small_permanent_target_satisfaction
+}
+recruitment_law_advance = {
+	age = age_2_renaissance
+	unlock_law = recruitment_law
+	requires = unlock_men_at_arms_advance
+}
+
+gun_smith_advance = {
+	age = age_2_renaissance
+	
+	unlock_building = gun_smith
+	requires = recruitment_law_advance
+	allow = { has_embraced_institution = institution:professional_armies }
+}
+unlock_handgonners_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_handgonners
+	
+	requires = gun_smith_advance
+	ai_weight = { add = 20 }
+}
+professional_armies_advance = {
+	age = age_2_renaissance
+	icon = professional_armies_advance
+
+	requires = unlock_handgonners_advance
+	
+	army_maintenance_cost = -0.10
+}
+aristocracy = {
+	age = age_2_renaissance
+	government = monarchy
+	
+	
+	requires = correct_box_advance_renaissance
+
+	unlock_levy = levy_plated_knights
+	
+	allow = {
+		any_market_present_in_country = { 
+			OR = {
+				is_produced_in_market = goods:tools 
+				is_traded_in_market = goods:tools 
+			}
+		}
+	}
+}
+#Tree +5
+denounce_heretics = {
+	age = age_2_renaissance
+	
+	potential = { religion = religion:catholic }
+	
+	monthly_prestige = 0.05
+
+	requires = global_clergy_max_literacy_advance
+}
+preaching_friars = {
+	age = age_2_renaissance
+	 
+	
+	potential = { religion = religion:catholic }
+	
+	clergy_estate_target_satisfaction = small_permanent_target_satisfaction
+
+	requires = denounce_heretics
+}
+inquisition_advance = {
+	age = age_2_renaissance
+	
+	potential = { religion = religion:catholic }
+	
+	unlock_law = inquisition_law
+	requires = preaching_friars
+}
+
+improve_relation_impact_renaissance = {
+	age = age_2_renaissance
+	icon = court_accounting
+
+	requires = trade_range_advance_age_2
+	
+	improve_relation_impact = 0.10
+
+	ai_weight = {
+		if = {
+			limit = {
+				root = {
+					subjects_relative_power > 0.25
+				}
+			}
+			add = 1
+		}
+	}
+}
+merchant_traditions = {
+	age = age_2_renaissance
+	icon = merchant_power_from_maritime_reformation_advance
+	for = dip
+
+	requires = banking_advance
+	
+	merchant_power_from_maritime_modifier = 0.1
+	
+}
+shrewd_commerce_practice = {
+	age = age_2_renaissance
+	icon = zmw_merchant_taxes
+	for = dip
+	
+	requires = merchant_traditions
+	
+	global_trade_center_power = 0.05
+}
+global_burghers_max_literacy_advance = {
+	age = age_2_renaissance
+	requires = entrepot_advance
+
+	global_burghers_max_literacy = 10
+}
+
+pop_promotion_speed_age_2 = {
+	age = age_2_renaissance
+	icon = improved_foraging
+
+	requires = global_burghers_max_literacy_advance
+	
+	global_pop_promotion_speed_modifier = 0.1
+}
+pop_promote_actions_advance = {
+	
+	age = age_2_renaissance
+	requires = pop_promotion_speed_age_2
+	
+	unlock_cabinet_action = pop_promote_action
+}
+court_accounting = {
+	age = age_2_renaissance
+	icon = court_accounting
+	for = adm
+
+	requires = counting_house_advance
+	
+	court_spending_cost = -0.01
+}
+debt_and_loans = {
+	age = age_2_renaissance
+	icon = debt_and_loans
+	for = adm
+	requires = court_accounting
+
+	bank_interest = -0.01
+}
+#Tree -6
+unlock_crossbowmen_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_crossbowmen
+	
+	requires = unlock_men_at_arms_advance
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_crossbowmen)"
+	}
+}
+global_supply_limit_modifier_advance_2 = {
+	age = age_2_renaissance
+	icon = global_supply_limit_modifier_advance_5
+	
+	global_supply_limit_modifier = 0.1
+	
+	requires = unlock_crossbowmen_advance
+}
+cannon_maker_advance = {
+	age = age_2_renaissance
+	
+	unlock_building = cannon_maker
+	
+	requires = unlock_handgonners_advance
+	ai_weight = { add = 1.5 }
+}
+unlock_houfnice_advance = {
+	age = age_2_renaissance
+	unlock_unit = a_houfnice
+	
+	requires = cannon_maker_advance
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(a_houfnice)"
+	}
+}
+#Tree +6
+friends_in_high_places = {
+	age = age_2_renaissance
+	government = theocracy
+	
+	country_cabinet_efficiency = 0.05
+	
+	requires = global_clergy_max_literacy_advance
+	
+}
+flesh_is_weak = {
+	age = age_2_renaissance
+	government = theocracy
+
+	land_morale_modifier = 0.05
+	requires = friends_in_high_places
+}
+organised_mercenary_recruitment = {
+	age = age_2_renaissance
+	icon = regimental_system
+	for = adm
+
+	requires = trade_range_advance_age_2
+	hire_mercenary_premium_cost_modifier = -0.2
+}
+benefits_for_mercenaries = {
+	age = age_2_renaissance
+	icon = regimental_system
+	for = adm
+
+	requires = organised_mercenary_recruitment
+	mercenary_maintenance_cost = -0.15
+}
+early_anti_piracy_warfare = {
+	age = age_2_renaissance
+	icon = expansionism
+	for = adm
+
+	requires = benefits_for_mercenaries
+	
+	anti_piracy_warfare_modifier = 0.25
+}
+national_assemblies_advance = {
+	age = age_2_renaissance
+	requires = pop_promotion_speed_age_2
+	unlock_government_reform = national_assemblies
+}
+#Tree -7
+nobles_rights_laws_advance = {
+	age = age_2_renaissance
+	requires = crown_power_advance_renaissance
+	unlock_law = nobles_rights_laws
+}
+global_nobles_max_literacy_advance = {
+	age = age_2_renaissance
+	requires = nobles_rights_laws_advance
+
+	global_nobles_max_literacy = 10
+}
+government_size_renaissance  = {
+	age = age_2_renaissance
+	
+	government_size = 1
+	
+	requires = crown_power_advance_renaissance
+	ai_weight = { add = 2 }
+}
+gunpowder_advance = {
+	age = age_2_renaissance
+	icon = gunpowder_advance
+			
+	military_tactics = 0.25
+		
+	requires = unlock_handgonners_advance
+}
+#Tree +7
+power_projection_advance_2 = {
+	age = age_2_renaissance
+
+	requires = global_clergy_max_literacy_advance
+
+	power_projection = 5
+}
+slave_center_advance = {
+	age = age_2_renaissance
+	unlock_building = slave_center
+	requires = power_projection_advance_2
+}
+claim_fabrication = {
+	age = age_2_renaissance
+	icon = expansionism
+	for = dip
+	
+	requires = slave_center_advance
+	
+	casus_belli_creation_speed_modifier = 0.25
+}
+merchant_power_from_maritime_renaissance_advance = {
+	age = age_2_renaissance
+	icon = global_trade_routes_advance
+	
+	merchant_power_from_maritime = 0.025
+	
+	requires = trade_range_advance_age_2
+}
+coastal_fort_advance = {
+	age = age_2_renaissance
+	
+	requires = merchant_power_from_maritime_renaissance_advance
+	
+	ai_weight = {
+		if = {
+			limit = {
+				has_ports = yes
+			}
+			add = {
+				value = 50
+				multiply = num_of_ports
+				divide = num_locations
+			}
+		}
+	}
+
+	unlock_building = coastal_fort
+}
+unlock_barque_advance = {
+	age = age_2_renaissance
+
+	unlock_unit = n_barque
+	requires = coastal_fort_advance
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(n_barque)"
+	}
+}
+naval_repair_ren = {
+	icon = rudimentary_coastal_ship_repair
+	age = age_2_renaissance
+	
+	requires = unlock_barque_advance
+	
+	navy_repair_cost = -0.05
+}
+maritime_advance_age_2 = {
+	age = age_2_renaissance
+	icon = maritime_advance_age_2
+	
+	requires = naval_repair_ren
+	
+	global_maritime_presence_modifier = 0.1
+}
+#Tree -8
+vibrant_court_advance = {
+	age = age_2_renaissance
+	icon = cultural_acceptance_advance
+	
+	cultures_capacity = 1
+	
+	requires = renaissance_subject_opinions_advance
+	allow = { has_embraced_institution = institution:renaissance }
+	ai_weight = { add = 2 }
+}
+patron_of_art  = {
+	age = age_2_renaissance
+
+	requires = vibrant_court_advance
+
+	has_cultural_maintenance = yes
+	num_possible_artists = 1
+}
+
+renaissance_thought  = {
+	age = age_2_renaissance
+	
+	government_reform_slots = 1
+	requires = patron_of_art
+}
+renaissance_court = {
+	age = age_2_renaissance
+	icon = scholasticism
+
+	cultural_influence_modifier = 0.10
+	cultural_tradition_modifier = 0.10
+
+	requires = renaissance_thought
+}
+university_advance = {
+	age = age_2_renaissance
+	
+	requires = renaissance_court
+	
+	unlock_building = university
+	unlock_law = education_elites_law
+
+	ai_weight = { add = 1 }
+}
+anatomy_advance = {
+	age = age_2_renaissance
+	global_life_expectancy = 3
+	global_disease_resistance = 0.05
+
+	requires = university_advance
+}
+beguins_and_beghards = {
+	age = age_2_renaissance
+
+	potential = { religion = religion:catholic }
+	
+	global_medicaments_output_modifier = 0.1
+
+	requires = anatomy_advance
+}
+#Tree +8
+glorious_arms = {
+	age = age_2_renaissance
+	icon = glorious_arms
+	for = mil
+	
+	requires = power_projection_advance_2
+	
+	prestige_from_land_battle = 1.0
+}
+naval_morale_advance_1 = {
+	age = age_2_renaissance
+	
+	naval_morale = 0.25
+
+	requires = trade_range_advance_age_2
+}
+dock_advance = {
+	age = age_2_renaissance
+	
+	requires = naval_morale_advance_1
+	
+	unlock_building = dock
+
+	ai_weight = {
+		if = {
+			limit = {
+				has_ports = yes
+			}
+			add = {
+				value = 100
+				multiply = num_of_ports
+				divide = num_locations
+			}
+		}
+	}
+	
+	ai_preference_tags = {
+		exploration
+	}
+}
+protected_harbor_advance = {
+	age = age_2_renaissance
+	
+	requires = dock_advance
+	
+	ai_weight = {
+		if = {
+			limit = {
+				has_ports = yes
+			}
+			add = {
+				value = 100
+				multiply = num_of_ports
+				divide = num_locations
+			}
+		}
+	}
+
+	unlock_building = protected_harbor
+}
+unlock_m_galley_advance = {
+	age = age_2_renaissance
+
+	unlock_unit = n_mediterrannean_galley
+	requires = protected_harbor_advance
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(n_mediterrannean_galley)"
+	}
+}
+blockade_tactics = {
+	age = age_2_renaissance
+	requires = unlock_m_galley_advance
+	
+	blockade_efficiency = 0.1
+}
+#Tree -9
+art_school_advance = {
+	age = age_2_renaissance
+
+	requires = patron_of_art
+	
+	unlock_building = art_school
+}
+renaissance_sculptures  = {
+	icon = renaissance_advance
+	age = age_2_renaissance
+
+	requires = art_school_advance
+	
+	global_stone_output_modifier = 0.1
+}
+tolerance_idea = {
+	age = age_2_renaissance
+	icon = cultural_acceptance_advance
+	for = mil
+
+	requires = university_advance
+
+	
+	tolerance_heretic = 1
+	tolerance_heathen = 1
+}
+open_levy_standards = {
+	age = age_2_renaissance
+	icon = regiment_reinforcement_speed_renaissance
+	for = mil
+	
+	wrong_culture_levy_size = 0.25
+	
+	requires = tolerance_idea
+}
+integrated_elites = {
+	age = age_2_renaissance
+	icon = diplomatic_range_age_1
+	for = dip
+	
+	requires = renaissance_court
+	
+	monthly_diplomats = 0.1
+}
+boarding_parties = {
+	age = age_2_renaissance
+	icon = gunpowder_advance
+	for = mil
+	
+	requires = unlock_m_galley_advance
+
+	naval_damage_done = 0.1
+}
+#Tree +9
+benign_diplomats = {
+	age = age_2_renaissance
+	icon = cultural_acceptance_advance
+	for = dip	
+	requires = power_projection_advance_2
+	
+	improve_relation_impact = 0.2
+
+	ai_weight = {
+		if = {
+			limit = {
+				root = {
+					subjects_relative_power > 0.25
+				}
+			}
+			add = 1
+		}
+	}
+}
+unlock_early_carrack_advance = {
+	age = age_2_renaissance
+
+	requires = dock_advance
+	unlock_unit = n_early_carrack
+
+	ai_preference_tags = {
+		exploration
+	}
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(n_early_carrack)"
+	}
+}
+naval_initiative_ren = {
+	age = age_2_renaissance
+	icon = ship_building_advance
+	
+	requires = unlock_early_carrack_advance
+	
+	navy_initiative = 0.2
+}
+merchants_and_trade = {
+	age = age_2_renaissance
+	icon = global_trade_routes_advance
+	
+	requires = naval_initiative_ren
+	
+	naval_range = 250
+	trade_range = 250
+	colonial_range = 250
+	
+	ai_preference_tags = {
+		exploration
+	}
+}
+#Tree -10
+rgo_build_time_advance = {
+	age = age_2_renaissance
+	country_type = location
+	
+	requires = renaissance_thought
+	
+	global_rgo_build_time = -0.1
+}
+theater_advance = {
+	age = age_2_renaissance
+	requires = patron_of_art
+	unlock_building = theater
+}
+devotio_moderna = {
+	age = age_2_renaissance
+	
+	potential = { religion = religion:catholic }
+	
+	court_spending_cost = -0.01
+
+	requires = vibrant_court_advance
+}
+renaissance_advance = {
+	age = age_2_renaissance
+	icon = renaissance_advance
+	
+	cultural_influence = 0.05
+
+	requires = renaissance_court
+	
+}
+recovery_efforts = {
+	icon = offensive_army
+	age = age_2_renaissance
+	
+	requires = university_advance
+	
+	global_devastation_recovery = 0.005
+}
+innovativeness = {
+	age = age_2_renaissance
+	icon = scholasticism
+	for = adm
+	
+	requires = recovery_efforts
+	
+	global_max_literacy = 5
+}
+#Tree +10
+rebellion_support = {
+	icon = zakah
+	age = age_2_renaissance
+	requires = power_projection_advance_2
+	
+	unlock_diplomacy = { supportrebels }
+}
+unlock_hulk_advance = {
+	age = age_2_renaissance
+
+	requires = naval_morale_advance_1
+
+	unlock_unit = n_hulk
+
+	ai_weight = { 
+		add = "ai_unlock_unit_score(n_hulk)"
+	}
+}
+rudimentary_coastal_ship_repair = {
+	age = age_2_renaissance
+	icon = rudimentary_coastal_ship_repair
+
+	requires = unlock_early_carrack_advance
+
+	ship_repair_at_sea = 0.05
+	ship_repair_at_sea_to_max_strength = 0.3
+}
+route_to_the_indies_advance = {
+	age = age_2_renaissance
+	
+	requires = rudimentary_coastal_ship_repair
+
+	exploration_preparation_time_modifier = -0.1
+
+	potential = {
+		capital ?= { sub_continent = sub_continent:western_europe }
+	}
+}
+#Tree -11
+marcher_lords = {
+	age = age_2_renaissance
+	icon = diplomatic_influence
+	for = dip
+	
+	requires = integrated_elites
+	
+	unlock_subject_type = march
+}
+influence = {
+	age = age_2_renaissance
+	icon = expansionism
+	for = dip
+	
+	requires = marcher_lords
+	
+	global_war_score_cost = -0.05
+}
+tribute_system = {
+	age = age_2_renaissance
+	icon = debt_and_loans
+	for = dip
+
+	requires = marcher_lords
+
+	subject_income_modifier = 0.025
+}
+#Tree +11
+infiltrate_administration_advance= {
+	icon = efficient_spies
+	age = age_2_renaissance
+
+	unlock_diplomacy = { infiltrate_administration }
+	
+	requires = power_projection_advance_2
+}
+naval_glory = {
+	age = age_2_renaissance
+	icon = ship_building_advance
+	for = mil
+	requires = naval_morale_advance_1
+
+	monthly_navy_tradition = 0.1
+}
+marine_regiments = {
+	age = age_2_renaissance
+	icon = global_trade_routes_advance
+	for = mil
+
+	requires = unlock_hulk_advance
+
+	army_disembark_speed = 0.20
+}
+#Tree +12
+privateers = {
+	age = age_2_renaissance
+	icon = letters_of_marque
+	for = dip
+	
+	requires = unlock_hulk_advance
+	
+	can_hire_privateers = yes
+}

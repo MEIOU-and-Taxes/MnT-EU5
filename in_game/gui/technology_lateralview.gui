@@ -1,0 +1,2331 @@
+#researched node
+# visible = "[AdvanceNode.GetItem.IsOwned]"
+
+# not researched node
+# visible = "[Not(AdvanceNode.GetItem.IsOwned)]"
+
+# visible available node
+# visible = "[AdvanceNode.GetItem.CanAddToResearchQueue]"
+
+# visible unavailable node
+# visible = "[Not(AdvanceNode.GetItem.CanAddToResearchQueue)]"
+
+# visible is in queue
+# visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.IsInResearchQueue)]"
+
+# visible is in progress
+# visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+
+# visible enabled not in progress
+# visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+
+# unlocks navy
+# visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasNavyUnlocks]"
+
+# unlocks army
+# visible = "[Or(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasArmyUnlocks, AdvanceNode.GetItem.GetAdvance.GetDefinition.HasLevyUnlocks)]"
+
+# unlocks buildings
+# visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasBuildingUnlocks]"
+
+# flavor modifiers
+# visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+
+# generic flavor
+# visible = "[AdvanceNode.GetItem.IsSpecialUnlock]"
+
+# religious flavor
+# visible = "[AdvanceNode.GetItem.IsReligionUnlock]"
+
+# government flavor
+# visible = "[AdvanceNode.GetItem.IsGovernmentUnlock]"
+
+# country type flavor
+# visible = "[And(And(AdvanceNode.GetItem.IsCountryTypeUnlock, Not(AdvanceNode.GetItem.IsChoiceUnlock)), Not(AdvanceNode.GetItem.IsSpecialUnlock))]"
+
+# country flavor
+# visible = "[AdvanceNode.GetItem.IsCountryUnlock]"
+
+template unlock_icon {
+	icon = {
+		parentanchor = hcenter|bottom
+		size = { 97% 97% }
+		block "unlock_texture" {
+			texture = "gfx/interface/advance/unlocks/army.dds"
+		}
+
+		texture_density = 2
+
+		modify_texture = {
+			using = color_grey_texture
+			blend_mode = multiply
+			#visible = "[And(Not(AdvanceNode.GetItem.IsOwned), Not(AdvanceNode.GetItem.CanAddToResearchQueue))]"
+			visible = "[And3(Not(AdvanceNode.GetItem.IsOwned), Not(AdvanceNode.GetItem.CanAddToResearchQueue), Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+		}
+		
+		modify_texture = {
+			using = color_new_gold_texture
+			blend_mode = multiply 
+			#visible = "[And(Not(AdvanceNode.GetItem.IsOwned), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+			visible = "[And(Not(AdvanceNode.GetItem.IsOwned), Or(AdvanceNode.GetItem.CanAddToResearchQueue, AdvanceNode.GetItem.IsInResearchQueue))]"
+		}
+		modify_texture = {
+			using = color_bronze_texture
+			blend_mode = multiply
+			#visible = "[AdvanceNode.GetItem.IsOwned]"
+			visible = "[And(AdvanceNode.GetItem.IsOwned, Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+		}
+
+		modify_texture = {
+			using = overlay_stone_texture
+			blend_mode = overlay
+			alpha = 0.6
+		}
+		modify_texture = {
+			using = bg_fade_vertical_up_mask_texture
+			blend_mode = overlay
+			alpha = 0.4
+			#visible = "[AdvanceNode.GetItem.CanAddToResearchQueue]"
+			visible = "[And(AdvanceNode.GetItem.CanAddToResearchQueue, Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+		}
+		modify_texture = {
+			using = bg_fade_vertical_up_mask_texture
+			blend_mode = overlay
+			alpha = 0.4
+			#visible = "[AdvanceNode.GetItem.IsOwned]"
+			visible = "[And(AdvanceNode.GetItem.IsOwned, Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+		}
+	}
+}
+
+
+
+template special_advance {
+	widget = {
+		size = {100% 100%}
+		visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+		using = bg_circle_outline
+		blockoverride "frame_color" {
+			modify_texture = {
+				using = color_grey_texture
+				blend_mode = multiply
+				visible = "[And(Not(AdvanceNode.GetItem.IsOwned), Not(AdvanceNode.GetItem.CanAddToResearchQueue))]"
+			}
+			modify_texture = {
+				using = color_new_gold_texture
+				blend_mode = multiply
+				visible = "[And(Not(AdvanceNode.GetItem.IsOwned), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+			}
+			modify_texture = {
+				using = color_bronze_texture
+				blend_mode = multiply
+				visible = "[AdvanceNode.GetItem.IsOwned]"
+			}
+		}
+
+		blockoverride "inside_color" {
+			modify_texture = {
+				using = color_dark_purple_texture
+				blend_mode = multiply
+			}
+		}
+
+
+		icon = {
+			parentanchor = center
+			visible = "[AdvanceNode.GetItem.IsSpecialUnlock]"
+			texture = "gfx/interface/icons/location_icons/culture.dds"
+			size = { 35 35 }
+
+			glow = {
+				name = "drop_shadow"
+				glow_radius = 2
+				color = {0.0 0.0 0.0 1.0}
+				alpha = 0.5
+			}
+
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					lowpriotextcontext =  "[AdvanceNode.GetItem.GetUnlockInformation]"
+
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "gfx/interface/icons/location_icons/culture.dds"
+							texture_density = 2
+							alpha = 1
+						}
+					}
+
+					blockoverride "tooltip_content" {
+						TooltipRequirementsList = {
+							textcontext = "[TitleDescTooltip.GetDesc]"
+						}
+					}
+				}
+			}
+		}
+
+		icon = {
+			parentanchor = center
+			visible = "[AdvanceNode.GetItem.IsReligionUnlock]"
+			texture = "[GetReligionIcon(Player.GetReligion)]"
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "[GetReligionIcon(Player.GetReligion)]"
+							texture_density = 2
+							alpha = 1
+						}
+					}
+					lowpriotextcontext =  "[AdvanceNode.GetItem.GetUnlockInformation]"
+				}
+			}
+			size = { 35 35 }
+
+			glow = {
+				name = "drop_shadow"
+				glow_radius = 2
+				color = {0.0 0.0 0.0 1.0}
+				alpha = 0.3
+			}
+		}
+
+		icon = {
+			parentanchor = center
+			visible = "[AdvanceNode.GetItem.IsGovernmentUnlock]"
+			texture = "[GetGovernmentTypeIcon(Player.GetGovernment.GetGovernmentType)]"
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "[GetGovernmentTypeIcon(Player.GetGovernment.GetGovernmentType)]"
+							texture_density = 2
+							alpha = 1
+						}
+					}
+					lowpriotextcontext =  "[AdvanceNode.GetItem.GetUnlockInformation]"
+				}
+			}
+			size = { 35 35 }
+			position = {0 -2}
+
+			glow = {
+				name = "drop_shadow"
+				glow_radius = 2
+				color = {0.0 0.0 0.0 1.0}
+				alpha = 0.5
+			}
+		}
+
+		icon = {
+			parentanchor = center
+			visible = "[And(And(AdvanceNode.GetItem.IsCountryTypeUnlock, Not(AdvanceNode.GetItem.IsChoiceUnlock)), Not(AdvanceNode.GetItem.IsSpecialUnlock))]"
+			texture = "[GetCountryTypeIcon(Player.Self)]"
+			using = overlay_color_light_blue
+			size = { 26 26 }
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "[GetCountryTypeIcon(Player.Self)]"
+							texture_density = 2
+							alpha = 1
+						}
+					}
+					lowpriotextcontext =  "[AdvanceNode.GetItem.GetUnlockInformation]"
+				}
+			}
+		}
+
+		icon = {
+			parentanchor = center
+			size = { 26 26 }
+			visible = "[AdvanceNode.GetItem.IsChoiceUnlock]"
+			texture = "[AdvanceNode.GetItem.GetChoiceIcon]"
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "gfx/interface/icons/_default.dds"
+							texture_density = 2
+							alpha = 1
+						}
+					}
+					lowpriotextcontext =  "[AdvanceNode.GetItem.GetUnlockInformation]"
+				}
+			}
+		}
+
+		icon = {
+			parentanchor = center
+			visible = "[And(And(AdvanceNode.GetItem.IsCountryTypeUnlock, Not(AdvanceNode.GetItem.IsChoiceUnlock)), Not(AdvanceNode.GetItem.IsSpecialUnlock))]"
+			texture = "[GetCountryTypeIcon(Player.Self)]"
+			using = overlay_color_light_blue
+			size = { 26 26 }
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "[GetCountryTypeIcon(Player.Self)]"
+							texture_density = 2
+							alpha = 1
+						}
+					}
+					lowpriotextcontext =  "[AdvanceNode.GetItem.GetUnlockInformation]"
+				}
+			}
+		}
+
+		# country_flag_very_small = {
+		# 	parentanchor = center
+		# 	visible = "[AdvanceNode.GetItem.IsCountryUnlock]"
+		# 	datacontext = "[Player]"
+		# 	position = {1 0}
+
+		# 	blockoverride "show_as_button" { visible = no }
+		# 	blockoverride "show_as_icon" { visible = yes }
+		# 	blockoverride "tooltip" {}
+		# 	blockoverride "contextmenu" {}
+		# 	blockoverride "click" {}
+		# 	blockoverride "double_click" {}
+
+		# 	tooltipwidget = {
+		# 		SimpleContextualTooltipType = {
+		# 			blockoverride "title_icon"
+		# 			{
+		# 				country_flag_small = {
+		# 					datacontext = "[Player]"
+		# 				}
+		# 			}
+		# 			lowpriotextcontext = "[AdvanceNode.GetItem.GetUnlockInformation]"
+		# 			blockoverride "tooltip_content" {
+		# 				TooltipRequirementsList = {
+		# 					textcontext = "[TitleDescTooltip.GetDesc]"
+		# 				}
+		# 			}
+		# 		}
+		# 	}
+		# }
+
+		circular_country_flag_small = {
+			parentanchor = center
+			visible = "[AdvanceNode.GetItem.IsCountryUnlock]"
+			datacontext = "[Player]"
+			blockoverride "show_as_button" { visible = no }
+			blockoverride "show_as_icon" { visible = yes }
+			blockoverride "tooltip" {}
+			blockoverride "contextmenu" {}
+			blockoverride "click" {}
+			blockoverride "double_click" {}
+
+			size = { 70 46 }
+
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						country_flag_small = {
+							datacontext = "[Player]"
+						}
+					}
+					lowpriotextcontext = "[AdvanceNode.GetItem.GetUnlockInformation]"
+					blockoverride "tooltip_content" {
+						TooltipRequirementsList = {
+							textcontext = "[TitleDescTooltip.GetDesc]"
+						}
+					}
+				}
+			}
+		}
+
+
+		icon = {
+			size = {24 15}
+			parentanchor = right|vcenter
+			position = {-10 -22}
+			texture = "gfx/interface/component_tiles/floral_decor_02.dds"
+			texture_density = 2
+			alwaystransparent = yes
+
+			background = {
+				texture = "gfx/interface/component_tiles/floral_decor_02.dds"
+				texture_density = 2
+				margin = {1 0}
+				margin_bottom = 2
+				alpha = 0.4
+
+				modify_texture = {
+					using = color_black_texture
+					blend_mode = multiply
+				}
+
+				glow = {
+					name = "drop_shadow"
+					glow_radius = 2
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.1
+				}
+			}
+
+
+			modify_texture = {
+				using = color_grey_texture
+				blend_mode = multiply
+				visible = "[And(Not(AdvanceNode.GetItem.IsOwned), Not(AdvanceNode.GetItem.CanAddToResearchQueue))]"
+			}
+			modify_texture = {
+				using = color_new_gold_texture
+				blend_mode = multiply
+				visible = "[And(Not(AdvanceNode.GetItem.IsOwned), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+			}
+			modify_texture = {
+				using = color_bronze_texture
+				blend_mode = multiply
+				visible = "[AdvanceNode.GetItem.IsOwned]"
+			}
+
+			modify_texture = {
+				using = overlay_metal_texture
+				blend_mode = overlay
+				alpha = 0.2
+			}
+		}
+		icon = {
+			size = {24 15}
+			parentanchor = right|vcenter
+			position = {-10 22}
+			texture = "gfx/interface/component_tiles/floral_decor_02.dds"
+			texture_density = 2
+			mirror = vertical
+			alwaystransparent = yes
+
+			background = {
+				texture = "gfx/interface/component_tiles/floral_decor_02.dds"
+				texture_density = 2
+				mirror = vertical
+				margin = {1 0}
+				margin_bottom = 2
+				alpha = 0.4
+
+				modify_texture = {
+					using = color_black_texture
+					blend_mode = multiply
+				}
+
+
+
+				glow = {
+					name = "drop_shadow"
+					glow_radius = 2
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.1
+				}
+			}
+
+			modify_texture = {
+				using = color_grey_texture
+				blend_mode = multiply
+				visible = "[And(Not(AdvanceNode.GetItem.IsOwned), Not(AdvanceNode.GetItem.CanAddToResearchQueue))]"
+			}
+			modify_texture = {
+				using = color_new_gold_texture
+				blend_mode = multiply
+				visible = "[And(Not(AdvanceNode.GetItem.IsOwned), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+			}
+			modify_texture = {
+				using = color_bronze_texture
+				blend_mode = multiply
+				visible = "[AdvanceNode.GetItem.IsOwned]"
+			}
+
+			modify_texture = {
+				using = overlay_metal_texture
+				blend_mode = overlay
+				alpha = 0.2
+			}
+		}
+	}
+}
+
+types AdvancesTreeView
+{
+	type advances_tree_item = container {
+		name = "advances_tree_item"
+		ignoreinvisible = yes
+
+		# don't remove this, it is needed for setting up the graph
+		datamodel = "[TechTreeItem.SetupDataContexts(PdxGuiWidget.AccessSelf)]"
+
+		# These two widgets determine the margin between graph nodes
+		widget = {
+			name = "margin_top_left" # Do not change this name
+			size = { 0 0 }
+		}
+
+		widget = {
+			name = "margin_bottom_right" # Do not change this name
+			size = { 0 75 }
+		}
+
+		# This widget tells the layout how to offset and space the lines
+		widget = {
+			name = "line_offset" # Do not change this name
+			position = { 1 3 } # Fixed offset (i.e. to compensate for line width)
+			size = { 3 0 } # Spacing between edges
+		}
+
+		# Container for all the edges in the graph
+		container = {
+			name = "line_area" # Do not change this name
+			position = { 0 120 }
+
+			datamodel = "[TechTreeItem.GetLineItems]"
+			datamodel_reuse_widgets = yes
+
+			item = {
+				container = {
+					position = "[AdvanceLineItem.GetPosition]"
+
+					line = {
+						using = Line_Tree
+						points = "[AdvanceLineItem.GetPointsInContainer]"
+						color ="[AdvanceLineItem.GetColor]"
+						mask ="[AdvanceLineItem.GetMask]"
+						mask_uv_scale = { 0.01 1.0 }
+						line_type = "bspline"
+					}
+				}
+			}
+		}
+
+		# Container for all the nodes in the graph
+		container = {
+			name = "node_area" # Do not change this name
+			position = { 0 120 }
+			datamodel = "[TechTreeItem.GetItems]"
+			datamodel_reuse_widgets = yes
+
+			item = {
+				widget = {
+					size = { 330 265 }
+					# DO NOT DELETE WIDGETID AND POSITION
+					widgetid = "[AdvanceNode.GetKey]"
+					position = "[AdvanceNode.GetPosition]"
+
+					icon = {
+						parentanchor = center
+						size = { 300 300 }
+						visible = "[AdvanceNode.GetItem.IsHighlightedBySearch]"
+						texture = "gfx/interface/buttons/advances_buttons_frame_search.dds"
+					}
+					
+					flowcontainer = {
+						ignoreinvisible = yes
+						direction = vertical
+						parentanchor = bottom|hcenter
+
+						###RESEARCHED new
+						widget = {
+							visible = "[AdvanceNode.GetItem.IsOwned]"
+							size = { 271 270 }
+
+							# data container
+							widget = {
+								size = { 250 200 }
+								position = {0 -10}
+								parentanchor = hcenter|bottom
+
+								background = {
+									texture = "gfx/interface/component_tiles/advance_tree/advance_card_frame.dds"
+									texture_density = 2
+									margin = {12 12}
+									margin_bottom = 14
+									alpha = 0.5
+
+									modify_texture = {
+										using = color_black_texture
+										blend_mode = multiply
+									}
+
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 10
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								background = {
+									texture = "gfx/interface/colors/paper.dds"
+
+									modify_texture = {
+										using = paper_03_texture
+										blend_mode = overlay
+										alpha = 0.5
+									}
+								}
+
+								# title
+								widget = {
+									size = { 100% 38 }
+									position = {0 -33}
+									parentanchor = center
+
+									background = {
+										texture = "gfx/interface/component_tiles/square_tile.dds"
+
+										modify_texture = {
+											using = color_bronze_texture
+											blend_mode = multiply
+										}
+										modify_texture = {
+											using = overlay_metal_texture
+											blend_mode = overlay
+											alpha = 0.2
+										}
+										modify_texture = {
+											using = overlay_triangular_pattern_texture
+											blend_mode = overlay
+											alpha = 0.5
+										}
+									}
+
+
+									background = {
+										texture = "gfx/interface/component_tiles/square_tile.dds"
+										visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+
+										modify_texture = {
+											using = color_dark_purple_texture
+											blend_mode = multiply
+										}
+										modify_texture = {
+											using = overlay_metal_texture
+											blend_mode = overlay
+											alpha = 0.2
+										}
+										modify_texture = {
+											using = overlay_triangular_pattern_texture
+											blend_mode = overlay
+											alpha = 0.5
+										}
+									}
+
+									text_single = {
+										size = { 240 38 }
+										margin = {25 0}
+										autoresize = no
+										text = "[AdvanceNode.GetItem.GetName]"
+										align = center|nobaseline
+										using = Font_Size_Medium
+										default_format = "#flavor_title"
+									}
+								}
+
+
+								# content modifiers
+								widget = {
+									size = { 96% 115 }
+									parentanchor = hcenter|bottom
+									widget = {
+										size = { 100% 100% }
+										parentanchor = hcenter|top
+										vbox = {
+											margin_top = 5
+											margin_bottom = 10
+
+											scroll_list = {
+												blockoverride "scroll_list_layout" {
+													vbox = {
+														layoutpolicy_vertical = expanding
+														datamodel = "[AdvanceNode.GetItem.GetAdvanceEffectItemsNoTooltip]"
+														spacing = 2
+														item = {
+															vbox = {
+																layoutpolicy_horizontal = expanding
+																
+																using = bg_text_mask_container_brown
+
+																hbox = {
+																	layoutpolicy_horizontal = expanding
+																	margin_left = 10
+
+																	widget = {
+																		size = { 40 40 }
+																		icon = {
+																			alwaystransparent = yes
+																			size = { 40 40 }
+																			texture = "gfx/interface/icons/outliner/background/_defaultbg.dds"
+																			modify_texture = {
+																				blend_mode = overlay
+																				alpha = 1
+																			}
+																		}
+																		text_single = {
+																			layoutpolicy_horizontal = growing
+																			size = { 25 25 }
+																			parentanchor = center
+																			text = "[AdvanceEffectItem.GetIcon]"
+																		}
+																		icon = {
+																			alwaystransparent = yes
+																			size = { 40 40 }
+																			texture = "gfx/interface/graphical_cultures/european_gfx/circle_frame.dds"
+																			modify_texture = {
+																				blend_mode = overlay
+																				alpha = 1
+																			}
+																		}
+																	}
+
+																	vbox = {
+																		layoutpolicy_horizontal = expanding
+																		text_single = {
+																			layoutpolicy_horizontal = expanding
+																			margin_left = 5
+																			margin_right = 15
+																			align = left
+																			text = "[AdvanceEffectItem.GetTitleEffect]"
+																		}
+
+																		text_single = {
+																			layoutpolicy_horizontal = expanding
+																			margin_left = 5
+																			margin_right = 15
+																			align = left
+																			text = "[AdvanceEffectItem.GetDescEffect]"
+																		}
+																	}
+
+																	expand = {}
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							# icon
+							widget = {
+								size = { 113 113 }
+								parentanchor = hcenter|top
+
+								widget = {
+									size = { 77% 77% }
+									parentanchor = center
+
+									# round bckg
+									widget = {
+										parentanchor = center
+										size = { 105% 105% }
+										position = {0 2}
+
+										background = {
+											texture = "gfx/interface/advance/backgrounds/green.dds"
+											texture_density = 2
+										}
+									}
+
+									# round bckg
+									widget = {
+										parentanchor = center
+										size = { 105% 105% }
+										position = {0 2}
+										datacontext = "[AdvanceNode.GetItem.GetAdvance.GetDefinition]"
+										using = background_advance
+									}
+
+									icon =  {
+										parentanchor = center
+										size = { 100% 100% }
+										visible = "[Not(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasSubunitUnlocks)]"
+										# gfx\interface\icons\advance
+										texture = "[GetAdvanceIcon(AdvanceNode.GetItem.GetAdvance.GetDefinition)]"
+									}
+									
+									# icon =  {
+									# 	parentanchor = center
+									# 	size = { 100% 100% }
+									# 	visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasSubunitUnlocks]"
+									# 	texture = "[GetSubunitTypeIllustration(AdvanceNode.GetItem.GetAdvance.GetDefinition.GetFirstSubunitUnlock)]"
+									# }
+
+									widget = {
+										parentanchor = center
+										size = { 112% 112% }
+										position = {8 10}
+										visible = "[And(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasSubunitUnlocks, Not(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasNavyUnlocks))]"
+										background = {
+											texture = "[GetSubunitTypeIllustration(AdvanceNode.GetItem.GetAdvance.GetDefinition.GetFirstSubunitUnlock, GetPlayer.GetCulture)]"
+											fittype = start
+											texture_density = 2
+											spriteborder = { 0 0 }
+											frame_grid = {2 1}
+											frame = 1
+											modify_texture = {
+												texture = "gfx/interface/component_masks/advance_unit_unlock_mask.dds"
+												texture_density = 2
+												blend_mode = alphamultiply
+											}
+										}
+									}
+
+									widget = {
+										parentanchor = center
+										size = { 114% 114% }
+										position = {8 -3}
+										visible = "[And(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasSubunitUnlocks, AdvanceNode.GetItem.GetAdvance.GetDefinition.HasNavyUnlocks)]"
+										background = {
+											texture = "[GetSubunitTypeIllustration(AdvanceNode.GetItem.GetAdvance.GetDefinition.GetFirstSubunitUnlock, GetPlayer.GetCulture)]"
+											fittype = start
+											texture_density = 2
+											spriteborder = { 0 0 }
+											frame_grid = {3 1}
+											frame = 2
+											modify_texture = {
+												texture = "gfx/interface/component_masks/advance_unit_unlock_navy_mask.dds"
+												texture_density = 2
+												blend_mode = alphamultiply
+											}
+										}
+									}
+								}
+							}
+
+							icon = {
+								texture = "gfx/interface/buttons/advances_researched_frame.dds"
+								texture_density = 2
+								size = {100% 100%}
+								parentanchor = center
+								alwaystransparent = yes
+							}
+
+
+							widget = {#unlock building
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 6}
+								visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasBuildingUnlocks]"
+
+								using = unlock_icon
+
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/building.dds"
+								}
+							}
+							widget = {#unlock navy
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 6}
+								visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasNavyUnlocks]"
+
+								using = unlock_icon
+
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/navy.dds"
+								}
+							}
+							widget = {#unlock army
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 6}
+								visible = "[Or(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasArmyUnlocks, AdvanceNode.GetItem.GetAdvance.GetDefinition.HasLevyUnlocks)]"
+
+
+								using = unlock_icon
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/army.dds"
+								}
+							}
+							widget = {#unlock laws
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 6}
+								visible = "[Or(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasLawUnlocks, AdvanceNode.GetItem.GetAdvance.GetDefinition.HasPolicyUnlocks)]"
+
+
+								using = unlock_icon
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/laws.dds"
+								}
+							}
+							widget = {#unlock privileges
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 6}
+								visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasEstatePrivilegeUnlocks]"
+
+
+								using = unlock_icon
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/privileges.dds"
+								}
+							}
+
+							datacontext = "[AdvanceNode.GetItem.GetAdvance]"
+							tooltipwidget = {
+								using = Advance_tooltip_for_tech_tree
+							}
+
+							widget = {
+								size = { 50 50 }
+								parentanchor = left|vcenter
+								position = {-20 -10}
+
+								using = special_advance
+							}
+						}
+
+						###not researched new
+						widget = {
+							visible = "[Not(AdvanceNode.GetItem.IsOwned)]"
+							size = { 270 270 }
+
+							# data container
+							widget = {
+								size = { 250 200 }
+								position = {0 -10}
+								parentanchor = hcenter|bottom
+
+								background = {
+									texture = "gfx/interface/component_tiles/advance_tree/advance_card_frame.dds"
+									texture_density = 2
+									margin = {12 12}
+									margin_bottom = 14
+									alpha = 0.5
+
+									modify_texture = {
+										using = color_black_texture
+										blend_mode = multiply
+									}
+
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 10
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								background = {
+									using = color_paper_texture
+									modify_texture = {
+										using = paper_03_texture
+										blend_mode = overlay
+										alpha = 0.5
+									}
+								}
+								background = {
+									visible = "[Not(AdvanceNode.GetItem.IsUnlockedAdvance)]"
+									using = color_greyish_texture
+									modify_texture = {
+										using = paper_03_texture
+										blend_mode = overlay
+										alpha = 0.5
+									}
+								}
+
+								# title
+								widget = {
+									size = { 100% 38 }
+									position = {0 -33}
+									parentanchor = center
+
+									background = {
+										texture = "gfx/interface/component_tiles/square_tile.dds"
+										texture_density = 2
+
+										modify_texture = {
+											visible = "[And(And(Not(AdvanceNode.GetItem.IsCurrentResearch), Not(AdvanceNode.GetItem.IsInResearchQueue)), Not(AdvanceNode.GetItem.IsUnlockedAdvance))]"
+											using = color_low_green_texture
+											blend_mode = multiply
+										}
+
+										modify_texture = {
+											visible = "[And(Or(AdvanceNode.GetItem.IsCurrentResearch, AdvanceNode.GetItem.IsInResearchQueue), Not(AdvanceNode.GetItem.IsUnlockedAdvance))]"
+											using = color_mid_green_texture
+											blend_mode = multiply
+										}
+										modify_texture = {
+											visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+											using = color_dark_purple_texture
+											blend_mode = multiply
+										}
+
+										modify_texture = {
+											using = overlay_striped_texture
+											blend_mode = overlay
+											alpha = 0.2
+										}
+										modify_texture = {
+											using = overlay_cloth_texture
+											blend_mode = overlay
+											alpha = 0.2
+										}
+									}
+
+									background = {
+										texture = "gfx/interface/component_overlay/card_title_glow.dds"
+										texture_density = 2
+										visible = "[Or(AdvanceNode.GetItem.IsCurrentResearch, AdvanceNode.GetItem.IsInResearchQueue)]"
+										blend_mode = overlay
+										alpha = 0.1
+									}
+
+									text_single = {
+										size = { 240 38 }
+										margin = {25 0}
+										autoresize = no
+										text = "[AdvanceNode.GetItem.GetName]"
+										align = center|nobaseline
+										using = Font_Size_Medium
+										default_format = "#flavor_title"
+									}
+								}
+							}
+
+							# icon
+							widget = {
+								size = { 113 113 }
+								parentanchor = hcenter|top
+								position = {1 1}
+								tooltipwidget = {
+									using = Advance_tooltip_for_tech_tree
+								}
+
+								background = {
+									visible = "[Not(AdvanceNode.GetItem.IsCurrentResearch)]"
+									texture = "gfx/interface/buttons/bg_button.dds"
+									texture_density = 2
+									margin = {-8 -8}
+
+									modify_texture = {
+										using = color_bg_brown_texture
+										blend_mode = multiply
+									}
+								}
+								background = {
+									visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+									texture = "gfx/interface/buttons/bg_button.dds"
+									texture_density = 2
+									# margin = {-8 -8}
+
+									modify_texture = {
+										using = color_dark_brown_texture
+										blend_mode = multiply
+									}
+								}
+
+								widget = {
+									size = { 77% 77% }
+									parentanchor = center
+									allow_outside = yes
+
+									# round bckg
+									widget = {
+										# visible = "[Not(AdvanceNode.GetItem.IsCurrentResearch)]"
+										parentanchor = center
+										size = { 100% 100% }
+										datacontext = "[AdvanceNode.GetItem.GetAdvance.GetDefinition]"
+										using = background_advance
+									}
+
+									icon = {
+										visible = "[Not(AdvanceNode.GetItem.CanAddToResearchQueue)]"
+										size = { 100% 100% }
+										texture = "gfx/interface/advance/backgrounds/unavailable.dds"
+										texture_density = 2
+									}
+
+									widget = {
+										size = { 100% 100% }
+										parentanchor = center
+										allow_outside = yes
+										using = round_advance_icon
+									}
+
+									piechart = {
+										visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+										parentanchor = center
+										position = {-1 -1}
+										size = { 127% 127% }
+
+										using = piechart_angles
+
+										pieslice = {
+											texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+											value = "[Player.GetCurrentResearch.GetProgress]"
+											color = { 1 1 1 1 }
+										}
+
+										pieslice = {
+											texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+											value = "[Subtract_float('(float)1.0', Player.GetCurrentResearch.GetProgress)]"
+											color = { 1 1 1 0 }
+										}
+									}
+								}
+							}
+
+							# button in progress
+							button_advances_inprogress_tree = {
+								visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+								using = advance_button_info
+								tooltipwidget = {
+									using = current_research_tooltip
+								}
+								size = {100% 100%}
+								
+								parentanchor = center
+
+								using = advances_tree_item_modifiers
+							}
+
+							# button not in progress
+							button_advances_tree = {
+								visible = "[Not(AdvanceNode.GetItem.IsCurrentResearch)]"
+								using = advance_button_info
+								tooltipwidget = {
+									using = Advance_tooltip_for_tech_tree
+								}
+								size = {100% 100%}
+								
+								parentanchor = center
+								
+								using = advances_tree_item_modifiers
+							}
+
+							widget = {#unlock building
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 2}
+								visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasBuildingUnlocks]"
+
+								using = unlock_icon
+
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/building.dds"
+								}
+							}
+							widget = {#unlock navy
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 2}
+								visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasNavyUnlocks]"
+
+
+								using = unlock_icon
+
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/navy.dds"
+								}
+							}
+							widget = {#unlock army
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 2}
+								visible = "[Or(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasArmyUnlocks, AdvanceNode.GetItem.GetAdvance.GetDefinition.HasLevyUnlocks)]"
+
+
+								using = unlock_icon
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/army.dds"
+								}
+							}
+							widget = {#unlock laws
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 2}
+								visible = "[Or(AdvanceNode.GetItem.GetAdvance.GetDefinition.HasLawUnlocks, AdvanceNode.GetItem.GetAdvance.GetDefinition.HasPolicyUnlocks)]"
+
+
+								using = unlock_icon
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/laws.dds"
+								}
+							}
+							widget = {#unlock privileges
+								parentanchor = hcenter|top
+								size = { 305 102 }
+								position = {0 2}
+								visible = "[AdvanceNode.GetItem.GetAdvance.GetDefinition.HasEstatePrivilegeUnlocks]"
+
+
+								using = unlock_icon
+								blockoverride "unlock_texture" {
+									texture = "gfx/interface/advance/unlocks/privileges.dds"
+								}
+							}
+
+							# percentage
+							widget = {
+								size = {50 25}
+								position = {0 -11}
+								parentanchor = hcenter|top
+								visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+
+								using = bg_round_card_outline
+
+								# percentage in progress
+								text_single = {
+									parentanchor = center
+									layoutpolicy_vertical = expanding
+									align = center|nobaseline
+									autoresize = yes
+									text = "[Player.GetCurrentResearch.GetProgress|2%]"
+									fontsize = 12
+									fontsize_min = 8
+									default_format = "#header_titles"
+								}
+
+								# percentage 0
+								text_single = {
+									visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+									size = {-1 100%}
+									align = center|nobaseline
+									autoresize = yes
+									fontsize = 17
+									raw_text = "0%"
+									default_format = "#header_titles"
+								}
+							}
+
+							# queue number
+							widget = {
+								size = { 49 49 }
+								parentanchor = hcenter|top
+								position = {1 -31}
+								visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.IsInResearchQueue)]"
+
+								using = bg_circle_outline
+
+								text_single = {
+									parentanchor = center
+									align = center|nobaseline
+									text = "[AdvanceNode.GetItem.GetResearchQueueSlot]"
+									fontsize = 25
+									default_format = "#header_titles"
+								}
+							}
+
+							datacontext = "[AdvanceNode.GetItem.GetAdvance]"
+							tooltipwidget = {
+								using = Advance_tooltip_for_tech_tree
+							}
+
+							widget = {
+								size = { 50 50 }
+								visible = "[Or(Or(AdvanceNode.GetItem.IsCountryUnlock, AdvanceNode.GetItem.IsChoiceUnlock), Or(Or(AdvanceNode.GetItem.IsCountryTypeUnlock, AdvanceNode.GetItem.IsGovernmentUnlock), Or(AdvanceNode.GetItem.IsSpecialUnlock, AdvanceNode.GetItem.IsReligionUnlock)))]"
+								parentanchor = left|vcenter
+								position = {-20 -10}
+
+								using = special_advance
+							}
+						}
+					}
+				}
+			}
+		}
+
+
+		# # Extra container for all the arrow heads on edges
+		container = {
+			datamodel = "[TechTreeItem.GetLineItems]"
+			datamodel_reuse_widgets = yes
+			item = {
+				widget = {
+					position = "[AdvanceLineItem.GetTo]"
+					size = { 16 16 }
+
+					visible = "[Not(AdvanceLineItem.IsToNodeVirtual)]"
+
+					# icon = {
+					# 	name = "arrow_head"
+					# 	position = { -6 0 }
+					# 	texture = "gfx/lines/advance_tree_line_tip.dds"
+					# 	texture_density = 2
+					# 	size = { 13 13 }
+					# 	alpha = 0
+
+					# 	# modify_texture = {
+					# 	# 	#visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+					# 	# 	using = color_bronze_texture
+					# 	# 	blend_mode = multiply
+					# 	# }
+
+					# 	modify_texture = {
+					# 		#visible = "[And(And(Not(AdvanceNode.GetItem.IsCurrentResearch), Not(AdvanceNode.GetItem.IsInResearchQueue)), Not(AdvanceNode.GetItem.IsUnlockedAdvance))]"
+					# 		using = color_new_gold_texture
+					# 		blend_mode = multiply
+					# 	}
+
+					# 	# modify_texture = {
+					# 	# 	visible = "[And(Or(AdvanceNode.GetItem.IsCurrentResearch, AdvanceNode.GetItem.IsInResearchQueue), Not(AdvanceNode.GetItem.IsUnlockedAdvance))]"
+					# 	# 	using = color_new_gold_texture
+					# 	# 	blend_mode = multiply
+					# 	# }
+					# }
+				}
+			}
+		}
+	}
+}
+
+# template ArrowLine
+# {
+# 	gfxtype = linegfx
+# 	width = 11
+
+# 	animation_speed = { 0.15 0.0 }
+# 	uv_scale = { 1.0 1.0 }
+# 	texture = "gfx/interface_old/from_sulla/arrow_texture.dds"
+# 	mask_uv_scale = { 1.0 1.0 }
+# 	mask = "gfx/interface_old/from_sulla/arrow_alpha.dds"
+# }
+
+template advances_tree_item_modifiers {
+	widget = {
+		size = { 95% 105 }
+		parentanchor = hcenter|bottom
+		position = { 0 -24 }
+
+		widget = {
+			size = { 93% 100% }
+			parentanchor = hcenter|top
+
+			vbox = {
+				margin_top = 5
+				margin_bottom = 10
+
+				scroll_list = {
+					blockoverride "scroll_list_layout" {
+						vbox = {
+							layoutpolicy_vertical = expanding
+							datamodel = "[AdvanceNode.GetItem.GetAdvanceEffectItemsNoTooltip]"
+							spacing = 2
+							item = {
+								vbox = {
+									layoutpolicy_horizontal = expanding
+									using = bg_text_mask_container_brown
+
+									hbox = {
+										layoutpolicy_horizontal = expanding
+										margin_left = 10
+
+										widget = {
+											size = { 35 35 }
+											icon = {
+												alwaystransparent = yes
+												size = { 35 35 }
+												texture = "gfx/interface/icons/outliner/background/_defaultbg.dds"
+												modify_texture = {
+													blend_mode = overlay
+													alpha = 1
+												}
+											}
+											text_single = {
+												layoutpolicy_horizontal = growing
+												size = { 25 25 }
+												parentanchor = center
+												text = "[AdvanceEffectItem.GetIcon]"
+											}
+											icon = {
+												alwaystransparent = yes
+												size = { 35 35 }
+												texture = "gfx/interface/graphical_cultures/european_gfx/circle_frame.dds"
+												modify_texture = {
+													blend_mode = overlay
+													alpha = 1
+												}
+											}
+										}
+
+										vbox = {
+											layoutpolicy_horizontal = expanding
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												margin_left = 5
+												margin_right = 15
+												align = left
+												text = "[AdvanceEffectItem.GetTitleEffect]"
+											}
+
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												margin_left = 5
+												margin_right = 15
+												align = left
+												text = "[AdvanceEffectItem.GetDescEffect]"
+											}
+										}
+
+										expand = {}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# template card_overlay_available {
+# 	#header available
+# 	modify_texture = {
+# 		visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+# 		using = color_black_texture
+# 		alpha = 0.3
+# 		blend_mode = overlay
+# 	}
+# 	modify_texture = {
+# 		visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+# 		using = color_white_texture
+# 		alpha = 0.3
+# 		blend_mode = overlay
+# 	}
+# 	modify_texture = {
+# 		visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.CanAddToResearchQueue)]"
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.6
+# 		blend_mode = overlay
+# 	}
+# 	#header available in progress
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+# 		using = color_white_texture
+# 		alpha = 0.2
+# 		blend_mode = overlay
+# 	}
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.8
+# 		blend_mode = overlay
+# 	}
+# }
+
+# template card_overlay_inprogress {
+# 	modify_texture = {
+# 		visible = "[Not(AdvanceNode.GetItem.IsUnlockedAdvance)]"
+# 		using = color_gold_texture
+# 		alpha = 1
+# 	}
+# 	modify_texture = {
+# 		visible = "[Not(AdvanceNode.GetItem.IsUnlockedAdvance)]"
+# 		using = color_gold_texture
+# 		alpha = 1
+# 		blend_mode = overlay
+# 	}
+# 	#in progress flavor purple
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+# 		texture = "gfx/interface/colors/nobles.dds"
+# 		alpha = 0.5
+# 	}
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+# 		texture = "gfx/interface/component_masks/mask_fade_horizontal_buttons_frames.dds"
+# 		spriteborder = { 0 0 }
+# 		texture_density = 2
+# 		alpha = 0.5
+# 		blend_mode = overlay
+# 	}
+# }
+
+# template card_overlay_researched {
+# 	modify_texture = {
+# 		using = color_black_texture
+# 		alpha = 0.4
+# 		blend_mode = overlay
+# 	}
+
+# 	modify_texture = {
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.1
+# 		blend_mode = overlay
+# 	}
+
+# 	modify_texture = {
+# 		using = color_bone_texture
+# 		alpha = 0.6
+# 		blend_mode = overlay
+# 	}
+# }
+
+# template card_overlay_unavailable {
+# 	modify_texture = {
+# 		visible = "[Not(AdvanceNode.GetItem.CanAddToResearchQueue)]"
+# 		using = color_grey_texture
+# 		alpha = 0.5
+# 	}
+
+# 	#unavailable flavor purple
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+# 		texture = "gfx/interface/colors/nobles.dds"
+# 		alpha = 0.3
+# 	}
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsUnlockedAdvance]"
+# 		using = color_grey_texture
+# 		alpha = 0.5
+# 	}
+# }
+
+# template frame_unlock {
+# 	texture_density = 2
+# 	parentanchor = top|hcenter
+# 	size = {139 45}
+# 	position = {-2 -20}
+
+# 	#frame unlock researched
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsOwned]"
+# 		using = color_black_texture
+# 		alpha = 0.4
+# 		blend_mode = overlay
+# 	}
+
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsOwned]"
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.1
+# 		blend_mode = overlay
+# 	}
+
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsOwned]"
+# 		using = color_bone_texture
+# 		alpha = 0.6
+# 		blend_mode = overlay
+# 	}
+
+# 	#frame unlock available
+# 	modify_texture = {
+# 		visible = "[And(AdvanceNode.GetItem.CanAddToResearchQueue, Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+# 		using = color_black_texture
+# 		alpha = 0.3
+# 		blend_mode = overlay
+# 	}
+
+# 	modify_texture = {
+# 		visible = "[And(AdvanceNode.GetItem.CanAddToResearchQueue, Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+# 		using = color_white_texture
+# 		alpha = 0.3
+# 		blend_mode = overlay
+# 	}
+
+# 	modify_texture = {
+# 		visible = "[And(AdvanceNode.GetItem.CanAddToResearchQueue, Not(AdvanceNode.GetItem.IsInResearchQueue))]"
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.6
+# 		blend_mode = overlay
+# 	}
+
+# 	#frame unlock in queue
+# 	modify_texture = {
+# 		visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.IsInResearchQueue)]"
+# 		using = color_black_texture
+# 		alpha = 0.3
+# 		blend_mode = overlay
+# 	}
+# 	modify_texture = {
+# 		visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.IsInResearchQueue)]"
+# 		using = color_white_texture
+# 		alpha = 0.3
+# 		blend_mode = overlay
+# 	}
+# 	modify_texture = {
+# 		visible = "[And(Not(AdvanceNode.GetItem.IsCurrentResearch), AdvanceNode.GetItem.IsInResearchQueue)]"
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.6
+# 		blend_mode = overlay
+# 	}
+# 	glow = {
+# 		visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+# 		name = "drop_shadow"
+# 		glow_radius = 5
+# 		color = {0.1 0.5 1.0 1.0}
+# 		alpha = 0.2
+# 	}
+
+# 	#frame unlock in progress
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+# 		using = color_white_texture
+# 		alpha = 0.1
+# 		blend_mode = overlay
+# 	}
+# 	modify_texture = {
+# 		visible = "[AdvanceNode.GetItem.IsCurrentResearch]"
+# 		texture = "gfx/interface/colors/yellow.dds"
+# 		alpha = 0.8
+# 		blend_mode = overlay
+# 	}
+# }
+
+lateralview_full = {
+	name = "technology_lateralview"
+
+	blockoverride "panel_header" {
+		window_header_alt = {
+			blockoverride "header_text" {
+				text = "THE_TECHNOLOGY_LATERALVIEW_TITLE"
+			}
+			blockoverride "window_header_alt_color_texture"{
+				using = color_advances_texture
+			}
+		}
+	}
+
+	blockoverride "panel_content" {
+		vbox = {
+			vbox = {
+				using = layoutpolicy_expanding
+				using = bg_main_inner_notabs_alt
+				using = window_main_tabs_margin_alt
+
+				header_secondary_tabs = {
+					visible = "[IsPlayerValid]"
+					blockoverride "content" {
+						datamodel = "[TechnologyLateralView.GetAges]"
+						datamodel_reuse_widgets = yes
+						item = {
+							button_secondary_tab_alt = {
+								using = layoutpolicy_expanding
+								onclick = "[TechnologyLateralView.SelectAge(Age.Self)]"
+								tooltipwidget = {
+									using = Age_tooltip
+								}
+								action_tooltip = {
+									click_type = left
+									click_mode = single
+									title = "OPEN_TECHNOLOGY_AGE"
+								}
+								down = "[TechnologyLateralView.IsAgeSelected(Age.Self)]"
+
+								flowcontainer = {
+									parentanchor = center
+									position = { 0 4 }
+									spacing = 5
+
+									icon = {
+										size = {27 27}
+										texture = "[GetAgeIcon(Age.Self)]"
+									}
+
+									text_single = {
+										autoresize = yes
+										minimumsize = { 50 27 }
+										maximumsize = { 250 -1 }
+										align = nobaseline
+										text = "[Age.GetNameWithNoTooltip]"
+									}
+								}
+							}
+						}
+					}
+				}
+
+				vbox = {
+					using = layoutpolicy_expanding
+					using = bg_advances_window
+					margin_top = 5
+
+					widget = {
+						layoutpolicy_horizontal = expanding
+						size = { -1 52 }
+						hbox = {
+							visible = "[IsPlayerValid]"
+
+							hbox = {
+								using = layoutpolicy_expanding
+								layoutstretchfactor_horizontal = "[GetDataModelSize(TechnologyLateralView.GetInstitutionItems)]"
+								datamodel = "[TechnologyLateralView.GetInstitutionItems]"
+								datamodel_reuse_widgets = yes
+								
+								item = {
+									using = institution_item_subheader
+								}
+							}
+
+							hbox = {
+								using = layoutpolicy_expanding
+								layoutstretchfactor_horizontal = 4
+								icon_text_2rows_advances = {
+									using = bg_paper_card
+									using = bg_cabinet_card_frame
+									tooltipwidget = {
+										using = research_speed_tooltip_technology_view
+									}
+									blockoverride "top_text_setup" {
+										align = left|nobaseline
+										text = "RESEARCH_PROGRESS"
+									}
+									blockoverride "bottom_text_setup" {
+										align = left|nobaseline
+										text = "[Player.GetDoubleModifierValueNoFormat('research_speed','research_speed_modifier')]"
+									}
+									blockoverride "icon_setup" {
+										texture = "gfx/interface/icons/flat_icons/advances_panel/research_speed.dds"
+
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.3
+										}
+									}
+								}
+
+								icon_text_2rows_advances = {
+									using = bg_paper_card
+									using = bg_cabinet_card_frame
+									blockoverride "base_setup" {
+										layoutstretchfactor_vertical = 1
+									}
+									blockoverride "icon_setup" {
+										texture = "gfx/interface/icons/flat_icons/advances_panel/government_reforms.dds"
+
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.3
+										}
+										blockoverride "title_text" {
+											text = "GOVERNMENT_REFORMS"
+										}
+									}
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_icon" {
+												icon = {
+													texture = "gfx/interface/icons/flat_icons/advances_panel/government_reforms.dds"
+													using = tooltip_title_icon_size
+												}
+											}
+											blockoverride "title_text" {
+												text = "GOVERNMENT_REFORMS"
+											}
+											blockoverride "concept_link" {
+												text = [government_reforms|e]
+											}
+											blockoverride "tooltip_content" {
+												TooltipTextBlock = {
+													blockoverride "text" {
+														text = "[TechnologyLateralView.GetNewReforms]"
+													}
+												}
+												TooltipTextBlock = {
+													blockoverride "text" {
+														text = "[TechnologyLateralView.GetNewReformsTooltip]"
+													}
+												}
+											}
+										}
+									}
+									blockoverride "top_text_setup" {
+										align = left|nobaseline
+										text = "GOVERNMENT_REFORMS"
+									}
+									blockoverride "bottom_text_setup" {
+										align = left|nobaseline
+										text = "[TechnologyLateralView.GetNewReforms]"
+									}
+								}
+
+								icon_text_2rows_advances = {
+									using = bg_paper_card
+									using = bg_cabinet_card_frame
+									blockoverride "base_setup" {
+										layoutstretchfactor_vertical = 1
+									}
+									blockoverride "icon_setup" {
+										texture = "gfx/interface/icons/flat_icons/advances_panel/market_price.dds"
+
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.3
+										}
+									}
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_icon" {
+												icon = {
+													texture = "gfx/interface/icons/flat_icons/advances_panel/market_price.dds"
+													using = tooltip_title_icon_size
+												}
+											}
+											blockoverride "title_text" {
+												text = "PRICE_MARKET"
+											}
+											blockoverride "concept_link" {
+												text = [market_price|e]
+											}
+											blockoverride "tooltip_content" {
+												TooltipTextBlock = {
+													blockoverride "text" {
+														text = "[TechnologyLateralView.GetPriceMarketTooltip]"
+													}
+												}
+											}
+										}
+									}
+									blockoverride "top_text_setup" {
+										align = left|nobaseline
+										text = "PRICE_MARKET"
+									}
+									blockoverride "bottom_text_setup" {
+										align = left|nobaseline
+										text = "[TechnologyLateralView.GetPriceMarket]"
+									}
+								}
+
+								icon_text_2rows_advances = {
+									using = bg_paper_card
+									using = bg_cabinet_card_frame
+									blockoverride "icon_obj" {
+										widget = {
+											size = { 40 40 }
+
+											background = {
+												texture = "gfx/interface/component_tiles/hud_corners/circle_frame.dds"
+												texture_density = 2
+
+												alpha = 1
+
+												using = color_gold
+												using = overlay_gold
+											}
+
+											widget = {
+												visible = "[Player.GetCurrentResearch.IsActive]"
+												parentanchor = center
+												size = {80% 80%}
+												widget = {
+													size = {100% 100%}
+													datacontext = "[Player.GetCurrentResearch.GetAdvance.GetDefinition]"
+													using = background_advance
+												}
+											}
+
+											icon =  {
+												visible = "[Not(Player.GetCurrentResearch.IsActive)]"
+												parentanchor = center
+												size = { 100% 100% }
+												texture = "gfx/interface/advance/_no_research.dds"
+											}
+
+											icon =  {
+												visible = "[Player.GetCurrentResearch.IsActive]"
+												parentanchor = center
+												size = { 80% 80% }
+												texture = "[GetAdvanceIcon(Player.GetCurrentResearch.GetAdvance.GetDefinition)]"
+											}
+
+											piechart = {
+												parentanchor = center
+												size = { 100% 100% }
+
+												using = piechart_angles
+
+												pieslice = {
+													texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+													value = "[Player.GetCurrentResearch.GetProgress]"
+													color = { 1 1 1 1 }
+												}
+
+												pieslice = {
+													texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+													value = "[Subtract_float('(float)1.0', Player.GetCurrentResearch.GetProgress)]"
+													color = { 1 1 1 0 }
+												}
+											}
+										}
+									}
+
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_icon" {
+												icon = {
+													texture = "gfx/interface/icons/flat_icons/advances_panel/research_speed.dds"
+													using = tooltip_title_icon_size
+												}
+											}
+
+
+											blockoverride "title_text" {
+
+												text = "CURRENT_RESEARCH_TITLE"
+											}
+											blockoverride "concept_link" {
+												text = [research|e]
+											}
+
+											blockoverride "tooltip_content" {
+												TooltipDebugTextBlock = {
+													blockoverride "text" {
+														debug_text = "[Player.GetCurrentResearch.GetDebugInfo]"
+													}
+												}
+												hbox = {
+													visible = "[Player.GetCurrentResearch.IsActive]"
+													vbox = {
+														widget = {
+															size = { 120 120 }
+															using = bg_circle_outline
+															blockoverride "inside_color" {
+																modify_texture = {
+																	using = color_dark_brown_texture
+																	blend_mode = multiply
+																}
+															}
+															blockoverride "frame_size" {
+																texture = "gfx/interface/component_tiles/hud_corners/circle_frame_alt_thin.dds"
+																texture_density = 2
+																margin = {1 1}
+															}
+															blockoverride "shadow_margin" {
+																margin = {1 1}
+																margin_bottom = 1
+																alpha = 0.4
+															}
+
+															widget = {
+																parentanchor = center
+																size = {79% 79%}
+																widget = {
+																	size = {100% 100%}
+																	datacontext = "[Player.GetCurrentResearch.GetAdvance.GetDefinition]"
+																	using = background_advance
+																}
+															}
+
+
+															icon =  {
+																parentanchor = center
+																size = { 79% 79% }
+																texture = "[GetAdvanceIcon(Player.GetCurrentResearch.GetAdvance.GetDefinition)]"
+															}
+
+															piechart = {
+																parentanchor = center
+																size = { 100% 100% }
+
+																using = piechart_angles
+
+																pieslice = {
+																	texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+																	value = "[Player.GetCurrentResearch.GetProgress]"
+																	color = { 1 1 1 1 }
+																}
+
+																pieslice = {
+																	texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+																	value = "[Subtract_float('(float)1.0', Player.GetCurrentResearch.GetProgress)]"
+																	color = { 1 1 1 0 }
+																}
+															}
+														}
+														widget = {
+															size = { 10 16 }
+														}
+														text_single = {
+															text = "[Player.GetCurrentResearch.GetETA]"
+															default_format = "#subtle_name"
+														}
+													}
+													widget = {
+														size = { 16 16 }
+													}
+													vbox = {
+														TooltipStringPairList = {
+															blockoverride "block_title" {
+																text = "RES_MONTHLY_PROGRESS"
+															}
+															textcontext = "[Player.GetDoubleDescriptionFor('research_speed', 'research_speed_modifier')]"
+														}
+														widget = {
+															size = { 8 8 }
+														}
+
+														TooltipStringPairList = {
+															blockoverride "block_title" {
+																text = "[Player.GetCurrentResearch.GetProgressInfo]"
+															}
+															textcontext = "[Player.GetCurrentResearch.GetResearchCost]"
+														}
+													}
+												}
+												TooltipTextBlock = {
+													visible = "[Not(Player.GetCurrentResearch.IsActive)]"
+													blockoverride "text" {
+														text = "NO_ACTIVE_RESEARCH"
+													}
+												}
+												TooltipTextBlock = {
+													visible = "[Not(Player.GetCurrentResearch.IsActive)]"
+													blockoverride "text" {
+														text = "[Player.GetCurrentResearch.GetProgressInfo]"
+													}
+												}
+
+
+												TooltipStringPairList = {
+													visible = "[Player.GetCurrentResearch.IsActive]"
+													blockoverride "block_title" {
+														text = "[Player.GetCurrentResearch.GetAdvance.GetDefinition.GetNameWithNoTooltip]"
+													}
+													textcontext = "[Player.GetCurrentResearch.GetAdvance.GetDefinition.GetEffects]"
+												}
+
+												TooltipFlavorTextBlock= {
+													visible = "[Player.GetCurrentResearch.IsActive]"
+													blockoverride "text" {
+														text = "[Player.GetCurrentResearch.GetAdvance.GetDefinition.GetDesc]"
+													}
+												}
+											}
+										}
+									}
+
+									blockoverride "top_text_setup" {
+										visible = "[Player.GetCurrentResearch.IsActive]"
+										text = "[Player.GetCurrentResearch.GetAdvance.GetDefinition.GetName]"
+										datacontext = "[Player.GetCurrentResearch.GetAdvance]"
+										align = left|nobaseline
+									}
+									blockoverride "bottom_text_setup" {
+										visible = "[Not(Player.GetCurrentResearch.IsActive)]"
+										text = "NO_ACTIVE_RESEARCH"
+										align = left|nobaseline
+									}
+									blockoverride "alternative_text_setup" {
+										size = { -1 18 }
+										visible = "[Player.GetCurrentResearch.IsActive]"
+										text = "[Player.GetCurrentResearch.GetProgress|2Y%]"
+										align = left|nobaseline
+									}
+								}
+							}
+						}
+					}
+
+					zoomarea = {
+						name = "graph_zoomarea"
+						layoutpolicy_horizontal = expanding
+						layoutpolicy_vertical = expanding
+						scissor = yes
+						zoom = 1
+						zoom_step = 0.2
+						zoom_min = 0.1
+						zoom_max = 2.0
+						pan_position = { 0 0 }
+						clamp_pan_position = no
+
+						draggable_by = left
+
+						state = {
+							name = "_zoom_changed"
+							duration = 0.2
+						}
+
+						zoomwidget = {
+							widget = {
+								flowcontainer = {
+									alwaystransparent = no
+									direction = vertical
+									resizeparent = yes
+
+									container = {
+										datacontext = "[TechnologyLateralView.GetSelectedAgeTechTree]"
+										dynamicgridbox = {
+											name = "technology_tree"
+											setitemsizefromcell = yes
+											datamodel = "[TechTreeOneAge.GetTechTreeItems]"
+											datamodel_reuse_widgets = yes
+
+											item = {
+												# recursive = yes
+												advances_tree_item = {}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		widget = {
+			parentanchor = top|hcenter
+			position = { 0 93 }
+			size = { 500 52 }
+
+			searchbar = {
+				datacontext = "[TechnologyLateralView.GetSearchBar]"
+
+				blockoverride "autocomplete_entry_widget_setup" {
+					datacontext = "[TechnologyLateralView.GetAutocompleteFromKey(AutocompleteEntry.GetTooltip)]"
+				}
+
+				blockoverride "autocomplete_entry_icon" {
+					icon = {
+						texture = "[GetAdvanceIcon(Advance.GetDefinition)]"
+						size = { 100% 100% }
+						parentanchor = center
+					}
+				}
+
+				blockoverride "autocomplete_setup" {
+					maximumsize = { -1 500 }
+				}
+
+				blockoverride "autocomplete_entry_actions" {
+					action_tooltip = {
+						title = "TECHNOLOGY_VIEW_PAN_TO_ADV"
+						on_action = "[AutocompleteEntry.ToggleFilter]"
+					}
+				}
+
+				blockoverride "autocomplete_entry_tooltip" {
+					datacontext = "[Advance.GetDefinition]"
+					tooltipwidget = {
+						using = AdvanceDefinition_tooltip
+					}
+				}
+			}
+		}
+	}
+}
+
+template institution_item_subheader {
+	icon_text_2rows_advances = {
+		datacontext = "[InstitutionItem.GetInstitution]"
+		tooltipwidget = {
+			using = Institution_tooltip
+		}
+		using = bg_paper_card
+		using = bg_cabinet_card_frame
+		blockoverride "icon_obj" {
+			Icon = {
+				visible = "[And(Player.HasEmbracedInstitution(InstitutionItem.GetInstitution.Self), Or(Not(InstitutionItem.GetUIAction.IsRightClickEnabled), Not(InstitutionItem.GetUIAction.IsRightClickVisible)))]"
+				size = { 27 27}
+				# gfx\interface\icons\advance
+				texture = "[GetInstitutionIcon(InstitutionItem.GetInstitution.Self)]"
+				background = {
+					texture = "gfx/interface/buttons/bg_button.dds"
+					texture_density = 2
+					margin = {5 5}
+					modify_texture = {
+						using = color_bg_blue_texture
+						blend_mode = multiply
+					}
+				}
+				background = {
+					texture = "gfx/interface/component_tiles/hud_corners/circle_frame_alt_thin.dds"
+					texture_density = 2
+					margin = {6 6}
+					modify_texture = {
+						using = color_gold_texture
+						blend_mode = multiply
+					}
+					modify_texture = {
+						using = overlay_stone_texture
+						blend_mode = overlay
+						alpha = 0.3
+					}
+					modify_texture = {
+						using = overlay_window_texture
+						blend_mode = overlay
+						alpha = 0.8
+					}
+				}
+			}
+			button = {
+				visible = "[And3(Player.HasEmbracedInstitution(InstitutionItem.GetInstitution.Self), InstitutionItem.GetUIAction.IsRightClickEnabled, InstitutionItem.GetUIAction.IsRightClickVisible)]"
+				size = { 32 32 }
+				datacontext = "[InstitutionItem.GetUIAction]"
+				using = button_action_provider
+				# gfx\interface\icons\advance
+				texture = "[GetInstitutionIcon(InstitutionItem.GetInstitution.Self)]"
+			}
+			widget = {
+				visible = "[And(Not(Player.HasEmbracedInstitution(InstitutionItem.GetInstitution.Self)), Player.CanEmbraceInstitution(InstitutionItem.GetInstitution.Self))]"
+				size = { 32 32 }
+				background = {
+					texture = "gfx/interface/buttons/bg_button.dds"
+					texture_density = 2
+					margin = {0 0}
+					modify_texture = {
+						using = color_bg_blue_texture
+						blend_mode = multiply
+					}
+				}
+				background = {
+					texture = "gfx/interface/component_tiles/hud_corners/circle_frame.dds"
+					texture_density = 2
+					alpha = 1
+					using = color_gold
+					using = overlay_gold
+				}
+				piechart = {
+					parentanchor = center
+					size = { 100% 100% }
+					using = piechart_angles
+					pieslice = {
+						texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+						value = "[Player.GetInstitutionSpreadValue(InstitutionItem.GetInstitution.Self)]"
+						color = { 1 1 1 1 }
+					}
+					pieslice = {
+						texture = "gfx/interface/pie_charts/pie_chart_white.dds"
+						value = "[Player.GetInstitutionMissingMinimumPercent(InstitutionItem.GetInstitution.Self)]"
+						color = { 0.75 0.75 0.75 1 }
+					}
+					pieslice = {
+						texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+						value = "[Subtract_float('(float)1.0', Player.GetInstitutionSpreadValue(InstitutionItem.GetInstitution.Self))]"
+						color = { 1 1 1 0 }
+					}
+					icon =  {
+						tooltipwidget = {
+							using = Institution_tooltip
+						}
+						parentanchor = center
+						size = { 80% 80% }
+						# gfx\interface\icons\advance
+						texture = "[GetInstitutionIcon(InstitutionItem.GetInstitution.Self)]"
+					}
+				}
+				button = {
+					parentanchor = center
+					size = { 80% 80% }
+					datacontext = "[InstitutionItem.GetInstitution]"
+					tooltipwidget = {
+						using = Institution_tooltip
+						# blockoverride "max_flavor_textbox_size" { maximumsize = { -1 200 } }
+						# blockoverride "extra_section" {
+						# 	TooltipTextBlock = {
+						# 		size = { -1 20 }
+						# 		blockoverride "text" {
+						# 			text = "[InstitutionItem.GetUIAction.GetDescription]"
+						# 		}
+						# 	}
+						# }
+					}
+					datacontext = "[InstitutionItem.GetUIAction]"
+					using = button_action_provider
+					modify_texture = {
+						# gfx/interface/icons/institutions
+						texture = "[GetInstitutionIcon(InstitutionItem.GetInstitution.Self)]"
+						blend_mode = multiply
+						alpha = 1
+					}
+				}
+			}
+
+			widget = {
+				visible = "[And(Not(Player.HasEmbracedInstitution(InstitutionItem.GetInstitution.Self)), Not(Player.CanEmbraceInstitution(InstitutionItem.GetInstitution.Self)))]"
+				size = { 32 32 }
+				background = {
+					texture = "gfx/interface/buttons/bg_button.dds"
+					texture_density = 2
+					margin = {0 0}
+					modify_texture = {
+						using = color_bg_blue_texture
+						blend_mode = multiply
+					}
+				}
+				background = {
+					texture = "gfx/interface/component_tiles/hud_corners/circle_frame.dds"
+					texture_density = 2
+					alpha = 1
+					using = color_gold
+					using = overlay_gold
+				}
+				piechart = {
+					parentanchor = center
+					size = { 100% 100% }
+					using = piechart_angles
+					pieslice = {
+						texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+						value = "[Player.GetInstitutionSpreadValue(InstitutionItem.GetInstitution.Self)]"
+						color = { 1 1 1 1 }
+					}
+					pieslice = {
+						texture = "gfx/interface/pie_charts/pie_chart_white.dds"
+						value = "[Player.GetInstitutionMissingMinimumPercent(InstitutionItem.GetInstitution.Self)]"
+						color = { 0.75 0.75 0.75 1 }
+					}
+					pieslice = {
+						texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+						value = "[Subtract_float('(float)1.0', Player.GetInstitutionSpreadValue(InstitutionItem.GetInstitution.Self))]"
+						color = { 1 1 1 0 }
+					}
+					icon =  {
+						tooltipwidget = {
+							using = Institution_tooltip
+						}
+						parentanchor = center
+						size = { 80% 80% }
+						# gfx\interface\icons\advance
+						texture = "[GetInstitutionIcon(InstitutionItem.GetInstitution.Self)]"
+					}
+				}
+				button = {
+					parentanchor = center
+					size = { 80% 80% }
+					datacontext = "[InstitutionItem.GetInstitution]"
+					tooltipwidget = {
+						using = Institution_tooltip
+						# blockoverride "max_flavor_textbox_size" { maximumsize = { -1 200 } }
+						# blockoverride "extra_section" {
+						# 	TooltipTextBlock = {
+						# 		size = { -1 20 }
+						# 		blockoverride "text" {
+						# 			text = "CANNOT_EMBRACE_INSTITUTION_TT_TEXT"
+						# 		}
+						# 	}
+						# }
+					}
+					datacontext = "[InstitutionItem.GetUIAction]"
+					using = button_action_provider
+					modify_texture = {
+						# gfx/interface/icons/institutions
+						texture = "[GetInstitutionIcon(InstitutionItem.GetInstitution.Self)]"
+						blend_mode = multiply
+						alpha = 1
+					}
+				}
+			}
+		}
+		blockoverride "base_setup" {
+			layoutstretchfactor_vertical = 1
+		}
+		blockoverride "icon_setup" {}
+		blockoverride "top_text_setup" {
+			text = "[InstitutionItem.GetInstitution.GetNameWithNoTooltip]"
+			default_format = "#subtle_name"
+		}
+		blockoverride "bottom_text_setup" {
+			visible = "[InstitutionItem.GetInstitution.HasBirthPlace]"
+			text = "[InstitutionItem.GetInstitution.GetOrigin.GetNameWithNoTooltip]"
+		}
+	}
+}
