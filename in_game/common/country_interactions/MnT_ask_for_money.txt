@@ -1,0 +1,156 @@
+﻿REPLACE:ask_for_money = {
+	type = diplomacy
+
+	category = CATEGORY_ECONOMY_ACTIONS
+
+	diplomatic_cost = ask_for_money_cost
+	
+	ai_tick = daily
+	ai_tick_frequency = 360
+
+	potential = {
+	}
+
+	cooldown = { 
+		type = ask_for_money
+		years = 10
+	}
+
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		ai_interaction_source_list = {
+			scope:actor = {
+				every_friendly_or_high_opinion_country = {
+					add_to_list = source
+				}
+			}
+		}
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			not = {	#Military Orders have their own diplo action with a more flavorful name and more money to gain
+				scope:recipient = {
+					giving_scripted_relation = {
+						type = relation_type:military_sponsorship
+						target = scope:actor
+					}
+				}
+			}
+		}
+        enabled = { 
+			gold >= {  #this action cannot put recipient in debt
+			 	value = scope:actor.country_tax_base #scope:actor.country_tax_base x 4 is one possible value being transferred
+			 	multiply = 4
+			 	
+				min = {
+			 		value = scope:recipient.country_tax_base #scope:recipient.country_tax_base is second possible value being transferred
+			 	}
+
+				min = {
+					value = scope:recipient.gold #enabled only when actor has less money from recipient
+				}
+			 }
+		}
+	}
+
+	ai_will_do = {
+		if = {
+			limit = {
+				scope:actor = {	
+					OR = {
+						monthly_balance < 0
+						num_loans > 0
+					}
+				}
+			}
+			add = {
+				value = 10
+			}
+		}
+	}
+
+
+	effect = {
+        scope:recipient = {
+			add_gold = {
+				value = scope:actor.country_tax_base
+				min = {
+					value = scope:recipient.country_tax_base
+					min = {
+						value = scope:actor.country_tax_base
+						multiply = 4
+					}
+				}
+				multiply = -1
+			}
+			add_prestige = 5
+		}
+		scope:actor = {
+			add_gold = {
+				value = scope:actor.country_tax_base
+				min = {
+					value = scope:recipient.country_tax_base
+					min = {
+						value = scope:actor.country_tax_base
+						multiply = 4
+					}
+				}
+			}
+			add_prestige = -10
+		}
+	}
+
+	diplo_chance = {
+		base = -15
+		in_debt = -100
+		opinion = 0.1
+	}
+
+
+	# Extra calculation offers
+	#
+	accept = {
+		add = {
+			desc = "GOLD_RELATION_TOOLTIP"
+			
+			if = {
+				limit = {	
+					scope:recipient = { 
+						gold < { #only allow it if as a result of an operation actor will not get richer from recipient
+							value = scope:actor.country_tax_base #scope:actor.country_tax_base x 4 is one possible value being transferred
+							multiply = 4
+							add = scope:actor.gold
+							min = {
+								value = scope:recipient.country_tax_base #scope:recipient.country_tax_base is second possible value being transferred
+								add = scope:actor.gold
+							}
+						}
+					}
+				}
+				value = -30
+			}
+		}
+
+		add = {
+			desc = "ENOUGH_MONEY_TOOLTIP"
+			
+			if = {
+				limit = {	
+					scope:actor = { #enabled only when actor is low on money
+						gold > { 
+							value = scope:actor.country_tax_base
+							min = scope:recipient.country_tax_base
+						}
+					}
+				}
+				value = -15
+			}
+		}		
+	}
+}
