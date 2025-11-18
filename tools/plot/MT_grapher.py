@@ -20,10 +20,10 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 
 import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
-from tools.shared.fetch_logs import get_log_directory_from_config
+from tools.shared.manage_config import get_from_config
 
 TARGET_FILE_NAME_ROOT = 'debug'
-ERROR_FILE_NOT_FOUND = 'debug.log not found. Please include in the config the correct path to the logs folder'
+ERROR_FILE_NOT_FOUND = TARGET_FILE_NAME_ROOT + '.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
 
 graph_introduction = """
@@ -92,7 +92,7 @@ class MainWindow(QMainWindow):
 		self.setGeometry(100, 100, 1800, 800)
 
 		# --- Data and State ---
-		self.log_folder = get_log_directory_from_config()
+		self.log_folder = get_from_config('Paths', 'log_directory')
 		self.logs = []
 		self.data = ""
 		self.graphs = {}

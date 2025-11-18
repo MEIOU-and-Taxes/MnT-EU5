@@ -2,7 +2,7 @@
 import os
 from collections import defaultdict
 
-from tools.shared.fetch_logs import get_log_directory_from_config
+from tools.shared.manage_config import get_from_config
 
 def process_log(p_file_error, p_file_error_cleaned, p_file_error_cleaned_old, p_file_error_cleaned_oldest):
 	# Handle log file rotation
@@ -91,12 +91,12 @@ def process_log(p_file_error, p_file_error_cleaned, p_file_error_cleaned_old, p_
 	print(f"Processed log saved to {output_file}")
 
 if __name__ == '__main__':
-	config_path = get_log_directory_from_config()
+	log_path = get_from_config('Paths', 'log_directory')
 
-	file_error = config_path + 'error.log'
-	file_error_cleaned = config_path + 'cleaned_error.log'
-	file_error_cleaned_old = config_path + 'cleaned_error_old.log'
-	file_error_cleaned_oldest = config_path + 'cleaned_error_oldest.log'
+	file_error = log_path + 'error.log'
+	file_error_cleaned = log_path + 'cleaned_error.log'
+	file_error_cleaned_old = log_path + 'cleaned_error_old.log'
+	file_error_cleaned_oldest = log_path + 'cleaned_error_oldest.log'
 
 	# Call the function with the path to your error.log
 	process_log(file_error, file_error_cleaned, file_error_cleaned_old, file_error_cleaned_oldest)
