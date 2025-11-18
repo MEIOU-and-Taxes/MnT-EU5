@@ -1,3 +1,5 @@
+# Thanks to the Seelowe/Justice Fighter, the author of the code this is based on
+
 import configparser
 import glob
 import os
@@ -5,10 +7,9 @@ import sys
 import traceback
 from functools import partial
 
-import re
-from itertools import cycle
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL.PSDraw import ERROR_PS
 from PyQt6.QtGui import QShortcut, QKeySequence
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
@@ -19,10 +20,11 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 
 import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
+from tools.shared.fetch_logs import get_log_directory_from_config
 
-CONFIG_FILE = "log_reader_config.ini"
-DEFAULT_LOG_PATH = ''
 TARGET_FILE_NAME_ROOT = 'debug'
+ERROR_FILE_NOT_FOUND = 'debug.log not found. Please include in the config the correct path to the logs folder'
+is_path_found = True
 
 graph_introduction = """
 Welcome to the M&T graphing tool!
@@ -186,7 +188,7 @@ class MainWindow(QMainWindow):
 		self.clear_filter_widgets()
 		self.ax.clear()
 		self.ax.set_title("Menu")
-		text_to_show = msg if msg else graph_introduction.strip()
+		text_to_show = ERROR_FILE_NOT_FOUND if not is_path_found else msg if msg else graph_introduction.strip()
 		self.ax.text(0.5, 0.5, text_to_show,
 					 horizontalalignment="center", verticalalignment="center")
 		self.canvas.draw()
@@ -286,35 +288,19 @@ def read_all_logs(log_directory):
 	for fn in files:
 		with open(fn, "r", encoding="utf-8") as f:
 			content_list.append(f.read())
+			is_path_found = True
 
 	game_log_path = os.path.join(log_directory, f"{TARGET_FILE_NAME_ROOT}.log")
 	try:
 		with open(game_log_path, "r", encoding="utf-8") as f:
 			content_list.append(f.read())
+			is_path_found = True
 	except FileNotFoundError:
 		print(f"WARNING: Could not find {game_log_path}")
+		is_path_found = False
 
 	print(f'Read {len(files) + (1 if os.path.exists(game_log_path) else 0)} log file(s) from "{log_directory}"')
 	return files, "".join(content_list)
-
-
-def get_log_directory_from_config():
-	"""Reads the log directory path from the config file."""
-	config = configparser.ConfigParser()
-	if os.path.exists(CONFIG_FILE):
-		try:
-			config.read(CONFIG_FILE)
-			return config.get('Paths', 'log_directory')
-		except (configparser.NoSectionError, configparser.NoOptionError):
-			pass
-
-	config['Paths'] = {'log_directory': DEFAULT_LOG_PATH}
-	try:
-		with open(CONFIG_FILE, 'w') as configfile:
-			config.write(configfile)
-	except Exception as e:
-		print(f"ERROR: Could not write config file: {e}")
-	return DEFAULT_LOG_PATH
 
 
 if __name__ == '__main__':
