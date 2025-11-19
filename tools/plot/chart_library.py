@@ -4,6 +4,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QLabel, QComboBox
 
+from tools.plot.MT_grapher import is_path_found, ERROR_FILE_NOT_FOUND
 from tools.plot.custom_widgets import RightClickableComboBox
 from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population
 from matplotlib.ticker import MaxNLocator
@@ -15,10 +16,13 @@ STR_ALL_MOMENTS = "All moments"
 STR_ALL_BUILDINGS = "All buildings"
 STR_ALL_REGIONS = "All regions"
 STR_ALL_GOODS = "All goods"
+ERROR_NO_DATA_MATCH = "No data matches the current filters"
+ERROR_NO_STATISTICS = "The logs exist, but there are no statistics stored\nPlay more or get other logs"
 
 POS_SUBPLOT_BOTTOM_EDGE = 0.10
 POS_SUBPLOT_RIGHT_EDGE = 0.95
 SHOW_LEGEND = False
+has_found_statistics = False
 
 # This function will be monkey-patched by the main script
 def get_data(data, str_target):
@@ -62,6 +66,8 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	combo_region.addItem(STR_ALL_REGIONS)
 	combo_region.addItems(all_regions)
 
+	has_found_statistics = len(all_moments) > 0 or len(all_categories) > 0 or len(all_regions) > 0
+
 	# Add widgets to the layout
 	filter_layout.addWidget(lbl_moment, 0, 0)
 	filter_layout.addWidget(combo_moment, 0, 1)
@@ -94,7 +100,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 		]
 
 		if not filtered_data:
-			ax.text(0.5, 0.5, "No data matches the current filters.", ha='center', va='center')
+			ax.text(0.5, 0.5, get_error_message(), ha='center', va='center')
 			ax.figure.canvas.draw_idle()
 			return
 
@@ -213,7 +219,7 @@ def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plot
 		]
 
 		if not filtered_data:
-			ax.text(0.5, 0.5, "No data matches the current filters.", ha='center', va='center')
+			ax.text(0.5, 0.5, get_error_message(), ha='center', va='center')
 			ax.figure.canvas.draw_idle()
 			return
 
@@ -289,6 +295,13 @@ def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_pl
 	"""Goods Prices by Region"""
 	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config=GP_CONFIG)
 
+
+def get_error_message():
+	if not is_path_found:
+		return ERROR_FILE_NOT_FOUND
+	if not has_found_statistics:
+		return ERROR_NO_STATISTICS
+	return ERROR_NO_DATA_MATCH
 
 if __name__ == "__main__":
 	print("This file contains graphing functions and is not meant to be run directly.")

@@ -9,13 +9,13 @@
 	
 	allow = {
 		cultural_unity < 1.0
-		NAND = {
+		NAND = { #mnt adds this to prevent subjects of the same culture as the overlord from also culture converting
+			has_limited_diplomacy = yes
 			top_overlord ?= { 
 				culture = {
 					is_primary_in = root
 				}
 			}
-			has_limited_diplomacy = yes
 		}
 	}
 	
@@ -74,8 +74,11 @@
 	}
 
 	select_trigger = {
-		looking_for_a = province
+		looking_for_a = province 
+		#mnt removed source to allow all provinces to be evaluated
 		target_flag = target_1
+		#mnt: as a compromise on the performance effects of removing the source limit, we apply it to ai
+		source_ai_override = actor
 		name = "promote_culture_select_province"
 		none_available_msg_key = "promote_culture_no_provinces"
 		column = {
@@ -88,7 +91,7 @@
 			data = population
 		}
 		default_sort = province_culture_percentage
-		visible = {
+		visible = { #mnt adds this to allow top overlord to convert provinces of same-culture subjects
 			any_location_in_province = {
 				owner ?= {
 					OR = {
@@ -99,8 +102,8 @@
 						}
 					}
 				}
-				NAND = {
-					dominant_culture = scope:target
+				NAND = { #mnt added this because the vanilla logic was "you can convert if the local cultural unity is less than 100% or the dominant culture isnt your primary culture", which doesn't make much sense
+					dominant_culture = scope:target 
 					local_cultural_unity >= 1.0
 				}
 			}
@@ -108,7 +111,7 @@
 				not = {
 					any_cabinet = {
 						has_cabinet_action = yes
-						cabinet_action ?= cabinet_action:promote_culture
+						cabinet_action ?= cabinet_action:promote_culture #mnt added ?= to fix vanilla bug that spams error log
 						interaction_target:target_1 ?= root
 					}
 				}
@@ -149,7 +152,7 @@
 	}
 
 	location_modifier = {
-		local_pop_assimilation_speed = 0.004
+		local_pop_assimilation_speed = 0.012 #mnt: from 0.04
 	}
 
 	progress = {
