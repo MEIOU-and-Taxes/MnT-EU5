@@ -1,0 +1,112 @@
+﻿namespace = estate_income_fix
+
+# Hidden event to calculate and grant control shortfall payments to estates
+# Formula: For each estate, sum across all locations: estate_power * tax_base * ((1 - control)/control)
+# This represents the gold that estates should receive from imperfect control over locations
+estate_income_fix.1 = {
+	type = country_event
+	
+	hidden = yes
+	
+	trigger = {
+		is_human = yes
+	}
+
+	# Calculate and grant control shortfall payments to estates
+	immediate = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				power > 0
+				estate_gold < {
+					value = estate_tax_base
+					multiply = 100
+				}
+			}
+
+			estate_add_gold = {
+				value = {
+					owner = {
+						every_owned_location = {
+							add = {
+								value = location_tax_base
+								divide = local_control
+							}
+						}
+					}
+					multiply = power
+					subtract = estate_tax_base
+					min = 0
+				}
+			}
+		}
+	}
+}
+
+estate_income_fix.2 = {
+	type = country_event
+	
+	hidden = yes
+
+	trigger = {
+		is_human = no
+	}
+	
+	immediate = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				power > 0
+				estate_gold < {
+					value = estate_tax_base
+					multiply = 100
+				}
+			}
+
+			estate_add_gold = {
+				value = {
+					owner = {
+						every_owned_location = {
+							add = {
+								value = location_tax_base
+								divide = local_control
+							}
+						}
+					}
+					multiply = power
+					subtract = estate_tax_base
+					multiply = 12
+					min = 0
+				}
+			}
+		}
+	}
+}
+
+estate_income_fix.3 = {
+	type = country_event
+	
+	hidden = yes
+
+	trigger = {
+		num_loans < 3
+	}
+	
+	immediate = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				power > 0
+				estate_gold < root.country_estate_loan_size
+			}
+
+			estate_add_gold = {
+				value = {
+					value = root.country_estate_loan_size
+					subtract = estate_gold
+				}
+			}
+		}
+	}
+}
+
