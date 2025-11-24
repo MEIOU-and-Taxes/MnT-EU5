@@ -1,0 +1,490 @@
+﻿namespace = time_of_struggle
+
+
+time_of_struggle.1 = {	#Start event
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.1.title
+	desc = time_of_struggle.1.desc
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		capital.region = { save_scope_as = target_region }
+		ruler_or_regent ?= { save_scope_as = target_character }
+
+	}
+
+	option = {
+		name = time_of_struggle.1.a
+
+		add_stability = stability_extreme_penalty
+		custom_tooltip = during_time_of_struggle_explanation_tt
+
+	}
+}
+
+time_of_struggle.2 = {	#End event
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.2.title
+	desc = time_of_struggle.2.desc
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		capital.region = { save_scope_as = target_region }
+	}
+
+	option = {
+		name = time_of_struggle.2.a
+
+		add_stability = stability_extreme_bonus
+
+		custom_tooltip = {
+			text = pops_accepted_or_primary_culture_gain_10_satisfaction_home_region_tt
+			every_owned_location = {
+				limit = {
+					region = root.capital.region
+				}
+				every_pop = {
+					limit = {
+						owner = root
+						OR = {
+							culture = root.culture
+							culture = {
+								is_accepted_in = root
+							}
+						}
+					}
+					add_pop_satisfaction = pop_satisfaction_mild_bonus
+				}
+			}
+		}
+	}
+}
+
+time_of_struggle.3 = {	#Province Separatists - existing country
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.3.title
+	desc = time_of_struggle.3.desc
+
+	trigger = {
+		any_owned_location = {
+			province = {
+				NOT = { 
+					any_location_in_province = { is_capital = yes }
+				}
+			}
+			NOT = { has_variable = recent_uprising_variable }
+			any_core_in_location = {
+				NOT = { country_exists = this }
+			}
+		}
+	}
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		ordered_owned_location = {
+			limit = {
+				NOT = { has_variable = recent_uprising_variable }
+				any_core_in_location = {
+					NOT = { country_exists = this }
+				}
+			}
+			order_by = {
+				value = population
+				if = {
+					limit = { average_satisfaction <= 0 }
+					divide = 0.05
+				}
+				else = { divide = average_satisfaction }
+			}
+			max = 1
+			check_range_bounds = no
+			save_scope_as = target_location
+			set_variable = {
+				name = recent_uprising_variable
+				years = 10
+			}
+			random_core_in_location = {
+				limit = { NOT = { country_exists = this } }
+				save_scope_as = target_country
+			}
+		}
+		create_country_from_cores_in_our_locations = scope:target_country
+
+		scope:target_country = { 
+			make_subject_of = { 
+				target = root 
+				type = subject_type:vassal 
+			}
+		}
+		
+		#For display purposes only
+		ruler_or_regent = { save_scope_as = target_character }
+		scope:target_country.ruler_or_regent ?= { save_scope_as = target_character2 }
+
+		#This is to correct most bordergore by giving
+		#locations that are completely cut off from root to scope:target_country
+		#unless these locations are coastal
+		every_owned_location = {
+			limit = {
+				is_neighbor_of = scope:target_country
+				area = scope:target_country.capital.area
+				is_coastal = no
+				NOT = { is_connected_to = root.capital }
+			}
+			add_core = scope:target_country
+			change_integration_level = core
+			change_location_owner = scope:target_country
+		}
+	}
+	option = {
+		name = time_of_struggle.3.a
+
+		scope:target_country = {
+			declare_war_with_cb = {
+				target = root
+				type = casus_belli:cb_independence_war
+			}
+		}
+	}
+
+	option = { 
+		name = time_of_struggle.3.b
+
+		custom_tooltip = {
+			text = target_country_allowed_to_slip_from_grasp_tt
+			scope:target_country = {
+				every_owned_location = {
+					remove_core = root
+				}
+			}
+		}
+	}
+}
+
+time_of_struggle.4 = {	#Province Separatists - dynamic country
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.3.title
+	desc = time_of_struggle.4.desc
+
+	trigger = {
+		any_owned_location = {
+			is_capital = no
+			NOT = { has_variable = recent_uprising_variable }
+			region != root.capital.region
+		}
+	}
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		ordered_province = {
+			limit = {
+				NOT = {
+					any_location_in_province = {
+						OR = {
+							region = root.capital.region 
+							has_variable = recent_uprising_variable
+						}
+					}
+				}
+			}
+			order_by = {
+				value = population
+				if = {
+					limit = { province_satisfaction <= 0 }
+					divide = 0.05
+				}
+				else = { divide = province_satisfaction }
+			}
+			max = 1
+			check_range_bounds = no
+			every_location_in_province = {
+				set_variable = {
+					name = recent_uprising_variable
+					years = 10
+				}
+			}
+			province_capital = { save_scope_as = target_location }
+			create_location_country_from_province = {
+				save_scope_as = target_country
+				make_subject_of = { 
+					target = root 
+					type = subject_type:vassal 
+				}
+			}
+		}
+
+		every_province = {
+			limit = {
+				NOT = { 
+					any_location_in_province = { 
+						OR = {
+							region = root.capital.region
+							has_variable = recent_uprising_variable 
+							is_capital = yes
+						}
+					}
+				}
+				any_location_in_province = { is_neighbor_of = scope:target_country }
+			}
+			every_location_in_province = {
+				limit = { 
+					owner ?= root 
+					is_capital = no 
+				}
+				add_core = scope:target_country
+				change_integration_level = core
+				change_location_owner = scope:target_country
+				set_variable = {
+					name = recent_uprising_variable
+					years = 10
+				}
+			}
+		}
+		
+		#For display purposes only
+		ruler_or_regent = { save_scope_as = target_character }
+		scope:target_country.ruler_or_regent ?= { save_scope_as = target_character2 }
+
+		#This is to correct most bordergore by giving
+		#locations that are completely cut off from root to scope:target_country
+		#unless these locations are coastal
+		every_owned_location = {
+			limit = {
+				is_capital = no
+				is_neighbor_of = scope:target_country
+				area = scope:target_country.capital.area
+				is_coastal = no
+				NOT = { is_connected_to = root.capital }
+			}
+			add_core = scope:target_country
+			change_integration_level = core
+			change_location_owner = scope:target_country
+		}
+	}
+
+	option = {
+		name = time_of_struggle.4.a
+
+		scope:target_country = {
+			declare_war_with_cb = {
+				target = root
+				type = casus_belli:cb_independence_war
+			}
+		}
+	}
+
+	option = { 
+		name = time_of_struggle.4.b
+
+		custom_tooltip = {
+			text = target_country_allowed_to_slip_from_grasp_tt
+			scope:target_country = {
+				every_owned_location = {
+					limit = {
+						root = { has_core = prev }
+					}
+					remove_core = root
+				}
+			}
+		}
+		cancel_subject = scope:target_country
+		add_stability = stability_weak_penalty
+	}
+}
+
+time_of_struggle.5 = {	#Relatively strong neighbor makes a move
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.5.title
+	desc = time_of_struggle.5.desc
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		random_neighbor_country = {
+			limit = {
+				any_active_disaster = { disaster_type = disaster_type:time_of_struggle }
+				NOR = {
+					in_union_with = root
+					has_mutual_scripted_relation = {
+						type = relation_type:alliance
+						target = root
+					}
+					has_truce_with = root
+					is_at_war_with = root
+					is_fighting_war_together_with = root
+					ROOT = { is_subject_of = prev }
+				}
+			}
+			save_scope_as = target_country
+			ruler_or_regent = { save_scope_as = target_character_1 }
+		}
+		ruler_or_regent = { save_scope_as = target_character_2 }
+	}
+
+	option = {
+		name = time_of_struggle.5.a
+
+		declare_war_with_cb = {	
+			target = scope:target_country
+			type = casus_belli:cb_cut_down_in_size 
+		}
+	}
+
+	option = {
+		name = time_of_struggle.5.b
+
+		add_government_power = government_power_weak_penalty
+	}
+}
+
+time_of_struggle.6 = {	#Non-accepted culture demands representation
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.6.title
+	desc = time_of_struggle.6.desc
+
+	trigger = {
+		total_accepted_culture_population < total_population
+	}
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		ordered_pop = {
+			limit = {
+				culture = {
+					root = {
+						NOT = { has_primary_or_accepted_culture = prev }
+					}
+					NOT = { is_in_list = decline_of_empires_6_list }
+				}
+			}
+			order_by = {
+				value = pop_size
+				if = {
+					limit = { pop_satisfaction > 0 }
+					divide = pop_satisfaction
+				}
+				else = { divide = 0.05 }
+			}
+			check_range_bounds = no
+			max = 5
+			culture = { add_to_list = decline_of_empires_6_list }
+		}
+
+		random_in_list = {
+			list = decline_of_empires_6_list
+			save_scope_as = target_culture
+		}
+
+		set_variable = {
+			name = num_locations_affected_variable
+			value = 0
+		}
+		set_variable = {
+			name = pop_size_variable
+			value = 0
+		}
+		every_owned_location = {
+			limit = {
+				any_pop = { culture = scope:target_culture }
+			}
+			root = {
+				change_variable = {
+					name = num_locations_affected_variable
+					add = 1
+				}
+			}
+		}
+		every_pop = {
+			limit = { culture = scope:target_culture }
+			root = {
+				change_variable = {
+					name = pop_size_variable
+					add = prev.pop_size
+				}
+			}
+		}
+	}
+
+	option = {
+		name = time_of_struggle.6.a
+
+		custom_tooltip = {
+			text = show_num_pops_affected_a_tt
+			every_pop = {
+				limit = { culture = scope:target_culture }
+				add_pop_satisfaction = pop_satisfaction_extreme_bonus
+			}
+		}
+
+		custom_tooltip = {
+			text = showcase_affected_locations_num_tt
+			every_owned_location = {
+				limit = {
+					any_pop = { culture = scope:target_culture }
+				}
+				change_control = control_mild_penalty
+			}
+		}
+		change_societal_value = { type = centralization_vs_decentralization value = societal_value_minor_move_to_right }
+
+		custom_tooltip = explain_decline_of_empires_events.6_tt
+	}
+
+	option = {
+		name = time_of_struggle.6.b
+
+		change_societal_value = { type = centralization_vs_decentralization value = societal_value_minor_move_to_left }
+
+		custom_tooltip = {
+			text = show_num_pops_affected_b_tt
+			every_pop = {
+				limit = { culture = scope:target_culture }
+				add_pop_satisfaction = pop_satisfaction_weak_penalty
+			}
+		}
+	}
+}
+
+time_of_struggle.7 = {	#vassal attempts to break free
+	type = country_event
+	category = disaster_event
+	title = time_of_struggle.7.title
+	desc = time_of_struggle.7.desc
+
+	trigger = {
+		num_subjects > 0
+		any_subject = { is_disloyal_subject = yes }
+	}
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		any_disloyal_subject = {
+			save_scope_as = target_country
+		}
+	}
+
+	option = {
+		name = time_of_struggle.7.a
+
+		scope:target_country = {
+			declare_war_with_cb = {
+				target = root
+				type = casus_belli:cb_independence_war
+			}
+		}
+	}
+
+	option = { 
+		name = time_of_struggle.7.b
+
+		cancel_subject = scope:target_country
+	}
+}

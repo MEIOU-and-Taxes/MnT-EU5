@@ -1,0 +1,121 @@
+﻿REPLACE:decline_of_empire = {
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+	
+	monthly_spawn_chance = monthly_spawn_chance_low
+
+	can_start = {
+#		country_rank = country_rank:rank_empire
+#		NOT = { current_age = age_1_traditions }
+#		trigger_if = {
+#			limit = { tag = CHI }
+#			NOT = { current_age = age_2_renaissance }
+#		}
+#		has_any_active_disaster = no
+#		stability < 0
+#		government_power < 80
+#		OR = {
+#			switch = {
+#				trigger = current_age
+#				age_2_renaissance = { average_control_in_home_region < 0.4 }
+#				age_3_discovery = { average_control_in_home_region < 0.45 }
+#				age_4_reformation = { average_control_in_home_region < 0.5 }
+#				age_5_absolutism = { average_control_in_home_region < 0.55 }
+#				age_6_revolutions = { average_control_in_home_region < 0.6 }
+#			}
+#			total_not_tolerated_culture_population > {
+#				value = total_population
+#				divide = 3
+#			}
+#		}
+#
+#		custom_tooltip = { 
+#			text = has_not_had_decline_of_empire_last_25_years 
+#			NOT = { has_variable = had_doe_disaster_variable }
+#		}
+		always = no
+	}
+	
+	can_end = {
+		decline_of_empire_end_trigger = yes
+	}
+	modifier = {
+		global_estate_target_satisfaction = big_permanent_target_satisfaction_penalty
+		monthly_rebel_growth = 0.003
+		bank_interest = 0.05
+	}
+	
+	on_start = {
+		trigger_event_non_silently = decline_of_empire.1 
+		set_variable = {	#Declares the target control in home region for the trigger
+			name = average_control_in_home_region_target_variable
+			value = {
+				add = average_control_in_home_region
+				multiply = 1.2
+				min = 0.5
+				max = 0.8
+			}
+		}
+	}
+	on_end = {
+		set_variable = {
+			name = had_doe_disaster_variable
+			years = 25 
+		}
+		trigger_event_non_silently = decline_of_empire.2 
+	}
+	
+	on_monthly = {
+		random_list = {
+			10 = { custom_tooltip = an_event_occurs_tt }
+			90 = { custom_tooltip = no_event_occurs_tt }
+		}
+		hidden_effect = {
+			random_list = {
+				91 = { }
+				3 = { trigger_event_silently = decline_of_empire.3 }
+				3 = { trigger_event_silently = decline_of_empire.4 }
+				3 = { 
+					trigger = {
+						any_neighbor_country = {
+							NOT = { any_active_disaster = { disaster_type = disaster_type:decline_of_empire } }
+							at_war = no
+							is_during_bankruptcy = no
+							NOR = {
+								in_union_with = root
+								has_mutual_scripted_relation = {
+									type = relation_type:alliance
+									target = root
+								}
+								has_truce_with = root
+								is_at_war_with = root
+								is_fighting_war_together_with = root
+								ROOT = { is_subject_of = prev }
+							}
+						}
+					}
+					random_neighbor_country = {
+						limit = {
+							NOT = { any_active_disaster = { disaster_type = disaster_type:decline_of_empire } }
+							at_war = no
+							is_during_bankruptcy = no
+							NOR = {
+								in_union_with = root
+								has_mutual_scripted_relation = {
+									type = relation_type:alliance
+									target = root
+								}
+								has_truce_with = root
+								is_at_war_with = root
+								is_fighting_war_together_with = root
+								ROOT = { is_subject_of = prev }
+							}
+						}
+						trigger_event_silently = decline_of_empire.5
+					}
+				}
+				3 = { trigger_event_silently = decline_of_empire.6 }
+			}
+		}
+	}
+}
