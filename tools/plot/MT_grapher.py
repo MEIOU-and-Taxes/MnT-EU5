@@ -20,6 +20,7 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 
 import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
+from tools.plot import log_parser
 from tools.shared.fetch_logs import get_log_directory_from_config
 
 TARGET_FILE_NAME_ROOT = 'debug'
@@ -29,7 +30,7 @@ is_path_found = True
 graph_introduction = """
 Welcome to the M&T graphing tool!
 
-Press '/' to see the list of available graphs.
+Press '`' to see the list of available graphs.
 Refresh to read game.log again.
 
 If this is the first run, update the generated config file
@@ -100,6 +101,8 @@ class MainWindow(QMainWindow):
 		self.chart_shortcuts = []
 		self.cursor_hover_handler = None
 		self.filter_widgets = []
+		self.current_graph_func = None
+		self.current_graph_title = None
 
 		# --- Main Layout ---
 		self.central_widget = QWidget()
@@ -158,10 +161,9 @@ class MainWindow(QMainWindow):
 		"""Load graph functions from the all_graphs module."""
 		all_graphs.get_data = self.get_data
 		self.graphs = {
-			getattr(all_graphs, name).__name__[5:].replace("_", " "): (
-				getattr(all_graphs, name).__doc__,
+			# Use docstring for title, fallback to formatted name
+			(getattr(all_graphs, name).__doc__ or getattr(all_graphs, name).__name__[6:].replace("_", " ").title()):
 				getattr(all_graphs, name)
-			)
 			for name in dir(all_graphs)
 			if callable(getattr(all_graphs, name)) and name.lower().startswith("graph")
 		}
@@ -179,19 +181,46 @@ class MainWindow(QMainWindow):
 		"""Plots a chart when its numeric hotkey is pressed."""
 		chart_name = self.chart_hotkeys.get(key)
 		if chart_name:
-			title, graph_func = self.graphs[chart_name]
-			self.display_chart(graph_func, title)
+			graph_func = self.graphs[chart_name]
+			self.display_chart(graph_func, chart_name)
+
+
+	def _reset_filter_layout(self):
+		"""
+		Removes the old filter layout and replaces it with a new, empty one.
+		This is the key to preventing widget misplacement.
+		"""
+
+		self.clear_filter_widgets()
+
+		# Remove the old QGridLayout from the main QVBoxLayout
+		if self.filter_layout is not None:
+			# Delete the layout
+			while self.filter_layout.count():
+				item = self.filter_layout.takeAt(0)
+				widget = item.widget()
+				if widget is not None:
+					widget.deleteLater()
+			self.layout.removeItem(self.filter_layout)
+			self.filter_layout.deleteLater()
+
+		# Create and add a fresh, new QGridLayout
+		self.filter_layout = QGridLayout()
+		self.layout.addLayout(self.filter_layout)
 
 	def display_info_screen(self, msg=None):
 		"""Displays the initial welcome message on the plot."""
 		self.cursor_hover_handler = None
-		self.clear_filter_widgets()
+		self._reset_filter_layout()
 		self.ax.clear()
 		self.ax.set_title("Menu")
 		text_to_show = ERROR_FILE_NOT_FOUND if not is_path_found else msg if msg else graph_introduction.strip()
 		self.ax.text(0.5, 0.5, text_to_show,
 					 horizontalalignment="center", verticalalignment="center")
 		self.canvas.draw()
+		# Clear current graph state when returning to menu
+		self.current_graph_func = None
+		self.current_graph_title = None
 
 	def get_data(self, _, str_target):
 		"""Read data (passed to all_graphs module)."""
@@ -225,9 +254,14 @@ class MainWindow(QMainWindow):
 
 	def display_chart(self, graph_func, title):
 		"""Clears the axes and plots a new graph."""
-		self.clear_filter_widgets()
+		# Store the current graph function and title for reloading
+		self.current_graph_func = graph_func
+		self.current_graph_title = title
+
+		self._reset_filter_layout() # MODIFIED: Use the reset helper
+
 		self.ax.clear()
-		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.925) # Reset adjustments
+		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.925)
 
 		try:
 			graph_func(
@@ -264,17 +298,30 @@ class MainWindow(QMainWindow):
 		self.display_info_screen()
 
 	def reload_log(self):
-		"""Reads all log files from the configured directory."""
+		"""Reads all log files and refreshes the current view."""
+		print("Reloading log data...")
+		# Clear the parser caches to force a re-read of the data.
+		log_parser.clear_all_caches()
+
+		# Read the raw text from the log files.
 		self.logs, self.data = read_all_logs(self.log_folder)
-		self.display_info_screen()
+
+		# Check if a graph is currently displayed.
+		if self.current_graph_func and self.current_graph_title:
+			# If yes, re-display the same chart, which will use the new self.data.
+			print(f"Refreshing current graph: {self.current_graph_title}")
+			self.display_chart(self.current_graph_func, self.current_graph_title)
+		else:
+			# If not (i.e., we are on the main menu), just show the info screen.
+			self.display_info_screen()
 
 	def show_chart_list(self):
 		"""Opens the chart selection dialog."""
 		dialog = ChartSelectionDialog(self.graphs, self)
 		if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_chart:
 			chart_name = dialog.selected_chart
-			title, graph_func = self.graphs[chart_name]
-			self.display_chart(graph_func, title)
+			graph_func = self.graphs[chart_name]
+			self.display_chart(graph_func, chart_name)
 
 
 def read_all_logs(log_directory):
