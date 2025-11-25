@@ -1,0 +1,123 @@
+namespace = diplomatic_spending
+
+# Recalculate demands from diplomatic spending
+# Unlike cost of the court, a proportion of spending will be directly transferred to estate
+diplomatic_spending.1 = {
+    type = country_event
+    title = diplomatic_spending.1.title
+    hidden = yes
+    immediate = {
+        set_local_variable = {
+            name = country_diplomatic_spending
+            value = {
+                value = 0
+                add = {
+                    value = "root.diplomatic_maintenance"
+                    multiply = "root.modifier:diplomatic_spending_cost"
+                    multiply = "root.country_economical_base"
+                }
+            }
+        }
+
+        # For now, 50% of the spending goes to the nobility
+        # We can discuss the proportion or whether this should be spread to other estates as well
+        "root.estate(estate_type:nobles_estate)" = {
+            estate_add_gold = {
+                value = {
+                    value = local_var:country_diplomatic_spending
+                    multiply = 0.5
+                }
+            }
+        }
+
+        # The other 50% of the spending goes to generate market demands
+        capital.market.location = {
+            if = {
+                limit = {
+                    not = { has_variable = total_diplomatic_spending}
+                }
+                set_variable = {
+                    name = total_diplomatic_spending
+                    value = 0
+                }
+            }
+            change_variable = {
+                name = total_diplomatic_spending
+                add = {
+                    value = local_var:country_diplomatic_spending
+                    multiply = 0.5
+                }
+            }
+        }
+    }
+}
+
+# Aggregate all diplomatic spending demands into temporary market demands
+diplomatic_spending.2 = {
+    type = country_event
+    title = diplomatic_spending.2.title
+    hidden = yes
+    trigger = {
+        tag = FRA
+    }
+    immediate = { 
+        every_market_in_world = {
+            set_local_variable = {
+                name = demand_basket_price
+                value = {
+                    value = 0
+                    add = {
+                        # 2 paper
+                        value = 2
+                        multiply = "market_price(goods:paper)"
+                    }
+                    add = {
+                        # 1 jewelry
+                        value = 1
+                        multiply = "market_price(goods:jewelry)"
+                    }
+                }
+            }
+
+            if = {
+                # In the first month, there are ~10 markets that do not have this variable stored. Removing the condition leads to errors
+                limit = { location = { has_variable = total_diplomatic_spending } }
+
+                # Switching between two temporary demands
+                # If we use only one temporary demand, the UI will not be updated properly
+                if = {
+                    limit = {
+                        has_temporary_demand = demand:diplomatic_spending_demand1
+                    }
+                    remove_temporary_demand = demand:diplomatic_spending_demand1
+                    add_temporary_demand = {
+                        type = demand:diplomatic_spending_demand2
+                        months = -1
+                        scale = {
+                            value = "location.var:total_diplomatic_spending"
+                            divide = "local_var:demand_basket_price"
+                        }
+                    }
+                } else = {
+                    remove_temporary_demand = demand:diplomatic_spending_demand2
+                    add_temporary_demand = {
+                        type = demand:diplomatic_spending_demand1
+                        months = -1
+                        scale = {
+                            value = "location.var:total_diplomatic_spending"
+                            divide = "local_var:demand_basket_price"
+                        }
+                    }
+                }
+            }
+
+            # Clear total CotC value from the last month
+            location = {
+                set_variable = {
+                    name = total_diplomatic_spending
+                    value = 0
+                }
+            }
+        }
+    }
+}
