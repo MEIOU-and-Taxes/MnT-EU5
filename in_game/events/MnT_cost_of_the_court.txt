@@ -1,8 +1,9 @@
-namespace = cost_of_the_court
+﻿namespace = cost_of_the_court
 
 # Recalculate demands from cost of the court
 cost_of_the_court.1 = {
 	type = country_event
+	title = cost_of_the_court.1.title
 	hidden = yes
 	immediate = {
 		capital.market.location = {
@@ -31,61 +32,63 @@ cost_of_the_court.1 = {
 # Aggregate all CotC demands into temporary market demands
 cost_of_the_court.2 = {
 	type = country_event
+	title = cost_of_the_court.2.title
 	hidden = yes
 	trigger = {
-		# FIXME: Figure out a way to not rely on a single tag
 		tag = FRA
 	}
 	immediate = {
 		every_market_in_world = {
-			# Remove demand from last month
-			if = {
-				limit = {
-					has_temporary_demand = demand:cost_of_the_court_demand
-				}
-				remove_temporary_demand = demand:cost_of_the_court_demand
-			}
-
 			# Calculate current price corresponding to 1 unit of the demand basket
 			set_local_variable = {
 				name = demand_basket_price
 				value = {
 					value = 0
-					add = {	# 3 furniture
+					add = {
+						# 3 furniture
 						value = 3
 						multiply = "market_price(goods:furniture)"
 					}
-					add = { # 1 tools
+					add = {
+						# 1 tools
 						value = 1
 						multiply = "market_price(goods:tools)"
 					}
-					add = { # 2 glass
+					add = {
+						# 2 glass
 						value = 2
 						multiply = "market_price(goods:glass)"
 					}
-					add = { # 4 fine_cloth
+					add = {
+						# 4 fine_cloth
 						value = 4
 						multiply = "market_price(goods:fine_cloth)"
 					}
 				}
 			}
 
-			add_temporary_demand = {
-				type = demand:cost_of_the_court_demand
-				months = -1
-				scale = {
-					value = "location.var:total_cost_of_the_court"
-					divide = "local_var:demand_basket_price"
-				}
-			}
+			if = {
+				# In the first month, there are ~10 markets that do not have this variable stored. Removing the condition leads to errors
+				limit = { location = { has_variable = total_cost_of_the_court } }
 
-			# Clear total CotC value from the last month
-			location = {
-				set_variable = {
-					name = total_cost_of_the_court
-					value = 0
+				add_temporary_demand = {
+					type = demand:cost_of_the_court_demand
+					months = 0
+					scale = {
+						value = "location.var:total_cost_of_the_court"
+						divide = "local_var:demand_basket_price"
+					}
+				}
+
+				# Clear total CotC value from the last month
+				location = {
+					set_variable = {
+						name = total_cost_of_the_court
+						value = 0
+					}
 				}
 			}
 		}
+
 	}
 }
