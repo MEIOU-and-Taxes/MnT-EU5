@@ -71,12 +71,30 @@ cost_of_the_court.2 = {
 				# In the first month, there are ~10 markets that do not have this variable stored. Removing the condition leads to errors
 				limit = { location = { has_variable = total_cost_of_the_court } }
 
-				add_temporary_demand = {
-					type = demand:cost_of_the_court_demand
-					months = 0
-					scale = {
-						value = "location.var:total_cost_of_the_court"
-						divide = "local_var:demand_basket_price"
+				# Switching between two temporary demands
+				# If we use only one temporary demand, the UI will not be updated properly
+				if = {
+					limit = {
+						has_temporary_demand = demand:cost_of_the_court_demand1
+					}
+					remove_temporary_demand = demand:cost_of_the_court_demand1
+					add_temporary_demand = {
+						type = demand:cost_of_the_court_demand2
+						months = -1
+						scale = {
+							value = "location.var:total_cost_of_the_court"
+							divide = "local_var:demand_basket_price"
+						}
+					}
+				} else = {
+					remove_temporary_demand = demand:cost_of_the_court_demand2
+					add_temporary_demand = {
+						type = demand:cost_of_the_court_demand1
+						months = -1
+						scale = {
+							value = "location.var:total_cost_of_the_court"
+							divide = "local_var:demand_basket_price"
+						}
 					}
 				}
 
