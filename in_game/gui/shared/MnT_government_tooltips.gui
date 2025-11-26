@@ -1,0 +1,145 @@
+template Estate_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon_texture" {
+			texture = "[GetEstateIcon(Estate.GetType)]"
+		}
+
+		blockoverride "title_text" {
+			text = "[Estate.GetLongNameWithNoTooltip]"
+		}
+		blockoverride "title_button" {
+			hint_button = {
+				action_tooltip = {
+					title = "OPEN_HINT"
+					on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_estates')]"
+				}
+			}
+		}
+
+		blockoverride "concept_link" {
+			text = [estate|E]
+		}
+
+		blockoverride "tooltip_content" {
+			block "extra_estates_info" {}
+
+			TooltipStringPairList = {
+				textcontext = "ESTATE_BREAKDOWN"
+			}
+
+			TooltipListBase = {
+				TooltipManualTableField = {
+					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+					text_single = {
+						text = "ESTATE_INCOME"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "[Estate.GetLastMonthsIncomeAfterTaxWithTooltip]@gold!"
+					}
+
+					tooltipwidget = {
+						using = estate_expense_tooltip
+					}
+				}
+
+				TooltipManualTableField = {
+					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+					text_single = {
+						text = "ESTATE_FOOD_INCOME"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "[Estate.GetFoodIncome|+=2]@gold!"
+					}
+				}
+
+				TooltipManualTableField = {
+					visible = "[And(Not(Estate.GetType.IsAlwaysLoyal), ObjectsEqual(Player.GetGovernment.GetEstateFromKey('nobles_estate').GetType, Estate.GetType))]"
+					text_single = {
+						text = "ESTATE_DIPLOMATIC_SPENDING_INCOME"
+					}
+					expand = {}
+					text_single = {
+						text = "[Estate.GetCountry.MakeScope.GetVariable('noble_diplomatic_spending_transfer').GetValue|+=2]@gold!"
+					}
+				}
+
+
+				TooltipManualTableField = {
+					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+					text_single = {
+						text = "ESTATE_TRADE_INCOME"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "[Estate.GetTradeIncome|+=2]@gold!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+					text_single = {
+						text = "ESTATE_EXPENSES"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetLastMonthsExpense|2]@gold!#!"
+					}
+				}
+			}
+
+
+			TooltipTextBlock = {
+				visible = "[Estate.IsNextBuildSetUp]"
+				blockoverride "text" {
+					text = "[Estate.GetCurrentBuildInformation]"
+				}
+			}
+
+			TooltipTextBlock = {
+				visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+				blockoverride "text" {
+					text = "[Estate.GetMostLikedCountries]"
+				}
+
+				tooltipwidget = {
+					SimpleContextualStringPairTooltipType = {
+						blockoverride "title_icon_texture" {
+							texture = "[GetEstateIcon(Estate.GetType)]"
+						}
+						blockoverride "concept_link" {
+							text = [estate_opinion|E]
+						}
+
+						textcontext = "[Estate.GetMostLikedCountriesFull]"
+					}
+				}
+			}
+
+			TooltipTextBlock = {
+				visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+				blockoverride "text" {
+					text = "[Estate.GetLeastLikedCountries]"
+				}
+
+				tooltipwidget = {
+					SimpleContextualStringPairTooltipType = {
+						blockoverride "title_icon_texture" {
+							texture = "[GetEstateIcon(Estate.GetType)]"
+						}
+						blockoverride "concept_link" {
+							text = [estate_opinion|E]
+						}
+						textcontext = "[Estate.GetLeastLikedCountriesFull]"
+					}
+				}
+			}
+
+			TooltipFlavorTextBlock = {
+				blockoverride "text" {
+					text = "[Estate.GetType.GetFlavorText]"
+				}
+			}
+		}
+	}
+}
