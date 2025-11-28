@@ -68,10 +68,12 @@ def parse_data_goods_prices(data):
 def _parse_population_value(value_str):
 	"""Converts a population string (e.g., '2.2M', '75K', '1,234') to an integer."""
 	value_str = value_str.strip().replace(',', '')
-	if 'M' in value_str:
-		return int(float(value_str.replace('M', '')) * 1_000_000)
 	if 'K' in value_str:
 		return int(float(value_str.replace('K', '')) * 1_000)
+	if 'M' in value_str:
+		return int(float(value_str.replace('M', '')) * 1_000_000)
+	if 'B' in value_str:
+		return int(float(value_str.replace('B', '')) * 1_000_000_000)
 	return int(value_str)
 
 def parse_data_population(data):
@@ -94,6 +96,7 @@ def parse_data_population(data):
 			parsed_data.append({
 				"moment": 1 + int(m.group(1)),
 				"region": m.group(2).strip(),
+				"statistic": "Total Population", #TODO: Add estates
 				"population": population_value
 			})
 		except (ValueError, IndexError) as e:

@@ -1,8 +1,8 @@
 # Thanks to the Seelowe/Justice Fighter, the author of the code this is based on
-
-import configparser
+import csv
 import glob
 import os
+import re
 import sys
 import traceback
 from functools import partial
@@ -14,7 +14,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget)
+							 QWidget, QFileDialog, QMessageBox)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
@@ -24,7 +24,7 @@ from tools.plot import log_parser
 from tools.shared.fetch_logs import get_log_directory_from_config
 
 TARGET_FILE_NAME_ROOT = 'debug'
-ERROR_FILE_NOT_FOUND = 'debug.log not found. Please include in the config the correct path to the logs folder'
+ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
 
 graph_introduction = """
@@ -101,8 +101,8 @@ class MainWindow(QMainWindow):
 		self.chart_shortcuts = []
 		self.cursor_hover_handler = None
 		self.filter_widgets = []
-		self.current_graph_func = None
-		self.current_graph_title = None
+		self.current_graph_info = None
+		self.current_dataset = []
 
 		# --- Main Layout ---
 		self.central_widget = QWidget()
@@ -123,10 +123,12 @@ class MainWindow(QMainWindow):
 		self.btn_refresh = QPushButton("Refresh data [F5]")
 		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
 		self.btn_charts = QPushButton("Charts [`]")
+		self.btn_export = QPushButton("Export to CSV [Ctrl+E]")
 		button_layout.addWidget(self.btn_refresh)
 		button_layout.addWidget(self.btn_backup)
 		button_layout.addWidget(self.btn_charts)
-		button_layout.addStretch(1) # Pushes buttons to the left
+		button_layout.addWidget(self.btn_export)
+		button_layout.addStretch(1)
 		self.layout.addLayout(button_layout)
 
 		# --- Bottom Filter Widgets Layout ---
@@ -137,6 +139,7 @@ class MainWindow(QMainWindow):
 		self.btn_refresh.clicked.connect(self.reload_log)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
+		self.btn_export.clicked.connect(self.export_to_csv)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
@@ -149,6 +152,7 @@ class MainWindow(QMainWindow):
 		QShortcut(QKeySequence("Ctrl+S"), self, self.backup_log)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
 		QShortcut(QKeySequence("F11"), self, self.toggle_fullscreen)
+		QShortcut(QKeySequence("Ctrl+E"), self, self.export_to_csv)
 
 	def toggle_fullscreen(self):
 		"""Toggles the main window between fullscreen and normal modes."""
@@ -167,6 +171,27 @@ class MainWindow(QMainWindow):
 			for name in dir(all_graphs)
 			if callable(getattr(all_graphs, name)) and name.lower().startswith("graph")
 		}
+
+		configs = {
+			'graph_building_types': all_graphs.BT_CONFIG,
+			'graph_goods_prices': all_graphs.GP_CONFIG,
+			'graph_markets': all_graphs.MK_CONFIG,
+			'graph_population': all_graphs.POP_CONFIG,
+		}
+
+		self.graphs = {}
+		for name in dir(all_graphs):
+			if callable(getattr(all_graphs, name)) and name.lower().startswith("graph"):
+				func = getattr(all_graphs, name)
+				title = func.__doc__ or name[6:].replace("_", " ").title()
+
+				# Store the function and its associated config together
+				if name in configs:
+					self.graphs[title] = {
+						'func': func,
+						'config': configs[name]
+					}
+
 		# Setup chart hotkeys (1, 2, 3...)
 		sorted_charts = sorted(self.graphs.keys())
 		self.chart_shortcuts.clear()
@@ -181,8 +206,8 @@ class MainWindow(QMainWindow):
 		"""Plots a chart when its numeric hotkey is pressed."""
 		chart_name = self.chart_hotkeys.get(key)
 		if chart_name:
-			graph_func = self.graphs[chart_name]
-			self.display_chart(graph_func, chart_name)
+			graph_info = self.graphs[chart_name]
+			self.display_chart(graph_info, chart_name)
 
 
 	def _reset_filter_layout(self):
@@ -219,8 +244,8 @@ class MainWindow(QMainWindow):
 					 horizontalalignment="center", verticalalignment="center")
 		self.canvas.draw()
 		# Clear current graph state when returning to menu
-		self.current_graph_func = None
-		self.current_graph_title = None
+		self.current_graph_info = None
+		self.current_dataset = []
 
 	def get_data(self, _, str_target):
 		"""Read data (passed to all_graphs module)."""
@@ -252,14 +277,18 @@ class MainWindow(QMainWindow):
 		"""Clears any existing tooltip handler."""
 		self.cursor_hover_handler = None
 
-	def display_chart(self, graph_func, title):
+	def display_chart(self, graph_info, title):
 		"""Clears the axes and plots a new graph."""
-		# Store the current graph function and title for reloading
-		self.current_graph_func = graph_func
-		self.current_graph_title = title
+		self.current_graph_info = {'info': graph_info, 'title': title}
 
-		self._reset_filter_layout() # MODIFIED: Use the reset helper
+		# Get the correct parser function from the graph's config.
+		parser_func = graph_info['config']['parser']
+		# Parse the entire dataset from the raw log data.
+		self.current_dataset = parser_func(self.data)
+		# Proceed with drawing the chart.
+		graph_func = graph_info['func']
 
+		self._reset_filter_layout()
 		self.ax.clear()
 		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.925)
 
@@ -270,7 +299,7 @@ class MainWindow(QMainWindow):
 				self.filter_layout,
 				self.filter_widgets,
 				self.setup_tooltip_handler,
-				self.clear_tooltip_handler
+				self.clear_tooltip_handler,
 			)
 			self.ax.set_title(title)
 			self.canvas.draw() # Draw the canvas first, to update the graph elements
@@ -282,19 +311,53 @@ class MainWindow(QMainWindow):
 		self.ax.set_title(title)
 		self.canvas.draw()
 
+	def export_to_csv(self):
+		"""Exports the complete, unfiltered data for the current chart type to a CSV file."""
+		if not self.current_dataset:
+			QMessageBox.warning(self, "Export Error", "No data available to export. Please select a chart first.")
+			return
+
+		default_filename = "export.csv"
+		if self.current_graph_info:
+			safe_title = self.current_graph_info['title'].lower().replace(" ", "_").replace("/", "")
+			default_filename = f"{safe_title}_full_export.csv"
+
+		file_path, _ = QFileDialog.getSaveFileName(
+			self, "Save Full Dataset as CSV", default_filename, "CSV Files (*.csv);;All Files (*)"
+		)
+
+		if not file_path:
+			return
+
+		try:
+			headers = self.current_dataset[0].keys()
+			with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
+				writer = csv.DictWriter(output_file, fieldnames=headers)
+				writer.writeheader()
+				writer.writerows(self.current_dataset)
+
+			QMessageBox.information(self, "Export Successful", f"Full dataset successfully exported to:\n{file_path}")
+
+		except Exception as e:
+			QMessageBox.critical(self, "Export Failed", f"An error occurred while writing the file:\n{e}")
+			traceback.print_exc()
+
 	def backup_log(self):
 		"""Backs up the current game.log."""
 		if not self.logs:
-			print("No log files found to determine the next backup number.")
+			QMessageBox.critical(self, "Back-up failed", "No log files found to determine the next backup number.")
 			return
-		last_log_num = int(os.path.basename(self.logs[-1])[5:-4])
+		number_str = re.findall(r'\d+', self.logs[-1])[0]
+
+		last_log_num = int(number_str) if number_str else 1
+		file_to_rename = rf"{self.log_folder}{TARGET_FILE_NAME_ROOT}.log"
 		try:
-			os.rename("game.log", f"game_{last_log_num + 1}.log")
-			print(f"Backed up game.log to game_{last_log_num + 1}.log")
+			os.rename(file_to_rename, f"{self.log_folder}{TARGET_FILE_NAME_ROOT}_{last_log_num + 1}.log")
+			QMessageBox.information(self, "Back-up complete", f"Backed up {TARGET_FILE_NAME_ROOT}.log to game_{last_log_num + 1}.log")
 		except FileNotFoundError:
-			print("game.log not found, nothing to back up.")
+			QMessageBox.critical(self, "Back-up failed", f"{file_to_rename} not found, nothing to back up.")
 		except Exception as e:
-			print(f"Error backing up log: {e}")
+			QMessageBox.critical(self, "Back-up failed", f"Error backing up log: {e}")
 		self.display_info_screen()
 
 	def reload_log(self):
@@ -304,13 +367,12 @@ class MainWindow(QMainWindow):
 		log_parser.clear_all_caches()
 
 		# Read the raw text from the log files.
-		self.logs, self.data = read_all_logs(self.log_folder)
+		self.logs, self.data = self.read_all_logs()
 
-		# Check if a graph is currently displayed.
-		if self.current_graph_func and self.current_graph_title:
-			# If yes, re-display the same chart, which will use the new self.data.
-			print(f"Refreshing current graph: {self.current_graph_title}")
-			self.display_chart(self.current_graph_func, self.current_graph_title)
+		if self.current_graph_info:
+			print(f"Refreshing current graph: {self.current_graph_info['title']}")
+			# Re-call display_chart, which will re-parse and re-plot everything.
+			self.display_chart(self.current_graph_info['info'], self.current_graph_info['title'])
 		else:
 			# If not (i.e., we are on the main menu), just show the info screen.
 			self.display_info_screen()
@@ -320,34 +382,38 @@ class MainWindow(QMainWindow):
 		dialog = ChartSelectionDialog(self.graphs, self)
 		if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_chart:
 			chart_name = dialog.selected_chart
-			graph_func = self.graphs[chart_name]
-			self.display_chart(graph_func, chart_name)
+			graph_info = self.graphs[chart_name]
+			self.display_chart(graph_info, chart_name)
 
 
-def read_all_logs(log_directory):
-	"""Read file(s) from a specified directory."""
-	content_list = []
-	search_pattern = os.path.join(log_directory, TARGET_FILE_NAME_ROOT + "_*.log")
-	files = glob.glob(search_pattern)
-	if files:
-		files.sort(key=lambda x: int(os.path.basename(x)[5:-4]))
-
-	for fn in files:
-		with open(fn, "r", encoding="utf-8") as f:
-			content_list.append(f.read())
-			is_path_found = True
-
-	game_log_path = os.path.join(log_directory, f"{TARGET_FILE_NAME_ROOT}.log")
-	try:
-		with open(game_log_path, "r", encoding="utf-8") as f:
-			content_list.append(f.read())
-			is_path_found = True
-	except FileNotFoundError:
-		print(f"WARNING: Could not find {game_log_path}")
+	def read_all_logs(self):
+		"""Read file(s) from a specified directory."""
+		content_list = []
 		is_path_found = False
+		search_pattern = os.path.join(self.log_folder, TARGET_FILE_NAME_ROOT + "_*.log")
+		files = glob.glob(search_pattern)
+		if files:
+			files.sort(key=lambda x: re.findall(r'\d+', x)[0])
 
-	print(f'Read {len(files) + (1 if os.path.exists(game_log_path) else 0)} log file(s) from "{log_directory}"')
-	return files, "".join(content_list)
+		for fn in files:
+			with open(fn, "r", encoding="utf-8") as f:
+				content_list.append(f.read())
+				is_path_found = True
+
+		game_log_path = os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.log")
+		try:
+			with open(game_log_path, "r", encoding="utf-8") as f:
+				content_list.append(f.read())
+				files.append(game_log_path)
+				is_path_found = True
+		except FileNotFoundError:
+			pass
+
+		print(f'Read {len(files) + (1 if os.path.exists(game_log_path) else 0)} log file(s) from "{self.log_folder}"')
+		if not is_path_found:
+			QMessageBox.critical (self, "No logs found", "Could not find any log files to read.")
+		return files, "".join(content_list)
+
 
 
 if __name__ == '__main__':

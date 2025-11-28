@@ -17,6 +17,7 @@ STR_ALL_MOMENTS = "All moments"
 STR_ALL_BUILDINGS = "All buildings"
 STR_ALL_REGIONS = "All regions"
 STR_ALL_GOODS = "All goods"
+
 ERROR_NO_DATA_MATCH = "No data matches the current filters"
 ERROR_NO_STATISTICS = "The logs exist, but there are no statistics stored\nPlay more or get other logs"
 
@@ -40,16 +41,22 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	fig.subplots_adjust(bottom=POS_SUBPLOT_BOTTOM_EDGE, right=POS_SUBPLOT_RIGHT_EDGE)
 
 	# --- Get config values ---
+	# Key name, used for grouping, primary filtering & creating lines. It's the main thing to analyze in the chart
 	category_key = config["category_key"]
+	# Numerical value to plot
 	value_key = config["value_key"]
+	# Label for the category dropdown menu
 	category_label_str = config["category_label"]
+	# The default "show everything" option appearing at the top of the category dropdown
 	all_category_str = config["all_category_str"]
+	# Label for the graph's Y axis
 	value_label_str = config["value_label"]
+	# Boolean controlling whether it will create a moment having values of 0 before the moment it *has* values
 	add_zero_start = config.get("add_zero_start", False)
-	ComboBoxClass = RightClickableComboBox if config.get("use_right_click_combo", True) else QComboBox
 
 	# --- Create Interactive PyQt Widgets ---
 	lbl_moment = QLabel("Time:")
+	ComboBoxClass = RightClickableComboBox
 	combo_moment = ComboBoxClass()
 	all_moments = sorted(list(set(item['moment'] for item in all_data)))
 	combo_moment.addItem(STR_ALL_MOMENTS)
@@ -75,8 +82,6 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 		combo_moment.setVisible(False)
 		lbl_region.setVisible(False)
 		combo_region.setVisible(False)
-
-	has_found_statistics = len(all_moments) > 0 or len(all_categories) > 0 or len(all_regions) > 0
 
 	# Add widgets to the layout
 	filter_layout.addWidget(lbl_moment, 0, 0)
@@ -204,79 +209,6 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	update_plot()
 
 
-def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
-	"""Population by Region"""
-	all_pop_data = parse_data_population(data)
-	fig = ax.figure
-	fig.subplots_adjust(bottom=POS_SUBPLOT_BOTTOM_EDGE, right=POS_SUBPLOT_RIGHT_EDGE)
-
-	# --- Create Interactive PyQt Widgets ---
-	lbl_region = QLabel("Region:")
-	combo_region = RightClickableComboBox()
-	all_regions = sorted(list(set(item['region'] for item in all_pop_data)))
-	combo_region.addItem(STR_ALL_REGIONS)
-	combo_region.addItems(all_regions)
-
-	# Add widgets to the layout
-	filter_layout.addWidget(lbl_region, 0, 0)
-	filter_layout.addWidget(combo_region, 0, 1)
-	filter_layout.setColumnStretch(2, 1)
-
-	filter_widgets_list.extend([lbl_region, combo_region])
-
-	def update_plot():
-		on_plot_cleared()
-		filter_region = combo_region.currentText()
-		ax.clear()
-
-		filtered_data = [
-			item for item in all_pop_data
-			if (filter_region == STR_ALL_REGIONS or item['region'] == filter_region)
-		]
-
-		if not filtered_data:
-			ax.text(0.5, 0.5, get_error_message(), ha='center', va='center')
-			ax.figure.canvas.draw_idle()
-			return
-
-		# --- Plotting Logic ---
-		prop_cycle = plt.rcParams['axes.prop_cycle']
-		colors = cycle(prop_cycle.by_key()['color'])
-
-		data_to_plot = {}
-		for item in filtered_data:
-			key = item['region']
-			if key not in data_to_plot:
-				data_to_plot[key] = {'moments': [], 'populations': []}
-			data_to_plot[key]['moments'].append(item['moment'])
-			data_to_plot[key]['populations'].append(item['population'])
-
-		ax.set_xlabel("Time")
-		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-		ax.set_ylabel("Population")
-		ax.set_title("Population Over Time")
-
-		for name, values in sorted(data_to_plot.items()):
-			if not values['moments']: continue
-			sorted_points = sorted(zip(values['moments'], values['populations']))
-			moments_sorted, pop_sorted = zip(*sorted_points)
-			ax.plot(moments_sorted, pop_sorted, marker='o', linestyle='-', label=name, color=next(colors))
-
-		if data_to_plot:
-			min_x = min(min(v['moments']) for v in data_to_plot.values() if v['moments'])
-			max_x = max(max(v['moments']) for v in data_to_plot.values() if v['moments'])
-			ax.set_xlim(min_x, max_x)
-
-		if SHOW_LEGEND and data_to_plot:
-			ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-
-		ax.figure.canvas.draw_idle()
-		on_lines_plotted()
-
-	combo_region.currentIndexChanged.connect(update_plot)
-	update_plot()
-
-
 # --- Graph Configurations ---
 
 BT_CONFIG = {
@@ -287,7 +219,6 @@ BT_CONFIG = {
     "all_category_str": STR_ALL_BUILDINGS,
     "value_label": "Count",
     "add_zero_start": True,
-    "use_right_click_combo": True
 }
 
 GP_CONFIG = {
@@ -298,7 +229,6 @@ GP_CONFIG = {
     "all_category_str": STR_ALL_GOODS,
     "value_label": "Price",
     "add_zero_start": False,
-    "use_right_click_combo": True
 }
 
 MK_CONFIG = {
@@ -309,23 +239,35 @@ MK_CONFIG = {
     "all_category_str": None,
     "value_label": "Value",
     "add_zero_start": False,
-    "use_right_click_combo": True
+}
+
+POP_CONFIG = {
+	"parser": parse_data_population,
+	"category_key": "statistic",
+	"value_key": "population",
+	"category_label": "Statistic:",
+	"all_category_str": None,
+	"value_label": "Population",
+	"add_zero_start": False,
 }
 
 # --- Public Graphing Functions ---
 
 def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
 	"""Building Types by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config=BT_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, BT_CONFIG)
 
 def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
 	"""Goods Prices by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config=GP_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, GP_CONFIG)
 
 def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
 	"""Market Statistics"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config=MK_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, MK_CONFIG)
 
+def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+	"""Population by Region"""
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, POP_CONFIG)
 
 def get_error_message():
 	if not is_path_found:
