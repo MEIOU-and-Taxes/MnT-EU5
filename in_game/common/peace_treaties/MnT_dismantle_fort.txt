@@ -1,0 +1,73 @@
+﻿REPLACE:dismantle_fortifications = {
+	
+	category = dismantle_fort
+	cost = {
+		add = {
+			desc = "DIPLOREASON_BASE"
+			value = "scope:target.location_peace_cost(scope:loser|scope:winner)"
+			multiply = 1
+		}
+	}
+	
+	base_antagonism = 1
+	antagonism_type = antagonism_dismantle_fortifications
+
+	are_targets_exclusive = yes
+
+	potential = {
+	}
+	 
+	select_trigger = {
+		looking_for_a = location
+		source = recipient
+		target_flag = target
+        visible = {
+			has_fort = yes 
+			NOT = { has_building = building_type:theodosian_walls }
+			owner = scope:recipient
+		}
+    }
+	
+	allow = {
+	}
+
+	effect = {
+		scope:target = { 
+		
+			every_buildings_in_location = {
+				limit = {
+					building_category = defense_category
+				}
+				location = { destroy_building = prev }
+			}
+		}
+	}
+
+	ai_desire = {
+		if = {
+			limit = {
+				scope:target = {
+					is_neighbor_of = scope:winner
+				}
+			}
+			add = {
+				desc = "DIPLOREASON_NEARBY_FORT"
+				value = 2
+			}
+		}
+
+		if = {
+			limit = {
+				scope:loser = {
+					is_rebel_country = yes
+
+				}
+			}
+			multiply = {
+				desc = "DIPLOREASON_CIVIL_WAR"
+				value = 0
+			}
+		}
+	}
+}
+
