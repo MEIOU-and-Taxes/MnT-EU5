@@ -1,0 +1,36 @@
+﻿prepare_country_estate_variables_for_income_lost = {
+	set_local_variable = {
+		name = income_lost
+		value = {
+			owner = {
+				every_owned_location = {
+					if = {
+						limit = { local_control > 0 }
+						add = {
+							value = location_tax_base
+							divide = local_control
+						}
+					}
+				}
+			}
+			multiply = power #TODO: refactor when able to coherently work out the proper income based on an estate's tax_per_pop
+			subtract = estate_tax_base
+			min = 0
+
+		}
+	}
+	if = { limit = { estate_type = estate_type:nobles_estate }
+		owner = { set_variable = { name = estate_nobles_income_lost value = local_var:income_lost } } }
+	else_if = { limit = { estate_type = estate_type:burghers_estate }
+		owner = { set_variable = { name = estate_burghers_income_lost value = local_var:income_lost } } }
+	else_if = { limit = { estate_type = estate_type:clergy_estate }
+		owner = { set_variable = { name = estate_clergy_income_lost value = local_var:income_lost } } }
+	else_if = { limit = { estate_type = estate_type:peasants_estate }
+		owner = { set_variable = { name = estate_peasants_income_lost value = local_var:income_lost } } }
+	else_if = { limit = { estate_type = estate_type:tribes_estate }
+		owner = { set_variable = { name = estate_tribes_income_lost value = local_var:income_lost } } }
+	else_if = { limit = { estate_type = estate_type:dhimmi_estate }
+		owner = { set_variable = { name = estate_dhimmi_income_lost value = local_var:income_lost } } }
+	else_if = { limit = { estate_type = estate_type:cossacks_estate }
+		owner = { set_variable = { name = estate_cossacks_income_lost value = local_var:income_lost } } }
+}
