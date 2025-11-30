@@ -43,7 +43,9 @@ Date: 2025-11-30
 - Diplomatic spending gives to the noble estate 50% of it   
 - 0.5 building cap levels are now given per 1K pops rather than per 100K  
 - The bailiff building is also allowed in towns and cities  
-- The wharf building monthly sailor output: 1 → 6  
+- The wharf building monthly sailor output: 1 → 6
+- Made rural buildings be buildable in any kind of location
+- Irrigation is only buildable where there is not enough rainfall
 - Control  
   - Proximity affects control at a rate of 75% → 50%  
   - Proximity cost reduced by 20-30%  
@@ -114,7 +116,8 @@ Date: 2025-11-30
 ##### Population
 
 - Cored locations' population growth is not restricted to those of primary culture anymore  
-- Added an always active pop demotion speed modifier (200% of pop promotion speed)  
+- Added an always active pop demotion speed modifier (200% of pop promotion speed) 
+- Pops (except slaves) have all now natural growth, not only peasants
 - Pop Promotion Speed:  
   - Locations will naturally give a local promotion speed of 10 → 5  
   - Universities’ local pop promotion speed: 10 → 5  
@@ -160,4 +163,3 @@ Date: 2025-11-30
 - Land war exhaustion from losses: 100 → 300  
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
-
