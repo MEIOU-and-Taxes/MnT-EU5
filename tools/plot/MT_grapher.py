@@ -177,6 +177,7 @@ class MainWindow(QMainWindow):
 			'graph_goods_prices': all_graphs.GP_CONFIG,
 			'graph_markets': all_graphs.MK_CONFIG,
 			'graph_population': all_graphs.POP_CONFIG,
+			'graph_road_types': all_graphs.RT_CONFIG,
 		}
 
 		self.graphs = {}

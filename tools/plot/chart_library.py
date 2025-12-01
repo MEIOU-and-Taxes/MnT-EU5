@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QLabel, QComboBox
 from tools.plot.MT_grapher import is_path_found, ERROR_FILE_NOT_FOUND
 from tools.plot.custom_widgets import RightClickableComboBox
 from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population, \
-	parse_data_markets
+	parse_data_markets, parse_data_road_types
 from matplotlib.ticker import MaxNLocator
 
 IS_LOGGING_YEARLY = True
@@ -17,6 +17,7 @@ STR_ALL_MOMENTS = "All moments"
 STR_ALL_BUILDINGS = "All buildings"
 STR_ALL_REGIONS = "All regions"
 STR_ALL_GOODS = "All goods"
+STR_ALL_ROADS = "All roads"
 
 ERROR_NO_DATA_MATCH = "No data matches the current filters"
 ERROR_NO_STATISTICS = "The logs exist, but there are no statistics stored\nPlay more or get other logs"
@@ -251,7 +252,16 @@ POP_CONFIG = {
 	"add_zero_start": False,
 }
 
-# --- Public Graphing Functions ---
+RT_CONFIG = {
+    "parser": parse_data_road_types,
+    "category_key": "road_type",
+    "value_key": "coverage_percentage",
+    "category_label": "Road Type:",
+    "all_category_str": STR_ALL_ROADS,
+    "value_label": "Coverage Percentage",
+    "add_zero_start": True,
+}
+
 
 def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
 	"""Building Types by Region"""
@@ -268,6 +278,10 @@ def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted
 def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
 	"""Population by Region"""
 	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, POP_CONFIG)
+
+def graph_road_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+	"""Road Coverage by Region"""
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, RT_CONFIG)
 
 def get_error_message():
 	if not is_path_found:
