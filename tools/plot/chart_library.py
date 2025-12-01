@@ -17,7 +17,7 @@ STR_ALL_MOMENTS = "All moments"
 STR_ALL_BUILDINGS = "All buildings"
 STR_ALL_REGIONS = "All regions"
 STR_ALL_GOODS = "All goods"
-STR_ALL_ROADS = "All roads"
+STR_ALL_ROAD_TYPES = "All road types"
 
 ERROR_NO_DATA_MATCH = "No data matches the current filters"
 ERROR_NO_STATISTICS = "The logs exist, but there are no statistics stored\nPlay more or get other logs"
@@ -32,7 +32,7 @@ def get_data(data, str_target):
 	raise NotImplementedError("get_data function was not assigned")
 
 
-def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config):
+def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config, filter_widget_map):
 	"""
 	A generic graphing function that creates a line or bar chart based on a configuration.
 	This function is intended for internal use and is called by specific graph functions.
@@ -62,6 +62,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	all_moments = sorted(list(set(item['moment'] for item in all_data)))
 	combo_moment.addItem(STR_ALL_MOMENTS)
 	combo_moment.addItems([str(m) for m in all_moments])
+	filter_widget_map['moment'] = combo_moment
 
 	lbl_category = QLabel(category_label_str)
 	combo_category = ComboBoxClass()
@@ -69,18 +70,22 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	if all_category_str:
 		combo_category.addItem(all_category_str)
 	combo_category.addItems(all_categories)
+	filter_widget_map[category_key] = combo_category
 
 	is_market_chart = 'Food Stockpile' in all_categories
+	is_road_chart = category_key == 'road_type'
 
 	lbl_region = QLabel("Region:")
 	combo_region = ComboBoxClass()
 	all_regions = sorted(list(set(item['region'] for item in all_data)))
 	combo_region.addItem(STR_ALL_REGIONS)
 	combo_region.addItems(all_regions)
+	filter_widget_map['region'] = combo_region
 
-	if is_market_chart:
+	if is_market_chart or is_road_chart:
 		lbl_moment.setVisible(False)
 		combo_moment.setVisible(False)
+	if is_market_chart:
 		lbl_region.setVisible(False)
 		combo_region.setVisible(False)
 
@@ -162,16 +167,21 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			title_text = f"{value_label_str}s for: {filter_category_type}" if is_category_picked else f"{value_label_str}s in: {filter_region}"
 			ax.set_title(title_text)
 
+			unique_moments_count = len(set(item['moment'] for item in filtered_data))
+			marker_style = 'o' if unique_moments_count <= 50 else None
+
 			for name, values in sorted(data_to_plot.items()):
 				if not values['moments']: continue
 				sorted_points = sorted(zip(values['moments'], values['values']))
 				moments_sorted, values_sorted = zip(*sorted_points)
-				ax.plot(moments_sorted, values_sorted, marker='o', linestyle='-', label=name, color=next(colors))
+				ax.plot(moments_sorted, values_sorted, marker=marker_style, linestyle='-', label=name, color=next(colors))
 
 			if data_to_plot:
 				min_x = min(min(v['moments']) for v in data_to_plot.values() if v['moments'])
 				max_x = max(max(v['moments']) for v in data_to_plot.values() if v['moments'])
 				ax.set_xlim(min_x, max_x)
+				if "y_axis_limits" in config:
+					ax.set_ylim(config["y_axis_limits"])
 
 			if SHOW_LEGEND and data_to_plot:
 				ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
@@ -257,31 +267,32 @@ RT_CONFIG = {
     "category_key": "road_type",
     "value_key": "coverage_percentage",
     "category_label": "Road Type:",
-    "all_category_str": STR_ALL_ROADS,
+    "all_category_str": STR_ALL_ROAD_TYPES,
     "value_label": "Coverage Percentage",
     "add_zero_start": True,
+    "y_axis_limits": (0, 100),
 }
 
 
-def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
 	"""Building Types by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, BT_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, BT_CONFIG, filter_widget_map)
 
-def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
 	"""Goods Prices by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, GP_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, GP_CONFIG, filter_widget_map)
 
-def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
 	"""Market Statistics"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, MK_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, MK_CONFIG, filter_widget_map)
 
-def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
 	"""Population by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, POP_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, POP_CONFIG, filter_widget_map)
 
-def graph_road_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+def graph_road_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
 	"""Road Coverage by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, RT_CONFIG)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, RT_CONFIG, filter_widget_map)
 
 def get_error_message():
 	if not is_path_found:

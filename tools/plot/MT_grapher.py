@@ -1,6 +1,7 @@
 # Thanks to the Seelowe/Justice Fighter, the author of the code this is based on
 import csv
 import glob
+import json
 import os
 import re
 import sys
@@ -14,7 +15,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget, QFileDialog, QMessageBox)
+							 QWidget, QFileDialog, QMessageBox, QComboBox)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
@@ -23,7 +24,7 @@ from interactive_tooltip import InteractiveLineTooltip
 from tools.plot import log_parser
 from tools.shared.fetch_logs import get_log_directory_from_config
 
-TARGET_FILE_NAME_ROOT = 'debug'
+TARGET_FILE_NAME_ROOT = 'error'
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
 
@@ -103,6 +104,10 @@ class MainWindow(QMainWindow):
 		self.filter_widgets = []
 		self.current_graph_info = None
 		self.current_dataset = []
+		self.key_configs = {}
+		self.filter_widget_map = {}
+		self.preset_buttons = []
+		self.preset_shortcuts = []
 
 		# --- Main Layout ---
 		self.central_widget = QWidget()
@@ -119,17 +124,22 @@ class MainWindow(QMainWindow):
 		self.layout.addWidget(self.toolbar)
 
 		# --- Top Buttons Layout ---
-		button_layout = QHBoxLayout()
-		self.btn_refresh = QPushButton("Refresh data [F5]")
-		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
+		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
+		self.btn_full_screen = QPushButton("Fullscreen [F]")
+		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
+		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
 		self.btn_export = QPushButton("Export to CSV [Ctrl+E]")
-		button_layout.addWidget(self.btn_refresh)
-		button_layout.addWidget(self.btn_backup)
-		button_layout.addWidget(self.btn_charts)
-		button_layout.addWidget(self.btn_export)
-		button_layout.addStretch(1)
-		self.layout.addLayout(button_layout)
+		self.top_button_layout.addWidget(self.btn_charts)
+		self.top_button_layout.addWidget(self.btn_full_screen)
+		self.top_button_layout.addWidget(self.btn_refresh)
+		self.top_button_layout.addWidget(self.btn_backup)
+		self.top_button_layout.addWidget(self.btn_export)
+		self.top_button_layout.addStretch(1)
+		self.layout.addLayout(self.top_button_layout)
+
+		self.preset_button_layout = QHBoxLayout()
+		self.layout.addLayout(self.preset_button_layout)
 
 		# --- Bottom Filter Widgets Layout ---
 		self.filter_layout = QGridLayout()
@@ -137,21 +147,35 @@ class MainWindow(QMainWindow):
 
 		# --- Connect Signals ---
 		self.btn_refresh.clicked.connect(self.reload_log)
+		self.btn_full_screen.clicked.connect(self.toggle_fullscreen)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
 		self.btn_export.clicked.connect(self.export_to_csv)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
+		self.load_key_configs()
 		self.load_graph_definitions()
 		self.reload_log()
 
+	def load_key_configs(self):
+		try:
+			with open("key_configs.json", "r") as f:
+				self.key_configs = json.load(f)
+				print("Successfully loaded key_configs.json")
+		except FileNotFoundError:
+			self.key_configs = {}
+			print("key_configs.json not found, no function key presets will be available.")
+		except json.JSONDecodeError as e:
+			self.key_configs = {}
+			QMessageBox.critical(self, "Config Error", f"Error parsing key_configs.json:\n{e}")
+
 	def setup_shortcuts(self):
 		"""Setup global keyboard shortcuts."""
-		QShortcut(QKeySequence("F5"), self, self.reload_log)
+		QShortcut(QKeySequence("Shift+S"), self, self.reload_log)
 		QShortcut(QKeySequence("Ctrl+S"), self, self.backup_log)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
-		QShortcut(QKeySequence("F11"), self, self.toggle_fullscreen)
+		QShortcut(QKeySequence("F"), self, self.toggle_fullscreen)
 		QShortcut(QKeySequence("Ctrl+E"), self, self.export_to_csv)
 
 	def toggle_fullscreen(self):
@@ -238,6 +262,7 @@ class MainWindow(QMainWindow):
 		"""Displays the initial welcome message on the plot."""
 		self.cursor_hover_handler = None
 		self._reset_filter_layout()
+		self.clear_preset_buttons()
 		self.ax.clear()
 		self.ax.set_title("Menu")
 		text_to_show = ERROR_FILE_NOT_FOUND if not is_path_found else msg if msg else graph_introduction.strip()
@@ -268,6 +293,7 @@ class MainWindow(QMainWindow):
 			self.filter_layout.removeWidget(widget)
 			widget.deleteLater()
 		self.filter_widgets.clear()
+		self.filter_widget_map.clear()
 
 	def setup_tooltip_handler(self):
 		"""Creates a new tooltip handler for the current axes."""
@@ -301,9 +327,11 @@ class MainWindow(QMainWindow):
 				self.filter_widgets,
 				self.setup_tooltip_handler,
 				self.clear_tooltip_handler,
+				self.filter_widget_map
 			)
 			self.ax.set_title(title)
 			self.canvas.draw() # Draw the canvas first, to update the graph elements
+			self.setup_preset_buttons(title)
 
 		except Exception as e:
 			self.ax.text(0.5, 0.5, f"Error:\n{e}", ha='center', va='center')
@@ -311,6 +339,89 @@ class MainWindow(QMainWindow):
 
 		self.ax.set_title(title)
 		self.canvas.draw()
+
+	def clear_preset_buttons(self):
+		while self.preset_button_layout.count():
+			item = self.preset_button_layout.takeAt(0)
+			widget = item.widget()
+			if widget is not None:
+				widget.deleteLater()
+
+		self.preset_buttons.clear()
+
+		for shortcut in self.preset_shortcuts:
+			shortcut.setEnabled(False)
+			shortcut.deleteLater()
+		self.preset_shortcuts.clear()
+
+	def setup_preset_buttons(self, chart_title):
+		self.clear_preset_buttons()
+		chart_configs = self.key_configs.get(chart_title, {})
+
+		sorted_keys = sorted(chart_configs.keys(), key=lambda x: int(x[1:]))
+
+		for key in sorted_keys:
+			config = chart_configs[key]
+			is_valid_preset = True
+			for filter_key, filter_value in config.get("filters", {}).items():
+				if filter_key not in self.filter_widget_map:
+					print(f"Warning for preset {key}: Filter key '{filter_key}' does not exist for this chart.")
+					is_valid_preset = False
+					break
+
+				combo_box = self.filter_widget_map[filter_key]
+				if combo_box.findText(filter_value) == -1:
+					print(f"Info for preset {key}: Value '{filter_value}' not found for filter '{filter_key}'. Disabling button.")
+					is_valid_preset = False
+					break
+
+			description = config.get("description", "No description")
+			button_text = f"{description} [{key}]"
+			button = QPushButton(button_text)
+			button.setToolTip(description)
+			button.clicked.connect(partial(self.apply_key_config, config["filters"]))
+			button.setEnabled(is_valid_preset)
+
+			self.preset_button_layout.addWidget(button)
+			self.preset_buttons.append(button)
+
+			shortcut = QShortcut(QKeySequence(key), self)
+			shortcut.activated.connect(partial(self.apply_key_config, config["filters"]))
+			shortcut.setEnabled(is_valid_preset)
+			self.preset_shortcuts.append(shortcut)
+
+		self.preset_button_layout.addStretch(1)
+
+	def apply_key_config(self, filters):
+		print(f"Applying filter preset: {filters}")
+
+		for combo_box in self.filter_widget_map.values():
+			combo_box.blockSignals(True)
+
+		try:
+			for key, value in filters.items():
+				if key in self.filter_widget_map:
+					combo_box = self.filter_widget_map[key]
+					index = combo_box.findText(value)
+					if index != -1:
+						combo_box.setCurrentIndex(index)
+					else:
+						error_message = f"Value '{value}' not found for filter '{key}'.\n\nThe log data may not contain this option."
+						QMessageBox.warning(self, "Preset Error", error_message)
+						print(f"Warning: {error_message}")
+						return
+				else:
+					error_message = f"Filter key '{key}' not found in widget map."
+					QMessageBox.warning(self, "Preset Error", error_message)
+					print(f"Warning: {error_message}")
+					return
+		finally:
+			for combo_box in self.filter_widget_map.values():
+				combo_box.blockSignals(False)
+
+		if self.filter_widget_map:
+			first_widget = next(iter(self.filter_widget_map.values()))
+			first_widget.currentIndexChanged.emit(first_widget.currentIndex())
 
 	def export_to_csv(self):
 		"""Exports the complete, unfiltered data for the current chart type to a CSV file."""
@@ -365,15 +476,42 @@ class MainWindow(QMainWindow):
 		"""Reads all log files and refreshes the current view."""
 		print("Reloading log data...")
 		# Clear the parser caches to force a re-read of the data.
+
+		saved_graph_info = self.current_graph_info
+		saved_filters = {}
+		if saved_graph_info:
+			for key, widget in self.filter_widget_map.items():
+				if isinstance(widget, QComboBox):
+					saved_filters[key] = widget.currentText()
+
 		log_parser.clear_all_caches()
 
 		# Read the raw text from the log files.
 		self.logs, self.data = self.read_all_logs()
 
-		if self.current_graph_info:
-			print(f"Refreshing current graph: {self.current_graph_info['title']}")
-			# Re-call display_chart, which will re-parse and re-plot everything.
-			self.display_chart(self.current_graph_info['info'], self.current_graph_info['title'])
+		if saved_graph_info:
+			print(f"Refreshing current graph: {saved_graph_info['title']}")
+			self.display_chart(saved_graph_info['info'], saved_graph_info['title'])
+
+			for widget in self.filter_widget_map.values():
+				widget.blockSignals(True)
+
+			for key, value in saved_filters.items():
+				if key in self.filter_widget_map:
+					widget = self.filter_widget_map[key]
+					index = widget.findText(value)
+					if index != -1:
+						widget.setCurrentIndex(index)
+					else:
+						print(f"Warning: Saved filter value '{value}' for '{key}' not found after reload. Resetting to default.")
+						widget.setCurrentIndex(0)
+
+			for widget in self.filter_widget_map.values():
+				widget.blockSignals(False)
+
+			if self.filter_widget_map:
+				first_widget = next(iter(self.filter_widget_map.values()))
+				first_widget.currentIndexChanged.emit(first_widget.currentIndex())
 		else:
 			# If not (i.e., we are on the main menu), just show the info screen.
 			self.display_info_screen()
