@@ -22,6 +22,111 @@ on_game_start_MnT = {
 		c:FRA = {
 			trigger_event_silently = { id = LOGGER_CHARTS.03 }
 		}
+		every_country = {
+			limit = { num_locations > 0 }
+			# This logic is to remove "added pops" that come by way of buildings introduced in setup. Buildings added in the setup create new pops rather than employing existing ones; this removes the equivalent count of peasants that were added
+			every_owned_location = {
+				save_temporary_scope_as = location_scope
+				set_variable = {
+					name = non_peasant_pops
+					value = {
+						add = num_pop_type:laborers
+						add = num_pop_type:burghers
+						add = num_pop_type:soldiers
+						add = num_pop_type:clergy
+						add = num_pop_type:nobles
+					}
+				}
+				# Only bother with this if there were non-peasant pops to begin with
+				if = {
+					limit = {
+						var:non_peasant_pops > 0
+					}
+					ordered_pop = {
+						limit = {
+							pop_type = pop_type:peasants
+						}
+						order_by = pop_size
+						max = 1
+						check_range_bounds = no
+						save_temporary_scope_as = largest_peasant_pop
+					}					
+					set_variable = {
+						name = largest_peasant_pop_size
+						value = scope:largest_peasant_pop.pop_size
+					}
+					if = {
+						limit = {
+							var:largest_peasant_pop_size < var:non_peasant_pops
+						}
+						scope:largest_peasant_pop = {
+							add_pop_size = {
+								value = pop_size
+								multiply = -1
+							}
+						}
+						change_variable = {
+							name = non_peasant_pops
+							subtract = var:largest_peasant_pop_size
+						}
+						# Since the first pop group was too large, we need to iterate a second time
+						ordered_pop = {
+							limit = {
+								pop_type = pop_type:peasants
+							}
+							order_by = pop_size
+							max = 1
+							check_range_bounds = no
+							if = {
+								limit = {
+									pop_size < scope:location_scope.var:non_peasant_pops
+								}
+								add_pop_size = {
+									value = pop_size
+									multiply = -1
+								}
+							}
+							else = {
+								add_pop_size = {
+									value = scope:location_scope.var:non_peasant_pops
+									multiply = -1
+								}
+							}
+						}
+					}
+					else = {
+						scope:largest_peasant_pop = {
+							add_pop_size = {
+								value = scope:location_scope.var:non_peasant_pops
+								multiply = -1
+							}
+						}
+					}
+				}
+				# Cleanup
+				remove_variable = largest_peasant_pop_size
+				remove_variable = non_peasant_pops
+			}
+			every_owned_location = {
+				limit = { 
+					num_pop_type:peasants > 6
+					location_rank = location_rank:rural_settlement
+					NOT = {
+						vegetation = desert
+						topography = mountains
+						climate = arctic
+					}
+				}
+				change_building_level_in_location = {
+					building = building_type:farming_village
+					value = {
+						add = num_pop_type:peasants
+						divide = 12 #one per 12000 peasants
+						round = yes
+					}
+				}
+			}
+		}
 	}
 }
 
