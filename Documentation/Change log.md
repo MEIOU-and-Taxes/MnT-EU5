@@ -152,7 +152,10 @@ Date: 2025-11-30
     - Tolerance of the True Faith: \-0.5 (New)  
   - ‘Abrahamic communities’:  
     - No longer reduce local Unrest by 0.1  
-    - 
+- Modify requirements for country rank change
+  - prestige requirement changed from 25/50/70 to being positive
+  - added requirement about positive stability
+  - added requirement about govt. power above 60
 
 ##### Disasters
 
