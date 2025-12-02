@@ -1,0 +1,127 @@
+﻿REPLACE:decline_of_empire = {
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+	
+	monthly_spawn_chance = {
+		value = monthly_spawn_chance_low
+		#the below doesn't work because paradox is shit. For now changed to low.
+#		if = {
+#			limit = { 
+#				owner = { num_locations_owned_or_owned_by_subjects_or_below >= 200 }
+#			}
+#			add = monthly_spawn_chance_very_low
+#		}
+#		if = {
+#			limit = { 
+#				owner = { num_locations_owned_or_owned_by_subjects_or_below >= 300 }
+#			}
+#			add = monthly_spawn_chance_very_low
+#		}
+#		if = {
+#			limit = { 
+#				owner = {	
+#					total_not_tolerated_culture_population > {
+#						value = total_population
+#						divide = 3
+#					}
+#				}
+#			}
+#			add = monthly_spawn_chance_very_low
+#		}
+	}
+	
+	can_start = {
+		has_any_active_disaster = no
+		stability < 0
+		num_locations_owned_or_owned_by_subjects_or_below >= 100
+		custom_tooltip = { 
+			text = has_not_had_decline_of_empire_last_25_years 
+			NOT = { has_variable = had_doe_disaster_variable }
+		}
+	}
+	
+	can_end = {
+		stability > 0
+		had_disaster_for_years = {
+			disaster_type = disaster_type:decline_of_empire
+			years >= 5
+		}
+	}
+	modifier = {
+		global_estate_target_satisfaction = large_permanent_target_satisfaction_penalty
+		monthly_rebel_growth = 0.002
+		subject_loyalty = -20
+	}
+	
+	on_start = {
+		trigger_event_non_silently = decline_of_empire.1 
+	}
+	on_end = {
+		set_variable = {
+			name = had_doe_disaster_variable
+			years = 20 
+		}
+		trigger_event_non_silently = decline_of_empire.2 
+	}
+	
+	on_monthly = {
+		random_list = {
+			20 = { custom_tooltip = an_event_occurs_tt }
+			80 = { custom_tooltip = no_event_occurs_tt }
+		}
+		hidden_effect = {
+			random_list = {
+				80 = { }
+				2 = { trigger_event_silently = decline_of_empire.3 }
+				2 = { trigger_event_silently = decline_of_empire.4 }
+				4 = { 
+					trigger = {
+						any_neighbor_country = {
+							NOT = { any_active_disaster = { disaster_type = disaster_type:decline_of_empire } }
+							at_war = no
+							is_during_bankruptcy = no
+							NOR = {
+								in_union_with = root
+								has_mutual_scripted_relation = {
+									type = relation_type:alliance
+									target = root
+								}
+								has_truce_with = root
+								is_at_war_with = root
+								is_fighting_war_together_with = root
+								ROOT = { is_subject_of = prev }
+							}
+						}
+					}
+					random_neighbor_country = {
+						limit = {
+							NOT = { any_active_disaster = { disaster_type = disaster_type:decline_of_empire } }
+							at_war = no
+							is_during_bankruptcy = no
+							NOR = {
+								in_union_with = root
+								has_mutual_scripted_relation = {
+									type = relation_type:alliance
+									target = root
+								}
+								has_truce_with = root
+								is_at_war_with = root
+								is_fighting_war_together_with = root
+								ROOT = { is_subject_of = prev }
+							}
+						}
+						trigger_event_silently = decline_of_empire.5
+					}
+				}
+				4 = { trigger_event_silently = decline_of_empire.6 }
+				8 = {
+					trigger = {
+						num_subjects > 0
+						any_subject = { is_disloyal_subject = yes }
+					}
+					trigger_event_silently = decline_of_empire.7
+				}
+			}
+		}
+	}
+}

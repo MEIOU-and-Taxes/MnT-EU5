@@ -6,7 +6,8 @@ from PyQt6.QtWidgets import QLabel, QComboBox
 
 from tools.plot.MT_grapher import is_path_found, ERROR_FILE_NOT_FOUND
 from tools.plot.custom_widgets import RightClickableComboBox
-from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population
+from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population, \
+	parse_data_markets
 from matplotlib.ticker import MaxNLocator
 
 IS_LOGGING_YEARLY = True
@@ -57,14 +58,23 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	lbl_category = QLabel(category_label_str)
 	combo_category = ComboBoxClass()
 	all_categories = sorted(list(set(item[category_key] for item in all_data)))
-	combo_category.addItem(all_category_str)
+	if all_category_str:
+		combo_category.addItem(all_category_str)
 	combo_category.addItems(all_categories)
+
+	is_market_chart = 'Food Stockpile' in all_categories
 
 	lbl_region = QLabel("Region:")
 	combo_region = ComboBoxClass()
 	all_regions = sorted(list(set(item['region'] for item in all_data)))
 	combo_region.addItem(STR_ALL_REGIONS)
 	combo_region.addItems(all_regions)
+
+	if is_market_chart:
+		lbl_moment.setVisible(False)
+		combo_moment.setVisible(False)
+		lbl_region.setVisible(False)
+		combo_region.setVisible(False)
 
 	has_found_statistics = len(all_moments) > 0 or len(all_categories) > 0 or len(all_regions) > 0
 
@@ -77,7 +87,9 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	filter_layout.addWidget(combo_region, 0, 5)
 	filter_layout.setColumnStretch(6, 1)
 
-	filter_widgets_list.extend([lbl_moment, combo_moment, lbl_category, combo_category, lbl_region, combo_region])
+	widgets = [lbl_moment, combo_moment, lbl_category, combo_category]
+	widgets.extend([lbl_region, combo_region])
+	filter_widgets_list.extend(widgets)
 
 	def update_plot():
 		on_plot_cleared()
@@ -165,7 +177,11 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			coloring_key = category_key if is_region_picked else 'region'
 			unique_items = sorted(list(set(item[coloring_key] for item in filtered_data)))
 			color_map = {name: next(colors) for name in unique_items}
-			labels = [f"{item[category_key]}\n({item['region']})" for item in filtered_data]
+			if is_region_picked:
+				labels = [f"{item[category_key]}" for item in filtered_data]
+			elif is_category_picked:
+				labels = [f"{item['region']}" for item in filtered_data]
+
 			values = [item[value_key] for item in filtered_data]
 			bar_colors = [color_map[item[coloring_key]] for item in filtered_data]
 
@@ -285,6 +301,17 @@ GP_CONFIG = {
     "use_right_click_combo": True
 }
 
+MK_CONFIG = {
+    "parser": parse_data_markets,
+    "category_key": "statistic",
+    "value_key": "value",
+    "category_label": "Statistic:",
+    "all_category_str": None,
+    "value_label": "Value",
+    "add_zero_start": False,
+    "use_right_click_combo": True
+}
+
 # --- Public Graphing Functions ---
 
 def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
@@ -294,6 +321,10 @@ def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_
 def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
 	"""Goods Prices by Region"""
 	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config=GP_CONFIG)
+
+def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared):
+	"""Market Statistics"""
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config=MK_CONFIG)
 
 
 def get_error_message():

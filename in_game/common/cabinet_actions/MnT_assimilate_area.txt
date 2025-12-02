@@ -1,0 +1,62 @@
+﻿assimilate_area = {
+	ability = dip
+	allow_multiple = no
+	
+	potential = {
+		modifier:allow_cabinet_assimilate_area = yes
+	}
+	
+	allow = {
+		cultural_unity < 1.0
+	}
+
+	
+	select_trigger = {
+		looking_for_a = area
+		source = actor
+		target_flag = target
+		name = "assimilate_area_select_area"
+		none_available_msg_key = "assimilate_area_no_areas"
+		column = {
+			data = name
+		}
+		column = {
+			data = area_primary_culture_percentage
+		}
+		column = {
+			data = population
+		}
+		default_sort = area_primary_culture_percentage
+		visible = {
+			any_location_in_area = {
+				local_cultural_unity < 1.0
+				owner ?= {
+					this = scope:actor
+				}
+			}
+		}
+		map_color = {
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+				factor = "province.culture_percentage(scope:actor.dominant_culture)"
+			}
+		}
+	}
+
+	location_modifier = {
+		local_pop_assimilation_speed = 0.008 #mnt: from 0.02
+		local_pop_assimilation_speed_modifier = 0.1 #added by M&T
+	}
+
+
+	map_marker = {
+		show_for_owner = yes
+	}
+
+	progress = {
+		scope:target = {
+			value = "culture_percentage_in_area(scope:actor|scope:actor.dominant_culture)"
+		}
+	}
+}
