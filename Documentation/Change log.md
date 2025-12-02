@@ -163,3 +163,11 @@ Date: 2025-11-30
 - Land war exhaustion from losses: 100 → 300  
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
+
+##### Situations
+
+- Fixes to Colombian Exchange situation
+  - remove the faulty requirement about 1M laborers or peasants needed to change RGO type
+  - adapt logic of RGO changing to new mechanics related to demand on goods absent in the market
+  - remove prestige cost on changing the RGO
+  

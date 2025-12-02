@@ -1,0 +1,133 @@
+﻿#####################################
+# Columbian Exchange				#
+#####################################
+
+REPLACE:is_candidate_for_NW_good = {
+	#There are enough peasants/laborers to at least fill the first level
+	#MnT: remove check for peasants/laborers as action of changing good closes the RGO which is in the location so they will become available
+	#OR = {
+	#	num_pop_type:peasants > 1000
+	#	num_pop_type:laborers > 1000
+	#}
+	#Never replace certain goods
+	NOR = {
+		#Precious
+		raw_material = goods:goods_gold
+		raw_material = goods:silver
+		raw_material = goods:gems
+		raw_material = goods:pearls
+		raw_material = goods:amber
+		raw_material = goods:silk
+		raw_material = goods:incense
+		raw_material = goods:mercury
+		#Spices
+		raw_material = goods:saffron
+		raw_material = goods:pepper
+		raw_material = goods:cloves
+		raw_material = goods:chili
+		#Strategic
+		raw_material = goods:livestock
+		raw_material = goods:iron
+		raw_material = goods:tin
+		#New World						
+		raw_material = goods:tobacco
+		raw_material = goods:cocoa
+		raw_material = goods:maize
+		raw_material = goods:potato
+	}
+	#Is the RGO that we are about to replace rare?
+	#Only replace if there is more than one
+	raw_material = {
+		save_temporary_scope_as = good_to_be_replaced_scope
+	}
+	market = {
+		#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:good_to_be_replaced_scope = goods:copper
+					scope:good_to_be_replaced_scope = goods:tin
+					scope:good_to_be_replaced_scope = goods:marble
+					scope:good_to_be_replaced_scope = goods:alum
+					scope:good_to_be_replaced_scope = goods:beeswax
+					scope:good_to_be_replaced_scope = goods:lead
+				}
+			}
+			#check we still have plenty of locations producing these key raw materials
+			"raw_material_amount(scope:good_to_be_replaced_scope)" > 3
+		}
+		trigger_else = {								
+			#don't care so much about others
+			"raw_material_amount(scope:good_to_be_replaced_scope)" > 1
+		}
+	}
+}
+
+REPLACE:is_candidate_for_OW_good = {
+	#There are enough peasants/laborers to at least fill the first level
+	#MnT: remove check for peasants/laborers as action of changing good closes the RGO which is in the location so they will become available
+	#OR = {
+	#	num_pop_type:peasants > 1000
+	#	num_pop_type:laborers > 1000
+	#}
+	#Never replace certain goods
+	NOR = {
+		#Precious
+		raw_material = goods:goods_gold
+		raw_material = goods:silver
+		raw_material = goods:gems
+		raw_material = goods:pearls
+		raw_material = goods:amber
+		raw_material = goods:silk
+		raw_material = goods:incense
+		raw_material = goods:mercury
+		#Spices
+		raw_material = goods:saffron
+		raw_material = goods:pepper
+		raw_material = goods:cloves
+		raw_material = goods:chili
+		#Strategic
+		raw_material = goods:livestock
+		raw_material = goods:iron
+		raw_material = goods:tin
+		#Old World						
+		raw_material = goods:cotton
+		raw_material = goods:wheat
+		raw_material = goods:millet
+		raw_material = goods:coffee
+		raw_material = goods:rice
+		raw_material = goods:sugar
+		raw_material = goods:wine
+		raw_material = goods:horses
+	}
+	#Is the RGO that we are about to replace rare?
+	#Only replace if there is more than one
+	raw_material = {
+		save_temporary_scope_as = good_to_be_replaced_scope
+	}
+	market = {
+		#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:good_to_be_replaced_scope = goods:copper
+					scope:good_to_be_replaced_scope = goods:tin
+					scope:good_to_be_replaced_scope = goods:marble
+					scope:good_to_be_replaced_scope = goods:alum
+					scope:good_to_be_replaced_scope = goods:beeswax
+					scope:good_to_be_replaced_scope = goods:lead
+				}
+			}
+			any_location_in_market = {
+				count > 3
+				raw_material = scope:good_to_be_replaced_scope
+			}
+		}
+		trigger_else = {								
+			any_location_in_market = {
+				count > 1
+				raw_material = scope:good_to_be_replaced_scope
+			}
+		}
+	}
+}

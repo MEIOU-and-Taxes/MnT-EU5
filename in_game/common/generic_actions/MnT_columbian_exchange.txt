@@ -1,0 +1,844 @@
+﻿#Plant in the Old World
+#Plant tobacco
+#Plant cocoa
+#Plant potatoes
+#Plant maize
+
+REPLACE:move_nw_good_to_new_location = {
+	type = situation
+
+	ai_tick = monthly
+	ai_tick_frequency = 60
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+	}
+
+	allow = {
+		scope:actor ?= {
+			any_market_present_in_country = {
+				save_temporary_scope_as = temp_market
+				any_in_global_list = {
+					variable = new_world_goods
+					save_temporary_scope_as = temp_goods
+					scope:temp_market = {
+						OR = {
+							is_produced_in_market = scope:temp_goods
+							is_traded_in_market = scope:temp_goods
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	price = price:move_good_to_new_location
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:columbian_exchange = this
+			situation_is_active = yes
+		}
+	}
+
+	
+	#goods in scope:goods
+	select_trigger = {
+		looking_for_a = goods
+		target_flag = target_good
+		ai_interaction_source_list = {# Has a market that demands the good
+			every_in_global_list = {
+				variable = new_world_goods
+				#MnT: bypass the whole commented section below: after changes to good demand, it does not exist when it is not available in the market
+
+				#save_temporary_scope_as = temp_goods
+
+				#scope:actor = { 
+				#	random_market_present_in_country = {
+				#		limit = {
+				#			"goods_demand_in_market(scope:temp_goods)" > "goods_supply_in_market(scope:temp_goods)"
+				#		}
+				#		scope:temp_goods = { add_to_list = source }
+				#	}
+				#}
+				add_to_list = source 
+			}
+		}
+		name = "spread_select_goods"
+		none_available_msg_key = "move_nw_good_to_new_location_no_available_good"
+		column = { data = name }
+		visible = {
+			has_tag = new_world_goods
+			#MnT: bypass the whole commented section below
+			
+			#scope:actor ?= {
+			#	any_market_present_in_country = {
+			#		OR = {
+			#			is_produced_in_market = root
+			#			is_traded_in_market = root
+			#		}
+			#	}
+			#}
+		}
+	}
+	
+	#Select Region
+	select_trigger = {
+		looking_for_a = region
+		source = actor
+		target_flag = target_region
+		name = "choose_a_region"
+		none_available_msg_key = "no_regions_available"
+		column = { data = name }
+		visible = {
+			any_area_in_region = {
+				scope:actor = { has_discovered_area = prev }
+				any_location_in_area = {
+					OR = {
+						owner ?= scope:actor
+						top_owner ?= scope:actor
+					}
+				}
+			}
+		}
+	}
+
+	#Select the owned location where to spread the new resource
+	select_trigger = {
+		looking_for_a = location
+		source = target_region
+		source_flags = only_actual_locations
+		target_flag = target_location
+		ai_interaction_source_list = {
+			scope:actor ?= {
+				every_subject_or_below = {
+					every_owned_location = {
+						limit = {
+							is_candidate_for_NW_good = yes
+						}
+						add_to_list = source
+					}
+				}
+				every_owned_location = {
+					limit = {
+						is_candidate_for_NW_good = yes
+					}
+					add_to_list = source
+				}
+			}
+		}
+		map_mode = raw_material
+		name = "choose_location"
+		none_available_msg_key = "move_nw_good_to_new_location_no_available_location"
+		column = { data = rank }
+		column = { data = name }
+		column = { data = raw_material }
+		column = { data = population }
+		visible = {
+			is_ownable = yes
+			has_owner = yes
+			OR = {
+				owner ?= scope:actor
+				top_owner ?= scope:actor
+			}
+			#Tobacco
+			trigger_if = {
+				limit = {
+					scope:target_good ?= goods:tobacco
+				}
+				NOT = { raw_material ?= goods:tobacco }
+				NOT = {vegetation = desert }
+				OR = {
+					topography = flatland
+					topography = hills
+				}
+				OR = {					
+					climate = tropical
+					climate = subtropical
+					climate = mediterranean
+					climate = oceanic
+					climate = continental
+				}
+				NOR = {
+					region = region:scandinavian_region
+					region = region:north_atlantic_islands_region
+					region = region:great_britain_region
+					region = region:ireland_region
+					region = region:ruthenia_region
+					region = region:steppes_region
+					region = region:russian_region
+					region = region:ural_region
+					region = region:mongolia_region
+					region = region:kongo_region
+					region = region:ethiopia_region
+					region = region:nubia_region
+					region = region:somalia_region
+					region = region:madagascar_region
+					region = region:southern_africa_islands_region
+					region = region:sahel_region
+					region = region:canada_region
+					area = area:new_hampshire_area
+					area = area:southern_new_england_area
+					area = area:maine_area
+					area = area:hudson_area
+					area = area:haudenosaunee_area
+					area = area:westsylvania_area
+					area = area:maryland_area
+					area = area:west_virginia_area
+					area = area:ohio_area
+					area = area:indiana_area
+					area = area:michigan_area
+					area = area:illinois_area
+					area = area:wisconsin_area
+					area = area:alabama_area
+					area = area:mississippi_area
+					region = region:west_coast_region
+					region = region:great_plains_region
+					region = region:alaska_region
+					region = region:brazil_region
+					region = region:chaco_region
+					region = region:australia_region
+					region = region:new_zealand_region
+				}
+			}
+			#Cocoa https://www.researchgate.net/profile/Rachel-Friedman-12/publication/269616565/figure/fig1/AS:392096088379400@1470494400663/Map-of-current-global-distribution-of-cocoa-developed-in-ArcGIS-based-on-data-from.png
+			trigger_if = {
+				limit = {
+					scope:target_good ?= goods:cocoa
+				}
+				NOT = { raw_material ?= goods:cocoa }
+				NOR = {
+					vegetation = desert
+					vegetation = sparse
+					vegetation = grasslands
+				}
+				area = {
+					is_area_sea = no
+				}
+				NOR = { 
+					topography = atoll
+					topography = wetlands
+				}
+				climate = tropical
+				NOR = {
+					region = region:bengal_region
+					region = region:western_india_region
+					area = area:mozambique_area
+					area = area:ruvuma_lurio_area
+					area = area:gondwana_area
+					area = area:andhra_area
+					area = area:telingana_area
+					area = area:vidarbha_area
+					area = area:maharashtra_area
+					area = area:konkan_area
+					area = area:lower_mekong_area
+					area = area:northern_tai_highland_area
+					area = area:champa_area
+					area = area:arakhan_area
+					area = area:irrawady_area
+					area = area:shan_highland_area
+					area = area:kachin_area
+					area = area:mayaab_area
+					area = area:puuk_area
+					area = area:chactemal_area
+				}
+			}
+			#Maize https://ipad.fas.usda.gov/cropexplorer/cropview/commodityView.aspx?cropid=0440000
+			trigger_if = {
+				limit = {
+					scope:target_good ?= goods:maize
+				}
+				NOT = { raw_material ?= goods:maize }
+				OR = {
+					vegetation = farmland
+					vegetation = forest
+					vegetation = woods
+					vegetation = grasslands
+				}
+				area = {
+					is_area_sea = no
+				}
+				OR = { 
+					topography = flatland
+					topography = hills
+				}
+				OR = {
+					climate = tropical
+					climate = subtropical
+					climate = continental
+					climate = oceanic
+					climate = mediterranean
+				}
+			}
+			#Chili https://es.wikipedia.org/wiki/Capsicum
+			trigger_if = {
+				limit = {
+					scope:target_good ?= goods:chili
+				}
+				NOT = { raw_material ?= goods:chili }
+				OR = {
+					vegetation = farmland
+					vegetation = forest
+					vegetation = woods
+					vegetation = grasslands
+					vegetation = sparse
+				}
+				area = {
+					is_area_sea = no
+				}
+				OR = { 
+					topography = wetlands
+					topography = flatland
+					topography = hills
+					topography = plateau
+				}
+				OR = {
+					climate = tropical
+					climate = subtropical
+					climate = mediterranean
+					climate = oceanic
+					climate = continental
+				}
+			}
+			#Potato
+			trigger_if = {
+				limit = {
+					scope:target_good ?= goods:potato
+				}
+				NOT = { raw_material ?= goods:potato }
+				NOT = {
+					vegetation = desert
+				}
+				area = {
+					is_area_sea = no
+				}
+				NOR = {
+					climate = tropical
+					climate = arid
+					climate = cold_arid
+					climate = arctic
+				}
+			}
+		}
+	}
+
+	effect = {
+		scope:target_location ?= {			
+			change_max_raw_material_workers = {
+				value = rgo_workers
+				subtract = 1
+				min = 0
+				multiply = -1
+			}
+			change_prosperity = prosperity_weak_penalty
+			change_raw_material = scope:target_good
+		}
+	}
+	
+	ai_will_do = {
+		value = -1 #Bias against doing anything
+		#scope:target_good, scope:target_location
+		if = {
+			limit = {
+				exists = scope:target_good
+				exists = scope:target_location
+			}
+			scope:target_good = {
+				#We try to keep expensive resources
+				add = "price_in_market(scope:target_location.market)"
+				scope:target_location.raw_material = {
+					subtract = "price_in_market(scope:target_location.market)"
+				}
+				#If there is surplus is less valuable
+				if = {
+					limit = {
+						is_in_surplus_in_market = { market = scope:mission_target_market country = root value > 0 }
+					}
+					subtract = 	100
+				}
+				#If the good is food
+				if = {
+					limit = {
+						is_food = yes
+					}
+					subtract = scope:target_good.food_value
+					add = scope:target_location.raw_material.food_value
+				}
+
+			}
+		}
+	}
+}
+
+#Plant in the New World
+#Plant Cotton
+#Plant Wheat
+#Plant Olives
+#Plant coffee
+#Plant millet
+#Plant rice
+#Plant sugar
+#Release horses
+#Release pigs/ Raise Cattle
+REPLACE:move_ow_good_to_new_location = {
+	type = situation
+
+	ai_tick = monthly
+	ai_tick_frequency = 60
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+	}
+
+	allow = {
+		scope:actor ?= {
+			any_market_present_in_country = {
+				save_temporary_scope_as = temp_market
+				any_in_global_list = {
+					variable = old_world_goods
+					save_temporary_scope_as = temp_goods
+					scope:temp_market = {
+						OR = {
+							is_produced_in_market = scope:temp_goods
+							is_traded_in_market = scope:temp_goods
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	price = price:move_good_to_new_location
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:columbian_exchange = this
+			situation_is_active = yes
+		}
+	}
+
+	#goods in scope:goods
+	select_trigger = {
+		looking_for_a = goods
+		target_flag = target_good
+		ai_interaction_source_list = {# Has a market that demands the good
+			every_in_global_list = {
+				variable = old_world_goods
+				#MnT: bypass the whole commented section below: after changes to good demand, it does not exist when it is not available in the market
+
+				# save_temporary_scope_as = temp_goods
+				# scope:actor = { 
+				# 	random_market_present_in_country = {
+				# 		limit = {
+				# 			"goods_demand_in_market(scope:temp_goods)" > "goods_supply_in_market(scope:temp_goods)"
+				# 		}
+				# 		scope:temp_goods = { add_to_list = source }
+				# 	}
+				# }
+				add_to_list = source
+			}
+		}
+		name = "spread_select_goods"
+		none_available_msg_key = "move_nw_good_to_new_location_no_available_good"
+		column = { data = name }
+		visible = {
+			has_tag = old_world_goods
+			#MnT: bypass the whole commented section below
+			#scope:actor ?= {
+			#	any_market_present_in_country = {
+			#		OR = {
+			#			is_produced_in_market = root
+			#			is_traded_in_market = root
+			#		}
+			#	}
+			#}
+		}
+	}
+	
+	#Select Region
+	select_trigger = {
+		looking_for_a = region
+		source = actor
+		target_flag = target_region
+		name = "choose_a_region"
+		none_available_msg_key = "no_regions_available"
+		column = { data = name }
+		visible = {
+			OR = {
+				continent = continent:america
+				continent = continent:oceania
+				this = region:macaronesia_region
+			}
+			any_area_in_region = {
+				scope:actor = { has_discovered_area = prev }
+				any_location_in_area = {
+					OR = {
+						owner ?= scope:actor
+						top_owner ?= scope:actor
+					}
+				}
+			}
+		}
+	}
+	#Select the owned location where to spread the new resource
+	select_trigger = {
+		looking_for_a = location
+		source = target_region
+		source_flags = only_actual_locations
+		target_flag = target_location
+		ai_interaction_source_list = {
+			scope:actor ?= {
+				every_subject_or_below = {
+					every_owned_location = {
+						limit = {
+							is_candidate_for_OW_good = yes
+						}
+						add_to_list = source
+					}
+				}
+				every_owned_location = {
+					limit = {
+						is_candidate_for_OW_good = yes
+					}
+					add_to_list = source
+				}
+			}
+		}
+		name = "choose_location"
+		none_available_msg_key = "move_ow_good_to_new_location_no_available_location"
+		column = { data = name }
+		column = { data = raw_material }
+		visible = {
+			is_ownable = yes
+			has_owner = yes
+			OR = {
+				owner ?= scope:actor
+				top_owner ?= scope:actor
+			}
+			OR = {
+				continent = continent:america
+				continent = continent:oceania
+				region = region:macaronesia_region
+			}
+			#Cotton https://ipad.fas.usda.gov/cropexplorer/cropview/commodityView.aspx?cropid=2631000
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:cotton
+				}
+				NOT = { raw_material ?= goods:cotton }
+				NOR = {
+					vegetation = desert
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = flatland
+				}
+				OR = {
+					climate = subtropical
+					climate = tropical
+					climate = arid
+					climate = cold_arid
+					climate = mediterranean
+				}
+			}
+			#wheat https://ipad.fas.usda.gov/cropexplorer/cropview/commodityView.aspx?cropid=0410000
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:wheat
+				}
+				NOT = { raw_material ?= goods:wheat }
+				NOR = {
+					vegetation = desert
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = flatland
+					topography = plateau
+				}
+				OR = {
+					climate = subtropical
+					climate = continental
+					climate = mediterranean
+					climate = oceanic
+					climate = cold_arid
+				}
+			}
+			#millet https://ipad.fas.usda.gov/cropexplorer/cropview/commodityView.aspx?cropid=0410000
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:millet
+				}
+				NOT = { raw_material ?= goods:millet }
+				NOR = {
+					vegetation = desert
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = flatland
+					topography = hills
+					topography = plateau
+				}
+				OR = {
+					climate = subtropical
+					climate = tropical
+					climate = continental
+					climate = mediterranean
+					climate = oceanic
+					climate = arid
+					climate = cold_arid
+				}
+			}
+			#olives https://www.reddit.com/r/MapPorn/comments/1bjstdu/major_olive_growing_regions_of_the_world/#lightbox
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:olives
+				}
+				NOT = { raw_material ?= goods:olives }
+				NOR = {
+					vegetation = desert
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = flatland
+					topography = hills
+					topography = plateau
+				}
+				OR = {
+					climate = mediterranean
+					climate = cold_arid
+				}
+			}
+			#coffee https://www.researchgate.net/profile/Christian-Bunn/publication/269419801/figure/fig1/AS:295281645113350@1447412038471/Global-coffee-location-database-and-major-coffee-growing-regions-Blue-points-represent.png
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:coffee
+				}
+				NOT = { raw_material ?= goods:coffee }
+				OR = {
+					vegetation = woods
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = flatland
+					topography = hills
+					topography = plateau
+					topography = mountains
+				}
+				OR = {
+					climate = subtropical
+					climate = tropical
+				}
+				NOR = {
+					region = region:east_coast_region
+					region = region:great_plains_region
+					region = region:caribbean_region
+				}
+			}
+			#rice https://ipad.fas.usda.gov/cropexplorer/cropview/commodityView.aspx?cropid=0422110
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:rice
+				}
+				NOT = { raw_material ?= goods:rice }
+				OR = {
+					vegetation = farmland
+					vegetation = grasslands
+					vegetation = woods
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = flatland
+					topography = wetlands
+				}
+				OR = {
+					climate = subtropical
+					climate = tropical
+				}
+				NOR = {
+					region = region:east_coast_region
+				}
+			}
+			#sugar https://sugar.ca/sites/default/uploads/images/Geography%20of%20sugar%20graph.png
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:sugar
+				}
+				NOT = { raw_material ?= goods:sugar }
+				NOR = {
+					vegetation = desert
+					vegetation = sparse
+				}
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = wetlands
+				}
+				OR = {
+					climate = tropical
+					climate = subtropical
+					climate = mediterranean
+				}
+			}
+			#wine https://www.reddit.com/media?url=https%3A%2F%2Fexternal-preview.redd.it%2FneRHDZFAEL_Mthmtcg1XdV7njNkMfnlsR2KSMdBYLg8.jpg%3Fauto%3Dwebp%26s%3Dd114383394d6b5b719ba097dc6e14c07d8cc82f7
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:wine
+				}
+				NOT = { raw_material ?= goods:wine }
+				NOR = {
+					vegetation = jungle
+					vegetation = forest
+				}
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = hills
+					topography = mountains
+				}
+				OR = {
+					climate = cold_arid
+					climate = mediterranean
+					climate = oceanic
+					climate = continental
+				}
+				NOR = {
+					region = region:great_plains_region
+					region = region:caribbean_region
+				}
+			}
+			#horses https://www.researchgate.net/publication/281822984/figure/fig11/AS:341927150014466@1458533193400/Potential-habitat-suitable-land-cover-for-feral-horses-E-ferus-The-distribution-of.png
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:horses
+				}
+				NOT = { raw_material ?= goods:horses }
+				NOR = {
+					vegetation = jungle
+					vegetation = forest
+					vegetation = woods
+				}
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = hills
+				}
+				OR = {
+					climate = cold_arid
+					climate = arid
+					climate = mediterranean
+					climate = oceanic
+					climate = continental
+				}
+			}
+			#livestock https://platform.vox.com/wp-content/uploads/sites/2/chorus/assets/4643285/cattle_distribution.png
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:livestock
+				}
+				NOT = { raw_material ?= goods:livestock }
+				NOR = {
+					vegetation = jungle
+					vegetation = forest
+					vegetation = woods
+				}
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = hills
+				}
+				NOR = {
+					climate = arctic
+				}
+			}
+			#Saffron https://es.wikipedia.org/wiki/Crocus_sativus
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:saffron
+				}
+				NOT = { raw_material ?= goods:saffron }
+				OR = {
+					vegetation = sparse
+					vegetation = grasslands
+					vegetation = farmland
+				}
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = hills
+				}
+				OR = {
+					climate = arid
+					climate = cold_arid
+					climate = mediterranean
+				}
+			}
+			#Pepper https://en.wikipedia.org/wiki/Black_pepper
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:pepper
+				}
+				NOT = { raw_material ?= goods:pepper }
+				OR = {
+					vegetation = jungle
+					vegetation = woods
+					vegetation = forest
+				}
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = hills
+				}
+				climate = tropical
+			}
+			#Cloves https://en.wikipedia.org/wiki/Clove
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:cloves
+				}
+				NOT = { raw_material ?= goods:cloves }
+				vegetation = jungle
+				OR = {
+					topography = plateau
+					topography = flatland
+					topography = hills
+				}
+				climate = tropical
+			}
+		}
+	}
+
+	effect = {
+		scope:target_location ?= {			
+			change_max_raw_material_workers = {
+				value = rgo_workers
+				subtract = 1
+				min = 0
+				multiply = -1
+			}
+			change_prosperity = prosperity_weak_penalty
+			change_raw_material = scope:target_good
+		}
+	}
+	
+	ai_will_do = {
+		#If the action is doable by the AI, 
+		#meaning there is a combination of target good and target location where it can replace the RGO it should do it
+		add = 100
+	}
+}
