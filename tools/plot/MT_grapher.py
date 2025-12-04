@@ -344,8 +344,47 @@ class MainWindow(QMainWindow):
 
 	def setup_tooltip_handler(self):
 		"""Creates a new tooltip handler for the current axes."""
-		self.cursor_hover_handler = InteractiveLineTooltip(self.ax)
+		self.cursor_hover_handler = InteractiveLineTooltip(self.ax, on_line_click_callback=self.handle_line_click)
 		self.cursor_hover_handler.setup_tooltip_handler()
+
+	def handle_line_click(self, line_label):
+		if not self.current_graph_info:
+			return
+
+		if self.current_graph_info['title'] == "Market Statistics":
+			return
+
+		config = self.current_graph_info['info']['config']
+		category_key = config['category_key']
+
+		category_combo = self.filter_widget_map.get(category_key)
+		region_combo = self.filter_widget_map.get('region')
+
+		if not category_combo or not region_combo:
+			return
+
+		is_category_specific = category_combo.currentIndex() != 0
+		is_region_specific = region_combo.currentIndex() != 0
+
+		for combo in [category_combo, region_combo]:
+			combo.blockSignals(True)
+
+		try:
+			if is_category_specific and not is_region_specific:
+				index = region_combo.findText(line_label)
+				if index != -1:
+					region_combo.setCurrentIndex(index)
+					category_combo.setCurrentIndex(0)
+			elif is_region_specific and not is_category_specific:
+				index = category_combo.findText(line_label)
+				if index != -1:
+					category_combo.setCurrentIndex(index)
+					region_combo.setCurrentIndex(0)
+		finally:
+			for combo in [category_combo, region_combo]:
+				combo.blockSignals(False)
+
+		self.redraw_current_plot()
 
 	def clear_tooltip_handler(self):
 		"""Clears any existing tooltip handler."""
