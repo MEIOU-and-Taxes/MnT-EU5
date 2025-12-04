@@ -120,6 +120,7 @@ class MainWindow(QMainWindow):
 		self.is_log_scale = False
 		self.is_moving_average = False
 		self.period_value = 5
+		self.chart_filter_memory = {}
 
 		# --- Main Layout ---
 		self.central_widget = QWidget()
@@ -306,6 +307,7 @@ class MainWindow(QMainWindow):
 		self._reset_filter_layout()
 		self.clear_preset_buttons()
 		self.ax.clear()
+		self.fig.suptitle(None)
 		self.ax.set_title("Menu")
 		text_to_show = ERROR_FILE_NOT_FOUND if not is_path_found else msg if msg else graph_introduction.strip()
 		self.ax.text(0.5, 0.5, text_to_show,
@@ -392,6 +394,11 @@ class MainWindow(QMainWindow):
 
 	def display_chart(self, graph_info, title):
 		"""Clears the axes and plots a new graph."""
+		if self.current_graph_info:
+			prev_title = self.current_graph_info['title']
+			current_filters = {key: widget.currentText() for key, widget in self.filter_widget_map.items() if isinstance(widget, QComboBox)}
+			self.chart_filter_memory[prev_title] = current_filters
+
 		self.current_graph_info = {'info': graph_info, 'title': title}
 		self.is_log_scale = False
 		self.btn_log_scale.setChecked(False)
@@ -407,7 +414,8 @@ class MainWindow(QMainWindow):
 
 		self._reset_filter_layout()
 		self.ax.clear()
-		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.925)
+		self.fig.suptitle(title)
+		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.90)
 
 		try:
 			graph_func(
@@ -421,15 +429,42 @@ class MainWindow(QMainWindow):
 				lambda: self.is_moving_average,
 				lambda: self.period_value
 			)
-			self.ax.set_title(title)
 			self.canvas.draw() # Draw the canvas first, to update the graph elements
 			self.setup_preset_buttons(title)
+
+			for widget in self.filter_widget_map.values():
+				widget.blockSignals(True)
+
+			try:
+				if title in self.chart_filter_memory:
+					saved_filters = self.chart_filter_memory[title]
+					for key, value in saved_filters.items():
+						if key in self.filter_widget_map:
+							widget = self.filter_widget_map[key]
+							index = widget.findText(value)
+							if index != -1:
+								widget.setCurrentIndex(index)
+				elif title in self.key_configs and "F1" in self.key_configs[title]:
+					f1_config = self.key_configs[title]["F1"]
+					is_valid = all(
+						key in self.filter_widget_map and self.filter_widget_map[key].findText(value) != -1
+						for key, value in f1_config['filters'].items()
+					)
+					if is_valid:
+						for key, value in f1_config['filters'].items():
+							widget = self.filter_widget_map[key]
+							index = widget.findText(value)
+							widget.setCurrentIndex(index)
+			finally:
+				for widget in self.filter_widget_map.values():
+					widget.blockSignals(False)
+
+			self.redraw_current_plot()
 
 		except Exception as e:
 			self.ax.text(0.5, 0.5, f"Error:\n{e}", ha='center', va='center')
 			traceback.print_exc()
 
-		self.ax.set_title(title)
 		self.canvas.draw()
 
 	def clear_preset_buttons(self):
