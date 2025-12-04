@@ -77,8 +77,21 @@ print_roads = {
 	every_road_type = {
 		if = {
 			limit = {
-				always = yes
-				#TODO-optimization: limit checking later roads if too early
+				OR = {
+					this = road_type:gravel_road
+					AND = {
+						this = road_type:paved_road
+						current_age = age_3_discovery
+					}
+					AND = {
+						this = road_type:modern_road
+						current_age = age_5_absolutism
+					}
+					AND = {
+						this = road_type:railroad
+						current_age = age_6_revolutions
+					}
+				}
 			}
 
 			set_local_variable = { name = road_curr value = this }
@@ -93,7 +106,7 @@ print_roads = {
 						remove_local_variable = loc_has_road
 					}
 
-					every_connected_location = {
+					every_neighbor_location = {
 						if = {
 							limit = {
 								has_road_of_type_to = {
