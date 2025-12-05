@@ -1,0 +1,86 @@
+﻿namespace = auto_marry
+
+auto_marry.1 = {
+	type = country_event
+	title = noble_auto_marry.1.t
+	desc = noble_auto_marry.1.d
+	
+	trigger = {
+		is_ai = no
+		any_character = {
+			filter = { 
+				is_courtier = yes
+			}
+			count < 20
+		}
+		any_character = {
+			is_married = no
+			is_female = no
+			NOT = { is_eligible_heir_baseline = root }
+			character_can_marry_trigger = yes
+			age_in_years > 22
+			age_in_years < 37
+		}
+	}
+	hidden = yes
+	
+	immediate = {
+		random_character = {
+			limit = {
+				is_married = no
+				is_female = no
+				NOT = { is_eligible_heir_baseline = root }
+				character_can_marry_trigger = yes
+				age_in_years > 22
+				age_in_years < 37
+			}
+			save_scope_as = target_male
+		}
+		if = {
+			limit = {
+				any_character = {
+					is_married = no
+					is_female = yes
+					NOT = {
+						is_close_relative = scope:target_male
+					}
+					NOT = { is_eligible_heir_baseline = root }
+					character_can_marry_trigger = yes
+					age_in_years > 22
+					age_in_years < 37
+				}
+			}
+			random_character = {
+				limit = {
+					is_married = no
+					is_female = yes
+					NOT = {
+						is_close_relative = scope:target_male
+					}
+					NOT = { is_eligible_heir_baseline = root }
+					character_can_marry_trigger = yes
+					age_in_years > 22
+					age_in_years < 37
+				}
+				save_scope_as = target_female
+			}
+		}
+		else = {
+			create_character = {
+				religion = target_male.religion
+				age = { 16 21 }
+				female = yes
+				random_estate_type_trigger = {
+					NOR = {
+						this = estate_type:nobles_estate
+						this = estate_type:clergy_estate
+						this = estate_type:dhimmi_estate
+					}
+				}
+				
+				save_scope_as = target_female 
+			}
+		}
+		scope:target_male ?= { marry_character = scope:target_female }
+	}
+}

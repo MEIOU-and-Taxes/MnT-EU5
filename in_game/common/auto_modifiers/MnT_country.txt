@@ -23,6 +23,8 @@ REPLACE:country_base_values = {
 	navy_tradition_decay = 0.005
 	global_maritime_presence_decay = 0.005
 	monthly_karma_decay = 0.01
+	
+	global_prosperity_decay = 0.01
 
 	monthly_rebel_growth = 0.001
 	
@@ -48,7 +50,7 @@ REPLACE:country_base_values = {
 	privateer_durability = 0.05
 	
 	skill_of_new_artists = 0.1
-	
+	stability_investment = -0.2 #added by M&T, this acts as a base force pushing towards instability.
 
 	wrong_culture_levy_size = -0.75
 	
@@ -56,8 +58,8 @@ REPLACE:country_base_values = {
 	
 	maximum_religious_influence = 100
 	
-	global_pop_assimilation_speed = 0.001
-	global_pop_conversion_speed = 0.002
+	#global_pop_assimilation_speed = 0.001 #removed, replaced by scaling amount based on total population
+	#global_pop_conversion_speed = 0.002 #removed, replaced by scaling amount based on total population
 	
 	
 	diplomatic_range = 1000
@@ -106,7 +108,7 @@ REPLACE:country_base_values = {
 
 	bank_interest = 0.10
 	merchant_power_from_maritime = 0.05
-	monthly_inflation = -0.001
+	monthly_inflation = -0.002 #M&T from -0.001
 
 	
 	sea_cost_on_distance_from_capital_when_maritime = 4 #M&T from 5
@@ -227,4 +229,67 @@ REPLACE:country_base_values = {
 
 
  
+}
+
+REPLACE:stability_impact = {
+	scales_with = {
+		value = stability
+		multiply = 0.01
+	}
+
+	global_pop_promotion_speed_modifier = 0.4 #M&T moved from only positive, reduced from 1.0
+	global_population_growth = 0.002 #M&T added
+	pop_join_rebel_threshold = -0.1
+	pop_leave_rebels_threshold = -0.05
+	
+	
+
+
+	great_power_score = 5.0
+}
+
+REPLACE:positive_stability_impact = {
+	potential_trigger = {
+		stability > 0
+	}	
+
+	scales_with = {
+		value = stability
+		multiply = 0.01
+	}
+
+		
+	global_estate_target_satisfaction = positive_stability_satisfaction_scale
+	#global_pop_promotion_speed_modifier = 1.0 #M&T removed
+	global_monthly_prosperity = 0.002 #M&T added
+	monthly_doom = -0.1
+	monthly_righteousness = 0.1
+}
+
+REPLACE:negative_stability_impact = {
+	potential_trigger = {
+		stability < 0
+	}	
+
+	scales_with = {
+		value = stability
+		multiply = -0.01
+	}
+
+		
+	global_estate_target_satisfaction = negative_stability_satisfaction_scale
+	global_mercenaries_modifier = 0.5
+	global_monthly_prosperity = 0.004 #M&T added
+	monthly_doom = 0.5
+	monthly_righteousness = -0.1
+}
+
+REPLACE:peasants_percentage_in_country = {
+	potential_trigger = { total_population > 0 } # No division by 0
+	scales_with = {
+		value = percentage_pop_type_in_country:peasants
+	}
+
+	monthly_towards_traditional_economy = societal_value_monthly_move
+	stability_investment = 0.2 #added by M&T
 }

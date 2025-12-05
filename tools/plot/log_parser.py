@@ -2,11 +2,12 @@ import re
 
 def clear_all_caches():
 	"""Resets all data caches to force reparsing on the next call."""
-	global bt_data_cache, gp_data_cache, pop_data_cache, mk_data_cache
+	global bt_data_cache, gp_data_cache, pop_data_cache, mk_data_cache, rt_data_cache
 	bt_data_cache = None
 	gp_data_cache = None
 	pop_data_cache = None
 	mk_data_cache = None
+	rt_data_cache = None
 	print("All data caches have been cleared.")
 
 
@@ -68,10 +69,12 @@ def parse_data_goods_prices(data):
 def _parse_population_value(value_str):
 	"""Converts a population string (e.g., '2.2M', '75K', '1,234') to an integer."""
 	value_str = value_str.strip().replace(',', '')
-	if 'M' in value_str:
-		return int(float(value_str.replace('M', '')) * 1_000_000)
 	if 'K' in value_str:
 		return int(float(value_str.replace('K', '')) * 1_000)
+	if 'M' in value_str:
+		return int(float(value_str.replace('M', '')) * 1_000_000)
+	if 'B' in value_str:
+		return int(float(value_str.replace('B', '')) * 1_000_000_000)
 	return int(value_str)
 
 def parse_data_population(data):
@@ -94,6 +97,7 @@ def parse_data_population(data):
 			parsed_data.append({
 				"moment": 1 + int(m.group(1)),
 				"region": m.group(2).strip(),
+				"statistic": "Total Population", #TODO: Add estates
 				"population": population_value
 			})
 		except (ValueError, IndexError) as e:
@@ -101,6 +105,31 @@ def parse_data_population(data):
 
 	pop_data_cache = parsed_data
 	print(f"Found and cached {len(pop_data_cache)} population entries.")
+	return parsed_data
+
+
+def parse_data_road_types(data):
+	global rt_data_cache
+	if rt_data_cache is not None:
+		return rt_data_cache
+
+	print("Parsing road type data for the first time...")
+	pattern = re.compile(r"::RT::(\d+):(.+?):(.+?):(\d+):(\d+)")
+	parsed_data = []
+	for m in pattern.finditer(data):
+		locations = int(m.group(4))
+		locations_with_road = int(m.group(5))
+		coverage = (locations_with_road / locations) * 100 if locations > 0 else 0
+		parsed_data.append({
+			"moment": 1 + int(m.group(1)),
+			"region": m.group(2).strip(),
+			"road_type": m.group(3).strip(),
+			"locations": locations,
+			"locations_with_road": locations_with_road,
+			"coverage_percentage": coverage
+		})
+	rt_data_cache = parsed_data
+	print(f"Found and cached {len(rt_data_cache)} road type entries.")
 	return parsed_data
 
 
