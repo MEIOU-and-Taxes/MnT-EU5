@@ -15,16 +15,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure Documentation/Change log.md was modified
+      - name: Get commit messages in PR
+        id: commits
         run: |
           base_sha="${{ github.event.pull_request.base.sha }}"
-          head_sha="${{ github.sha }}"
+          head_sha="${{ github.event.pull_request.head.sha }}"
+          msgs=$(git log --format=%s "$base_sha..$head_sha" || true)
 
-          echo "Checking files changed between $base_sha and $head_sha"
-          changed_files=$(git diff --name-only "$base_sha" "$head_sha")
-          echo "$changed_files"
+          echo "messages<<EOF" >> $GITHUB_OUTPUT
+          echo "$msgs" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Check if all commits are in ignored types
+        id: check_ignored
+        run: |
+          allowed_re='^(build|chore|ci|docs|style|refactor|perf|test)(\(.+\))?:'
+          all_allowed=true
+
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            if ! echo "$msg" | grep -Eq "$allowed_re"; then
+              all_allowed=false
+              break
+            fi
+          done <<< "${{ steps.commits.outputs.messages }}"
+
+          echo "all_allowed=$all_allowed" >> $GITHUB_OUTPUT
+
+      - name: Skip changelog requirement for pure non-user-facing changes
+        if: steps.check_ignored.outputs.all_allowed == 'true'
+        run: echo "All commits are in ignored types; skipping changelog check."
+
+      - name: Ensure Documentation/Change log.md was modified
+        if: steps.check_ignored.outputs.all_allowed != 'true'
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.event.pull_request.head.sha }}"
           required_file="Documentation/Change log.md"
+
+          changed_files=$(git diff --name-only "$base_sha" "$head_sha")
 
           if ! echo "$changed_files" | grep -Fxq "$required_file"; then
             echo "::error ::$required_file must be updated in this pull request."
