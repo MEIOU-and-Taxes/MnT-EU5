@@ -1,0 +1,32 @@
+name: Require changelog update
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  require-changelog:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure Documentation/Change log.md was modified
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.sha }}"
+
+          echo "Checking files changed between $base_sha and $head_sha"
+          changed_files=$(git diff --name-only "$base_sha" "$head_sha")
+          echo "$changed_files"
+
+          required_file="Documentation/Change log.md"
+
+          if ! echo "$changed_files" | grep -Fxq "$required_file"; then
+            echo "::error ::$required_file must be updated in this pull request."
+            exit 1
+          fi
