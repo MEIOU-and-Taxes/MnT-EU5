@@ -135,10 +135,12 @@ REPLACE:move_nw_good_to_new_location = {
 		map_mode = raw_material
 		name = "choose_location"
 		none_available_msg_key = "move_nw_good_to_new_location_no_available_location"
-		column = { data = rank }
+		column = { data = owner_flag }
 		column = { data = name }
 		column = { data = raw_material }
 		column = { data = population }
+		column = { data = control}
+
 		visible = {
 			is_ownable = yes
 			has_owner = yes
@@ -342,35 +344,55 @@ REPLACE:move_nw_good_to_new_location = {
 	}
 	
 	ai_will_do = {
-		value = -1 #Bias against doing anything
 		#scope:target_good, scope:target_location
+
+		#starting factor from price
+		# -10 if prices are equal
+		# 0 if new good price is 150% of replaced good price
+		# 10 if new good price is double the price of replaced good
+		value = 0
+
+
 		if = {
 			limit = {
 				exists = scope:target_good
 				exists = scope:target_location
 			}
-			scope:target_good = {
-				#We try to keep expensive resources
-				add = "price_in_market(scope:target_location.market)"
-				scope:target_location.raw_material = {
-					subtract = "price_in_market(scope:target_location.market)"
+			add = "scope:target_good.price_in_market(scope:target_location.market)"
+			divide = "scope:target_location.raw_material.price_in_market(scope:target_location.market)"
+			subtract = 1.5
+			multiply = 20
+
+			if = {
+				limit = {
+					scope:target_location.market  = {
+						any_location_in_market = {
+							count = 0
+							raw_material = scope:target_good
+						}
+					}
 				}
+				add = 	10
+			}
+
+			scope:target_good = {
 				#If there is surplus is less valuable
 				if = {
 					limit = {
-						is_in_surplus_in_market = { market = scope:mission_target_market country = root value > 0 }
+						is_in_surplus_in_market = { market = scope:target_location.market country = root value > 0 }
 					}
 					subtract = 	100
 				}
-				#If the good is food
+			}
+
+			scope:target_location.raw_material = {
+				#if replaced good is not in surplus, add heavy penalty
 				if = {
 					limit = {
-						is_food = yes
+						NOT = { is_in_surplus_in_market = { market = scope:target_location.market country = root value > 1 } }
 					}
-					subtract = scope:target_good.food_value
-					add = scope:target_location.raw_material.food_value
+					subtract = 	100
 				}
-
 			}
 		}
 	}
@@ -517,8 +539,11 @@ REPLACE:move_ow_good_to_new_location = {
 		}
 		name = "choose_location"
 		none_available_msg_key = "move_ow_good_to_new_location_no_available_location"
+		column = { data = owner_flag }
 		column = { data = name }
 		column = { data = raw_material }
+		column = { data = population }
+		column = { data = control}
 		visible = {
 			is_ownable = yes
 			has_owner = yes
@@ -839,8 +864,56 @@ REPLACE:move_ow_good_to_new_location = {
 	}
 	
 	ai_will_do = {
-		#If the action is doable by the AI, 
-		#meaning there is a combination of target good and target location where it can replace the RGO it should do it
-		add = 100
+		#scope:target_good, scope:target_location
+
+		#starting factor from price
+		# -10 if prices are equal
+		# 0 if new good price is 150% of replaced good price
+		# 10 if new good price is double the price of replaced good
+		value = 0
+
+
+		if = {
+			limit = {
+				exists = scope:target_good
+				exists = scope:target_location
+			}
+			add = "scope:target_good.price_in_market(scope:target_location.market)"
+			divide = "scope:target_location.raw_material.price_in_market(scope:target_location.market)"
+			subtract = 1.5
+			multiply = 20
+
+			if = {
+				limit = {
+					scope:target_location.market  = {
+						any_location_in_market = {
+							count = 0
+							raw_material = scope:target_good
+						}
+					}
+				}
+				add = 	10
+			}
+
+			scope:target_good = {
+				#If there is surplus is less valuable
+				if = {
+					limit = {
+						is_in_surplus_in_market = { market = scope:target_location.market country = root value > 0 }
+					}
+					subtract = 	100
+				}
+			}
+
+			scope:target_location.raw_material = {
+				#if replaced good is not in surplus, add heavy penalty
+				if = {
+					limit = {
+						NOT = { is_in_surplus_in_market = { market = scope:target_location.market country = root value > 1 } }
+					}
+					subtract = 	100
+				}
+			}
+		}
 	}
 }
