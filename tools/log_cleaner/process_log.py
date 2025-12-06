@@ -2,7 +2,9 @@
 import os
 from collections import defaultdict
 
+from tools.shared.bootstrap import ensure_repo_paths
 from tools.shared.fetch_logs import get_log_directory_from_config
+from tools.shared.requirements_install import ensure_requirements_installed
 
 def process_log(p_file_error, p_file_error_cleaned, p_file_error_cleaned_old, p_file_error_cleaned_oldest):
 	# Handle log file rotation
@@ -91,6 +93,10 @@ def process_log(p_file_error, p_file_error_cleaned, p_file_error_cleaned_old, p_
 	print(f"Processed log saved to {output_file}")
 
 if __name__ == '__main__':
+	# Minimal bootstrap; no extra deps required for log cleaner
+	ensure_repo_paths()
+	ensure_requirements_installed(requirements_file=None)
+
 	config_path = get_log_directory_from_config()
 
 	file_error = config_path + 'error.log'

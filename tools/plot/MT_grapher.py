@@ -8,9 +8,20 @@ import sys
 import traceback
 from functools import partial
 
+from tools.shared.bootstrap import ensure_repo_paths
+from tools.shared.requirements_install import (
+	DEFAULT_REQUIREMENTS_FILE,
+	ensure_requirements_installed,
+)
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+# Run installer and path setup before importing heavy dependencies
+ensure_repo_paths([SCRIPT_DIR])
+ensure_requirements_installed(DEFAULT_REQUIREMENTS_FILE)
+
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL.PSDraw import ERROR_PS
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
@@ -21,14 +32,14 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 import chart_library as all_graphs
+import log_parser
 from interactive_tooltip import InteractiveLineTooltip
-from tools.plot import log_parser
 from tools.shared.fetch_logs import get_log_directory_from_config
 
 TARGET_FILE_NAME_ROOT = 'error'
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
-icon_path = 'icon.png'
+icon_path = SCRIPT_DIR / 'icon.png'
 
 graph_introduction = """
 Welcome to the M&T graphing tool!
@@ -94,8 +105,8 @@ class MainWindow(QMainWindow):
 		super().__init__()
 		self.setWindowTitle("MEIOU and Taxes Plotter")
 
-		if os.path.exists(icon_path):
-			self.setWindowIcon(QIcon(icon_path))
+		if icon_path.exists():
+			self.setWindowIcon(QIcon(str(icon_path)))
 		else:
 			print(f"Warning: '{icon_path}' not found. No application icon will be set.")
 
@@ -747,6 +758,9 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
 	try:
+		ensure_repo_paths([SCRIPT_DIR])
+		# Ensure dependencies are installed before doing anything else
+		ensure_requirements_installed(DEFAULT_REQUIREMENTS_FILE)
 		# Must change directory to script's location for config/log files
 		os.chdir(os.path.dirname(__file__) or '.')
 
