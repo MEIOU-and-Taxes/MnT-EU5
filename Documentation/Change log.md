@@ -58,10 +58,12 @@ Date: 2025-11-30
     - Proximity Cost of going downstream along a River: 10 → 7  
     - Proximity Cost on Frozen Water: 20 → 15  
   - Roads  
-    - Build cost scaled & maintenance market demands scaled & rebalanced  
-      - Paved roads: \+20%  
-      - Modern roads: X3  
-      - Railroads: X10  
+    - Build cost scaled & maintenance market demands scaled  
+      - Gravel roads: 2X
+      - Paved roads: 3X  
+      - Modern roads: 10X  
+      - Railroads: 50X
+    - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
 - Market  
   - Market access cost reduction doubled for roads:  
     - Gravel: \-10% → \-20%  
