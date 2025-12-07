@@ -1,5 +1,6 @@
 # Thanks to the Seelowe/Justice Fighter, the author of the code this is based on
 import csv
+import datetime
 import glob
 import json
 import os
@@ -16,7 +17,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel)
+							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel, QProgressDialog)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
@@ -139,7 +140,8 @@ class MainWindow(QMainWindow):
 		# --- Top Buttons Layout ---
 		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
-		self.btn_export = QPushButton("Export to CSV [Ctrl+E]")
+		self.btn_export_view = QPushButton("Export View [Ctrl+E]")
+		self.btn_export_all = QPushButton("Export All Data [Ctrl+Shift+E]")
 		self.btn_fullscreen = QPushButton("Fullscreen [F]")
 		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
 		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
@@ -161,7 +163,8 @@ class MainWindow(QMainWindow):
 		self.top_button_layout.addWidget(self.btn_charts)
 		self.top_button_layout.addWidget(self.btn_refresh)
 		self.top_button_layout.addWidget(self.btn_backup)
-		self.top_button_layout.addWidget(self.btn_export)
+		self.top_button_layout.addWidget(self.btn_export_view)
+		self.top_button_layout.addWidget(self.btn_export_all)
 		self.top_button_layout.addWidget(self.btn_fullscreen)
 		self.top_button_layout.addWidget(self.btn_log_scale)
 		self.top_button_layout.addWidget(self.btn_moving_avg)
@@ -181,7 +184,8 @@ class MainWindow(QMainWindow):
 		self.btn_refresh.clicked.connect(self.reload_log)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
-		self.btn_export.clicked.connect(self.export_to_csv)
+		self.btn_export_view.clicked.connect(self.export_current_view_to_csv)
+		self.btn_export_all.clicked.connect(self.export_all_data)
 		self.btn_fullscreen.toggled.connect(self.set_fullscreen_state)
 		self.btn_log_scale.toggled.connect(self.toggle_log_scale)
 		self.btn_moving_avg.toggled.connect(self.toggle_moving_average)
@@ -211,7 +215,8 @@ class MainWindow(QMainWindow):
 		QShortcut(QKeySequence("Ctrl+S"), self, self.backup_log)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
 		QShortcut(QKeySequence("F"), self, self.btn_fullscreen.toggle)
-		QShortcut(QKeySequence("Ctrl+E"), self, self.export_to_csv)
+		QShortcut(QKeySequence("Ctrl+E"), self, self.export_current_view_to_csv)
+		QShortcut(QKeySequence("Ctrl+Shift+E"), self, self.export_all_data)
 		QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
 		QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
 
@@ -600,7 +605,7 @@ class MainWindow(QMainWindow):
 			self.canvas.draw_idle()
 			QMessageBox.warning(self, "Scaling Error", "Could not apply logarithmic scale.\nData may contain non-positive values.")
 
-	def export_to_csv(self):
+	def export_current_view_to_csv(self):
 		"""Exports the complete, unfiltered data for the current chart type to a CSV file."""
 		if not self.current_dataset:
 			QMessageBox.warning(self, "Export Error", "No data available to export. Please select a chart first.")
@@ -629,6 +634,106 @@ class MainWindow(QMainWindow):
 
 		except Exception as e:
 			QMessageBox.critical(self, "Export Failed", f"An error occurred while writing the file:\n{e}")
+			traceback.print_exc()
+
+	def export_all_data(self):
+		"""Exports all parsable data types into separate CSV files in a timestamped folder with a progress bar."""
+		if not self.data:
+			QMessageBox.warning(self, "Export Error", "No log data loaded. Please refresh data first.")
+			return
+
+		# Define all available parsers and their desired filenames
+		all_parsers = {
+			"building_types": log_parser.parse_data_building_types,
+			"goods_prices": log_parser.parse_data_goods_prices,
+			"markets": log_parser.parse_data_markets,
+			"population": log_parser.parse_data_population,
+			"road_types": log_parser.parse_data_road_types,
+			"country_stats": log_parser.parse_data_countries,
+		}
+
+		# Ask user for a base directory to save the export folder
+		save_dir = QFileDialog.getExistingDirectory(self, "Select Directory to Save Export Folder")
+		if not save_dir:
+			return
+
+		# Create a timestamped folder name
+		timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+		export_folder_path = os.path.join(save_dir, f"M&T_Export_{timestamp}")
+
+		# --- Setup Progress Dialog ---
+		progress_dialog = QProgressDialog("Preparing to export...", "Cancel", 0, len(all_parsers), self)
+		progress_dialog.setWindowTitle("Export Progress")
+		progress_dialog.setModal(True)
+
+		# Style
+		progress_dialog.resize(650, 150)
+		progress_style = """
+			QProgressBar {
+				border: 2px solid grey;
+				border-radius: 8px;
+				text-align: center;
+				font-size: 16px;
+				font-weight: bold;
+				min-height: 50px;
+			}
+			QProgressBar::chunk {
+				background-color: #337ab7;
+				border-radius: 8px;
+			}
+		"""
+		progress_dialog.setStyleSheet(progress_style)
+
+		progress_dialog.show()
+		QApplication.processEvents() # Ensure the dialog is shown immediately
+
+		try:
+			os.makedirs(export_folder_path, exist_ok=True)
+			exported_files = []
+			was_cancelled = False
+
+			for i, (filename_root, parser_func) in enumerate(all_parsers.items()):
+				# Update progress and check for cancellation
+				progress_dialog.setValue(i)
+				progress_dialog.setLabelText(f"Parsing and writing {filename_root}...")
+				QApplication.processEvents()
+
+				if progress_dialog.wasCanceled():
+					was_cancelled = True
+					break
+
+				dataset = parser_func(self.data)
+
+				if not dataset:
+					print(f"No data found for {filename_root}, skipping.")
+					continue
+
+				file_path = os.path.join(export_folder_path, f"{filename_root}.csv")
+				try:
+					headers = dataset[0].keys()
+					with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
+						writer = csv.DictWriter(output_file, fieldnames=headers)
+						writer.writeheader()
+						writer.writerows(dataset)
+					exported_files.append(file_path)
+				except Exception as e:
+					QMessageBox.critical(self, "File Write Error", f"Failed to write {filename_root}.csv: {e}")
+					# Continue to the next file even if one fails
+
+			# Finalize the progress bar
+			progress_dialog.setValue(len(all_parsers))
+
+			# --- Show Final Status Message ---
+			if was_cancelled:
+				QMessageBox.information(self, "Export Cancelled", f"Export process was cancelled.\nPartial files may exist in:\n{export_folder_path}")
+			elif exported_files:
+				QMessageBox.information(self, "Export Successful", f"All data successfully exported to:\n{export_folder_path}")
+			else:
+				QMessageBox.warning(self, "Export Warning", "No data was available to export.")
+
+		except Exception as e:
+			progress_dialog.close() # Ensure dialog is closed on error
+			QMessageBox.critical(self, "Export Failed", f"A critical error occurred:\n{e}")
 			traceback.print_exc()
 
 	def backup_log(self):

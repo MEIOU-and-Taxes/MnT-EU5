@@ -2,12 +2,13 @@ import re
 
 def clear_all_caches():
 	"""Resets all data caches to force reparsing on the next call."""
-	global bt_data_cache, gp_data_cache, pop_data_cache, mk_data_cache, rt_data_cache
+	global bt_data_cache, gp_data_cache, pop_data_cache, mk_data_cache, rt_data_cache, tg_data_cache
 	bt_data_cache = None
 	gp_data_cache = None
 	pop_data_cache = None
 	mk_data_cache = None
 	rt_data_cache = None
+	tg_data_cache = None
 	print("All data caches have been cleared.")
 
 
@@ -187,4 +188,98 @@ def parse_data_markets(data):
 
 	mk_data_cache = transformed_data
 	print(f"Found and cached {len(mk_data_cache)} market statistic entries.")
+	return transformed_data
+
+def parse_data_countries(data):
+	"""
+	Parses all country data (::TG::) lines from the log data.
+	Transforms the data so each statistic becomes a separate entry,
+	suitable for the generic graphing function.
+	Uses a cache to avoid reparsing the same data.
+	"""
+	global tg_data_cache
+	if tg_data_cache is not None:
+		return tg_data_cache
+
+	print("Parsing country data for the first time...")
+
+	INSTITUTION_NAMES = [
+		'feudalism', 'legalism', 'meritocracy', 'renaissance', 'banking',
+		'professional_armies', 'new_world', 'printing_press', 'pike_and_shot',
+		'confessionalism', 'global_trade', 'artillery_Instution', 'manufactories',
+		'scientific_revolution', 'military_revolution', 'enlightenment',
+		'industrialization', 'levee_en_masse'
+	]
+	ESTATE_FLAVOURS = [
+		"Nobles", "Burghers", "Clergy", "Peasants", "Elites", "Tribes", "Gentry", "Commoners"
+	]
+	ESTATE_STATS = [
+		"Gold", "Balance", "Food Income", "Trade Income", "Last Month Income Count",
+		"Last Months Income Before Tax", "Last Months Tax", "Last Months Expense",
+		"Max Tax Value", "Relative Power", "Satisfaction", "Taxable Income", "Total Population"
+	]
+
+	transformed_data = []
+	pattern = re.compile(r".*::TG::(.*)")
+	for line in data.splitlines():
+		match = pattern.match(line)
+		if not match:
+				continue
+
+		line_content = match.group(1)
+
+		try:
+			parts = line_content.split('::')
+			if len(parts) != 14:
+				continue
+
+			main_data_str = parts[0]
+			main_data_fields = main_data_str.split(':')
+			if len(main_data_fields) != 7 + 18:
+				continue
+
+			moment = int(main_data_fields[0]) + 1
+			country_name = main_data_fields[2].strip()
+			if not country_name or '_REVOLT' in main_data_fields[1]:
+				continue
+
+			transformed_data.append({
+				"moment": moment,
+				"region": country_name,
+				"statistic": "Total Income",
+				"value": float(main_data_fields[5])
+			})
+
+			inst_values = main_data_fields[7:]
+			for i, inst_name in enumerate(INSTITUTION_NAMES):
+				transformed_data.append({
+					"moment": moment,
+					"region": country_name,
+					"statistic": f"Institution - {inst_name.replace('_', ' ').title()}",
+					"value": int(inst_values[i])
+				})
+
+			estate_blocks = parts[1:]
+			for i, stat_name in enumerate(ESTATE_STATS):
+				values_str = estate_blocks[i].split(':')
+				if len(values_str) != 8:
+					continue
+
+				for j, flavour_name in enumerate(ESTATE_FLAVOURS):
+					try:
+						value = float(values_str[j])
+						transformed_data.append({
+							"moment": moment,
+							"region": country_name,
+							"statistic": f"{flavour_name} {stat_name}",
+							"value": value
+						})
+					except ValueError:
+						pass
+
+		except (ValueError, IndexError):
+			pass
+
+	tg_data_cache = transformed_data
+	print(f"Found and cached {len(tg_data_cache)} country statistic entries.")
 	return transformed_data
