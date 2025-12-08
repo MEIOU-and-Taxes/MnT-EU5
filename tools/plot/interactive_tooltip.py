@@ -10,9 +10,10 @@ class InteractiveLineTooltip:
 	Y-values of all lines at the current X-position of the cursor.
 	"""
 
-	def __init__(self, ax):
+	def __init__(self, ax, on_line_click_callback=None):
 		self.ax = ax
 		self.fig = ax.figure
+		self.on_line_click_callback = on_line_click_callback
 		print(f"CursorHoverInfo: Initializing for axes: {ax}")
 
 		all_lines = self.ax.get_lines()
@@ -65,10 +66,33 @@ class InteractiveLineTooltip:
 		print("CursorHoverInfo: Activating tooltip event handlers.")
 		self.fig.canvas.mpl_connect("motion_notify_event", self.on_hover)
 		self.fig.canvas.mpl_connect("axes_leave_event", self.on_leave)
+		self.fig.canvas.mpl_connect('button_press_event', self.on_click)
 
 	def clear_tooltip_handler(self):
 		"""Clears any existing tooltip handler."""
 		self.cursor_hover_handler = None
+
+	def on_click(self, event):
+		if event.inaxes != self.ax or event.button != 1 or not self.on_line_click_callback:
+			return
+
+		min_vertical_dist = float('inf')
+		closest_line_label = None
+
+		for line in self.lines:
+			x_data, y_data = line.get_data()
+			if not len(x_data):
+				continue
+
+			interp_y = np.interp(event.xdata, x_data, y_data)
+			vertical_dist_pixels = abs(self.ax.transData.transform((event.xdata, interp_y))[1] - event.y)
+
+			if vertical_dist_pixels < min_vertical_dist:
+				min_vertical_dist = vertical_dist_pixels
+				closest_line_label = line.get_label()
+
+		if closest_line_label:
+			self.on_line_click_callback(closest_line_label)
 
 	def on_hover(self, event):
 		if not hasattr(self, 'annot') or event.inaxes != self.ax or event.xdata is None or event.ydata is None:
@@ -144,13 +168,18 @@ class InteractiveLineTooltip:
 
 		# Build tooltip text
 		x_label = self.ax.get_xlabel() or "X-Value"
+		y_label = self.ax.get_ylabel()
+
+		is_integer_plot = y_label in ("Population", "Count")
+		format_spec = ",.0f" if is_integer_plot else ",.2f"
+
 		max_label_len = max(len(d['label']) for d in sorted_data) if sorted_data else 0
-		max_val_len = max(len(f"{d['y_val']:,.2f}") for d in sorted_data) if sorted_data else 0
+		max_val_len = max(len(f"{d['y_val']:{format_spec}}") for d in sorted_data) if sorted_data else 0
 
 		info_texts = [f"{x_label:>{max_label_len + 3}} : {current_integer_x}", '']
 		for item in sorted_data:
 			label_str = f"{item['label']:<{max_label_len}}"
-			val_str = f"{item['y_val']:>{max_val_len},.2f}"
+			val_str = f"{item['y_val']:>{max_val_len}{format_spec}}"
 			char_reveal = '*' if item['label'] == closest_line_label else ' '
 			info_texts.append(f"{val_str} : {char_reveal}{label_str}")
 
