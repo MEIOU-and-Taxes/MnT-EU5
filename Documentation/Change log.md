@@ -25,6 +25,9 @@ Date: 2025-11-30
 
 #### Balancing
 
+-Reduced use of masonry by granaries.
+-Reduced use of tools by lumber mills.
+
 ##### Diplomacy
 
 - Steal map’s antagonism bomb will not impact the robbed tag, but the discovered place  
@@ -58,10 +61,12 @@ Date: 2025-11-30
     - Proximity Cost of going downstream along a River: 10 → 7  
     - Proximity Cost on Frozen Water: 20 → 15  
   - Roads  
-    - Build cost scaled & maintenance market demands scaled & rebalanced  
-      - Paved roads: \+20%  
-      - Modern roads: X3  
-      - Railroads: X10  
+    - Build cost scaled & maintenance market demands scaled  
+      - Gravel roads: 2X
+      - Paved roads: 3X  
+      - Modern roads: 10X  
+      - Railroads: 50X
+    - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
 - Market  
   - Market access cost reduction doubled for roads:  
     - Gravel: \-10% → \-20%  
@@ -112,6 +117,8 @@ Date: 2025-11-30
   - Burgher mansion:  
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
+-Sand added to several production methods, including masonry, weapons, and tools.
+-Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 
 ##### Population
 
