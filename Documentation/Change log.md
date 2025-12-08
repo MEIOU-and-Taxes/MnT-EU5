@@ -25,6 +25,9 @@ Date: 2025-11-30
 
 #### Balancing
 
+-Reduced use of masonry by granaries.
+-Reduced use of tools by lumber mills.
+
 ##### Diplomacy
 
 - Steal map’s antagonism bomb will not impact the robbed tag, but the discovered place  
@@ -114,6 +117,8 @@ Date: 2025-11-30
   - Burgher mansion:  
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
+-Sand added to several production methods, including masonry, weapons, and tools.
+-Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 
 ##### Population
 
