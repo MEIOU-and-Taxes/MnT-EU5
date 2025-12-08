@@ -25,6 +25,8 @@ Date: 2025-11-30
 
 #### Balancing
 
+-Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+
 ##### Diplomacy
 
 - Steal map’s antagonism bomb will not impact the robbed tag, but the discovered place  
