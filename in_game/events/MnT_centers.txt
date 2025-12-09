@@ -1,0 +1,199 @@
+namespace = mnt_centers
+
+# Yearly recalculation of centers (trade / production / culture / education)
+mnt_centers.1 = {
+	type = country_event
+	title = mnt_centers.1.t
+	desc = mnt_centers.1.d
+	hidden = yes
+
+	trigger = {
+		tag = FRA # single fire per year to avoid duplicate global runs
+	}
+
+	immediate = {
+		# Compute per-location heuristic scores
+		mnt_calculate_center_scores = yes
+
+		# Clear previous center modifiers
+		every_location = {
+			remove_location_modifier = mnt_center_trade_local
+			remove_location_modifier = mnt_center_trade_regional
+			remove_location_modifier = mnt_center_trade_continental
+			remove_location_modifier = mnt_center_trade_world
+
+			remove_location_modifier = mnt_center_production_local
+			remove_location_modifier = mnt_center_production_regional
+			remove_location_modifier = mnt_center_production_continental
+			remove_location_modifier = mnt_center_production_world
+
+			remove_location_modifier = mnt_center_culture_local
+			remove_location_modifier = mnt_center_culture_regional
+			remove_location_modifier = mnt_center_culture_continental
+			remove_location_modifier = mnt_center_culture_world
+
+			remove_location_modifier = mnt_center_education_local
+			remove_location_modifier = mnt_center_education_regional
+			remove_location_modifier = mnt_center_education_continental
+			remove_location_modifier = mnt_center_education_world
+		}
+
+		# Local (area) centers
+		every_area = {
+			# Trade
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_trade_score }
+				max = 3
+				check_range_bounds = no
+				limit = { var:mnt_trade_score >= 4 }
+				add_location_modifier = { name = mnt_center_trade_local duration = -1 }
+			}
+			# Production
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_production_score }
+				max = 3
+				check_range_bounds = no
+				limit = { var:mnt_production_score >= 5 }
+				add_location_modifier = { name = mnt_center_production_local duration = -1 }
+			}
+			# Culture
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_culture_score }
+				max = 2
+				check_range_bounds = no
+				limit = { var:mnt_culture_score >= 3 }
+				add_location_modifier = { name = mnt_center_culture_local duration = -1 }
+			}
+			# Education
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_education_score }
+				max = 2
+				check_range_bounds = no
+				limit = { var:mnt_education_score >= 3 }
+				add_location_modifier = { name = mnt_center_education_local duration = -1 }
+			}
+		}
+
+		# Regional centers
+		every_region = {
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_trade_score }
+				max = 2
+				check_range_bounds = no
+				limit = { var:mnt_trade_score >= 10 }
+				add_location_modifier = { name = mnt_center_trade_regional duration = -1 }
+			}
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_production_score }
+				max = 2
+				check_range_bounds = no
+				limit = { var:mnt_production_score >= 12 }
+				add_location_modifier = { name = mnt_center_production_regional duration = -1 }
+			}
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_culture_score }
+				max = 1
+				check_range_bounds = no
+				limit = { var:mnt_culture_score >= 8 }
+				add_location_modifier = { name = mnt_center_culture_regional duration = -1 }
+			}
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_education_score }
+				max = 1
+				check_range_bounds = no
+				limit = { var:mnt_education_score >= 8 }
+				add_location_modifier = { name = mnt_center_education_regional duration = -1 }
+			}
+		}
+
+		# Continental centers
+		every_continent = {
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_trade_score }
+				max = 3
+				check_range_bounds = no
+				limit = { var:mnt_trade_score >= 18 }
+				add_location_modifier = { name = mnt_center_trade_continental duration = -1 }
+			}
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_production_score }
+				max = 3
+				check_range_bounds = no
+				limit = { var:mnt_production_score >= 20 }
+				add_location_modifier = { name = mnt_center_production_continental duration = -1 }
+			}
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_culture_score }
+				max = 2
+				check_range_bounds = no
+				limit = { var:mnt_culture_score >= 14 }
+				add_location_modifier = { name = mnt_center_culture_continental duration = -1 }
+			}
+			ordered_location = {
+				limit = { is_land = yes }
+				order_by = { value = var:mnt_education_score }
+				max = 2
+				check_range_bounds = no
+				limit = { var:mnt_education_score >= 14 }
+				add_location_modifier = { name = mnt_center_education_continental duration = -1 }
+			}
+		}
+
+		# World centers (late game, very scarce)
+		ordered_location = {
+			limit = {
+				is_land = yes
+				current_age_or_later = { age = age_5_absolutism }
+				var:mnt_trade_score >= 30
+			}
+			order_by = { value = var:mnt_trade_score }
+			max = 4
+			check_range_bounds = no
+			add_location_modifier = { name = mnt_center_trade_world duration = -1 }
+		}
+		ordered_location = {
+			limit = {
+				is_land = yes
+				current_age_or_later = { age = age_5_absolutism }
+				var:mnt_production_score >= 32
+			}
+			order_by = { value = var:mnt_production_score }
+			max = 4
+			check_range_bounds = no
+			add_location_modifier = { name = mnt_center_production_world duration = -1 }
+		}
+		ordered_location = {
+			limit = {
+				is_land = yes
+				current_age_or_later = { age = age_5_absolutism }
+				var:mnt_culture_score >= 24
+			}
+			order_by = { value = var:mnt_culture_score }
+			max = 3
+			check_range_bounds = no
+			add_location_modifier = { name = mnt_center_culture_world duration = -1 }
+		}
+		ordered_location = {
+			limit = {
+				is_land = yes
+				current_age_or_later = { age = age_5_absolutism }
+				var:mnt_education_score >= 24
+			}
+			order_by = { value = var:mnt_education_score }
+			max = 3
+			check_range_bounds = no
+			add_location_modifier = { name = mnt_center_education_world duration = -1 }
+		}
+	}
+}

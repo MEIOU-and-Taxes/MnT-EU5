@@ -1,0 +1,76 @@
+# Calculate heuristic scores for centers.
+mnt_calculate_center_scores = {
+	every_location = {
+		# Trade heuristic: market + burghers + taxable base, weighted by rank.
+		set_variable = {
+			name = mnt_trade_score
+			value = {
+				value = location_tax_base
+				add = {
+					value = num_pop_type:burghers
+					multiply = 0.5
+				}
+				add = {
+					value = market.market_population
+					multiply = 0.05
+				}
+				if = {
+					limit = { location_rank = location_rank:city }
+					multiply = 1.25
+				}
+				else_if = {
+					limit = { location_rank = location_rank:town }
+					multiply = 1.1
+				}
+			}
+		}
+
+		# Production heuristic: population + laborers + tax base.
+		set_variable = {
+			name = mnt_production_score
+			value = {
+				value = population
+				multiply = 0.25
+				add = {
+					value = num_pop_type:laborers
+					multiply = 0.5
+				}
+				add = location_tax_base
+			}
+		}
+
+		# Culture heuristic: nobles + tradition proxy via tax base + population.
+		set_variable = {
+			name = mnt_culture_score
+			value = {
+				value = location_tax_base
+				multiply = 0.5
+				add = {
+					value = num_pop_type:nobles
+					multiply = 1.0
+				}
+				add = {
+					value = population
+					multiply = 0.1
+				}
+			}
+		}
+
+		# Education heuristic: clergy + population + tax base proxy.
+		set_variable = {
+			name = mnt_education_score
+			value = {
+				value = num_pop_type:clergy
+				multiply = 1.0
+				add = {
+					value = population
+					multiply = 0.1
+				}
+				add = {
+					value = location_tax_base
+					multiply = 0.25
+				}
+			}
+		}
+	}
+}
