@@ -25,6 +25,7 @@ Date: 2025-11-30
 
 #### Balancing
 
+-Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
 -Reduced use of masonry by granaries.
 -Reduced use of tools by lumber mills.
 
