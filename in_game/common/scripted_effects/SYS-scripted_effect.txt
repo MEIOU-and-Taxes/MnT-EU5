@@ -1,21 +1,23 @@
 ﻿run_logging = {
 	if = {
 		limit = { has_global_variable = is_logging_enabled}
-		print_building_types = yes        # characters at start: 147,474
-		print_population = yes            # characters at start:   9,505
-		print_prices = yes                # characters at start: 765,974
-		print_markets = yes
-		debug_log = "::Done logging for this year"
+		print_regional_building_types = yes        # characters at start: 147,474
+		print_regional_population = yes            # characters at start:   9,505
+		print_regional_prices = yes                # characters at start: 765,974
+		print_regional_roads = yes
+		print_market_information = yes
+		print_country_information = yes
+		error_log = "::Done logging for this year"
 	}
 }
 
-print_population = {
+print_regional_population = {
     every_region = {
-        debug_log = "::POP::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[THIS.GetRegion.GetTotalPopulation]"
+		error_log = "::POP::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[THIS.GetRegion.GetTotalPopulation]"
     }
 }
 
-print_prices = {
+print_regional_prices = {
 	every_goods = {
 		# limit = { this = goods:wheat }
 		save_scope_as = good_curr
@@ -33,14 +35,14 @@ print_prices = {
 			}
 			if = {
 				limit = { location_counter > 0 }
-				debug_log = "::GP::[GetCurrentYear]:[PREV.GetGoods.GetNameWithNoTooltip]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('avg_cost').GetValue]"
+				error_log = "::GP::[GetCurrentYear]:[PREV.GetGoods.GetNameWithNoTooltip]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('avg_cost').GetValue]"
 			}
 		}
 	}
 	remove_local_variable = avg_cost
 }
 
-print_building_types = {
+print_regional_building_types = {
     every_building_type = {
         set_local_variable = { name = bldg_curr value = this }
         every_region = {
@@ -59,15 +61,88 @@ print_building_types = {
 
             if = {
                 limit = { local_var:bldg_count > 0 }
-                debug_log = "::BT:[GetCurrentYear]:[SCOPE.GetLocalVariable('bldg_curr').GetBuildingType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('bldg_count').GetValue]:[THIS.GetRegion.GetNameWithNoTooltip]"
+				error_log = "::BT:[GetCurrentYear]:[SCOPE.GetLocalVariable('bldg_curr').GetBuildingType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('bldg_count').GetValue]:[THIS.GetRegion.GetNameWithNoTooltip]"
             }
         }
     }
 	remove_local_variable = bldg_count
 }
 
-print_markets = {
+print_market_information = {
 	every_market_in_world = {
-		debug_log = "::MK::[GetCurrentYear]:[THIS.GetMarket.GetNameWithNoTooltip]:[THIS.GetMarket.GetFood]:[THIS.GetMarket.GetFoodStockpile]:[THIS.GetMarket.GetMaxFoodStockpile]:[THIS.GetMarket.GetFoodStockpilePercent]:[THIS.GetMarket.GetMonthlyFood]:[THIS.GetMarket.GetMonthlyFoodBalance]:[THIS.GetMarket.GetFoodPrice]:[THIS.GetMarket.GetBurgherFoodImports]:[THIS.GetMarket.GetBurgherFoodExports]:[THIS.GetMarket.GetTotalValueTraded]:[THIS.GetMarket.GetMerchantTotalCapacityInMarket]"
+		error_log = "::MK::[GetCurrentYear]:[THIS.GetMarket.GetNameWithNoTooltip]:[THIS.GetMarket.GetFood]:[THIS.GetMarket.GetFoodStockpile]:[THIS.GetMarket.GetMaxFoodStockpile]:[THIS.GetMarket.GetFoodStockpilePercent]:[THIS.GetMarket.GetMonthlyFood]:[THIS.GetMarket.GetMonthlyFoodBalance]:[THIS.GetMarket.GetFoodPrice]:[THIS.GetMarket.GetBurgherFoodImports]:[THIS.GetMarket.GetBurgherFoodExports]:[THIS.GetMarket.GetTotalValueTraded]:[THIS.GetMarket.GetMerchantTotalCapacityInMarket]"
 	}
 }
+
+print_regional_roads = {
+	every_road_type = {
+		if = {
+			limit = {
+				OR = {
+					this = road_type:gravel_road
+					AND = {
+						this = road_type:paved_road
+						current_age_or_later = { age = age_3_discovery }
+					}
+					AND = {
+						this = road_type:modern_road
+						current_age_or_later = { age = age_5_absolutism }
+					}
+					AND = {
+						this = road_type:railroad
+						current_age_or_later = { age = age_6_revolutions }
+					}
+				}
+			}
+
+			set_local_variable = { name = road_curr value = this }
+			every_region = {
+				set_local_variable = { name = num_locations value = 0 }
+				set_local_variable = { name = num_locations_with_road value = 0 }
+				every_ownable_location_in_region = {
+					change_local_variable = { name = num_locations add = 1 }
+
+					if = {
+						limit = { has_local_variable = loc_has_road }
+						remove_local_variable = loc_has_road
+					}
+
+					every_neighbor_location = {
+						if = {
+							limit = {
+								has_road_of_type_to = {
+									target = prev
+									type = local_var:road_curr
+								}
+							}
+							set_local_variable = loc_has_road
+						}
+					}
+					if = {
+						limit = { has_local_variable = loc_has_road }
+						change_local_variable = { name = num_locations_with_road add = 1 }
+					}
+				}
+				if = {
+					limit = { local_var:num_locations_with_road > 0 }
+					error_log = "::RT::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('road_curr').GetRoadType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('num_locations').GetValue]:[SCOPE.GetLocalVariable('num_locations_with_road').GetValue]"
+				}
+			}
+		}
+	}
+
+	# error_log = "[SCOPE.GetLocalVariable('connections').GetValue]"
+
+	remove_local_variable = road_curr
+	remove_local_variable = num_locations
+	remove_local_variable = num_locations_with_road
+}
+
+print_country_information = {
+	every_country = {
+		error_log = "::RT::[GetCurrentYear]:[THIS.GetCountry.GetTag]:[THIS.GetCountry.GetMapName]:[THIS.GetCountry.GetCapital.GetArea.GetNameWithNoTooltip]:[THIS.GetCountry.GetCountryTypeNameWithNoTooltip]:[THIS.GetCountry.GetIncomeValue]:[THIS.GetCountry.GetCurrentResearch.GetAdvance.GetNameWithNoTooltip]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('feudalism').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('legalism').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('meritocracy').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('renaissance').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('banking').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('professional_armies').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('new_world').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('printing_press').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('pike_and_shot').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('confessionalism').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('global_trade').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('artillery_institution').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('manufactories').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('scientific_revolution').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('military_revolution').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('enlightenment').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('industrialization').Self)]:[THIS.GetCountry.HasEmbracedInstitution(GetInstitutionByKey('levee_en_masse').Self)]"
+	}
+}
+
+# Country.GetEconomy
+# Country.GetGovernment
