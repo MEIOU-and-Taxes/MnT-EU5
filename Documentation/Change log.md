@@ -175,7 +175,8 @@ Date: 2025-11-30
 ##### Situations
 
 - Fixes to Colombian Exchange situation
-  - remove the faulty requirement about 1M laborers or peasants needed to change RGO type
   - adapt logic of RGO changing to new mechanics related to demand on goods absent in the market
   - remove prestige cost on changing the RGO
+  - modify mapmode and tooltips, so previous and new good is visible to a player
+  - remove ability to plant Tobacco in Oceanic and Continental climates
   
