@@ -130,7 +130,6 @@ def parse_data_countries(data):
 			lines_after_TG = -1
 
 			current_record = dict(zip(headers, values))
-			current_record['_societal_values'] = {} # Temp storage
 
 		elif lines_after_TG <= 15:
 			# This is a societal value line for the current country
