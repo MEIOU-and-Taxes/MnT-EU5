@@ -1,5 +1,13 @@
 import re
 
+# --- Cache Globals ---
+bt_data_cache = None
+gp_data_cache = None
+pop_data_cache = None
+mk_data_cache = None
+rt_data_cache = None
+tg_data_cache = None
+
 def clear_all_caches():
 	"""Resets all data caches to force reparsing on the next call."""
 	global bt_data_cache, gp_data_cache, pop_data_cache, mk_data_cache, rt_data_cache, tg_data_cache
@@ -10,6 +18,137 @@ def clear_all_caches():
 	rt_data_cache = None
 	tg_data_cache = None
 	print("All data caches have been cleared.")
+
+
+def _parse_dynamic_numeric_value(value_str):
+	"""
+	Converts a string that could be a number, empty, or have K/M/B suffixes into a float or returns the original string.
+	Handles commas and whitespace. Returns 0 for empty strings.
+	"""
+	if not isinstance(value_str, str):
+		return value_str # Return as-is if not a string
+
+	cleaned_str = value_str.strip().replace(',', '')
+	if not cleaned_str:
+		return 0.0
+
+	upper_str = cleaned_str.upper()
+	multiplier = 1.0
+
+	if upper_str.endswith('K'):
+		multiplier = 1_000.0
+		cleaned_str = cleaned_str[:-1]
+	elif upper_str.endswith('M'):
+		multiplier = 1_000_000.0
+		cleaned_str = cleaned_str[:-1]
+	elif upper_str.endswith('B'):
+		multiplier = 1_000_000_000.0
+		cleaned_str = cleaned_str[:-1]
+
+	try:
+		return float(cleaned_str) * multiplier
+	except (ValueError, TypeError):
+		return value_str # Return original string if it's not a number (e.g., a tag 'KBO')
+
+
+def parse_data_countries(data):
+	"""
+	Parses all country data (::TG::) lines from the log data.
+	This is a very wide dataset with over 160 columns.
+	"""
+	global tg_data_cache
+	if tg_data_cache is not None:
+		return tg_data_cache
+
+	print("Parsing country data for the first time...")
+	# Define the headers in the exact order they appear in the log
+	headers = [
+		"year", "tag", "name", "capital_area", "country_type", "government_type", "income", "current_research",
+		"has_feudalism", "has_legalism", "has_meritocracy", "has_renaissance", "has_banking", "has_professional_armies",
+		"has_new_world", "has_printing_press", "has_pike_and_shot", "has_confessionalism", "has_global_trade",
+		"has_artillery_institution", "has_manufactories", "has_scientific_revolution", "has_military_revolution",
+		"has_enlightenment", "has_industrialization", "has_levee_en_masse", "estate_nobles_income_lost",
+		"estate_clergy_income_lost", "estate_burghers_income_lost", "estate_peasants_income_lost",
+		"estate_dhimmi_income_lost", "estate_tribes_income_lost", "estate_cossacks_income_lost",
+		"nobles_gold", "clergy_gold", "burghers_gold", "peasants_gold", "dhimmi_gold", "tribes_gold", "cossacks_gold",
+		"nobles_balance", "clergy_balance", "burghers_balance", "peasants_balance", "dhimmi_balance", "tribes_balance", "cossacks_balance",
+		"nobles_food_income", "clergy_food_income", "burghers_food_income", "peasants_food_income", "dhimmi_food_income", "tribes_food_income", "cossacks_food_income",
+		"nobles_trade_income", "clergy_trade_income", "burghers_trade_income", "peasants_trade_income", "dhimmi_trade_income", "tribes_trade_income", "cossacks_trade_income",
+		"nobles_income_count", "clergy_income_count", "burghers_income_count", "peasants_income_count", "dhimmi_income_count", "tribes_income_count", "cossacks_income_count",
+		"nobles_income_before_tax", "clergy_income_before_tax", "burghers_income_before_tax", "peasants_income_before_tax", "dhimmi_income_before_tax", "tribes_income_before_tax", "cossacks_income_before_tax",
+		"nobles_tax", "clergy_tax", "burghers_tax", "peasants_tax", "dhimmi_tax", "tribes_tax", "cossacks_tax",
+		"nobles_expense", "clergy_expense", "burghers_expense", "peasants_expense", "dhimmi_expense", "tribes_expense", "cossacks_expense",
+		"nobles_max_tax", "clergy_max_tax", "burghers_max_tax", "peasants_max_tax", "dhimmi_max_tax", "tribes_max_tax", "cossacks_max_tax",
+		"nobles_relative_power", "clergy_relative_power", "burghers_relative_power", "peasants_relative_power", "dhimmi_relative_power", "tribes_relative_power", "cossacks_relative_power",
+		"nobles_satisfaction", "clergy_satisfaction", "burghers_satisfaction", "peasants_satisfaction", "dhimmi_satisfaction", "tribes_satisfaction", "cossacks_satisfaction",
+		"nobles_taxable_income", "clergy_taxable_income", "burghers_taxable_income", "peasants_taxable_income", "dhimmi_taxable_income", "tribes_taxable_income", "cossacks_taxable_income",
+		"nobles_population", "clergy_population", "burghers_population", "peasants_population", "dhimmi_population", "tribes_population", "cossacks_population",
+		"num_loans", "total_debt", "remaining_loan_capacity", "trade_balance", "is_bankrupt", "regency_type",
+		"parliament_name", "parliament_type", "parliament_debate_estate", "parliament_debate_name", "parliament_issue_support",
+		"rank_level", "score", "num_artists", "great_power_rank", "great_power_score", "living_characters", "num_works_of_art",
+		"num_characters", "power_projection", "num_locations", "has_active_rebels", "army_levy_potential", "army_levy_power",
+		"army_size", "avg_army_experience", "avg_navy_experience", "num_forts", "expected_army_size", "expected_navy_size",
+		"fort_limit", "max_manpower", "max_sailors", "military_strength", "naval_range", "navy_levy_power", "navy_size",
+		"navy_strength", "raised_levy_strength", "raw_army_levy_power", "raw_navy_levy_power", "regular_army_size",
+		"total_ships", "crown_power", "avg_literacy", "cultural_capacity", "cultural_unity", "primary_culture_percentage",
+		"primary_religion_percentage", "total_coastal_population", "total_culture_capacity_used", "economical_base",
+		"estimated_monthly_income", "estimated_monthly_income_trade_tax", "num_starving_provinces", "num_institutions_embraced",
+		"overlord_tag", "num_active_cb_targets", "annexation_progress", "diplomatic_range", "liberty_desire",
+		"max_diplomatic_capacity", "max_diplomats", "num_diplomats", "num_subjects", "subject_loyalty", "used_diplomatic_capacity"
+	]
+	societal_value_names = [
+		"centralization_vs_decentralization", "traditionalist_vs_innovative", "spiritualist_vs_humanist",
+		"aristocracy_vs_plutocracy", "serfdom_vs_free_subjects", "mercantilism_vs_free_trade",
+		"belligerent_vs_conciliatory", "quality_vs_quantity", "offensive_vs_defensive", "land_vs_naval",
+		"capital_economy_vs_traditional_economy", "individualism_vs_communalism", "outward_vs_inward",
+		"sinicized_vs_unsinicized", "absolutism_vs_liberalism", "mysticism_vs_jurisprudence"
+	]
+	string_columns = {
+		"tag", "name", "capital_area", "country_type", "government_type", "current_research",
+		"regency_type", "parliament_name", "parliament_type", "parliament_debate_estate",
+		"parliament_debate_name", "overlord_tag"
+	}
+
+	pattern = re.compile(r"::TG::(.*?)\n")
+	parsed_data = []
+	current_record = None
+	lines_after_TG = 16
+
+	for line in data.splitlines():
+		if '::TG::' in line:
+			# If a new country record starts, finalize and store the previous one
+			# if current_record:
+			# 	parsed_data.append(current_record)
+
+			# Start a new record
+			match = re.search(r'::TG::(.*)', line)
+			if not match: continue
+
+			values = match.group(1).strip().split(':')
+			if len(values) != len(headers):
+				print(f"Warning: Skipping malformed country data line. Expected {len(headers)} columns, found {len(values)}.")
+			lines_after_TG = -1
+
+			current_record = dict(zip(headers, values))
+			current_record['_societal_values'] = {} # Temp storage
+
+		elif lines_after_TG <= 15:
+			# This is a societal value line for the current country
+			match = re.search(r"(-?\d+(?:\.\d+)?)$", line)
+			if match:
+				value = float(match.group(1))
+				current_record[societal_value_names[lines_after_TG]] = value
+				if lines_after_TG == 15:
+					# Convert appropriate values to numeric types
+					for key, value in current_record.items():
+						if key not in string_columns:
+							current_record[key] = _parse_dynamic_numeric_value(value)
+					parsed_data.append(current_record)
+		lines_after_TG += 1
+
+	tg_data_cache = parsed_data
+	print(f"Found and cached {len(tg_data_cache)} country data entries.")
+	return parsed_data
 
 
 def parse_data_building_types(data):
@@ -67,17 +206,6 @@ def parse_data_goods_prices(data):
 	return parsed_data
 
 
-def _parse_population_value(value_str):
-	"""Converts a population string (e.g., '2.2M', '75K', '1,234') to an integer."""
-	value_str = value_str.strip().replace(',', '')
-	if 'K' in value_str:
-		return int(float(value_str.replace('K', '')) * 1_000)
-	if 'M' in value_str:
-		return int(float(value_str.replace('M', '')) * 1_000_000)
-	if 'B' in value_str:
-		return int(float(value_str.replace('B', '')) * 1_000_000_000)
-	return int(value_str)
-
 def parse_data_population(data):
 	"""
 	Parses all population (::POP::) lines from the log data.
@@ -94,7 +222,7 @@ def parse_data_population(data):
 	parsed_data = []
 	for m in pattern.finditer(data):
 		try:
-			population_value = _parse_population_value(m.group(3))
+			population_value = _parse_dynamic_numeric_value(m.group(3))
 			parsed_data.append({
 				"moment": 1 + int(m.group(1)),
 				"region": m.group(2).strip(),
@@ -188,98 +316,4 @@ def parse_data_markets(data):
 
 	mk_data_cache = transformed_data
 	print(f"Found and cached {len(mk_data_cache)} market statistic entries.")
-	return transformed_data
-
-def parse_data_countries(data):
-	"""
-	Parses all country data (::TG::) lines from the log data.
-	Transforms the data so each statistic becomes a separate entry,
-	suitable for the generic graphing function.
-	Uses a cache to avoid reparsing the same data.
-	"""
-	global tg_data_cache
-	if tg_data_cache is not None:
-		return tg_data_cache
-
-	print("Parsing country data for the first time...")
-
-	INSTITUTION_NAMES = [
-		'feudalism', 'legalism', 'meritocracy', 'renaissance', 'banking',
-		'professional_armies', 'new_world', 'printing_press', 'pike_and_shot',
-		'confessionalism', 'global_trade', 'artillery_Instution', 'manufactories',
-		'scientific_revolution', 'military_revolution', 'enlightenment',
-		'industrialization', 'levee_en_masse'
-	]
-	ESTATE_FLAVOURS = [
-		"Nobles", "Burghers", "Clergy", "Peasants", "Elites", "Tribes", "Gentry", "Commoners"
-	]
-	ESTATE_STATS = [
-		"Gold", "Balance", "Food Income", "Trade Income", "Last Month Income Count",
-		"Last Months Income Before Tax", "Last Months Tax", "Last Months Expense",
-		"Max Tax Value", "Relative Power", "Satisfaction", "Taxable Income", "Total Population"
-	]
-
-	transformed_data = []
-	pattern = re.compile(r".*::TG::(.*)")
-	for line in data.splitlines():
-		match = pattern.match(line)
-		if not match:
-				continue
-
-		line_content = match.group(1)
-
-		try:
-			parts = line_content.split('::')
-			if len(parts) != 14:
-				continue
-
-			main_data_str = parts[0]
-			main_data_fields = main_data_str.split(':')
-			if len(main_data_fields) != 7 + 18:
-				continue
-
-			moment = int(main_data_fields[0]) + 1
-			country_name = main_data_fields[2].strip()
-			if not country_name or '_REVOLT' in main_data_fields[1]:
-				continue
-
-			transformed_data.append({
-				"moment": moment,
-				"region": country_name,
-				"statistic": "Total Income",
-				"value": float(main_data_fields[5])
-			})
-
-			inst_values = main_data_fields[7:]
-			for i, inst_name in enumerate(INSTITUTION_NAMES):
-				transformed_data.append({
-					"moment": moment,
-					"region": country_name,
-					"statistic": f"Institution - {inst_name.replace('_', ' ').title()}",
-					"value": int(inst_values[i])
-				})
-
-			estate_blocks = parts[1:]
-			for i, stat_name in enumerate(ESTATE_STATS):
-				values_str = estate_blocks[i].split(':')
-				if len(values_str) != 8:
-					continue
-
-				for j, flavour_name in enumerate(ESTATE_FLAVOURS):
-					try:
-						value = float(values_str[j])
-						transformed_data.append({
-							"moment": moment,
-							"region": country_name,
-							"statistic": f"{flavour_name} {stat_name}",
-							"value": value
-						})
-					except ValueError:
-						pass
-
-		except (ValueError, IndexError):
-			pass
-
-	tg_data_cache = transformed_data
-	print(f"Found and cached {len(tg_data_cache)} country statistic entries.")
 	return transformed_data
