@@ -83,8 +83,7 @@ def parse_data_countries(data):
 		"nobles_satisfaction", "clergy_satisfaction", "burghers_satisfaction", "peasants_satisfaction", "dhimmi_satisfaction", "tribes_satisfaction", "cossacks_satisfaction",
 		"nobles_taxable_income", "clergy_taxable_income", "burghers_taxable_income", "peasants_taxable_income", "dhimmi_taxable_income", "tribes_taxable_income", "cossacks_taxable_income",
 		"nobles_population", "clergy_population", "burghers_population", "peasants_population", "dhimmi_population", "tribes_population", "cossacks_population",
-		"num_loans", "total_debt", "remaining_loan_capacity", "trade_balance", "is_bankrupt", "regency_type",
-		"parliament_name", "parliament_type", "parliament_debate_estate", "parliament_debate_name", "parliament_issue_support",
+		"num_loans", "total_debt", "remaining_loan_capacity", "trade_balance", "is_bankrupt", "regency_type", "parliament_type", "parliament_debate_estate", "parliament_debate_name", "parliament_issue_support",
 		"rank_level", "score", "num_artists", "great_power_rank", "great_power_score", "living_characters", "num_works_of_art",
 		"num_characters", "power_projection", "num_locations", "has_active_rebels", "army_levy_potential", "army_levy_power",
 		"army_size", "avg_army_experience", "avg_navy_experience", "num_forts", "expected_army_size", "expected_navy_size",
@@ -94,7 +93,9 @@ def parse_data_countries(data):
 		"primary_religion_percentage", "total_coastal_population", "total_culture_capacity_used", "economical_base",
 		"estimated_monthly_income", "estimated_monthly_income_trade_tax", "num_starving_provinces", "num_institutions_embraced",
 		"overlord_tag", "num_active_cb_targets", "annexation_progress", "diplomatic_range", "liberty_desire",
-		"max_diplomatic_capacity", "max_diplomats", "num_diplomats", "num_subjects", "subject_loyalty", "used_diplomatic_capacity"
+		"max_diplomatic_capacity", "max_diplomats", "num_diplomats", "num_subjects", "subject_loyalty", "used_diplomatic_capacity",
+		"gold", "stability", "government_power", "prestige", "war_exhaustion", "manpower", "sailors", "inflation", "army_tradition",
+		"navy_tradition", "control_avg", "dev_avg", "prosperity_avg", "market_access_avg", "towns", "cities", "winter_pow_avg"
 	]
 	societal_value_names = [
 		"centralization_vs_decentralization", "traditionalist_vs_innovative", "spiritualist_vs_humanist",
