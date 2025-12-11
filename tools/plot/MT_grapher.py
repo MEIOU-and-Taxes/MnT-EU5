@@ -246,6 +246,34 @@ class MainWindow(QMainWindow):
 			self.btn_fullscreen.blockSignals(False)
 		super().changeEvent(event)
 
+		# In MT_grapher.py, inside the MainWindow class
+
+		def _check_file_locks(self, export_folder_path, filenames):
+			"""
+			Checks if any of the target CSV files in the export directory are locked.
+			Returns the full path of the first locked file found, or None if all are writable.
+			"""
+			# Also check for the derived 'normalized' file
+			filenames_to_check = list(filenames)
+			if "country_stats" in filenames_to_check:
+				filenames_to_check.append("country_stats_normalized")
+
+			for name in filenames_to_check:
+				full_path = os.path.join(export_folder_path, f"{name}.csv")
+
+				if os.path.exists(full_path):
+					try:
+						# The most reliable way to check for a lock is to try to open it.
+						# We use append mode ('a') as it's a non-destructive write test.
+						file = open(full_path, 'a')
+						file.close()
+					except (IOError, PermissionError):
+						# This exception means the file is locked by another process.
+						print(f"Lock detected on file: {full_path}")
+						return full_path  # Return the path of the locked file
+
+			return None  # No locks found
+
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""
 		all_graphs.get_data = self.get_data
@@ -618,6 +646,32 @@ class MainWindow(QMainWindow):
 			self.canvas.draw_idle()
 			QMessageBox.warning(self, "Scaling Error", "Could not apply logarithmic scale.\nData may contain non-positive values.")
 
+	def _check_file_locks(self, export_folder_path, filenames):
+		"""
+		Checks if any of the target CSV files in the export directory are locked.
+		Returns the full path of the first locked file found, or None if all are writable.
+		"""
+		# Also check for the derived 'normalized' file
+		filenames_to_check = list(filenames)
+		if "country_stats" in filenames_to_check:
+			filenames_to_check.append("country_stats_normalized")
+
+		for name in filenames_to_check:
+			full_path = os.path.join(export_folder_path, f"{name}.csv")
+
+			if os.path.exists(full_path):
+				try:
+					# The most reliable way to check for a lock is to try to open it.
+					# We use append mode ('a') as it's a non-destructive write test.
+					file = open(full_path, 'a')
+					file.close()
+				except (IOError, PermissionError):
+					# This exception means the file is locked by another process.
+					print(f"Lock detected on file: {full_path}")
+					return full_path  # Return the path of the locked file
+
+		return None  # No locks found
+
 
 	def export_all_data(self):
 		"""
@@ -639,8 +693,15 @@ class MainWindow(QMainWindow):
 			"country_stats": log_parser.parse_data_countries,
 		}
 
-		# --- Define a fixed export path inside the log folder ---
+		# Define a fixed export path inside the log folder
 		export_folder_path = os.path.join(self.log_folder, "csv_export")
+
+		# Pre-check for locked files
+		locked_file = self._check_file_locks(export_folder_path, list(all_parsers.keys()))
+		if locked_file:
+			QMessageBox.critical(self, "File In Use", f"Please close the file and try again:\n\n{locked_file}")
+			return False
+
 		print(f"Exporting CSV files to: {export_folder_path}")
 
 		# --- Load the location lookup data ---
