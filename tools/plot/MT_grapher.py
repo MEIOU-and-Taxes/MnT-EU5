@@ -164,6 +164,7 @@ class MainWindow(QMainWindow):
 
 		self.top_button_layout.addWidget(self.btn_change_log_folder)
 		self.top_button_layout.addWidget(self.btn_charts)
+		self.top_button_layout.addWidget(self.btn_analysis)
 		self.top_button_layout.addWidget(self.btn_refresh)
 		self.top_button_layout.addWidget(self.btn_backup)
 		self.top_button_layout.addWidget(self.btn_export_view)
@@ -193,6 +194,8 @@ class MainWindow(QMainWindow):
 		self.btn_log_scale.toggled.connect(self.toggle_log_scale)
 		self.btn_moving_avg.toggled.connect(self.toggle_moving_average)
 		self.slider_period.valueChanged.connect(self.on_period_slider_change)
+		self.btn_analysis.clicked.connect(self.open_analysis_toolkit)
+		self.btn_change_log_folder.clicked.connect(self.change_log_folder)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
@@ -211,6 +214,13 @@ class MainWindow(QMainWindow):
 		except json.JSONDecodeError as e:
 			self.key_configs = {}
 			QMessageBox.critical(self, "Config Error", f"Error parsing key_configs.json:\n{e}")
+
+	def load_initial_data(self):
+		"""
+		Performs the initial, potentially slow, loading of log data.
+		This should be called after the main window is shown.
+		"""
+		self.reload_log(is_interactive=True)
 
 	def setup_shortcuts(self):
 		"""Setup global keyboard shortcuts."""
@@ -715,13 +725,36 @@ class MainWindow(QMainWindow):
 					print(f"No data found for {filename_root}, skipping.")
 					continue
 
+				# Add region, subcontinent & continent based on the location.csv file
+				if filename_root == "country_stats" and location_lookup:
+					print("Enriching country data with geographical information...")
+					enhanced_dataset = []
+					for record in dataset:
+						capital_area = record.get('capital_area')
+						# Use .get() with a default empty dict for safe lookups
+						geo_data = location_lookup.get(capital_area, {})
+
+						# Create a new record with geo data first for nice column order
+						enhanced_record = {
+							'continent': geo_data.get('continent', 'N/A'),
+							'subcontinent': geo_data.get('subcontinent', 'N/A'),
+							'region': geo_data.get('region', 'N/A'),
+						}
+						enhanced_record.update(record) # Add all original data
+						enhanced_dataset.append(enhanced_record)
+
+					dataset_to_write = enhanced_dataset
+				else:
+					dataset_to_write = dataset
+
+
 				file_path = os.path.join(export_folder_path, f"{filename_root}.csv")
 				try:
-					headers = dataset[0].keys()
+					headers = dataset_to_write[0].keys()
 					with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
 						writer = csv.DictWriter(output_file, fieldnames=headers)
 						writer.writeheader()
-						writer.writerows(dataset)
+						writer.writerows(dataset_to_write)
 					exported_files.append(file_path)
 				except Exception as e:
 					QMessageBox.critical(self, "File Write Error", f"Failed to write {filename_root}.csv: {e}")
@@ -735,7 +768,6 @@ class MainWindow(QMainWindow):
 				QMessageBox.information(self, "Export Cancelled", f"Export process was cancelled.\nPartial files may exist in:\n{export_folder_path}")
 				return False # Return failure status
 			elif exported_files:
-				QMessageBox.information(self, "Export Successful", f"All data successfully exported to:\n{export_folder_path}")
 				# --- Create a custom message box with an "Open Directory" button ---
 				msg_box = QMessageBox(self)
 				msg_box.setIcon(QMessageBox.Icon.Information)
