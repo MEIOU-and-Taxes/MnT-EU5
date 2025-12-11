@@ -1,6 +1,5 @@
 # Thanks to the Seelowe/Justice Fighter, the author of the code this is based on
 import csv
-import datetime
 import glob
 import json
 import os
@@ -11,22 +10,24 @@ from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL.PSDraw import ERROR_PS
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
+import pandas as pd
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel, QProgressDialog)
+							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel, QProgressDialog, QProgressBar)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
+from tools.dataset_analysis.analysis_toolkit import AnalysisToolkitDialog
 from tools.plot import log_parser
-from tools.shared.fetch_logs import get_log_directory_from_config
+from tools.shared import fetch_logs
 
 TARGET_FILE_NAME_ROOT = 'error'
+columns_not_to_multiply_by_num_of_locations = ['num_locations', 'year', 'age', 'century', 'decade']
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
 icon_path = 'icon.png'
@@ -167,7 +168,6 @@ class MainWindow(QMainWindow):
 		self.top_button_layout.addWidget(self.btn_analysis)
 		self.top_button_layout.addWidget(self.btn_refresh)
 		self.top_button_layout.addWidget(self.btn_backup)
-		self.top_button_layout.addWidget(self.btn_export_view)
 		self.top_button_layout.addWidget(self.btn_export_all)
 		self.top_button_layout.addWidget(self.btn_fullscreen)
 		self.top_button_layout.addWidget(self.btn_log_scale)
@@ -188,7 +188,6 @@ class MainWindow(QMainWindow):
 		self.btn_refresh.clicked.connect(self.reload_log)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
-		self.btn_export_view.clicked.connect(self.export_current_view_to_csv)
 		self.btn_export_all.clicked.connect(self.export_all_data)
 		self.btn_fullscreen.toggled.connect(self.set_fullscreen_state)
 		self.btn_log_scale.toggled.connect(self.toggle_log_scale)
@@ -201,7 +200,7 @@ class MainWindow(QMainWindow):
 		self.setup_shortcuts()
 		self.load_key_configs()
 		self.load_graph_definitions()
-		self.reload_log()
+		self.display_info_screen()
 
 	def load_key_configs(self):
 		try:
@@ -230,8 +229,7 @@ class MainWindow(QMainWindow):
 		QShortcut(QKeySequence("A"), self, self.open_analysis_toolkit)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
 		QShortcut(QKeySequence("F"), self, self.btn_fullscreen.toggle)
-		QShortcut(QKeySequence("Ctrl+E"), self, self.export_current_view_to_csv)
-		QShortcut(QKeySequence("Ctrl+Shift+E"), self, self.export_all_data)
+		QShortcut(QKeySequence("Ctrl+E"), self, self.export_all_data)
 		QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
 		QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
 
@@ -620,36 +618,6 @@ class MainWindow(QMainWindow):
 			self.canvas.draw_idle()
 			QMessageBox.warning(self, "Scaling Error", "Could not apply logarithmic scale.\nData may contain non-positive values.")
 
-	def export_current_view_to_csv(self):
-		"""Exports the complete, unfiltered data for the current chart type to a CSV file."""
-		if not self.current_dataset:
-			QMessageBox.warning(self, "Export Error", "No data available to export. Please select a chart first.")
-			return
-
-		default_filename = "export.csv"
-		if self.current_graph_info:
-			safe_title = self.current_graph_info['title'].lower().replace(" ", "_").replace("/", "")
-			default_filename = f"{safe_title}_full_export.csv"
-
-		file_path, _ = QFileDialog.getSaveFileName(
-			self, "Save Full Dataset as CSV", default_filename, "CSV Files (*.csv);;All Files (*)"
-		)
-
-		if not file_path:
-			return
-
-		try:
-			headers = self.current_dataset[0].keys()
-			with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
-				writer = csv.DictWriter(output_file, fieldnames=headers)
-				writer.writeheader()
-				writer.writerows(self.current_dataset)
-
-			QMessageBox.information(self, "Export Successful", f"Full dataset successfully exported to:\n{file_path}")
-
-		except Exception as e:
-			QMessageBox.critical(self, "Export Failed", f"An error occurred while writing the file:\n{e}")
-			traceback.print_exc()
 
 	def export_all_data(self):
 		"""
@@ -756,6 +724,37 @@ class MainWindow(QMainWindow):
 						writer.writeheader()
 						writer.writerows(dataset_to_write)
 					exported_files.append(file_path)
+
+					# Generate the location-multiplied CSV
+					if filename_root == "country_stats" and dataset_to_write:
+						print("Generating location-multiplied country stats...")
+						location_multiplied_dataset = []
+
+						for record in dataset_to_write:
+							new_record = record.copy()
+							multiplier = record.get('num_locations', 1)
+
+							# Ensure multiplier is a valid number
+							if not isinstance(multiplier, (int, float)) or multiplier == 0:
+								location_multiplied_dataset.append(new_record)
+								continue
+
+							for key, value in new_record.items():
+								# Multiply only numeric values, and exclude 'num_locations' itself
+								if isinstance(value, (int, float)) and key not in columns_not_to_multiply_by_num_of_locations:
+									new_record[key] = value * multiplier
+
+							location_multiplied_dataset.append(new_record)
+
+						# Write the new dataset to its own file
+						new_filepath = os.path.join(export_folder_path, "country_stats_locations.csv")
+						with open(new_filepath, 'w', newline='', encoding='utf-8') as new_file:
+							writer = csv.DictWriter(new_file, fieldnames=headers)
+							writer.writeheader()
+							writer.writerows(location_multiplied_dataset)
+						exported_files.append(new_filepath)
+						print(f"Successfully created {new_filepath}")
+
 				except Exception as e:
 					QMessageBox.critical(self, "File Write Error", f"Failed to write {filename_root}.csv: {e}")
 					# Continue to the next file even if one fails
@@ -1074,10 +1073,8 @@ class LoadingDialog(QDialog):
 
 if __name__ == '__main__':
 	try:
-		# Must change directory to script's location for config/log files
-		os.chdir(os.path.dirname(__file__) or '.')
-
 		app = QApplication(sys.argv)
+
 		main_window = MainWindow()
 		main_window.show()
 
