@@ -642,10 +642,14 @@ class MainWindow(QMainWindow):
 			traceback.print_exc()
 
 	def export_all_data(self):
-		"""Exports all parsable data types into separate CSV files in a timestamped folder with a progress bar."""
+		"""
+		Exports all parsable data. For country_stats, it also generates a second CSV
+		where numeric values are multiplied by the number of locations.
+		Returns True on success, False on failure or cancellation."""
+
 		if not self.data:
 			QMessageBox.warning(self, "Export Error", "No log data loaded. Please refresh data first.")
-			return
+			return False
 
 		# Define all available parsers and their desired filenames
 		all_parsers = {
@@ -657,14 +661,12 @@ class MainWindow(QMainWindow):
 			"country_stats": log_parser.parse_data_countries,
 		}
 
-		# Ask user for a base directory to save the export folder
-		save_dir = QFileDialog.getExistingDirectory(self, "Select Directory to Save Export Folder")
-		if not save_dir:
-			return
+		# --- Define a fixed export path inside the log folder ---
+		export_folder_path = os.path.join(self.log_folder, "csv_export")
+		print(f"Exporting CSV files to: {export_folder_path}")
 
-		# Create a timestamped folder name
-		timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-		export_folder_path = os.path.join(save_dir, f"M&T_Export_{timestamp}")
+		# --- Load the location lookup data ---
+		location_lookup = self._load_location_data()
 
 		# --- Setup Progress Dialog ---
 		progress_dialog = QProgressDialog("Preparing to export...", "Cancel", 0, len(all_parsers), self)
@@ -731,16 +733,33 @@ class MainWindow(QMainWindow):
 			# --- Show Final Status Message ---
 			if was_cancelled:
 				QMessageBox.information(self, "Export Cancelled", f"Export process was cancelled.\nPartial files may exist in:\n{export_folder_path}")
+				return False # Return failure status
 			elif exported_files:
 				QMessageBox.information(self, "Export Successful", f"All data successfully exported to:\n{export_folder_path}")
+				# --- Create a custom message box with an "Open Directory" button ---
+				msg_box = QMessageBox(self)
+				msg_box.setIcon(QMessageBox.Icon.Information)
+				msg_box.setWindowTitle("Export Successful")
+				msg_box.setText(f"All data successfully exported to the 'csv_export' subfolder in your log directory:\n{export_folder_path}")
+
+				open_button = msg_box.addButton("Open Directory", QMessageBox.ButtonRole.ActionRole)
+				msg_box.addButton(QMessageBox.StandardButton.Ok)
+
+				msg_box.exec()
+
+				if msg_box.clickedButton() == open_button:
+					# Use QDesktopServices for cross-platform compatibility to open the folder
+					QDesktopServices.openUrl(QUrl.fromLocalFile(export_folder_path))
+				return True # Return success status
 			else:
 				QMessageBox.warning(self, "Export Warning", "No data was available to export.")
+				return False # Return failure status
 
 		except Exception as e:
 			progress_dialog.close() # Ensure dialog is closed on error
 			QMessageBox.critical(self, "Export Failed", f"A critical error occurred:\n{e}")
 			traceback.print_exc()
-
+			return False # Return failure status
 	def backup_log(self):
 		"""Backs up the current game.log."""
 		if not self.logs:
@@ -759,7 +778,7 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "Back-up failed", f"Error backing up log: {e}")
 		self.display_info_screen()
 
-	def reload_log(self):
+	def reload_log(self, is_interactive=True):
 		"""Reads all log files and refreshes the current view."""
 		print("Reloading log data...")
 		# Clear the parser caches to force a re-read of the data.
@@ -1029,6 +1048,17 @@ if __name__ == '__main__':
 		app = QApplication(sys.argv)
 		main_window = MainWindow()
 		main_window.show()
+
+		# Show the loading screen on top of the main window.
+		loading_dialog = LoadingDialog()
+		loading_dialog.show()
+		app.processEvents() # Ensure the loading dialog appears immediately.
+
+		# Run the slow data loading process.
+		main_window.load_initial_data()
+		# Once loading is complete, close the loading screen.
+		loading_dialog.close()
+		# Start the main application event loop.
 		sys.exit(app.exec())
 
 	except Exception as e:
