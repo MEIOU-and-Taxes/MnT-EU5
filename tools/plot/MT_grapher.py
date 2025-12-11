@@ -849,6 +849,24 @@ class MainWindow(QMainWindow):
 		return files, "".join(content_list)
 
 
+	def change_log_folder(self):
+		"""Opens a dialog to select a new log folder and updates the config."""
+		path_new_folder = QFileDialog.getExistingDirectory(self, "Select Log Folder", self.log_folder)
+
+		if path_new_folder and path_new_folder != self.log_folder:
+			print(f"Changing log folder to: {path_new_folder}")
+			self.log_folder = path_new_folder
+
+			# --- Use the centralized function to update the config file ---
+			fetch_logs.update_config_file('Paths', 'log_directory', path_new_folder)
+
+			QMessageBox.information(self, "Log Folder Changed",
+									f"The log folder has been updated.\n"
+									f"The application will now refresh data from:\n{path_new_folder}")
+
+			self.reload_log()
+
+
 
 if __name__ == '__main__':
 	try:
