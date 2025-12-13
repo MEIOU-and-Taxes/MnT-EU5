@@ -159,15 +159,40 @@ Date: 2025-11-30
     - No longer reduce local Unrest by 0.1  
     - Tolerance of Heathen Beliefs: 1 → 2  
     - Tolerance of the True Faith: \-0.5 (New)  
-    - Impact on Dhimmi estate power: +100% → +70%
+    - Impact on Dhimmi estate power: +100% → +50%
   - ‘Promote tolerance’ 
     - Tolerance of Heathen Beliefs: 1 → 2  
     - Tolerance of the True Faith: \-0.5 (New)  
-    - Impact on Dhimmi estate power: +50% → +33%
+    - Impact on Dhimmi estate power: +50% → +25%
   - ‘Preserve Local Traditions’ 
     - Tolerance of Heathen Beliefs: 1 → 2  
     - Tolerance of the True Faith: \-0.5 (New)  
-    - Impact on Dhimmi estate power: +33% → +25%
+    - Impact on Dhimmi estate power: +33% → +20%
+  - ‘Pact of Umar’ 
+    - Impact on Dhimmi estate power: +100% → +50%
+- Commoners estate privileges - reduction of impact on estate power to match increased power per pop:  
+  - generic:
+    - peasants_free_peasantry: +50% → +25%
+    - peasants_represented_in_parliament: +20% → +10%
+    - peasant_owns_their_food: +20% → +10%
+    - peasants_fewer_levies: +33% → +15%
+    - peasants_allowed_weapons_privilege: +50% → +25%
+    - allow_hunting: +25% → +15%
+    - no_labor_sunday: +33% → +15%
+    - communal_lands: +20% → +10%
+    - partial_yield: +33% → +15%
+    - access_to_royal_and_ecclesiastical_courts: +33% → +15%
+    - peasants_in_administration: +50% → +25%
+    - peasants_autonomous_villages: +50% → +25%
+  - unique:
+    - invite_german_settlers: +20% → +5%
+    - ayuntamientos: +50% → +25%
+    - cas_caballeros_villanos: +20% → +10%
+- Noble estate privileges - added impact on Commoners and Dhimmi estate power
+  - noble_serfdom_rights: added -30% Commoners and Dhimmi estate power
+  - nobles_land_rights: added -15% Commoners and Dhimmi estate power
+  - manorial_courts: added -25% Commoners and Dhimmi estate power
+  - banal_lordship: added -25% Commoners and Dhimmi estate power
 - Modify requirements for country rank change
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
