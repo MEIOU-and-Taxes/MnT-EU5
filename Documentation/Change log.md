@@ -38,10 +38,11 @@ Date: 2025-11-30
   - Experience gain increased for units to compensate for higher loss of troops.
   - Retreat strength loss increased, minimum combat time increased. (Be wary of where and when you engage!)
   - Bombardment phase is longer and base bombardment chance increased.
+- Warscore from battles stays constant through the ages. No more -80% in 'Age of Revolutions'. 
 
--Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
--Reduced use of masonry by granaries.
--Reduced use of tools by lumber mills.
+- Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+- Reduced use of masonry by granaries.
+- Reduced use of tools by lumber mills.
 
 ##### Diplomacy
 
