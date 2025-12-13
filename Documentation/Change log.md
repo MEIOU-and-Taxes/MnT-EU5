@@ -173,10 +173,10 @@ Date: 2025-11-30
   - added requirement about positive stability
   - added requirement about govt. power above 60
 - Base Estate Power split
-  - Commoners (Peasants) estate power per pop: 0.025 -> 0.25
-  - Dhimmi estate power per pop: 0.02 -> 0.2
-  - Tribes estate power per pop: 0.01 -> 0.2
-  - Cossacks estate power per pop: 0.02 -> 0.2
+  - Commoners (Peasants) estate power per pop: 0.025 → 0.2
+  - Dhimmi estate power per pop: 0.02 → 0.1
+  - Tribes estate power per pop: 0.01 → 0.2
+  - Cossacks estate power per pop: 0.02 → 0.2
   - Burghers estate power per pop: 2 → 3
 - Scaling of lower class estate power moved to free subjects/serfdom slider, with -100% power at full serfdom slider and +50% at full free subjects
 - Scaling of Tribes Estate added to centralization slider, with -100% power at full centralization and +50% at full decentralization
