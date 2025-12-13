@@ -47,6 +47,151 @@
 	
 }
 
+REPLACE:burghers_estate = {
+	color = pop_burghers
+	power_per_pop = 3 #MnT changed from 2
+	tax_per_pop = 20
+	rival = -0.01
+	alliance = 0.01
+	
+	revolt_court_language = common_language
+	characters_have_dynasty = sometimes # new characters may spawn with a dynasty
+	can_generate_mercenary_leaders = yes
+	
+	bank = yes 	#can and will loan money
+	
+	#multiplied with (satisfaction - LOW_SATISFACTION_THRESHOLD)
+	satisfaction = {
+		global_merchant_power = 0.5
+		global_production_efficiency = medium_production_efficiency_bonus
+	}
+	#multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
+	high_power = {
+		burghers_estate_max_tax = -0.5
+		global_merchant_capacity_modifier = 1.0
+		navy_maintenance_cost = -0.33
+		monthly_towards_plutocracy = societal_value_significant_monthly_move
+	}
+	
+	
+	#multiplied with -(relative_power - LOW_POWER_THRESHOLD) if < LOW_POWER_THRESHOLD
+	low_power = {
+		burghers_estate_max_tax = 0.5
+	}
+	
+	opinion = {
+		add = {
+			desc = "ESTATE_OPINION_BASE"
+			value = "opinion(scope:target)"
+			multiply = 0.05
+		}
+		
+		
+		
+		
+		add = {
+			desc = "ESTATE_OPINION_TARGET_B_ESTATE_POWER"
+			value = "scope:target.estate_power(estate_type:burghers_estate)"
+			subtract = 0.2
+			multiply = 5
+		}
+		
+		
+		add = {
+			desc = "ESTATE_OPINION_MERCHANT_CAPACITY"
+			value = total_merchant_capacity
+			subtract = scope:target.total_merchant_capacity
+			multiply = 0.1
+			max = 5
+			min = -5
+		}
+		
+		add = {
+			desc = "capital_economy_vs_traditional_economy"
+			value = {
+				value = societal_value:capital_economy_vs_traditional_economy
+				multiply = -1
+				divide = 10
+			}
+		}
+		
+		add = {
+			desc = "aristocracy_vs_plutocracy"
+			value = {
+				value = societal_value:aristocracy_vs_plutocracy
+				divide = 10
+			}
+		}
+		
+		add = {
+			desc = "mercantilism_vs_free_trade"
+			value = {
+				value = societal_value:mercantilism_vs_free_trade
+				divide = 10
+			}
+		}
+		
+		
+		if = {
+			limit = {
+				capital.market.language = scope:target.capital.market.language
+			}
+			add = {
+				desc = "ESTATE_OPINION_OUR_MARKET_LANGUAGE"
+				value = 10
+			}
+		}
+		
+		
+		if = {
+			limit = {
+				capital.market = { has_merchant = scope:target }
+			}	
+			add = {
+				desc = "ESTATE_OPINION_MERCHANT_IN_CAPITAL"
+				value = -5
+			}
+		}
+		
+		
+		if = {
+			limit = {
+				scope:target.capital.market = { has_merchant = root }
+			}	
+			add = {
+				desc = "ESTATE_OPINION_OUR_MERCHANT_IN_THEIR_CAPITAL"
+				value = 10
+			}
+		}
+
+
+		if = {
+			
+			limit = {
+				government_type = government_type:republic
+				scope:target = { government_type = government_type:republic }
+			}	
+			add = {
+				desc = "ESTATE_OPINION_BOTH_REPUBLIC"
+				value = 5
+			}
+		}
+		
+		
+		if = {
+			limit = {
+				is_embargoed_by = scope:target
+			}	
+			add = {
+				desc = "ESTATE_OPINION_EMBARGOING_US"
+				value = -5
+			}
+		}
+
+
+	}
+}
+
 REPLACE:peasants_estate = {
     color = pop_peasants
     power_per_pop  = 0.25 #MnT increased from vanilla 0.025
