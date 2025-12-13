@@ -155,15 +155,30 @@ Date: 2025-11-30
 ##### Politics
 
 - Dhimmi estate privileges:  
-  - ‘Abrahamic communities’, ‘Promote tolerance’ & ‘Preserve Local Traditions’:  
+  - ‘Abrahamic communities’
+    - No longer reduce local Unrest by 0.1  
     - Tolerance of Heathen Beliefs: 1 → 2  
     - Tolerance of the True Faith: \-0.5 (New)  
-  - ‘Abrahamic communities’:  
-    - No longer reduce local Unrest by 0.1  
+    - Impact on Dhimmi estate power: +100% → +70%
+  - ‘Promote tolerance’ 
+    - Tolerance of Heathen Beliefs: 1 → 2  
+    - Tolerance of the True Faith: \-0.5 (New)  
+    - Impact on Dhimmi estate power: +50% → +33%
+  - ‘Preserve Local Traditions’ 
+    - Tolerance of Heathen Beliefs: 1 → 2  
+    - Tolerance of the True Faith: \-0.5 (New)  
+    - Impact on Dhimmi estate power: +33% → +25%
 - Modify requirements for country rank change
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
   - added requirement about govt. power above 60
+- Base Estate Power split
+  - Commoners (Peasants) estate power per pop: 0.025 -> 0.25
+  - Dhimmi estate power per pop: 0.02 -> 0.2
+  - Tribes estate power per pop: 0.01 -> 0.2
+  - Cossacks estate power per pop: 0.02 -> 0.2
+- Scaling of lower class estate power moved to free subjects/serfdom slider, with -100% power at full serfdom slider and +50% at full free subjects
+- Scaling of Tribes Estate added to centralization slider, with -100% power at full centralization and +50% at full decentralization
 
 ##### Disasters
 
