@@ -1,74 +1,89 @@
 # Calculate heuristic scores for centers.
 mnt_calculate_center_scores = {
 	every_location_in_the_world = {
-		# Trade heuristic: market + burghers + taxable base, weighted by rank.
+		# Trade heuristic: weighted blend of access, local advantage, burgher capacity, and state trade capacity from buildings.
 		set_variable = {
 			name = mnt_trade_score
 			value = {
-				value = location_tax_base
+				value = market_access
+				multiply = 5
 				add = {
-					value = num_pop_type:burghers
-					multiply = 0.5
+					value = modifier:local_merchant_power
+					multiply = 5
 				}
 				add = {
-					value = market.market_population
-					multiply = 0.05
+					value = modifier:local_trades_per_burgher
+					multiply = num_pop_type:burghers
+					multiply = 20
 				}
-				if = {
-					limit = { location_rank = location_rank:city }
-					multiply = 1.25
+				add = {
+					value = modifier:merchant_capacity_from_building
+					multiply = 10
 				}
-				else_if = {
-					limit = { location_rank = location_rank:town }
-					multiply = 1.1
+				add = {
+					value = location_maritime_merchant_power
+					multiply = 5
+				}
+				add = {
+					value = is_market_center
+					multiply = 25 #boolean * 20
 				}
 			}
 		}
 
-		# Production heuristic: population + laborers + tax base.
+		# Production heuristic: Total goods produced in location / population
 		set_variable = {
 			name = mnt_production_score
 			value = {
-				value = population
-				multiply = 0.25
-				add = {
-					value = num_pop_type:laborers
-					multiply = 0.5
+				value = goods_output
+				divide = {
+					value = population
 				}
-				add = location_tax_base
 			}
 		}
 
-		# Culture heuristic: nobles + tradition proxy via tax base + population.
+		# Culture heuristic: cultural influence + tradition
 		set_variable = {
 			name = mnt_culture_score
 			value = {
-				value = location_tax_base
-				multiply = 0.5
+				value = modifier:local_cultural_influence
+				multiply = 33
 				add = {
-					value = num_pop_type:nobles
-					multiply = 1.0
+					value = modifier:local_cultural_tradition
+					multiply = 10
 				}
 				add = {
-					value = population
-					multiply = 0.1
+					value = location_art_quality
+					multiply = 12.5
 				}
 			}
 		}
 
-		# Education heuristic: clergy + population + tax base proxy.
+		# Education heuristic: clergy + nobles + literacy + buildings.
 		set_variable = {
 			name = mnt_education_score
 			value = {
 				value = num_pop_type:clergy
-				multiply = 1.0
+				multiply = 0.5
 				add = {
-					value = population
-					multiply = 0.1
+					value = num_pop_type:nobles
+					multiply = 0.25
 				}
 				add = {
-					value = location_tax_base
-					multiply = 0.25
+					value = average_location_literacy
+					multiply = 20
+				}
+				if = {
+					limit = { has_building = university }
+					add = 50
+				}
+				if = {
+					limit = { has_building = monastery }
+					add = 25
+				}
+				if = {
+					limit = { has_building = library }
+					add = 30
 				}
 			}
 		}
