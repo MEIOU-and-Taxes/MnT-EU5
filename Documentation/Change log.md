@@ -39,6 +39,8 @@ Date: 2025-11-30
   - Retreat strength loss increased, minimum combat time increased. (Be wary of where and when you engage!)
   - Bombardment phase is longer and base bombardment chance increased.
 - Warscore from battles stays constant through the ages. No more -80% in 'Age of Revolutions'. 
+- Warscore cost from ages is now -10% starting in age 4 up until -40% in age 6 (Vanilla is -10% age 5; -20% age 6)
+  - This is to balance out the increased control from later ages
 
 - Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
 - Reduced use of masonry by granaries.
