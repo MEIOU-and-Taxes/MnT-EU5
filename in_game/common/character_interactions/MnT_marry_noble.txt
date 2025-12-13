@@ -1,0 +1,218 @@
+﻿REPLACE:marry_noble = { 
+
+	sound = UI_action_character_marry_noble
+
+	is_consort_action = yes
+	on_own_nation = yes
+	context_menu_click_mode = click # Disable confirm
+	
+	#commenting out the below temporarily in favour of hooking this to the effect scope
+	# sound = "event:/SFX/UI/Character/Unique/sfx_ui_character_arrange_marriage"
+	
+	message = yes
+	
+	
+	potential = {
+		scope:actor = {
+			OR = {
+				government_type = government_type:monarchy
+				succession_law = heir_selection:signoria_selection
+			}
+		}
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 120
+	
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+		}
+		enabled = {
+			character_can_marry_trigger = yes
+		}
+	}
+
+	select_trigger = {
+		top_widget = marry_noble_character_top
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		name = "marry_noble_select_title"
+		none_available_msg_key = "marry_noble_no_characters"
+		column = {
+			data = character_info
+		}
+		visible = {
+			OR = {
+				scope:actor = { modifier:can_marry_only_overlord_dynasty_characters = no }
+				AND = {
+					scope:actor = { modifier:can_marry_only_overlord_dynasty_characters = yes }
+					has_dynasty = yes
+					OR = {
+						owner = { any_subject = { this = scope:actor } }
+						dynasty = {
+							any_character_in_dynasty = {
+								owner = { any_subject = { this = scope:actor } }
+							}
+						}
+					}
+				}
+			}
+			OR = {
+				has_estate = estate_type:nobles_estate
+				AND = {
+					scope:actor = { succession_law = heir_selection:signoria_selection }
+					has_estate = estate_type:burghers_estate
+				}
+			}
+			NOT = { is_same_gender = scope:recipient }
+			NOT = { is_close_relative = scope:recipient }
+			character_can_marry_trigger = yes
+			not = { is_spouse_of = scope:recipient }
+			modifier:blocked_from_character_interactions = no
+		}
+
+		enabled = {
+			OR = {
+				AND = {
+					NOT = {
+						OR = {
+							scope:actor ?= { modifier:country_celtic_marriage_banned = yes }
+							scope:target ?= { owner ?= { modifier:country_celtic_marriage_banned = yes } } #M&T changed from = to ?=
+						}
+					}
+					OR = {
+						AND = {
+							NOT = { scope:target ?= { culture = { has_culture_group = culture_group:celtic_group } } }
+							scope:recipient ?= { culture = { has_culture_group = culture_group:celtic_group } }
+						}
+						AND = {
+							scope:target ?= { culture = { has_culture_group = culture_group:celtic_group } }
+							NOT = { scope:recipient ?= { culture = { has_culture_group = culture_group:celtic_group } } }
+						}
+					}
+				}
+				AND = {
+					scope:target ?= { culture = { has_culture_group = culture_group:celtic_group } }
+					scope:recipient ?= { culture = { has_culture_group = culture_group:celtic_group } }
+				}
+				AND = {
+					NOT = { scope:target ?= { culture = { has_culture_group = culture_group:celtic_group } } }
+					NOT = { scope:recipient ?= { culture = { has_culture_group = culture_group:celtic_group } } }
+				}
+			}
+		}
+	}
+	
+	effect = {
+		if = {	
+			limit = {
+				exists = scope:recipient
+				exists = scope:target
+			}
+			scope:recipient = {
+				marry_character = scope:target
+			}
+		}
+		
+		if = {	
+			limit = {
+				scope:actor ?= { NOT = { has_estate_privilege = estate_privilege:noble_marriage_rights } }
+			}
+			scope:actor = {
+				add_legitimacy = legitimacy_mild_penalty
+			}
+		}
+		if = {
+			limit = {
+				scope:recipient = character:vij_bukka_raya_sangama
+			}
+			scope:target = {
+				add_to_list = bukka_raya_previous_spouses
+			}
+		}
+	}
+
+	ai_will_do = {
+		# We treat scope:recipient as the important character. This will be evaluated both ways though
+		
+		
+		add = {
+			if= {
+				limit = {
+					scope:recipient ?= {
+						is_married = yes
+					}
+				}
+				value = -1000
+			}
+		}
+		
+
+		# Old rulers must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						is_ruler = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = 30 # This gives a few years to try to find diplomatic marriages first
+				multiply = 5
+			}
+		}
+		# Old heirs must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						OR = {
+							is_heir = yes
+							AND = {
+								exists = father
+								father = {
+									is_ruler = yes
+								}
+							}
+							AND = {
+								exists = mother
+								mother = {
+									is_ruler = yes
+								}
+							}
+						}
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = 30 # This gives a few years to try to find diplomatic marriages first
+				multiply = 5
+			}
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						is_female = yes
+						age_in_years = 35 # Pregnancy threshold
+					}
+				}
+				value = 35
+				subtract = scope:target.age_in_years
+				multiply = 10
+			}
+		}
+	}
+}	
