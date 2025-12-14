@@ -67,9 +67,9 @@ def parse_data_countries(data):
 		"has_feudalism", "has_legalism", "has_meritocracy", "has_renaissance", "has_banking", "has_professional_armies",
 		"has_new_world", "has_printing_press", "has_pike_and_shot", "has_confessionalism", "has_global_trade",
 		"has_artillery_institution", "has_manufactories", "has_scientific_revolution", "has_military_revolution",
-		"has_enlightenment", "has_industrialization", "has_levee_en_masse", "estate_nobles_income_lost",
-		"estate_clergy_income_lost", "estate_burghers_income_lost", "estate_peasants_income_lost",
-		"estate_dhimmi_income_lost", "estate_tribes_income_lost", "estate_cossacks_income_lost",
+		"has_enlightenment", "has_industrialization", "has_levee_en_masse", "nobles_income_lost",
+		"clergy_income_lost", "burghers_income_lost", "peasants_income_lost",
+		"dhimmi_income_lost", "tribes_income_lost", "cossacks_income_lost",
 		"nobles_gold", "clergy_gold", "burghers_gold", "peasants_gold", "dhimmi_gold", "tribes_gold", "cossacks_gold",
 		"nobles_balance", "clergy_balance", "burghers_balance", "peasants_balance", "dhimmi_balance", "tribes_balance", "cossacks_balance",
 		"nobles_food_income", "clergy_food_income", "burghers_food_income", "peasants_food_income", "dhimmi_food_income", "tribes_food_income", "cossacks_food_income",
@@ -226,7 +226,7 @@ def parse_data_population(data):
 			parsed_data.append({
 				"moment": 1 + int(m.group(1)),
 				"region": m.group(2).strip(),
-				"statistic": "Total Population", #TODO: Add estates
+				"statistic": "Total Population",
 				"population": population_value
 			})
 		except (ValueError, IndexError) as e:
