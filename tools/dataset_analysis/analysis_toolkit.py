@@ -8,7 +8,7 @@ import seaborn as sns
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton, QWidget,
 							 QStackedWidget, QListWidget, QAbstractItemView, QSpinBox, QLabel,
 							 QTextEdit, QFileDialog, QMessageBox,
-							 QProgressDialog, QApplication)
+							 QProgressDialog, QApplication, QCheckBox)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
@@ -258,6 +258,15 @@ class AnalysisToolkitDialog(QDialog):
 		self.summary_group_by_selector.addItems(self._get_categorical_columns())
 		layout.addWidget(self.summary_group_by_selector)
 
+		# Add the normalization checkbox
+		self.summary_normalize_checkbox = QCheckBox("Normalize by num_locations")
+		self.summary_normalize_checkbox.setToolTip(
+			"If checked, divides extensive variables (income, population, etc.)\n"
+			"by 'num_locations' before calculating statistics."
+		)
+		layout.addWidget(self.summary_normalize_checkbox)
+		# --- END of new UI element ---
+
 		grouped_button = QPushButton("Export Grouped Summary (Excel)")
 		grouped_button.clicked.connect(self._export_grouped_summary)
 		layout.addWidget(grouped_button)
@@ -447,8 +456,15 @@ class AnalysisToolkitDialog(QDialog):
 			QMessageBox.warning(self, "Selection Error", "Please select a category to group by.")
 			return
 	
+		# --- Check the state of the new checkbox ---
+		is_normalized = self.summary_normalize_checkbox.isChecked()
+
+		# Set a dynamic filename and title for the dialog
+		default_filename = f"summary_stats_by_{group_by_col}_normalized.xlsx" if is_normalized else f"summary_stats_by_{group_by_col}.xlsx"
+		dialog_title = "Save Normalized Grouped Summary" if is_normalized else "Save Grouped Summary"
+
 		file_path, _ = QFileDialog.getSaveFileName(
-			self, "Save Grouped Summary", f"summary_stats_by_{group_by_col}.xlsx", "Excel Files (*.xlsx)"
+			self, dialog_title, default_filename, "Excel Files (*.xlsx)"
 		)
 	
 		if not file_path:
@@ -468,11 +484,39 @@ class AnalysisToolkitDialog(QDialog):
 				for group in groups:
 					print(f"  - Processing group: {group}")
 					# Filter the dataframe for the current group
-					subset_df = self.df[self.df[group_by_col] == group]
+					subset_df = self.df[self.df[group_by_col] == group].copy()
 	
 					# Safeguard: Skip if the subset is somehow empty
 					if subset_df.empty:
 						continue
+
+					# Perform normalization if the checkbox is ticked
+					if is_normalized:
+						if 'num_locations' not in subset_df.columns or subset_df['num_locations'].sum() == 0:
+							print(f"	- Skipping normalization for group '{group}' due to missing or zero 'num_locations'.")
+						else:
+							# Define extensive columns to be normalized
+							extensive_cols = [
+								'income', 'total_debt', 'army_size', 'max_manpower', 'max_sailors',
+								'military_strength', 'navy_size', 'navy_strength', 'economical_base',
+								'estimated_monthly_income', 'total_coastal_population'
+							]
+							estate_types = ['nobles', 'clergy', 'burghers', 'peasants', 'dhimmi', 'tribes', 'cossacks']
+							for estate in estate_types:
+								extensive_cols.extend([
+									f'{estate}_gold', f'{estate}_balance', f'{estate}_food_income',
+									f'{estate}_trade_income', f'{estate}_income_before_tax', f'{estate}_tax',
+									f'{estate}_expense', f'{estate}_taxable_income', f'{estate}_population'
+								])
+
+							for col in extensive_cols:
+								if col in subset_df.columns:
+									# Use np.where for safe division
+									subset_df[col] = np.where(
+										subset_df['num_locations'] > 0,
+										subset_df[col] / subset_df['num_locations'],
+										0
+									)
 
 					numeric_subset = subset_df.select_dtypes(include=np.number)
 
