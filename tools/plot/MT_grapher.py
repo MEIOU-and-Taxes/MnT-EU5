@@ -11,11 +11,12 @@ from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL.PSDraw import ERROR_PS
-from PyQt6.QtGui import QShortcut, QKeySequence
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget, QFileDialog, QMessageBox, QComboBox)
+							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
@@ -27,6 +28,7 @@ from tools.shared.fetch_logs import get_log_directory_from_config
 TARGET_FILE_NAME_ROOT = 'error'
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
+icon_path = 'icon.png'
 
 graph_introduction = """
 Welcome to the M&T graphing tool!
@@ -90,8 +92,15 @@ class ChartSelectionDialog(QDialog):
 class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
-		self.setWindowTitle("MEIOU and Taxes - Sim graphs")
+		self.setWindowTitle("MEIOU and Taxes Plotter")
+
+		if os.path.exists(icon_path):
+			self.setWindowIcon(QIcon(icon_path))
+		else:
+			print(f"Warning: '{icon_path}' not found. No application icon will be set.")
+
 		self.setGeometry(100, 100, 1800, 800)
+		self.setStyleSheet("QPushButton:checked { background-color: #cce8ff; border: 1px solid #99c8ef; }")
 
 		# --- Data and State ---
 		self.log_folder = get_log_directory_from_config()
@@ -108,6 +117,10 @@ class MainWindow(QMainWindow):
 		self.filter_widget_map = {}
 		self.preset_buttons = []
 		self.preset_shortcuts = []
+		self.is_log_scale = False
+		self.is_moving_average = False
+		self.period_value = 5
+		self.chart_filter_memory = {}
 
 		# --- Main Layout ---
 		self.central_widget = QWidget()
@@ -126,15 +139,34 @@ class MainWindow(QMainWindow):
 		# --- Top Buttons Layout ---
 		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
-		self.btn_full_screen = QPushButton("Fullscreen [F]")
+		self.btn_export = QPushButton("Export to CSV [Ctrl+E]")
+		self.btn_fullscreen = QPushButton("Fullscreen [F]")
 		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
 		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
-		self.btn_export = QPushButton("Export to CSV [Ctrl+E]")
+		self.btn_log_scale = QPushButton("Log Scale [L]")
+		self.btn_moving_avg = QPushButton("Moving Avg [W]")
+
+		self.btn_fullscreen.setCheckable(True)
+		self.btn_log_scale.setCheckable(True)
+		self.btn_moving_avg.setCheckable(True)
+
+		self.slider_period = QSlider(Qt.Orientation.Horizontal)
+		self.slider_period.setRange(2, 50)
+		self.slider_period.setValue(self.period_value)
+		self.slider_period.setFixedWidth(100)
+		self.lbl_period_value = QLabel(f"Period: {self.period_value}")
+		self.slider_period.setVisible(False)
+		self.lbl_period_value.setVisible(False)
+
 		self.top_button_layout.addWidget(self.btn_charts)
-		self.top_button_layout.addWidget(self.btn_full_screen)
 		self.top_button_layout.addWidget(self.btn_refresh)
 		self.top_button_layout.addWidget(self.btn_backup)
 		self.top_button_layout.addWidget(self.btn_export)
+		self.top_button_layout.addWidget(self.btn_fullscreen)
+		self.top_button_layout.addWidget(self.btn_log_scale)
+		self.top_button_layout.addWidget(self.btn_moving_avg)
+		self.top_button_layout.addWidget(self.slider_period)
+		self.top_button_layout.addWidget(self.lbl_period_value)
 		self.top_button_layout.addStretch(1)
 		self.layout.addLayout(self.top_button_layout)
 
@@ -147,10 +179,13 @@ class MainWindow(QMainWindow):
 
 		# --- Connect Signals ---
 		self.btn_refresh.clicked.connect(self.reload_log)
-		self.btn_full_screen.clicked.connect(self.toggle_fullscreen)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
 		self.btn_export.clicked.connect(self.export_to_csv)
+		self.btn_fullscreen.toggled.connect(self.set_fullscreen_state)
+		self.btn_log_scale.toggled.connect(self.toggle_log_scale)
+		self.btn_moving_avg.toggled.connect(self.toggle_moving_average)
+		self.slider_period.valueChanged.connect(self.on_period_slider_change)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
@@ -175,15 +210,23 @@ class MainWindow(QMainWindow):
 		QShortcut(QKeySequence("Shift+S"), self, self.reload_log)
 		QShortcut(QKeySequence("Ctrl+S"), self, self.backup_log)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
-		QShortcut(QKeySequence("F"), self, self.toggle_fullscreen)
+		QShortcut(QKeySequence("F"), self, self.btn_fullscreen.toggle)
 		QShortcut(QKeySequence("Ctrl+E"), self, self.export_to_csv)
+		QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
+		QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
 
-	def toggle_fullscreen(self):
-		"""Toggles the main window between fullscreen and normal modes."""
-		if self.isFullScreen():
-			self.showNormal()
-		else:
+	def set_fullscreen_state(self, checked):
+		if checked:
 			self.showFullScreen()
+		else:
+			self.showNormal()
+
+	def changeEvent(self, event):
+		if event.type() == event.Type.WindowStateChange:
+			self.btn_fullscreen.blockSignals(True)
+			self.btn_fullscreen.setChecked(self.isFullScreen())
+			self.btn_fullscreen.blockSignals(False)
+		super().changeEvent(event)
 
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""
@@ -264,6 +307,7 @@ class MainWindow(QMainWindow):
 		self._reset_filter_layout()
 		self.clear_preset_buttons()
 		self.ax.clear()
+		self.fig.suptitle(None)
 		self.ax.set_title("Menu")
 		text_to_show = ERROR_FILE_NOT_FOUND if not is_path_found else msg if msg else graph_introduction.strip()
 		self.ax.text(0.5, 0.5, text_to_show,
@@ -295,10 +339,54 @@ class MainWindow(QMainWindow):
 		self.filter_widgets.clear()
 		self.filter_widget_map.clear()
 
+	def on_plot_updated(self):
+		"""Callback for when the plot is drawn or redrawn."""
+		self.setup_tooltip_handler()
+		self.apply_plot_settings()
+
 	def setup_tooltip_handler(self):
 		"""Creates a new tooltip handler for the current axes."""
-		self.cursor_hover_handler = InteractiveLineTooltip(self.ax)
+		self.cursor_hover_handler = InteractiveLineTooltip(self.ax, on_line_click_callback=self.handle_line_click)
 		self.cursor_hover_handler.setup_tooltip_handler()
+
+	def handle_line_click(self, line_label):
+		if not self.current_graph_info:
+			return
+
+		if self.current_graph_info['title'] == "Market Statistics":
+			return
+
+		config = self.current_graph_info['info']['config']
+		category_key = config['category_key']
+
+		category_combo = self.filter_widget_map.get(category_key)
+		region_combo = self.filter_widget_map.get('region')
+
+		if not category_combo or not region_combo:
+			return
+
+		is_category_specific = category_combo.currentIndex() != 0
+		is_region_specific = region_combo.currentIndex() != 0
+
+		for combo in [category_combo, region_combo]:
+			combo.blockSignals(True)
+
+		try:
+			if is_category_specific and not is_region_specific:
+				index = region_combo.findText(line_label)
+				if index != -1:
+					region_combo.setCurrentIndex(index)
+					category_combo.setCurrentIndex(0)
+			elif is_region_specific and not is_category_specific:
+				index = category_combo.findText(line_label)
+				if index != -1:
+					category_combo.setCurrentIndex(index)
+					region_combo.setCurrentIndex(0)
+		finally:
+			for combo in [category_combo, region_combo]:
+				combo.blockSignals(False)
+
+		self.redraw_current_plot()
 
 	def clear_tooltip_handler(self):
 		"""Clears any existing tooltip handler."""
@@ -306,7 +394,16 @@ class MainWindow(QMainWindow):
 
 	def display_chart(self, graph_info, title):
 		"""Clears the axes and plots a new graph."""
+		if self.current_graph_info:
+			prev_title = self.current_graph_info['title']
+			current_filters = {key: widget.currentText() for key, widget in self.filter_widget_map.items() if isinstance(widget, QComboBox)}
+			self.chart_filter_memory[prev_title] = current_filters
+
 		self.current_graph_info = {'info': graph_info, 'title': title}
+		self.is_log_scale = False
+		self.btn_log_scale.setChecked(False)
+		self.is_moving_average = False
+		self.btn_moving_avg.setChecked(False)
 
 		# Get the correct parser function from the graph's config.
 		parser_func = graph_info['config']['parser']
@@ -317,7 +414,8 @@ class MainWindow(QMainWindow):
 
 		self._reset_filter_layout()
 		self.ax.clear()
-		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.925)
+		self.fig.suptitle(title)
+		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.90)
 
 		try:
 			graph_func(
@@ -325,19 +423,48 @@ class MainWindow(QMainWindow):
 				self.ax,
 				self.filter_layout,
 				self.filter_widgets,
-				self.setup_tooltip_handler,
+				self.on_plot_updated,
 				self.clear_tooltip_handler,
-				self.filter_widget_map
+				self.filter_widget_map,
+				lambda: self.is_moving_average,
+				lambda: self.period_value
 			)
-			self.ax.set_title(title)
 			self.canvas.draw() # Draw the canvas first, to update the graph elements
 			self.setup_preset_buttons(title)
+
+			for widget in self.filter_widget_map.values():
+				widget.blockSignals(True)
+
+			try:
+				if title in self.chart_filter_memory:
+					saved_filters = self.chart_filter_memory[title]
+					for key, value in saved_filters.items():
+						if key in self.filter_widget_map:
+							widget = self.filter_widget_map[key]
+							index = widget.findText(value)
+							if index != -1:
+								widget.setCurrentIndex(index)
+				elif title in self.key_configs and "F1" in self.key_configs[title]:
+					f1_config = self.key_configs[title]["F1"]
+					is_valid = all(
+						key in self.filter_widget_map and self.filter_widget_map[key].findText(value) != -1
+						for key, value in f1_config['filters'].items()
+					)
+					if is_valid:
+						for key, value in f1_config['filters'].items():
+							widget = self.filter_widget_map[key]
+							index = widget.findText(value)
+							widget.setCurrentIndex(index)
+			finally:
+				for widget in self.filter_widget_map.values():
+					widget.blockSignals(False)
+
+			self.redraw_current_plot()
 
 		except Exception as e:
 			self.ax.text(0.5, 0.5, f"Error:\n{e}", ha='center', va='center')
 			traceback.print_exc()
 
-		self.ax.set_title(title)
 		self.canvas.draw()
 
 	def clear_preset_buttons(self):
@@ -419,9 +546,59 @@ class MainWindow(QMainWindow):
 			for combo_box in self.filter_widget_map.values():
 				combo_box.blockSignals(False)
 
+		self.redraw_current_plot()
+
+	def toggle_log_scale(self, checked):
+		if not self.current_graph_info:
+			return
+		self.is_log_scale = checked
+		self.apply_plot_settings()
+
+	def toggle_moving_average(self, checked):
+		if not self.current_graph_info:
+			return
+		self.is_moving_average = checked
+		self.slider_period.setVisible(checked)
+		self.lbl_period_value.setVisible(checked)
+		self.redraw_current_plot()
+
+	def on_period_slider_change(self, value):
+		self.period_value = value
+		self.lbl_period_value.setText(f"Period: {value}")
+		if self.is_moving_average:
+			self.redraw_current_plot()
+
+	def redraw_current_plot(self):
 		if self.filter_widget_map:
 			first_widget = next(iter(self.filter_widget_map.values()))
-			first_widget.currentIndexChanged.emit(first_widget.currentIndex())
+			if isinstance(first_widget, QComboBox):
+				first_widget.currentIndexChanged.emit(first_widget.currentIndex())
+			else:
+				self.apply_plot_settings()
+		else:
+			self.apply_plot_settings()
+
+	def apply_plot_settings(self):
+		"""Applies current settings (like log scale) to the plot."""
+		if not (self.ax.get_lines() or self.ax.patches):
+			return
+
+		try:
+			if self.is_log_scale:
+				self.ax.set_yscale('log')
+				bottom, top = self.ax.get_ylim()
+				if bottom <= 0:
+					self.ax.set_ylim(bottom=0.1)
+			else:
+				self.ax.set_yscale('linear')
+			self.canvas.draw_idle()
+		except Exception as e:
+			print(f"Could not apply plot settings: {e}")
+			self.is_log_scale = False
+			self.btn_log_scale.setChecked(False)
+			self.ax.set_yscale('linear')
+			self.canvas.draw_idle()
+			QMessageBox.warning(self, "Scaling Error", "Could not apply logarithmic scale.\nData may contain non-positive values.")
 
 	def export_to_csv(self):
 		"""Exports the complete, unfiltered data for the current chart type to a CSV file."""
@@ -479,6 +656,10 @@ class MainWindow(QMainWindow):
 
 		saved_graph_info = self.current_graph_info
 		saved_filters = {}
+		saved_is_log_scale = self.is_log_scale
+		saved_is_moving_avg = self.is_moving_average
+		saved_period_value = self.period_value
+
 		if saved_graph_info:
 			for key, widget in self.filter_widget_map.items():
 				if isinstance(widget, QComboBox):
@@ -492,6 +673,13 @@ class MainWindow(QMainWindow):
 		if saved_graph_info:
 			print(f"Refreshing current graph: {saved_graph_info['title']}")
 			self.display_chart(saved_graph_info['info'], saved_graph_info['title'])
+
+			self.is_log_scale = saved_is_log_scale
+			self.btn_log_scale.setChecked(saved_is_log_scale)
+			self.is_moving_average = saved_is_moving_avg
+			self.btn_moving_avg.setChecked(saved_is_moving_avg)
+			self.period_value = saved_period_value
+			self.slider_period.setValue(saved_period_value)
 
 			for widget in self.filter_widget_map.values():
 				widget.blockSignals(True)
@@ -509,9 +697,7 @@ class MainWindow(QMainWindow):
 			for widget in self.filter_widget_map.values():
 				widget.blockSignals(False)
 
-			if self.filter_widget_map:
-				first_widget = next(iter(self.filter_widget_map.values()))
-				first_widget.currentIndexChanged.emit(first_widget.currentIndex())
+			self.redraw_current_plot()
 		else:
 			# If not (i.e., we are on the main menu), just show the info screen.
 			self.display_info_screen()
@@ -519,10 +705,14 @@ class MainWindow(QMainWindow):
 	def show_chart_list(self):
 		"""Opens the chart selection dialog."""
 		dialog = ChartSelectionDialog(self.graphs, self)
-		if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_chart:
-			chart_name = dialog.selected_chart
-			graph_info = self.graphs[chart_name]
-			self.display_chart(graph_info, chart_name)
+		self.btn_charts.setDown(True)
+		try:
+			if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_chart:
+				chart_name = dialog.selected_chart
+				graph_info = self.graphs[chart_name]
+				self.display_chart(graph_info, chart_name)
+		finally:
+			self.btn_charts.setDown(False)
 
 
 	def read_all_logs(self):
