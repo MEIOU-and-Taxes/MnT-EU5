@@ -1,4 +1,4 @@
-# Calculate heuristic scores for centers.
+﻿# Calculate heuristic scores for centers.
 mnt_calculate_center_scores = {
 	every_location_in_the_world = {
 		# Trade heuristic: weighted blend of access, local advantage, burgher capacity, and state trade capacity from buildings.
@@ -6,40 +6,32 @@ mnt_calculate_center_scores = {
 			name = mnt_trade_score
 			value = {
 				value = market_access
-				multiply = 5
 				add = {
 					value = modifier:local_merchant_power
-					multiply = 5
+					multiply = 10
 				}
 				add = {
 					value = modifier:local_trades_per_burgher
 					multiply = num_pop_type:burghers
-					multiply = 20
+					multiply = 15
 				}
 				add = {
 					value = modifier:merchant_capacity_from_building
 					multiply = 10
 				}
 				add = {
-					value = location_maritime_merchant_power
-					multiply = 5
-				}
-				add = {
-					value = is_market_center
-					multiply = 25 #boolean * 20
+					value = modifier:local_maritime_presence
 				}
 			}
 		}
 
-		# Production heuristic: Total goods produced in location / population
+		# Production heuristic: urban manufactured goods output per head
+		save_scope_as = target_location
+		calc_urban_goods_value_produced_location = yes
+		error_log = "::URBAN_GOODS_VALUE::[GetCurrentYear]:[THIS.GetLocation.GetNameWithNoTooltip]:[THIS.GetVariable('mnt_urban_goods_value').GetValue]"
 		set_variable = {
 			name = mnt_production_score
-			value = {
-				value = goods_output
-				divide = {
-					value = population
-				}
-			}
+			value = var:mnt_urban_goods_value
 		}
 
 		# Culture heuristic: cultural influence + tradition
@@ -74,15 +66,15 @@ mnt_calculate_center_scores = {
 					multiply = 20
 				}
 				if = {
-					limit = { has_building = university }
+					limit = { has_building = building_type:university }
 					add = 50
 				}
 				if = {
-					limit = { has_building = monastery }
+					limit = { has_building = building_type:monastery }
 					add = 25
 				}
 				if = {
-					limit = { has_building = library }
+					limit = { has_building = building_type:library }
 					add = 30
 				}
 			}
