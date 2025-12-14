@@ -205,7 +205,10 @@ Date: 2025-11-30
   - Burghers estate power per pop: 2 → 3
 - Scaling of lower class estate power moved to free subjects/serfdom slider, with -100% power at full serfdom slider and +50% at full free subjects
 - Added impact of sefdom slider on noble estate power with +100% at full sefdom slider
-- Scaling of Tribes Estate added to centralization slider, with -50% power at full centralization and +50% at full decentralization
+- Scaling of Tribes Estate added to centralization slider, with -50% power at full centralization and +50% at full 
+- Changed impact of government reforms on estate power:
+  - land_inheritance_act: added +10% impact on commoner estate power
+  - universal_serfdom: reduced impact on commoners estate power from -50% to -10% (as effects are moved to actual serfdom value)
 
 ##### Disasters
 
