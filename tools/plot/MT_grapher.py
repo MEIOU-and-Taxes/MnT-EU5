@@ -248,32 +248,6 @@ class MainWindow(QMainWindow):
 
 		# In MT_grapher.py, inside the MainWindow class
 
-		def _check_file_locks(self, export_folder_path, filenames):
-			"""
-			Checks if any of the target CSV files in the export directory are locked.
-			Returns the full path of the first locked file found, or None if all are writable.
-			"""
-			# Also check for the derived 'normalized' file
-			filenames_to_check = list(filenames)
-			if "country_stats" in filenames_to_check:
-				filenames_to_check.append("country_stats_normalized")
-
-			for name in filenames_to_check:
-				full_path = os.path.join(export_folder_path, f"{name}.csv")
-
-				if os.path.exists(full_path):
-					try:
-						# The most reliable way to check for a lock is to try to open it.
-						# We use append mode ('a') as it's a non-destructive write test.
-						file = open(full_path, 'a')
-						file.close()
-					except (IOError, PermissionError):
-						# This exception means the file is locked by another process.
-						print(f"Lock detected on file: {full_path}")
-						return full_path  # Return the path of the locked file
-
-			return None  # No locks found
-
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""
 		all_graphs.get_data = self.get_data
@@ -788,31 +762,34 @@ class MainWindow(QMainWindow):
 
 					# Generate the location-multiplied CSV
 					if filename_root == "country_stats" and dataset_to_write:
-						print("Generating location-multiplied country stats...")
-						location_multiplied_dataset = []
+						print("Generating cleaned and filtered country stats for analysis...")
 
-						for record in dataset_to_write:
-							new_record = record.copy()
-							multiplier = record.get('num_locations', 1)
+						df = pd.DataFrame(dataset_to_write)
+						if 'num_locations' not in df.columns:
+							print("  - Warning: Cannot create cleaned dataset, 'num_locations' column is missing.")
+							continue
 
-							# Ensure multiplier is a valid number
-							if not isinstance(multiplier, (int, float)) or multiplier == 0:
-								location_multiplied_dataset.append(new_record)
-								continue
+						# Filter out countries that are too small to be meaningful in averages
+						# This removes Societies of Pops
+						df_cleaned = df[df['num_locations'] > 0].copy()
 
-							for key, value in new_record.items():
-								# Multiply only numeric values, and exclude 'num_locations' itself
-								if isinstance(value, (int, float)) and key not in columns_not_to_multiply_by_num_of_locations:
-									new_record[key] = value * multiplier
+						# Clean estate data: set stats to NaN where an estate has no power
+						estate_types = ['nobles', 'clergy', 'burghers', 'peasants', 'dhimmi', 'tribes', 'cossacks']
+						for estate in estate_types:
+							power_col = f'{estate}_relative_power'
+							if power_col in df_cleaned.columns:
+								# Find rows where this estate has no power
+								no_power_mask = df_cleaned[power_col] == 0
 
-							location_multiplied_dataset.append(new_record)
+								# Get all columns related to this estate
+								stats_cols = [col for col in df_cleaned.columns if col.startswith(f'{estate}_')]
 
-						# Write the new dataset to its own file
-						new_filepath = os.path.join(export_folder_path, "country_stats_locations.csv")
-						with open(new_filepath, 'w', newline='', encoding='utf-8') as new_file:
-							writer = csv.DictWriter(new_file, fieldnames=headers)
-							writer.writeheader()
-							writer.writerows(location_multiplied_dataset)
+								# Set their values to NaN for these rows
+								df_cleaned.loc[no_power_mask, stats_cols] = np.nan
+
+						# Write the new, cleaned dataset to its own file
+						new_filepath = os.path.join(export_folder_path, "country_stats_cleaned.csv")
+						df_cleaned.to_csv(new_filepath, index=False)
 						exported_files.append(new_filepath)
 						print(f"Successfully created {new_filepath}")
 
@@ -1036,7 +1013,7 @@ class MainWindow(QMainWindow):
 
 		# If we get here, the file exists (either from the start or after generation).
 		try:
-			# Get total number of rows for the progress bar maximum
+			# Get total number of rows for the progress bar maximum1
 			print("Counting rows for progress bar...")
 			with open(csv_path, 'r', encoding='utf-8') as f:
 				total_rows = sum(1 for row in f) - 1  # Subtract 1 for the header
