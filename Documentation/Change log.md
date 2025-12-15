@@ -69,6 +69,29 @@ Date: 2025-11-30
     - Modern roads: 10X  
     - Railroads: 50X
   - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
+  - Climate, topography & vegetation impact maintenance cost:
+    - Climate:
+      - Oceanic: +0%
+      - Tropical: +140%
+      - Subtropical: +80%
+      - Arid: +100%
+      - Cold arid: +60%
+      - Mediterranean: +65%
+      - Continental: +175%
+      - Arctic/Subarctic: +500%
+    - Topography:
+      - Flatlands: +0%
+      - Mountains: +350%
+      - Hills: +100%
+      - Plateau: +60%
+      - Wetlands: +500%
+    - Vegetation:
+      - Desert: +0%
+      - Grasslands: +100%
+      - Farmland: +140%
+      - Woods: +250%
+      - Forest: +450%
+      - Jungle: +700%
 - Market  
   - Market access cost reduction doubled for roads:  
     - Gravel: \-10% → \-20%  
