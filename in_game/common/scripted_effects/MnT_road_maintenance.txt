@@ -1,0 +1,144 @@
+﻿calculate_road_maintenance = {
+	every_country = {
+		set_local_variable = { name = loc_road_maint_total value = 0 }
+		set_local_variable = { name = loc_country_curr value = this }
+		every_road_type = {
+			limit = { is_road_available = yes }
+			set_local_variable = { name = loc_road_curr value = this }
+
+			prev = {
+				every_owned_location = {
+					every_connected_location = {
+						limit = {
+							has_road_of_type_to = {
+								target = prev
+								type = local_var:loc_road_curr
+							}
+						}
+						apply_maintenance_cost = yes
+					}
+				}
+			}
+		}
+		set_variable = { name = road_maintenance_total value = local_var:loc_road_maint_total }
+		every_estate = {
+			set_local_variable = {
+				name = loc_road_maint
+				value = { add = local_var:loc_road_maint_total multiply = power }
+			}
+
+			if = {
+				limit = { estate_type = estate_type:crown_estate }
+				owner = { set_variable = { name = crown_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:nobles_estate }
+				owner = { set_variable = { name = nobles_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:burghers_estate }
+				owner = { set_variable = { name = burghers_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:clergy_estate }
+				owner = { set_variable = { name = clergy_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:peasants_estate }
+				owner = { set_variable = { name = peasants_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:tribes_estate }
+				owner = { set_variable = { name = tribes_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:dhimmi_estate }
+				owner = { set_variable = { name = dhimmi_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:cossacks_estate }
+				owner = { set_variable = { name = cossacks_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+		}
+	}
+}
+
+apply_maintenance_cost = {
+	if = {
+		limit = { local_var:loc_road_curr = road_type:gravel_road }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 0.012
+					multiply = "market_price(goods:sand)"
+				}
+			}
+		}
+		# error_log = "[PREV.GetLocation.GetController.GetTag]:[PREV.GetLocation.GetNameWithNoTooltip]:[THIS.GetLocation.GetNameWithNoTooltip]"
+	}
+	else_if = {
+		limit = { local_var:loc_road_curr = road_type:paved_road }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 0.0075
+					multiply = "market_price(goods:lumber)"
+				}
+				add = {
+					value = 0.0825
+					multiply = "market_price(goods:masonry)"
+				}
+				add = {
+					value = 0.0075
+					multiply = "market_price(goods:sand)"
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { local_var:loc_road_curr = road_type:modern_road }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 0.04
+					multiply = "market_price(goods:lumber)"
+				}
+				add = {
+					value = 0.035
+					multiply = "market_price(goods:masonry)"
+				}
+				add = {
+					value = 0.01
+					multiply = "market_price(goods:sand)"
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { local_var:loc_road_curr = road_type:railroad }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 2.1
+					multiply = "market_price(goods:lumber)"
+				}
+				add = {
+					value = 0.75
+					multiply = "market_price(goods:masonry)"
+				}
+				add = {
+					value = 0.75
+					multiply = "market_price(goods:sand)"
+				}
+				add = {
+					value = 1.66
+					multiply = "market_price(goods:steel)"
+				}
+			}
+		}
+	}
+}

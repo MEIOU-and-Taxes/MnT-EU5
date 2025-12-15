@@ -77,25 +77,9 @@ print_market_information = {
 print_regional_roads = {
 	every_road_type = {
 		if = {
-			limit = {
-				OR = {
-					this = road_type:gravel_road
-					AND = {
-						this = road_type:paved_road
-						current_age_or_later = { age = age_3_discovery }
-					}
-					AND = {
-						this = road_type:modern_road
-						current_age_or_later = { age = age_5_absolutism }
-					}
-					AND = {
-						this = road_type:railroad
-						current_age_or_later = { age = age_6_revolutions }
-					}
-				}
-			}
+			limit = { is_road_available = yes }
 
-			set_local_variable = { name = road_curr value = this }
+			set_local_variable = { name = loc_road_curr value = this }
 			every_region = {
 				set_local_variable = { name = num_locations value = 0 }
 				set_local_variable = { name = num_locations_with_road value = 0 }
@@ -112,7 +96,7 @@ print_regional_roads = {
 							limit = {
 								has_road_of_type_to = {
 									target = prev
-									type = local_var:road_curr
+									type = local_var:loc_road_curr
 								}
 							}
 							set_local_variable = loc_has_road
@@ -133,7 +117,7 @@ print_regional_roads = {
 
 	# error_log = "[SCOPE.GetLocalVariable('connections').GetValue]"
 
-	remove_local_variable = road_curr
+	remove_local_variable = loc_road_curr
 	remove_local_variable = num_locations
 	remove_local_variable = num_locations_with_road
 }
