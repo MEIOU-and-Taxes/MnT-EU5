@@ -1,4 +1,4 @@
-﻿calculate_road_maintenance = {
+﻿calculate_road_maintenance_country = {
 	every_country = {
 		set_local_variable = { name = loc_road_maint_total value = 0 }
 		set_local_variable = { name = loc_country_curr value = this }
@@ -20,7 +20,7 @@
 				}
 			}
 		}
-		set_variable = { name = road_maintenance_total value = local_var:loc_road_maint_total }
+		set_variable = { name = road_maintenance_total value = { add = local_var:loc_road_maint_total divide = 2 } }
 		every_estate = {
 			set_local_variable = {
 				name = loc_road_maint
@@ -72,6 +72,7 @@ apply_maintenance_cost = {
 				add = {
 					value = 0.012
 					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
 				}
 			}
 		}
@@ -85,14 +86,17 @@ apply_maintenance_cost = {
 				add = {
 					value = 0.0075
 					multiply = "market_price(goods:lumber)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 0.0825
 					multiply = "market_price(goods:masonry)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 0.0075
 					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
 				}
 			}
 		}
@@ -105,14 +109,17 @@ apply_maintenance_cost = {
 				add = {
 					value = 0.04
 					multiply = "market_price(goods:lumber)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 0.035
 					multiply = "market_price(goods:masonry)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 0.01
 					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
 				}
 			}
 		}
@@ -125,18 +132,22 @@ apply_maintenance_cost = {
 				add = {
 					value = 2.1
 					multiply = "market_price(goods:lumber)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 0.75
 					multiply = "market_price(goods:masonry)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 0.75
 					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
 				}
 				add = {
 					value = 1.66
 					multiply = "market_price(goods:steel)"
+					multiply = prev.var:road_maintenance_cost
 				}
 			}
 		}
@@ -148,4 +159,39 @@ apply_maintenance_cost = {
 	}
 	else = { error_log = "No"}
 
+}
+
+calculate_road_maintenance_location = {
+	if = {
+		limit = { not = { has_global_variable = has_calculated_location_road_maintenance_cost } }
+		every_location_in_the_world = {
+			set_variable = { name = road_maintenance_cost value = 1 }
+
+			switch = {
+				trigger = climate
+				tropical = { change_variable = { name = road_maintenance_cost multiply = 2.4 } }
+				subtropical = { change_variable = { name = road_maintenance_cost multiply = 1.8 } }
+				arid = { change_variable = { name = road_maintenance_cost multiply = 2 } }
+				cold_arid = { change_variable = { name = road_maintenance_cost multiply = 1.6 } }
+				mediterranean = { change_variable = { name = road_maintenance_cost multiply = 1.65 } }
+				continental = { change_variable = { name = road_maintenance_cost multiply = 6 } }
+			}
+			switch = {
+				trigger = topography
+				mountains = { change_variable = { name = road_maintenance_cost multiply = 4.5 } }
+				hills = { change_variable = { name = road_maintenance_cost multiply = 2 } }
+				plateau = { change_variable = { name = road_maintenance_cost multiply = 1.6 } }
+				wetlands = { change_variable = { name = road_maintenance_cost multiply = 6 } }
+			}
+			switch = {
+				trigger = vegetation
+				grasslands = { change_variable = { name = road_maintenance_cost multiply = 2 } }
+				farmland = { change_variable = { name = road_maintenance_cost multiply = 2.4 } }
+				woods = { change_variable = { name = road_maintenance_cost multiply = 3.5 } }
+				forest = { change_variable = { name = road_maintenance_cost multiply = 5.5 } }
+				jungle = { change_variable = { name = road_maintenance_cost multiply = 8 } }
+			}
+		}
+		set_global_variable = has_calculated_location_road_maintenance_cost
+	}
 }

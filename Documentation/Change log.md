@@ -18,6 +18,7 @@ Date: 2025-11-30
   - Noble %, Burgher %, Laborer %, Peasant %  
   - Market food balance  
   - Market food stockpile
+  - Road maintenance cost
 
 #### Bugfixes
 
@@ -71,27 +72,27 @@ Date: 2025-11-30
   - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
   - Climate, topography & vegetation impact maintenance cost:
     - Climate:
-      - Oceanic: +0%
-      - Tropical: +140%
-      - Subtropical: +80%
-      - Arid: +100%
-      - Cold arid: +60%
-      - Mediterranean: +65%
-      - Continental: +175%
-      - Arctic/Subarctic: +500%
+      - Oceanic: base
+      - Tropical: 2.4X
+      - Subtropical: 1.8X
+      - Arid: 2X
+      - Cold arid: 1.6X
+      - Mediterranean: 1.65X
+      - Continental: 2.75X
+      - Arctic: 6X
     - Topography:
-      - Flatlands: +0%
-      - Mountains: +350%
-      - Hills: +100%
-      - Plateau: +60%
-      - Wetlands: +500%
+      - Flatlands: base
+      - Mountains: 4.5X
+      - Hills: 2X
+      - Plateau: 1.6X
+      - Wetlands: 6X
     - Vegetation:
-      - Desert: +0%
-      - Grasslands: +100%
-      - Farmland: +140%
-      - Woods: +250%
-      - Forest: +450%
-      - Jungle: +700%
+      - Desert: base
+      - Grasslands: 2X
+      - Farmland: 2.4X
+      - Woods: 3.5X
+      - Forest: 5.5X
+      - Jungle: 8X
 - Market  
   - Market access cost reduction doubled for roads:  
     - Gravel: \-10% → \-20%  

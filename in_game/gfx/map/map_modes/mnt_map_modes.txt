@@ -1090,3 +1090,122 @@ market_food_stockpile = {
 	color_and_names_refresh_counters = { MarketReach LocationOwnerChanged }
 	map_lines_mode = ToMarketCenter
 }
+
+road_maintenance_cost = {
+	map_color = {
+	 	if = {
+	 		limit = {
+	 			is_land = yes
+	 		}
+			if = { limit = { var:road_maintenance_cost > 144 }
+				value = define:NMapColors|MAP_COLOR_MIN
+			}
+			else_if = { limit = { var:road_maintenance_cost < 2 }
+				value = define:NMapColors|MAP_COLOR_MAX
+			}
+			else_if = {
+				limit = { var:road_maintenance_cost < 10 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_HIGH
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = var:road_maintenance_cost
+						subtract = 5
+						divide = 5
+					}
+				}
+			}
+			else_if = {
+				limit = { var:road_maintenance_cost < 5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MAX
+					max_color = define:NMapColors|MAP_COLOR_HIGH
+
+					factor = {
+						value = var:road_maintenance_cost
+						subtract = 2
+						divide = 5
+						subtract = 1
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_LOW
+
+					factor = {
+						value = var:road_maintenance_cost
+						subtract = 10
+						divide = 50
+					}
+				}
+			}
+		}
+	}
+
+	tooltip_key = {
+
+	}
+
+	small_map_names = location
+	medium_map_names = location
+	large_map_names = location
+
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+
+	flatmap_behaviour = Always
+	use_fow = no
+
+	category = economy
+	index = 0
+
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_BLACK"
+		color = define:NMapColors|MAP_COLOR_MIN
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_RED"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_YELLOW"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_GREEN_DARK"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_GREEN"
+		color = define:NMapColors|MAP_COLOR_MAX
+	}
+
+	map_markers = {
+		market_marker = no
+		fort_marker = no
+		toll_marker = no
+		unit_marker = no
+	}
+
+	gradient_parameters = {
+		zoom_step = @zoom_step_near
+
+		gradient_alpha_inside = 	@data_gradient_alpha_inside
+		gradient_alpha_outside = 	@data_gradient_alpha_outside
+		gradient_width = 			@data_gradient_width
+		gradient_color_mult =		@data_gradient_color_mult
+		edge_width = 				@data_edge_width
+		edge_sharpness = 			@data_edge_sharpness
+		edge_alpha = 				@data_edge_alpha
+		edge_color_mult = 			@data_edge_color_mult
+		before_lighting_blend =		@data_before_lighting_blend
+		after_lighting_blend =		@data_after_lighting_blend
+	}
+
+	color_and_names_refresh_counters = {}
+}
