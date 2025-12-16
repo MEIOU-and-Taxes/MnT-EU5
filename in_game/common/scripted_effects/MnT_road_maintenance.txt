@@ -76,7 +76,6 @@ apply_maintenance_cost = {
 				}
 			}
 		}
-		# error_log = "[PREV.GetLocation.GetController.GetTag]:[PREV.GetLocation.GetNameWithNoTooltip]:[THIS.GetLocation.GetNameWithNoTooltip]"
 	}
 	else_if = {
 		limit = { local_var:loc_road_curr = road_type:paved_road }
@@ -153,18 +152,15 @@ apply_maintenance_cost = {
 		}
 
 	}
-	if = {
-		limit = { has_earthquakes = yes }
-		error_log = "Yes"
-	}
-	else = { error_log = "No"}
-
+	#TODO: earthquakes - has_earthquakes
+	#TODO: active volcanos
 }
 
 calculate_road_maintenance_location = {
 	if = {
 		limit = { not = { has_global_variable = has_calculated_location_road_maintenance_cost } }
 		every_location_in_the_world = {
+			limit = { is_ownable = yes }
 			set_variable = { name = road_maintenance_cost value = 1 }
 
 			switch = {
@@ -174,7 +170,8 @@ calculate_road_maintenance_location = {
 				arid = { change_variable = { name = road_maintenance_cost multiply = 2 } }
 				cold_arid = { change_variable = { name = road_maintenance_cost multiply = 1.6 } }
 				mediterranean = { change_variable = { name = road_maintenance_cost multiply = 1.65 } }
-				continental = { change_variable = { name = road_maintenance_cost multiply = 6 } }
+				continental = { change_variable = { name = road_maintenance_cost multiply = 2.75 } }
+				arctic = { change_variable = { name = road_maintenance_cost multiply = 6 } }
 			}
 			switch = {
 				trigger = topography
@@ -185,6 +182,7 @@ calculate_road_maintenance_location = {
 			}
 			switch = {
 				trigger = vegetation
+				sparse = { change_variable = { name = road_maintenance_cost multiply = 1.2 } }
 				grasslands = { change_variable = { name = road_maintenance_cost multiply = 2 } }
 				farmland = { change_variable = { name = road_maintenance_cost multiply = 2.4 } }
 				woods = { change_variable = { name = road_maintenance_cost multiply = 3.5 } }
