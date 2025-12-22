@@ -24,7 +24,7 @@ Date: 2025-11-30
 - Stability map mode works, where it is red at \<25 and green at \>50 stability
 
 #### Balancing
-
+ 
 -Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
 -Reduced use of masonry by granaries.
 -Reduced use of tools by lumber mills.
