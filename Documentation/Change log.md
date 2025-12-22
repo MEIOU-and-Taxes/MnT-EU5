@@ -179,3 +179,12 @@ Date: 2025-11-30
 - Land war exhaustion from losses: 100 → 300  
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
+
+##### Situations
+
+- Fixes to Colombian Exchange situation
+  - adapt logic of RGO changing to new mechanics related to demand on goods absent in the market
+  - remove prestige cost on changing the RGO
+  - modify mapmode and tooltips, so previous and new good is visible to a player
+  - remove ability to plant Tobacco in Oceanic climate
+  
