@@ -32,7 +32,7 @@ def get_data(data, str_target):
 	raise NotImplementedError("get_data function was not assigned")
 
 
-def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config, filter_widget_map):
+def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, config, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""
 	A generic graphing function that creates a line or bar chart based on a configuration.
 	This function is intended for internal use and is called by specific graph functions.
@@ -115,12 +115,17 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			ax.figure.canvas.draw_idle()
 			return
 
-		filtered_data = [
+		pre_filtered_data = [
 			item for item in all_data
 			if (filter_moment_str == STR_ALL_MOMENTS or item['moment'] == int(filter_moment_str)) and
 			   (filter_category_type == all_category_str or filter_category_type == item[category_key]) and
 			   (filter_region == STR_ALL_REGIONS or filter_region == item['region'])
 		]
+
+		if config.get("ignore_zeros", False):
+			filtered_data = [item for item in pre_filtered_data if item[value_key] != 0]
+		else:
+			filtered_data = pre_filtered_data
 
 		if not filtered_data:
 			ax.text(0.5, 0.5, get_error_message(), ha='center', va='center')
@@ -170,11 +175,23 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 			unique_moments_count = len(set(item['moment'] for item in filtered_data))
 			marker_style = 'o' if unique_moments_count <= 50 else None
 
+			is_moving_average = get_is_moving_avg()
+
 			for name, values in sorted(data_to_plot.items()):
 				if not values['moments']: continue
 				sorted_points = sorted(zip(values['moments'], values['values']))
 				moments_sorted, values_sorted = zip(*sorted_points)
-				ax.plot(moments_sorted, values_sorted, marker=marker_style, linestyle='-', label=name, color=next(colors))
+
+				if is_moving_average and len(values_sorted) > 1:
+					period = get_period_value()
+					moving_avg_values = []
+					for i in range(len(values_sorted)):
+						current_window_size = min(i + 1, period)
+						window = values_sorted[i - current_window_size + 1 : i + 1]
+						moving_avg_values.append(sum(window) / len(window))
+					ax.plot(moments_sorted, moving_avg_values, marker=None, linestyle='-', label=name, color=next(colors))
+				else:
+					ax.plot(moments_sorted, values_sorted, marker=marker_style, linestyle='-', label=name, color=next(colors))
 
 			if data_to_plot:
 				min_x = min(min(v['moments']) for v in data_to_plot.values() if v['moments'])
@@ -210,6 +227,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 				patches = [mpatches.Patch(color=c, label=l) for l, c in color_map.items()]
 				ax.legend(handles=patches, bbox_to_anchor=(1.04, 1), loc="upper left")
 			ax.figure.canvas.draw_idle()
+			on_lines_plotted()
 		else:
 			ax.text(0.5, 0.5, "Please select a filter to display a graph.", ha='center', va='center')
 		ax.figure.canvas.draw_idle()
@@ -240,6 +258,7 @@ GP_CONFIG = {
     "all_category_str": STR_ALL_GOODS,
     "value_label": "Price",
     "add_zero_start": False,
+    "ignore_zeros": True,
 }
 
 MK_CONFIG = {
@@ -260,6 +279,7 @@ POP_CONFIG = {
 	"all_category_str": None,
 	"value_label": "Population",
 	"add_zero_start": False,
+	"ignore_zeros": True,
 }
 
 RT_CONFIG = {
@@ -273,26 +293,29 @@ RT_CONFIG = {
     "y_axis_limits": (0, 100),
 }
 
-
-def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
+# Functions prefixed with "graph_" are found in this module by the self.graphs code in MT_grapher.py.
+# The wrapper functions are essential for this mechanism to work.
+# Without them, you would need to manually create and maintain a list of all the chart configs in MT_grapher.py,
+# which would be less elegant and more error-prone.
+def graph_building_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""Building Types by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, BT_CONFIG, filter_widget_map)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, BT_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
 
-def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
+def graph_goods_prices(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""Goods Prices by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, GP_CONFIG, filter_widget_map)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, GP_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
 
-def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
+def graph_markets(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""Market Statistics"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, MK_CONFIG, filter_widget_map)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, MK_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
 
-def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
+def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""Population by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, POP_CONFIG, filter_widget_map)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, POP_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
 
-def graph_road_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map):
+def graph_road_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""Road Coverage by Region"""
-	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, RT_CONFIG, filter_widget_map)
+	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, RT_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
 
 def get_error_message():
 	if not is_path_found:
