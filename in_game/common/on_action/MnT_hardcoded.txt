@@ -1,0 +1,374 @@
+# A crude heuristic before we have proper location level wealth tracking
+# Calculate the share of potential tax base of the losing side's locations
+# Then, transfer that percentage of the losing side's estate
+# When the winning side does not have that estate, transfer it to the treasury
+# It's not very refined, just a first step to solve the economic leakage
+
+
+on_pre_losing_war = {
+    on_actions = {
+        MnT_on_pre_losing_war
+    }
+}
+
+on_took_location_in_peace_treaty = {
+    on_actions = {
+        MnT_took_location_in_peace_treaty
+    }
+}
+
+on_losing_war = {
+    on_actions = {
+        MnT_on_losing_war
+    }
+}
+
+
+MnT_on_pre_losing_war = {
+    effect = {
+        scope:loser = {
+            set_local_variable = {
+                name = total_potential_tax_base
+                value = 0
+            }
+            every_owned_location = {
+                limit = { local_control > 0 }
+                set_variable = {
+                    name = potential_tax_base
+                    value = {
+                        value = location_tax_base
+                        divide = local_control
+                    }
+                }
+                change_local_variable = {
+                    name = total_potential_tax_base
+                    add = var:potential_tax_base
+                }
+
+            }
+            set_variable = {
+                name = total_potential_tax_base
+                value = local_var:total_potential_tax_base
+            }
+            set_variable = {
+                name = estate_nobles_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_burghers_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_clergy_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_peasants_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_tribes_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_dhimmi_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_cossacks_war_lost
+                value = 0
+            }
+        }
+    }
+}
+
+MnT_took_location_in_peace_treaty = {
+    effect = {
+        scope:location = {
+            set_local_variable = {
+                # Proportion of total national estates wealth to be transferred because of this location
+                name = local_tax_base_share
+                value = {
+                    value = var:potential_tax_base
+                    divide = scope:loser.var:total_potential_tax_base
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:nobles_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_nobles_war_lost
+                        add = {
+                            value = "estate(estate_type:nobles_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:burghers_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_burghers_war_lost
+                        add = {
+                            value = "estate(estate_type:burghers_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:clergy_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_clergy_war_lost
+                        add = {
+                            value = "estate(estate_type:clergy_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:peasants_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_peasants_war_lost
+                        add = {
+                            value = "estate(estate_type:peasants_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:tribes_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_tribes_war_lost
+                        add = {
+                            value = "estate(estate_type:tribes_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:dhimmi_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_dhimmi_war_lost
+                        add = {
+                            value = "estate(estate_type:dhimmi_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:cossacks_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_cossacks_war_lost
+                        add = {
+                            value = "estate(estate_type:cossacks_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+MnT_on_losing_war = {
+    effect = {
+        scope:winner= {
+            if = {
+                limit = {
+                    country_has_estate = estate_type:nobles_estate
+                }
+                "estate(estate_type:nobles_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_nobles_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_nobles_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:burghers_estate
+                }
+                "estate(estate_type:burghers_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_burghers_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_burghers_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:clergy_estate
+                }
+                "estate(estate_type:clergy_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_clergy_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_clergy_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:peasants_estate
+                }
+                "estate(estate_type:peasants_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_peasants_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_peasants_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:tribes_estate
+                }
+                "estate(estate_type:tribes_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_tribes_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_tribes_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:dhimmi_estate
+                }
+                "estate(estate_type:dhimmi_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_dhimmi_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_dhimmi_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:cossacks_estate
+                }
+                "estate(estate_type:cossacks_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_cossacks_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_cossacks_war_lost
+                }
+            }
+        }
+
+        scope:loser = {
+            "estate(estate_type:nobles_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_nobles_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:burghers_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_burghers_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:clergy_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_clergy_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:peasants_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_peasants_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:tribes_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_tribes_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:dhimmi_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_dhimmi_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:cossacks_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_cossacks_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+        }
+    }
+}
