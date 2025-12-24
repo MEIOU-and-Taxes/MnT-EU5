@@ -1,9 +1,12 @@
 # A crude heuristic before we have proper location level wealth tracking
 # Calculate the share of potential tax base of the losing side's locations
-# Then, transfer that percentage of the losing side's estate
-# When the winning side does not have that estate, transfer it to the treasury
+# Then, transfer that percentage of the losing side's estate to the winner's corresponding ones
+# When the winning side does not have that estate, transfer it to their treasury
 # It's not very refined, just a first step to solve the economic leakage
 
+# When a peace is signed, the order of execution is
+# on_pre_losing_war => on_took_location_in_peace_treaty => on_losing_war
+# Both on_pre_losing_war and on_losing_war seems to be triggered twice though
 
 on_pre_losing_war = {
     on_actions = {
@@ -77,6 +80,12 @@ MnT_on_pre_losing_war = {
             set_variable = {
                 name = estate_cossacks_war_lost
                 value = 0
+            }
+            # My testing suggests that on_losing_war is always executed twice
+            # We need to ensure that we don't transfer wealth twice
+            set_variable = {
+                name = on_losing_war_not_triggered
+                value = 1
             }
         }
     }
@@ -210,7 +219,15 @@ MnT_took_location_in_peace_treaty = {
 }
 
 MnT_on_losing_war = {
+    trigger = {
+        scope:loser = {
+            has_variable = on_losing_war_not_triggered
+        }
+    }
     effect = {
+        scope:loser = {
+            remove_variable = on_losing_war_not_triggered
+        }
         scope:winner= {
             if = {
                 limit = {
