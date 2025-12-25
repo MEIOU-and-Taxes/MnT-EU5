@@ -47,12 +47,14 @@ mnt_centers.1 = {
 		}
 
 		# Trade Centers
-		clear_global_variable_list = world_center_candidates
+		remove_global_variable = world_center
 		every_continent = {
-			clear_global_variable_list = continent_center_candidates
+			remove_global_variable = continent_center
+
 			every_sub_continent_in_continent = {
 				every_region_in_continent = {
-					clear_global_variable_list = region_center_candidates
+					remove_global_variable = region_center
+
 					every_area_in_region = {
 						ordered_location_in_area = {
 							limit = {
@@ -63,66 +65,76 @@ mnt_centers.1 = {
 							max = 1
 							check_range_bounds = no
 							add_location_modifier = { modifier = mnt_center_trade_local days = -1 }
-							add_to_global_variable_list = {
-								name = region_center_candidates
-								target = this
+							if = {
+								limit = {
+									OR = {
+										this.var:mnt_center_trade_score_location > center_trade_regional_threshold
+										NOT = { has_global_variable = region_center }
+										this.var:mnt_center_trade_score_location > global_var:region_center.var:mnt_center_trade_score_location
+									}
+								}
+								set_global_variable = {
+									name = region_center
+									value = this
+								}
 							}
 						}
 					}
-					ordered_in_global_list = {
-						variable = region_center_candidates
-						limit = {
-							this.var:mnt_center_trade_score_location >= center_trade_regional_threshold
-						}
-						order_by = { value = this.var:mnt_center_trade_score_location}
-						max = 1
-						check_range_bounds = no
+					global_var:region_center ?= {
 						remove_location_modifier = mnt_center_trade_local
 						add_location_modifier = { modifier = mnt_center_trade_regional days = -1 }
-						add_to_global_variable_list = {
-							name = continent_center_candidates
-							target = this
+
+						if = {
+							limit = {
+								this.var:mnt_center_trade_score_location >= center_trade_continental_threshold
+								OR = {
+									NOT = { has_global_variable = continent_center }
+									this.var:mnt_center_trade_score_location > global_var:continent_center.var:mnt_center_trade_score_location
+								}
+							}
+							set_global_variable = {
+								name = continent_center
+								value = this
+							}
 						}
 					}
 				}
-				ordered_in_global_list = {
-					variable = continent_center_candidates
-					limit = {
-						this.var:mnt_center_trade_score_location >= center_trade_continental_threshold
-					}
-					order_by = { value = this.var:mnt_center_trade_score_location}
-					max = 1
-					check_range_bounds = no
+				global_var:continent_center ?= {
 					remove_location_modifier = mnt_center_trade_regional
 					add_location_modifier = { modifier = mnt_center_trade_continental days = -1 }
-					add_to_global_variable_list = {
-						name = world_center_candidates
-						target = this
+
+					if = {
+						limit = {
+							# World centers (late game, very scarce)
+							current_age_or_later = { age = age_5_absolutism }
+							this.var:mnt_center_trade_score_location >= center_trade_world_threshold
+							OR = {
+								NOT = { has_global_variable = world_center }
+								this.var:mnt_center_trade_score_location > global_var:world_center.var:mnt_center_trade_score_location
+							}
+						}
+						set_global_variable = {
+							name = world_center
+							value = this
+						}
 					}
 				}
 			}
 		}
-		ordered_in_global_list = {
-			variable = world_center_candidates
-			limit = {
-				# World centers (late game, very scarce)
-				current_age_or_later = { age = age_5_absolutism }
-				this.var:mnt_center_trade_score_location >= center_trade_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_trade_score_location}
-			max = 1
-			check_range_bounds = no
+		global_var:world_center ?= {
 			remove_location_modifier = mnt_center_trade_continental
-			add_location_modifier = { modifier = mnt_center_trade_world days = -1}
+			add_location_modifier = { modifier = mnt_center_trade_world }
 		}
 
 		# Production Centers
-		clear_global_variable_list = world_center_candidates
+		remove_global_variable = world_center
 		every_continent = {
-			clear_global_variable_list = continent_center_candidates
+			remove_global_variable = continent_center
+
 			every_sub_continent_in_continent = {
 				every_region_in_continent = {
-					clear_global_variable_list = region_center_candidates
+					remove_global_variable = region_center
+
 					every_area_in_region = {
 						ordered_location_in_area = {
 							limit = {
@@ -133,66 +145,76 @@ mnt_centers.1 = {
 							max = 1
 							check_range_bounds = no
 							add_location_modifier = { modifier = mnt_center_production_local days = -1 }
-							add_to_global_variable_list = {
-								name = region_center_candidates
-								target = this
+							if = {
+								limit = {
+									OR = {
+										this.var:mnt_center_production_score_location > center_production_regional_threshold
+										NOT = { has_global_variable = region_center }
+										this.var:mnt_center_production_score_location > global_var:region_center.var:mnt_center_production_score_location
+									}
+								}
+								set_global_variable = {
+									name = region_center
+									value = this
+								}
 							}
 						}
 					}
-					ordered_in_global_list = {
-						variable = region_center_candidates
-						limit = {
-							this.var:mnt_center_production_score_location >= center_production_regional_threshold
-						}
-						order_by = { value = this.var:mnt_center_production_score_location }
-						max = 1
-						check_range_bounds = no
+					global_var:region_center ?= {
 						remove_location_modifier = mnt_center_production_local
 						add_location_modifier = { modifier = mnt_center_production_regional days = -1 }
-						add_to_global_variable_list = {
-							name = continent_center_candidates
-							target = this
+
+						if = {
+							limit = {
+								this.var:mnt_center_production_score_location >= center_production_continental_threshold
+								OR = {
+									NOT = { has_global_variable = continent_center }
+									this.var:mnt_center_production_score_location > global_var:continent_center.var:mnt_center_production_score_location
+								}
+							}
+							set_global_variable = {
+								name = continent_center
+								value = this
+							}
+						}
+					}
+				}
+				global_var:continent_center ?= {
+					remove_location_modifier = mnt_center_production_regional
+					add_location_modifier = { modifier = mnt_center_production_continental days = -1 }
+
+					if = {
+						limit = {
+							# World centers (late game, very scarce)
+							current_age_or_later = { age = age_5_absolutism }
+							this.var:mnt_center_production_score_location >= center_production_world_threshold
+							OR = {
+								NOT = { has_global_variable = world_center }
+								this.var:mnt_center_production_score_location > global_var:world_center.var:mnt_center_production_score_location
+							}
+						}
+						set_global_variable = {
+							name = world_center
+							value = this
 						}
 					}
 				}
 			}
-			ordered_in_global_list = {
-				variable = continent_center_candidates
-				limit = {
-					this.var:mnt_center_production_score_location >= center_production_continental_threshold
-				}
-				order_by = { value = this.var:mnt_center_production_score_location}
-				max = 1
-				check_range_bounds = no
-				remove_location_modifier = mnt_center_production_regional
-				add_location_modifier = { modifier = mnt_center_production_continental days = -1 }
-				add_to_global_variable_list = {
-					name = world_center_candidates
-					target = this
-				}
-			}
 		}
-		ordered_in_global_list = {
-			variable = world_center_candidates
-			limit = {
-				# World centers (late game, very scarce)
-				current_age_or_later = { age = age_5_absolutism }
-				this.var:mnt_center_production_score_location >= center_production_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_production_score_location}
-			max = 1
-			check_range_bounds = no
+		global_var:world_center ?= {
 			remove_location_modifier = mnt_center_production_continental
-			add_location_modifier = { modifier = mnt_center_production_world days = -1}
+			add_location_modifier = { modifier = mnt_center_production_world }
 		}
 
 		# Culture Centers
-		clear_global_variable_list = world_center_candidates
+		remove_global_variable = world_center
 		every_continent = {
-			clear_global_variable_list = continent_center_candidates
+			remove_global_variable = continent_center
+
 			every_sub_continent_in_continent = {
 				every_region_in_continent = {
-					clear_global_variable_list = region_center_candidates
+					remove_global_variable = region_center
+
 					every_area_in_region = {
 						ordered_location_in_area = {
 							limit = {
@@ -203,66 +225,76 @@ mnt_centers.1 = {
 							max = 1
 							check_range_bounds = no
 							add_location_modifier = { modifier = mnt_center_culture_local days = -1 }
-							add_to_global_variable_list = {
-								name = region_center_candidates
-								target = this
+							if = {
+								limit = {
+									OR = {
+										this.var:mnt_center_culture_score_location > center_culture_regional_threshold
+										NOT = {has_global_variable = region_center}
+										this.var:mnt_center_culture_score_location > global_var:region_center.var:mnt_center_culture_score_location
+									}
+								}
+								set_global_variable = {
+									name = region_center
+									value = this
+								}
 							}
 						}
 					}
-					ordered_in_global_list = {
-						variable = region_center_candidates
-						limit = {
-							this.var:mnt_center_culture_score_location >= center_culture_regional_threshold
-						}
-						order_by = { value = this.var:mnt_center_culture_score_location }
-						max = 1
-						check_range_bounds = no
+					global_var:region_center ?= {
 						remove_location_modifier = mnt_center_culture_local
 						add_location_modifier = { modifier = mnt_center_culture_regional days = -1 }
-						add_to_global_variable_list = {
-							name = continent_center_candidates
-							target = this
+
+						if = {
+							limit = {
+								this.var:mnt_center_culture_score_location >= center_culture_continental_threshold
+								OR = {
+									NOT = { has_global_variable = continent_center }
+									this.var:mnt_center_culture_score_location > global_var:continent_center.var:mnt_center_culture_score_location
+								}
+							}
+							set_global_variable = {
+								name = continent_center
+								value = this
+							}
+						}
+					}
+				}
+				global_var:continent_center ?= {
+					remove_location_modifier = mnt_center_culture_regional
+					add_location_modifier = { modifier = mnt_center_culture_continental days = -1 }
+
+					if = {
+						limit = {
+							# World centers (late game, very scarce)
+							current_age_or_later = { age = age_5_absolutism }
+							this.var:mnt_center_culture_score_location >= center_culture_world_threshold
+							OR = {
+								NOT = { has_global_variable = world_center }
+								this.var:mnt_center_culture_score_location > global_var:world_center.var:mnt_center_culture_score_location
+							}
+						}
+						set_global_variable = {
+							name = world_center
+							value = this
 						}
 					}
 				}
 			}
-			ordered_in_global_list = {
-				variable = continent_center_candidates
-				limit = {
-					this.var:mnt_center_culture_score_location >= center_culture_continental_threshold
-				}
-				order_by = { value = this.var:mnt_center_culture_score_location}
-				max = 1
-				check_range_bounds = no
-				remove_location_modifier = mnt_center_culture_regional
-				add_location_modifier = { modifier = mnt_center_culture_continental days = -1 }
-				add_to_global_variable_list = {
-					name = world_center_candidates
-					target = this
-				}
-			}
 		}
-		ordered_in_global_list = {
-			variable = world_center_candidates
-			limit = {
-				# World centers (late game, very scarce)
-				current_age_or_later = { age = age_5_absolutism }
-				this.var:mnt_center_culture_score_location >= center_culture_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_culture_score_location}
-			max = 1
-			check_range_bounds = no
+		global_var:world_center ?= {
 			remove_location_modifier = mnt_center_culture_continental
-			add_location_modifier = { modifier = mnt_center_culture_world days = -1}
+			add_location_modifier = { modifier = mnt_center_culture_world }
 		}
 
 		# Education Centers
-		clear_global_variable_list = world_center_candidates
+		remove_global_variable = world_center
 		every_continent = {
-			clear_global_variable_list = continent_center_candidates
+			remove_global_variable = continent_center
+
 			every_sub_continent_in_continent = {
 				every_region_in_continent = {
-					clear_global_variable_list = region_center_candidates
+					remove_global_variable = region_center
+
 					every_area_in_region = {
 						ordered_location_in_area = {
 							limit = {
@@ -273,57 +305,65 @@ mnt_centers.1 = {
 							max = 1
 							check_range_bounds = no
 							add_location_modifier = { modifier = mnt_center_education_local days = -1 }
-							add_to_global_variable_list = {
-								name = region_center_candidates
-								target = this
+							if = {
+								limit = {
+									OR = {
+										this.var:mnt_center_education_score_location > center_education_regional_threshold
+										NOT = {has_global_variable = region_center}
+										this.var:mnt_center_education_score_location > global_var:region_center.var:mnt_center_education_score_location
+									}
+								}
+								set_global_variable = {
+									name = region_center
+									value = this
+								}
 							}
 						}
 					}
-					ordered_in_global_list = {
-						variable = region_center_candidates
-						limit = {
-							this.var:mnt_center_education_score_location >= center_education_regional_threshold
-						}
-						order_by = { value = this.var:mnt_center_education_score_location }
-						max = 1
-						check_range_bounds = no
+					global_var:region_center ?= {
 						remove_location_modifier = mnt_center_education_local
 						add_location_modifier = { modifier = mnt_center_education_regional days = -1 }
-						add_to_global_variable_list = {
-							name = continent_center_candidates
-							target = this
+
+						if = {
+							limit = {
+								this.var:mnt_center_education_score_location >= center_education_continental_threshold
+								OR = {
+									NOT = { has_global_variable = continent_center }
+									this.var:mnt_center_education_score_location > global_var:continent_center.var:mnt_center_education_score_location
+								}
+							}
+							set_global_variable = {
+								name = continent_center
+								value = this
+							}
+						}
+					}
+				}
+				global_var:continent_center ?= {
+					remove_location_modifier = mnt_center_education_regional
+					add_location_modifier = { modifier = mnt_center_education_continental days = -1 }
+
+					if = {
+						limit = {
+							# World centers (late game, very scarce)
+							current_age_or_later = { age = age_5_absolutism }
+							this.var:mnt_center_education_score_location >= center_education_world_threshold
+							OR = {
+								NOT = { has_global_variable = world_center }
+								this.var:mnt_center_education_score_location > global_var:world_center.var:mnt_center_education_score_location
+							}
+						}
+						set_global_variable = {
+							name = world_center
+							value = this
 						}
 					}
 				}
 			}
-			ordered_in_global_list = {
-				variable = continent_center_candidates
-				limit = {
-					this.var:mnt_center_education_score_location >= center_education_continental_threshold
-				}
-				order_by = { value = this.var:mnt_center_education_score_location}
-				max = 1
-				check_range_bounds = no
-				remove_location_modifier = mnt_center_education_regional
-				add_location_modifier = { modifier = mnt_center_education_continental days = -1 }
-				add_to_global_variable_list = {
-					name = world_center_candidates
-					target = this
-				}
-			}
 		}
-		ordered_in_global_list = {
-			variable = world_center_candidates
-			limit = {
-				# World centers (late game, very scarce)
-				current_age_or_later = { age = age_5_absolutism }
-				this.var:mnt_center_education_score_location >= center_education_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_education_score_location}
-			max = 1
-			check_range_bounds = no
+		global_var:world_center ?= {
 			remove_location_modifier = mnt_center_education_continental
-			add_location_modifier = { modifier = mnt_center_education_world days = -1}
+			add_location_modifier = { modifier = mnt_center_education_world }
 		}
 	}
 }
