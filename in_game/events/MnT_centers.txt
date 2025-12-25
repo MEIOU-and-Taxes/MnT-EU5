@@ -46,226 +46,284 @@ mnt_centers.1 = {
 			calc_center_education_score_location = yes
 		}
 
-		# World centers (late game, very scarce)
-		ordered_location_in_the_world = {
+		# Trade Centers
+		clear_global_variable_list = world_center_candidates
+		every_continent = {
+			clear_global_variable_list = continent_center_candidates
+			every_sub_continent_in_continent = {
+				every_region_in_continent = {
+					clear_global_variable_list = region_center_candidates
+					every_area_in_region = {
+						ordered_location_in_area = {
+							limit = {
+								has_variable = mnt_center_trade_score_location
+								this.var:mnt_center_trade_score_location >= center_trade_local_threshold
+							}
+							order_by = { value = this.var:mnt_center_trade_score_location }
+							max = 1
+							check_range_bounds = no
+							add_location_modifier = { modifier = mnt_center_trade_local days = -1 }
+							add_to_global_variable_list = {
+								name = region_center_candidates
+								target = this
+							}
+						}
+					}
+					ordered_in_global_list = {
+						variable = region_center_candidates
+						limit = {
+							this.var:mnt_center_trade_score_location >= center_trade_regional_threshold
+						}
+						order_by = { value = this.var:mnt_center_trade_score_location}
+						max = 1
+						check_range_bounds = no
+						remove_location_modifier = mnt_center_trade_local
+						add_location_modifier = { modifier = mnt_center_trade_regional days = -1 }
+						add_to_global_variable_list = {
+							name = continent_center_candidates
+							target = this
+						}
+					}
+				}
+				ordered_in_global_list = {
+					variable = continent_center_candidates
+					limit = {
+						this.var:mnt_center_trade_score_location >= center_trade_continental_threshold
+					}
+					order_by = { value = this.var:mnt_center_trade_score_location}
+					max = 1
+					check_range_bounds = no
+					remove_location_modifier = mnt_center_trade_regional
+					add_location_modifier = { modifier = mnt_center_trade_continental days = -1 }
+					add_to_global_variable_list = {
+						name = world_center_candidates
+						target = this
+					}
+				}
+			}
+		}
+		ordered_in_global_list = {
+			variable = world_center_candidates
 			limit = {
+				# World centers (late game, very scarce)
 				current_age_or_later = { age = age_5_absolutism }
-				has_variable = mnt_center_trade_score_location
 				this.var:mnt_center_trade_score_location >= center_trade_world_threshold
 			}
-			order_by = { value = this.var:mnt_center_trade_score_location }
+			order_by = { value = this.var:mnt_center_trade_score_location}
 			max = 1
 			check_range_bounds = no
-			add_location_modifier = { modifier= mnt_center_trade_world days = -1 }
-		}
-		ordered_location_in_the_world = {
-			limit = {
-				current_age_or_later = { age = age_5_absolutism }
-				has_variable = mnt_center_production_score_location
-				this.var:mnt_center_production_score_location >= center_production_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_production_score_location }
-			max = 1
-			check_range_bounds = no
-			add_location_modifier = { modifier= mnt_center_production_world days = -1 }
-		}
-		ordered_location_in_the_world = {
-			limit = {
-				current_age_or_later = { age = age_5_absolutism }
-				has_variable = mnt_center_culture_score_location
-				this.var:mnt_center_culture_score_location >= center_culture_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_culture_score_location }
-			max = 1
-			check_range_bounds = no
-			add_location_modifier = { modifier= mnt_center_culture_world days = -1 }
-		}
-		ordered_location_in_the_world = {
-			limit = {
-				current_age_or_later = { age = age_5_absolutism }
-				has_variable = mnt_center_education_score_location
-				this.var:mnt_center_education_score_location >= center_education_world_threshold
-			}
-			order_by = { value = this.var:mnt_center_education_score_location }
-			max = 1
-			check_range_bounds = no
-			add_location_modifier = { modifier= mnt_center_education_world days = -1 }
+			remove_location_modifier = mnt_center_trade_continental
+			add_location_modifier = { modifier = mnt_center_trade_world days = -1}
 		}
 
-		# Continental centers
+		# Production Centers
+		clear_global_variable_list = world_center_candidates
 		every_continent = {
-			ordered_location_in_continent = {
-				limit = {
-					NOT = { has_location_modifier = mnt_center_trade_world }
-					has_variable = mnt_center_trade_score_location
-					this.var:mnt_center_trade_score_location >= center_trade_continental_threshold
+			clear_global_variable_list = continent_center_candidates
+			every_sub_continent_in_continent = {
+				every_region_in_continent = {
+					clear_global_variable_list = region_center_candidates
+					every_area_in_region = {
+						ordered_location_in_area = {
+							limit = {
+								has_variable = mnt_center_production_score_location
+								this.var:mnt_center_production_score_location >= center_production_local_threshold
+							}
+							order_by = { value = this.var:mnt_center_production_score_location }
+							max = 1
+							check_range_bounds = no
+							add_location_modifier = { modifier = mnt_center_production_local days = -1 }
+							add_to_global_variable_list = {
+								name = region_center_candidates
+								target = this
+							}
+						}
+					}
+					ordered_in_global_list = {
+						variable = region_center_candidates
+						limit = {
+							this.var:mnt_center_production_score_location >= center_production_regional_threshold
+						}
+						order_by = { value = this.var:mnt_center_production_score_location }
+						max = 1
+						check_range_bounds = no
+						remove_location_modifier = mnt_center_production_local
+						add_location_modifier = { modifier = mnt_center_production_regional days = -1 }
+						add_to_global_variable_list = {
+							name = continent_center_candidates
+							target = this
+						}
+					}
 				}
-				order_by = { value = this.var:mnt_center_trade_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_trade_continental days = -1 }
 			}
-			ordered_location_in_continent = {
+			ordered_in_global_list = {
+				variable = continent_center_candidates
 				limit = {
-					NOT = { has_location_modifier = mnt_center_production_world }
-					has_variable = mnt_center_production_score_location
 					this.var:mnt_center_production_score_location >= center_production_continental_threshold
 				}
-				order_by = { value = this.var:mnt_center_production_score_location }
+				order_by = { value = this.var:mnt_center_production_score_location}
 				max = 1
 				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_production_continental days = -1 }
+				remove_location_modifier = mnt_center_production_regional
+				add_location_modifier = { modifier = mnt_center_production_continental days = -1 }
+				add_to_global_variable_list = {
+					name = world_center_candidates
+					target = this
+				}
 			}
-			ordered_location_in_continent = {
+		}
+		ordered_in_global_list = {
+			variable = world_center_candidates
+			limit = {
+				# World centers (late game, very scarce)
+				current_age_or_later = { age = age_5_absolutism }
+				this.var:mnt_center_production_score_location >= center_production_world_threshold
+			}
+			order_by = { value = this.var:mnt_center_production_score_location}
+			max = 1
+			check_range_bounds = no
+			remove_location_modifier = mnt_center_production_continental
+			add_location_modifier = { modifier = mnt_center_production_world days = -1}
+		}
+
+		# Culture Centers
+		clear_global_variable_list = world_center_candidates
+		every_continent = {
+			clear_global_variable_list = continent_center_candidates
+			every_sub_continent_in_continent = {
+				every_region_in_continent = {
+					clear_global_variable_list = region_center_candidates
+					every_area_in_region = {
+						ordered_location_in_area = {
+							limit = {
+								has_variable = mnt_center_culture_score_location
+								this.var:mnt_center_culture_score_location >= center_culture_local_threshold
+							}
+							order_by = { value = this.var:mnt_center_culture_score_location }
+							max = 1
+							check_range_bounds = no
+							add_location_modifier = { modifier = mnt_center_culture_local days = -1 }
+							add_to_global_variable_list = {
+								name = region_center_candidates
+								target = this
+							}
+						}
+					}
+					ordered_in_global_list = {
+						variable = region_center_candidates
+						limit = {
+							this.var:mnt_center_culture_score_location >= center_culture_regional_threshold
+						}
+						order_by = { value = this.var:mnt_center_culture_score_location }
+						max = 1
+						check_range_bounds = no
+						remove_location_modifier = mnt_center_culture_local
+						add_location_modifier = { modifier = mnt_center_culture_regional days = -1 }
+						add_to_global_variable_list = {
+							name = continent_center_candidates
+							target = this
+						}
+					}
+				}
+			}
+			ordered_in_global_list = {
+				variable = continent_center_candidates
 				limit = {
-					NOT = { has_location_modifier = mnt_center_culture_world }
-					has_variable = mnt_center_culture_score_location
 					this.var:mnt_center_culture_score_location >= center_culture_continental_threshold
 				}
-				order_by = { value = this.var:mnt_center_culture_score_location }
+				order_by = { value = this.var:mnt_center_culture_score_location}
 				max = 1
 				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_culture_continental days = -1 }
+				remove_location_modifier = mnt_center_culture_regional
+				add_location_modifier = { modifier = mnt_center_culture_continental days = -1 }
+				add_to_global_variable_list = {
+					name = world_center_candidates
+					target = this
+				}
 			}
-			ordered_location_in_continent = {
+		}
+		ordered_in_global_list = {
+			variable = world_center_candidates
+			limit = {
+				# World centers (late game, very scarce)
+				current_age_or_later = { age = age_5_absolutism }
+				this.var:mnt_center_culture_score_location >= center_culture_world_threshold
+			}
+			order_by = { value = this.var:mnt_center_culture_score_location}
+			max = 1
+			check_range_bounds = no
+			remove_location_modifier = mnt_center_culture_continental
+			add_location_modifier = { modifier = mnt_center_culture_world days = -1}
+		}
+
+		# Education Centers
+		clear_global_variable_list = world_center_candidates
+		every_continent = {
+			clear_global_variable_list = continent_center_candidates
+			every_sub_continent_in_continent = {
+				every_region_in_continent = {
+					clear_global_variable_list = region_center_candidates
+					every_area_in_region = {
+						ordered_location_in_area = {
+							limit = {
+								has_variable = mnt_center_education_score_location
+								this.var:mnt_center_education_score_location >= center_education_local_threshold
+							}
+							order_by = { value = this.var:mnt_center_education_score_location }
+							max = 1
+							check_range_bounds = no
+							add_location_modifier = { modifier = mnt_center_education_local days = -1 }
+							add_to_global_variable_list = {
+								name = region_center_candidates
+								target = this
+							}
+						}
+					}
+					ordered_in_global_list = {
+						variable = region_center_candidates
+						limit = {
+							this.var:mnt_center_education_score_location >= center_education_regional_threshold
+						}
+						order_by = { value = this.var:mnt_center_education_score_location }
+						max = 1
+						check_range_bounds = no
+						remove_location_modifier = mnt_center_education_local
+						add_location_modifier = { modifier = mnt_center_education_regional days = -1 }
+						add_to_global_variable_list = {
+							name = continent_center_candidates
+							target = this
+						}
+					}
+				}
+			}
+			ordered_in_global_list = {
+				variable = continent_center_candidates
 				limit = {
-					NOT = { has_location_modifier = mnt_center_education_world }
-					has_variable = mnt_center_education_score_location
 					this.var:mnt_center_education_score_location >= center_education_continental_threshold
 				}
-				order_by = { value = this.var:mnt_center_education_score_location }
+				order_by = { value = this.var:mnt_center_education_score_location}
 				max = 1
 				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_education_continental days = -1 }
+				remove_location_modifier = mnt_center_education_regional
+				add_location_modifier = { modifier = mnt_center_education_continental days = -1 }
+				add_to_global_variable_list = {
+					name = world_center_candidates
+					target = this
+				}
 			}
 		}
-
-		# Regional centers
-		every_region = {
-			ordered_location_in_region = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_trade_world
-						has_location_modifier = mnt_center_trade_continental
-					}
-					has_variable = mnt_center_trade_score_location
-					this.var:mnt_center_trade_score_location >= center_trade_regional_threshold
-				}
-				order_by = { value = this.var:mnt_center_trade_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_trade_regional days = -1 }
+		ordered_in_global_list = {
+			variable = world_center_candidates
+			limit = {
+				# World centers (late game, very scarce)
+				current_age_or_later = { age = age_5_absolutism }
+				this.var:mnt_center_education_score_location >= center_education_world_threshold
 			}
-			ordered_location_in_region = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_production_world
-						has_location_modifier = mnt_center_production_continental
-					}
-					has_variable = mnt_center_production_score_location
-					this.var:mnt_center_production_score_location >= center_production_regional_threshold
-				}
-				order_by = { value = this.var:mnt_center_production_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_production_regional days = -1 }
-			}
-			ordered_location_in_region = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_culture_world
-						has_location_modifier = mnt_center_culture_continental
-					}
-					has_variable = mnt_center_culture_score_location
-					this.var:mnt_center_culture_score_location >= center_culture_regional_threshold
-				}
-				order_by = { value = this.var:mnt_center_culture_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_culture_regional days = -1 }
-			}
-			ordered_location_in_region = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_education_world
-						has_location_modifier = mnt_center_education_continental
-					}
-					has_variable = mnt_center_education_score_location
-					this.var:mnt_center_education_score_location >= center_education_regional_threshold
-				}
-				order_by = { value = this.var:mnt_center_education_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_education_regional days = -1 }
-			}
-		}
-
-		# Local (area) centers
-		every_area = {
-			# Trade
-			ordered_location_in_area = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_trade_world
-						has_location_modifier = mnt_center_trade_continental
-						has_location_modifier = mnt_center_trade_regional
-					}
-					has_variable = mnt_center_trade_score_location
-					this.var:mnt_center_trade_score_location >= center_trade_local_threshold
-				}
-				order_by = { value = this.var:mnt_center_trade_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_trade_local days = -1 }
-			}
-			# Production
-			ordered_location_in_area = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_production_world
-						has_location_modifier = mnt_center_production_continental
-						has_location_modifier = mnt_center_production_regional
-					}
-					has_variable = mnt_center_production_score_location
-					this.var:mnt_center_production_score_location >= center_production_local_threshold
-				}
-				order_by = { value = this.var:mnt_center_production_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_production_local days = -1 }
-			}
-			# Culture
-			ordered_location_in_area = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_culture_world
-						has_location_modifier = mnt_center_culture_continental
-						has_location_modifier = mnt_center_culture_regional
-					}
-					has_variable = mnt_center_culture_score_location
-					this.var:mnt_center_culture_score_location >= center_culture_local_threshold
-				}
-				order_by = { value = this.var:mnt_center_culture_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_culture_local days = -1 }
-			}
-			# Education
-			ordered_location_in_area = {
-				limit = {
-					NOR = {
-						has_location_modifier = mnt_center_education_world
-						has_location_modifier = mnt_center_education_continental
-						has_location_modifier = mnt_center_education_regional
-					}
-					has_variable = mnt_center_education_score_location
-					this.var:mnt_center_education_score_location >= center_education_local_threshold
-				}
-				order_by = { value = this.var:mnt_center_education_score_location }
-				max = 1
-				check_range_bounds = no
-				add_location_modifier = { modifier= mnt_center_education_local days = -1 }
-			}
+			order_by = { value = this.var:mnt_center_education_score_location}
+			max = 1
+			check_range_bounds = no
+			remove_location_modifier = mnt_center_education_continental
+			add_location_modifier = { modifier = mnt_center_education_world days = -1}
 		}
 	}
 }
