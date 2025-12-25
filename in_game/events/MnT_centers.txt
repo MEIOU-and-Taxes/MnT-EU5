@@ -10,6 +10,11 @@ mnt_centers.1 = {
 	immediate = {
 		# Clear previous center modifiers
 		every_location_in_the_world = {
+			limit = {
+				# By checking the conditions here, later we can simply check for the existence of the variable
+				is_land = yes
+				has_owner = yes
+			}
 			remove_location_modifier = mnt_center_trade_local
 			remove_location_modifier = mnt_center_trade_regional
 			remove_location_modifier = mnt_center_trade_continental
@@ -33,49 +38,55 @@ mnt_centers.1 = {
 			# Production heuristic: urban manufactured goods output per head
 			save_scope_as = target_location
 			calc_urban_goods_value_produced_location = yes
+
+			# Cache scores to avoid recalculating during location iteration
+			calc_center_trade_score_location = yes
+			calc_center_production_score_location = yes
+			calc_center_culture_score_location = yes
+			calc_center_education_score_location = yes
 		}
 
 		# World centers (late game, very scarce)
 		ordered_location_in_the_world = {
 			limit = {
-				is_land = yes
 				current_age_or_later = { age = age_5_absolutism }
-				mnt_center_trade_score >= center_trade_world_threshold
+				has_variable = mnt_center_trade_score_location
+				this.var:mnt_center_trade_score_location >= center_trade_world_threshold
 			}
-			order_by = { value = mnt_center_trade_score }
+			order_by = { value = this.var:mnt_center_trade_score_location }
 			max = 1
 			check_range_bounds = no
 			add_location_modifier = { modifier= mnt_center_trade_world days = -1 }
 		}
 		ordered_location_in_the_world = {
 			limit = {
-				is_land = yes
 				current_age_or_later = { age = age_5_absolutism }
-				mnt_center_production_score >= center_production_world_threshold
+				has_variable = mnt_center_production_score_location
+				this.var:mnt_center_production_score_location >= center_production_world_threshold
 			}
-			order_by = { value = mnt_center_production_score }
+			order_by = { value = this.var:mnt_center_production_score_location }
 			max = 1
 			check_range_bounds = no
 			add_location_modifier = { modifier= mnt_center_production_world days = -1 }
 		}
 		ordered_location_in_the_world = {
 			limit = {
-				is_land = yes
 				current_age_or_later = { age = age_5_absolutism }
-				mnt_center_culture_score >= center_culture_world_threshold
+				has_variable = mnt_center_culture_score_location
+				this.var:mnt_center_culture_score_location >= center_culture_world_threshold
 			}
-			order_by = { value = mnt_center_culture_score }
+			order_by = { value = this.var:mnt_center_culture_score_location }
 			max = 1
 			check_range_bounds = no
 			add_location_modifier = { modifier= mnt_center_culture_world days = -1 }
 		}
 		ordered_location_in_the_world = {
 			limit = {
-				is_land = yes
 				current_age_or_later = { age = age_5_absolutism }
-				mnt_center_education_score >= center_education_world_threshold
+				has_variable = mnt_center_education_score_location
+				this.var:mnt_center_education_score_location >= center_education_world_threshold
 			}
-			order_by = { value = mnt_center_education_score }
+			order_by = { value = this.var:mnt_center_education_score_location }
 			max = 1
 			check_range_bounds = no
 			add_location_modifier = { modifier= mnt_center_education_world days = -1 }
@@ -84,45 +95,45 @@ mnt_centers.1 = {
 		# Continental centers
 		every_continent = {
 			ordered_location_in_continent = {
-				limit = { 
-					is_land = yes 
+				limit = {
 					NOT = { has_location_modifier = mnt_center_trade_world }
-					mnt_center_trade_score >= center_trade_continental_threshold
+					has_variable = mnt_center_trade_score_location
+					this.var:mnt_center_trade_score_location >= center_trade_continental_threshold
 				}
-				order_by = { value = mnt_center_trade_score }
+				order_by = { value = this.var:mnt_center_trade_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_trade_continental days = -1 }
 			}
 			ordered_location_in_continent = {
-				limit = { 
-					is_land = yes 
+				limit = {
 					NOT = { has_location_modifier = mnt_center_production_world }
-					mnt_center_production_score >= center_production_continental_threshold
+					has_variable = mnt_center_production_score_location
+					this.var:mnt_center_production_score_location >= center_production_continental_threshold
 				}
-				order_by = { value = mnt_center_production_score }
+				order_by = { value = this.var:mnt_center_production_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_production_continental days = -1 }
 			}
 			ordered_location_in_continent = {
-				limit = { 
-					is_land = yes 
+				limit = {
 					NOT = { has_location_modifier = mnt_center_culture_world }
-					mnt_center_culture_score >= center_culture_continental_threshold
+					has_variable = mnt_center_culture_score_location
+					this.var:mnt_center_culture_score_location >= center_culture_continental_threshold
 				}
-				order_by = { value = mnt_center_culture_score }
+				order_by = { value = this.var:mnt_center_culture_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_culture_continental days = -1 }
 			}
 			ordered_location_in_continent = {
-				limit = { 
-					is_land = yes 
+				limit = {
 					NOT = { has_location_modifier = mnt_center_education_world }
-					mnt_center_education_score >= center_education_continental_threshold
+					has_variable = mnt_center_education_score_location
+					this.var:mnt_center_education_score_location >= center_education_continental_threshold
 				}
-				order_by = { value = mnt_center_education_score }
+				order_by = { value = this.var:mnt_center_education_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_education_continental days = -1 }
@@ -132,57 +143,57 @@ mnt_centers.1 = {
 		# Regional centers
 		every_region = {
 			ordered_location_in_region = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_trade_world
 						has_location_modifier = mnt_center_trade_continental
 					}
-					mnt_center_trade_score >= center_trade_regional_threshold
+					has_variable = mnt_center_trade_score_location
+					this.var:mnt_center_trade_score_location >= center_trade_regional_threshold
 				}
-				order_by = { value = mnt_center_trade_score }
+				order_by = { value = this.var:mnt_center_trade_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_trade_regional days = -1 }
 			}
 			ordered_location_in_region = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_production_world
 						has_location_modifier = mnt_center_production_continental
 					}
-					mnt_center_production_score >= center_production_regional_threshold
+					has_variable = mnt_center_production_score_location
+					this.var:mnt_center_production_score_location >= center_production_regional_threshold
 				}
-				order_by = { value = mnt_center_production_score }
+				order_by = { value = this.var:mnt_center_production_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_production_regional days = -1 }
 			}
 			ordered_location_in_region = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_culture_world
 						has_location_modifier = mnt_center_culture_continental
 					}
-					mnt_center_culture_score >= center_culture_regional_threshold
+					has_variable = mnt_center_culture_score_location
+					this.var:mnt_center_culture_score_location >= center_culture_regional_threshold
 				}
-				order_by = { value = mnt_center_culture_score }
+				order_by = { value = this.var:mnt_center_culture_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_culture_regional days = -1 }
 			}
 			ordered_location_in_region = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_education_world
 						has_location_modifier = mnt_center_education_continental
 					}
-					mnt_center_education_score >= center_education_regional_threshold
+					has_variable = mnt_center_education_score_location
+					this.var:mnt_center_education_score_location >= center_education_regional_threshold
 				}
-				order_by = { value = mnt_center_education_score }
+				order_by = { value = this.var:mnt_center_education_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_education_regional days = -1 }
@@ -193,64 +204,64 @@ mnt_centers.1 = {
 		every_area = {
 			# Trade
 			ordered_location_in_area = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_trade_world
 						has_location_modifier = mnt_center_trade_continental
 						has_location_modifier = mnt_center_trade_regional
 					}
-					mnt_center_trade_score >= center_trade_local_threshold
+					has_variable = mnt_center_trade_score_location
+					this.var:mnt_center_trade_score_location >= center_trade_local_threshold
 				}
-				order_by = { value = mnt_center_trade_score }
+				order_by = { value = this.var:mnt_center_trade_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_trade_local days = -1 }
 			}
 			# Production
 			ordered_location_in_area = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_production_world
 						has_location_modifier = mnt_center_production_continental
 						has_location_modifier = mnt_center_production_regional
 					}
-					mnt_center_production_score >= center_production_local_threshold
+					has_variable = mnt_center_production_score_location
+					this.var:mnt_center_production_score_location >= center_production_local_threshold
 				}
-				order_by = { value = mnt_center_production_score }
+				order_by = { value = this.var:mnt_center_production_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_production_local days = -1 }
 			}
 			# Culture
 			ordered_location_in_area = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_culture_world
 						has_location_modifier = mnt_center_culture_continental
 						has_location_modifier = mnt_center_culture_regional
 					}
-					mnt_center_culture_score >= center_culture_local_threshold
+					has_variable = mnt_center_culture_score_location
+					this.var:mnt_center_culture_score_location >= center_culture_local_threshold
 				}
-				order_by = { value = mnt_center_culture_score }
+				order_by = { value = this.var:mnt_center_culture_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_culture_local days = -1 }
 			}
 			# Education
 			ordered_location_in_area = {
-				limit = { 
-					is_land = yes 
-					NOR = { 
+				limit = {
+					NOR = {
 						has_location_modifier = mnt_center_education_world
 						has_location_modifier = mnt_center_education_continental
 						has_location_modifier = mnt_center_education_regional
 					}
-					mnt_center_education_score >= center_education_local_threshold
+					has_variable = mnt_center_education_score_location
+					this.var:mnt_center_education_score_location >= center_education_local_threshold
 				}
-				order_by = { value = mnt_center_education_score }
+				order_by = { value = this.var:mnt_center_education_score_location }
 				max = 1
 				check_range_bounds = no
 				add_location_modifier = { modifier= mnt_center_education_local days = -1 }
@@ -258,3 +269,4 @@ mnt_centers.1 = {
 		}
 	}
 }
+
