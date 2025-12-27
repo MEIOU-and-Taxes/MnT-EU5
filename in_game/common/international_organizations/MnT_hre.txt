@@ -1,0 +1,888 @@
+REPLACE:hre = {
+
+	has_target = no
+	unique = yes
+	expel_members_who_are_targets_of_other_members = no
+	
+	show_leave_message = no
+	use_laws_as_join_reason = no
+
+	show_as_overlord_on_map_trigger = {
+		always = yes
+	}
+
+	has_parliament = yes
+	parliament_type = hre_court_assembly
+	resolution_widget = parliament
+	has_dynastic_power = yes
+	
+	has_leader_country = yes
+	leader_title_key = "HRE_LEADER"
+	use_regnal_number = yes
+	leader_type = character
+	leader = {
+		leader_country ?= {
+			if = {
+				limit = {
+					has_regent = yes
+					has_heir = yes
+				}
+				heir ?= {
+					add_to_list = leaders
+				}
+			}
+			else_if = {
+				limit = {
+					has_ruler = yes
+					ruler ?= { is_alive = yes }
+				}
+				ruler ?= {
+					add_to_list = leaders
+				}
+			}
+		}
+	}
+	leader_change_trigger_type = rulerchange
+	leader_change_method = vote
+	leadership_election_resolution = hre_election
+	disband_if_no_leader = no #can have no leader while there's a power battle to get enough votes
+	override_ruler_title = yes
+
+	only_leader_country_joins_defensive_wars = yes
+
+	join_defensive_wars_always = {
+		custom_tooltip = {
+			text = hre_defended_imperial_cities_tt
+			hre_enabled_free_cities_protection = yes
+			exists = scope:actor
+			scope:actor = {
+				OR = {
+					has_special_status_in_international_organization = {
+						type = special_status:free_city
+						international_organization = root
+					}
+					any_subject = {
+						has_special_status_in_international_organization = {
+							type = special_status:free_city
+							international_organization = root
+						}
+					}
+				}
+			}
+		}
+	}
+
+	join_defensive_wars_auto_call = {
+		scope:target ?= {
+			not = {
+				is_member_of_international_organization = root
+			}
+		}
+		scope:actor ?= {
+			modifier:excluded_from_imperial_protection = no
+		}
+	}
+	
+	can_declare_war = {
+		trigger_if = {
+			limit = {
+				scope:recipient = { modifier:enforced_internal_peace = yes }
+				scope:attacker = { is_member_of_international_organization = scope:recipient }
+				scope:defender = { is_member_of_international_organization = scope:recipient }
+			}
+			scope:recipient = { modifier:enforced_internal_peace = no }
+		}
+		trigger_else = {
+			#always = yes
+			# Rosth: added two conditions for HRE wars
+			# 1) if both countries are in the HRE, attacker needs a proper CB against the defender
+			# 2) if attacker is not in the HRE, they need to really want to declare this war
+			# Note that it does NOT eliminate the possibility of AI still choosing to no-CB
+			# No-CB selection bias is already lowered in defines, but other than that it's not moddable currently
+			OR = {
+				AND = {
+					scope:attacker = {
+						has_casus_belli_on = scope:defender
+						is_member_of_international_organization = scope:recipient
+					}
+					scope:defender = { is_member_of_international_organization = scope:recipient }
+				}
+				AND = {
+					scope:attacker = { NOT = { is_member_of_international_organization = scope:recipient } }
+					scope:defender = { is_member_of_international_organization = scope:recipient }
+					scope:attacker = { conquer_desire = { target = scope:defender value > 75 } }
+				}
+			}
+		}
+	}
+
+	gives_military_access_to_all_when_at_war = yes
+
+	can_initiate_policy_votes = {
+		is_leader_of_international_organization = scope:recipient
+	}
+
+	land_ownership_rule = hre_land_ownership
+	antagonism_modifier_for_taking_land_from_fellow_member = 0.75	  # Members get more Antagonism in the HRE			# Rosth: increased intra-HRE antagonism modifier from 0.75 to 1
+	antagonism_modifier_for_taking_land_from_member_as_outsider = 1.33 # Outsiders get even more Antagonism in the HRE	# Rosth: increased antagonism modifier for non-HRE countries from 1 to 1.33
+	no_cb_price_modifier_for_fellow_member = 0.75
+
+	modifier = {
+		block_from_change_to_kingdom_rank = yes
+		block_from_change_to_empire_rank = yes
+		block_from_change_to_duchy_rank = yes
+		reject_subjugation_reasons = 25
+	}
+
+	international_organization_modifier = {
+		# Standard setup for amount of electors
+		hre_max_elector = 4
+		hre_max_archbishop_elector = 3
+	}
+	
+	leader_modifier = {
+		great_power_score_exempt_from_forfeit = 250
+
+		diplomatic_capacity = 1
+		max_diplomats = 2
+		diplomatic_range = 500
+		
+		fort_limit = 1
+		
+		num_possible_artists = 1 
+		cultures_capacity = 1
+		government_size = 1
+		monthly_prestige = 0.1
+		
+		allowed_alliance = yes
+		allowed_guarantee = yes
+		allowed_support_rebels = yes
+		allowed_intervene_in_war = yes
+		allowed_enforce_peace = yes
+		allowed_threaten_war = yes
+
+	}
+	
+	create_visible_trigger = {
+		always = no
+	}
+
+	invite_visible_trigger = {
+		always = yes
+	}
+
+	can_lead_trigger = {
+		country_type = location
+		government_type = government_type:monarchy
+		is_subject = no
+		hre_country_fulfills_imperial_religion_requirement = { type = voting }
+		hidden_trigger = {
+			OR = {
+				has_regent = no
+				has_heir = yes
+			}
+		}
+		OR = {
+			# Not currently Emperor: ruler must be eligible
+			AND = {
+				NOT = { is_leader_of_international_organization = scope:recipient }
+
+				custom_tooltip = {
+					text = hre_has_eligible_ruler_tt
+					AND = {
+						has_regent = no
+						has_ruler = yes
+						OR = {
+							ruler ?= { is_female = no }
+							scope:recipient = { modifier:hre_allow_female_emperors = yes }
+						}
+						ruler ?= { modifier:blocked_from_ruling_the_hre = no }
+					}
+				}
+			}
+
+			# Already Emperor: heir must be eligible (successor check)
+			AND = {
+				is_leader_of_international_organization = scope:recipient
+
+				custom_tooltip = {
+					text = hre_has_eligible_heir_tt
+					AND = {
+						has_heir = yes
+						OR = {
+							has_ruler = no
+							is_leader_of_international_organization = scope:recipient
+						}
+						OR = {
+							heir ?= { is_female = no }
+							scope:recipient = { modifier:hre_allow_female_emperors = yes }
+						}
+						heir ?= { modifier:blocked_from_ruling_the_hre = no }
+					}
+				}
+			}
+		}
+	}
+	
+	can_join_trigger = {
+		scope:recipient = {
+			international_organization_has_leader = yes
+		}
+		religion = scope:recipient.leader_country.religion
+		OR = {
+			is_neighbor_of_international_organization = scope:recipient
+			any_owned_location = { is_owned_by_international_organization = scope:recipient }
+		}
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:swiss_confederation
+				international_organization:swiss_confederation = {
+					international_organization_has_unlocked_law_trigger = { type = sc_relations_with_hre }
+				}
+			}
+			international_organization:swiss_confederation = {
+				NOT = { international_organization_has_policy = policy:sc_leave_the_hre }
+			}
+		}
+	}
+	
+	can_leave_trigger = {
+		scope:recipient = {
+			international_organization_has_policy = policy:golden_bull_policy
+		}
+		NOT = { is_leader_of_international_organization = scope:recipient }
+		trigger_if = {
+			limit = { scope:recipient = { international_organization_has_leader = yes } }
+			trigger_if = {
+				limit = { scope:recipient = { modifier:hre_enable_leave_hre_peace_treaty = yes } }
+				custom_tooltip = {
+					text = hre_leaving_tt
+					always = no
+				}
+			}
+		}
+		trigger_else = {
+			scope:recipient = { international_organization_leader_reign >= LONG_IMPERIAL_REGENCY_YEARS }
+		}
+	}
+	
+	auto_leave_trigger = {
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:swiss_confederation
+				international_organization:swiss_confederation = {
+					international_organization_has_unlocked_law_trigger = { type = sc_relations_with_hre }
+				}
+			}
+			international_organization:swiss_confederation = {
+				international_organization_has_policy = policy:sc_leave_the_hre
+			}
+		}
+		trigger_else = {
+			always = no
+		}
+	}
+
+	can_vote_in_parliament = {
+		"country_highest_rated_special_status_power(scope:recipient)" > 0
+	}
+	
+	auto_disband_trigger = {
+		always = no
+	}
+
+	on_joined = {
+	}
+
+	on_left = {
+	}
+	
+	monthly_effect = {
+		hidden_effect = {
+			#auto-join anyone who has their capital in the hre
+			every_international_organization_owned_location = {
+				limit = {
+					is_capital = yes
+					owner = {
+						not = { is_member_of_international_organization = root }
+						country_can_join_international_organization = root
+					}
+				}
+				root = {
+					add_country_to_international_organization = prev.owner
+				}
+			}
+			#check that the kingdom titles are in the list and valid
+			hre_update_kingdom_title = { formable_country = formable_country:BOH_f }
+			hre_update_kingdom_title = { formable_country = formable_country:BGP_f }
+			hre_update_kingdom_title = { formable_country = formable_country:LOT_f }
+			hre_update_kingdom_title = { formable_country = formable_country:ITA_f }
+			#in case of a deadlock, pick the most powerful candidate of the HRE and make them emperor...
+			if = {
+				limit = {
+					international_organization_has_leader = no
+					international_organization_leader_reign > 2
+					OR = {
+						num_of_electors = 0
+						any_international_organization_elector = {
+							root = {
+								vote_is_locked = {
+									voter = prev
+									resolution = resolution:hre_election
+								}
+							}
+							percent >= 0.5
+						}
+					}
+				}
+				ordered_international_organization_member = {
+					order_by = great_power_score
+					limit = { can_lead_international_organization = root }
+					max = 1
+					check_range_bounds = no
+					save_scope_as = new_leader
+				}
+				if = {
+					limit = { exists = scope:new_leader }
+					set_leader_country = scope:new_leader
+				}
+			}
+		}
+	}
+	
+	variables = {
+		imperial_authority = {
+			format = "IMPERIAL_AUTHORITY_DISPLAY"
+			change_format = "VARIABLE_CHANGE_FORMAT"
+			min = 0
+			max = 100
+			monthly_change = {
+				add = {
+					#internal peace
+					add = {
+						desc = "INTERNAL_PEACE"
+						if = {
+							limit = {
+								international_organization_has_internal_peace = no
+							}
+							value = 0
+						}
+						else = {
+							value = 0.05
+						}
+					}
+
+					#free cities
+					add = {
+						desc = "NUMBER_OF_FREE_CITIES"
+						value = 0
+						every_international_organization_member = {
+							limit = {
+								root = {
+									country_has_special_status = {
+										type = special_status:free_city
+										country = prev
+									}
+								}
+							}
+							add = 0.003
+						}
+					}
+					
+					#number of princes
+					add = {
+						desc = "NUMBER_OF_PRINCES"
+						value = total_members
+						if = {
+							limit = { 
+								has_global_variable = guelphs_and_ghibellines_ended
+								global_var:guelphs_and_ghibellines_ended = 1 
+							} # Guelfs one --> Italy left the empire
+							multiply = 0.001
+							subtract = 0.075 # Below 75 princes you start loosing IA from this modifier
+						}
+						else = { # Pre GaG or Ghibellines won and italy stayed in the empire
+							multiply = 0.001
+							subtract = 0.125   # below 125 princes you start loosing IA from this modifier
+						}
+					}
+					
+					#lack of electors
+					add = {
+						desc = "LACK_OF_ELECTORS"
+						if = {
+							limit = { international_organization_has_policy = policy:erbkaisertum_policy }
+							value = 0
+						}
+						else_if = {
+							limit = { "num_countries_with_special_status(special_status:elector)" >= "max_countries_with_special_status(special_status:elector)" }
+							value = 0
+						}
+						else = {
+							value = "max_countries_with_special_status(special_status:elector)"
+							subtract = "num_countries_with_special_status(special_status:elector)"
+							multiply = -0.1
+						}
+					}
+					#vassalised electors
+					add = {
+						desc = "VASSALISED_ELECTORS"
+						if = {
+							limit = { international_organization_has_policy = policy:erbkaisertum_policy }
+							value = 0
+						}
+						else = {
+							value = 0
+							every_country_with_special_status_of_type = {
+								type = elector
+								limit = { is_subject = yes }
+								subtract = 0.05
+							}
+						}
+					}
+					
+					#lack of archbishop electors
+					add = {
+						desc = "LACK_OF_ARCHBISHOP_ELECTORS"
+						if = {
+							limit = { international_organization_has_policy = policy:erbkaisertum_policy }
+							value = 0
+						}
+						else_if = {
+							limit = { "num_countries_with_special_status(special_status:archbishop_elector)" >= "max_countries_with_special_status(special_status:archbishop_elector)" }
+							value = 0
+						}
+						else = {
+							value = "max_countries_with_special_status(special_status:archbishop_elector)"
+							subtract = "num_countries_with_special_status(special_status:archbishop_elector)"
+							multiply = -0.1
+						}
+					}
+					#vassalised archbishop electors
+					add = {
+						desc = "VASSALISED_ARCHBISHOP_ELECTORS"
+						if = {
+							limit = { international_organization_has_policy = policy:erbkaisertum_policy }
+							value = 0
+						}
+						else = {
+							value = 0
+							every_country_with_special_status_of_type = {
+								type = archbishop_elector
+								limit = { is_subject = yes }
+								subtract = 0.05
+							}
+						}
+					}
+					
+					#heretic princes
+					add = {
+						desc = "HERETIC_PRINCES"
+						value = 0
+						if = {
+							limit = { international_organization_has_leader = yes }
+							every_international_organization_member = {
+								limit = {
+									not = { religion = root.leader_country.religion }
+								}
+								add = 1
+							}
+							multiply = -0.01
+						}
+					}
+					
+					#foreign provinces
+					add = {
+						desc = "FOREIGN_PROVINCES_GERMANY"
+						value = 0
+						every_international_organization_owned_location = {
+							limit = {
+								has_owner = yes
+								owner = {
+									not = { is_member_of_international_organization = root }
+								}
+								OR = {
+									region = region:north_german_region
+									region = region:south_german_region
+								}
+							}
+							add = 1
+						}
+						multiply = -0.0075
+					}
+					add = {
+						desc = "FOREIGN_PROVINCES_REST"
+						value = 0
+						every_international_organization_owned_location = {
+							limit = {
+								has_owner = yes
+								owner = {
+									not = { is_member_of_international_organization = root }
+								}
+								NOT = {
+									OR = {
+										region = region:north_german_region
+										region = region:south_german_region
+									}
+								}
+							}
+							add = 1
+						}
+						multiply = -0.002
+					}
+					#subjugated members
+					add = {
+						desc = "SUBJUGATED_HRE_MEMBER"
+						every_international_organization_member = {
+							limit = {
+								is_subject = yes
+								top_overlord ?= { NOT = { is_member_of_international_organization = root } }
+							}
+							add = 1
+						}
+						multiply = -0.005
+					}
+					if = {
+						limit = {
+							international_organization_has_leader = no
+						}
+						# No gains if there is a interregnum
+						multiply = {
+							desc = "IMPERIAL_REGENCY"
+							value = 0
+						}
+
+						# Subtract IA if there is a long interregnum
+						if = {
+							limit = {
+								international_organization_leader_reign >= LONG_IMPERIAL_REGENCY_YEARS
+							}
+							subtract = {
+								desc = "LONG_IMPERIAL_REGENCY"
+								value = {
+									value = international_organization_leader_reign
+									subtract = LONG_IMPERIAL_REGENCY_YEARS
+									multiply = 0.25
+								}
+							}
+						}
+					}
+					else = {
+						# Dynastic Power
+						add = {
+							desc = "IA_DYNASTIC_POWER"
+							value = "leader_country.ruler_or_heir_if_regent.dynasty.dynastic_power(root)"
+							multiply = 0.005
+						}
+
+						# Emperor Abilities
+						add = {
+							desc = "EMPEROR_ABILITIES"
+							add = {
+								value = "leader_country.ruler_or_heir_if_regent.adm"
+								subtract = 50
+								multiply = 0.001
+							}
+							add = {
+								value = "leader_country.ruler_or_heir_if_regent.dip"
+								subtract = 50
+								multiply = 0.001
+							}
+							add = {
+								value = "leader_country.ruler_or_heir_if_regent.mil"
+								subtract = 50
+								multiply = 0.001
+							}
+						}
+						#monthly bonus from modifiers
+						add = {
+							desc = "FROM_MODIFIERS"
+							value = leader_country.modifier:monthly_imperial_authority
+						}
+
+						#monthly gain bonus
+						multiply = {
+							desc = "ADDITIONAL_MULTIPLIER"
+							format = "MULTIPLIER_CHANGE_FORMAT"
+							desc_sort_order = -99999 # Make sure we are last
+							value = {
+								value = leader_country.modifier:imperial_authority_modifier
+								add = 1
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	special_statuses_implemented = {
+		emperor
+		elector
+		archbishop_elector
+		free_city
+		primas_germaniae
+		legatus_natus
+		imperial_prelate
+		imperial_prince
+		imperial_peasant_republic
+	}
+
+	ai_desire_to_join = {
+		if = {
+			limit = { country_rank_level > 1 }
+			subtract = {
+				desc = "game_concept_country_rank"
+				value = {
+					value = country_rank_level
+					multiply = 100
+				}
+			}
+		}
+		subtract = {
+			desc = "game_concept_tax_base"
+			value = country_tax_base
+		}
+		add = {
+			desc = "game_concept_opinion"
+			value = {
+				value = "root.opinion(scope:actor)"
+				divide = 4      # max ±50 at ±200 opinion
+			}
+		}
+		add = {
+			desc = "game_concept_diplomatic_reputation"
+			value = {
+				value = "scope:actor.modifier:diplomatic_reputation"
+				multiply = 0.5  # +0.5 reasons per 1 diprep
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					has_ruler = yes
+					AND = {
+						has_regent = yes
+						has_heir = yes
+					}
+				}
+				ruler_or_heir_if_regent ?= {
+					has_dynasty = yes
+					dynasty ?= {
+						dynasty_home ?= {
+							is_owned_by_international_organization = root
+						}
+					}
+				}
+			}
+			add = {
+				desc = "SEAT_OF_DYNASTY_IN_IO"
+				value = 50
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:actor
+				OR = {
+					culture ?= scope:actor.culture
+					ruler ?= {
+						culture ?= scope:actor.culture
+					}
+				}
+			}
+			add = {
+				desc = "PRIMARY_OR_RULER_CULTURE_EQUAL_TO_LEADER_CULTURE"
+				value = 25
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:actor
+				exists = scope:recipient
+				any_neighbor_country = {
+					is_threat_to = root
+					NOT = { is_member_of_international_organization = scope:recipient }
+					OR = {
+						is_rival_of = scope:actor
+						is_enemy_of = scope:actor
+					}
+				}
+			}
+			add = {
+				desc = "THREATENED_BY_LEADER_RIVALS_OR_ENEMIES"
+				value = 25
+			}
+		}
+		if = {
+			limit = {
+				at_war = yes
+			}
+			subtract = {
+				desc = "IS_AT_WAR"
+				value = 1000
+			}
+		}
+	}
+	
+	ai_desire_to_allow_new_member = {
+		subtract = {
+			desc = "BASE"
+			value = 150
+		}
+		if = {
+			limit = { international_organization_has_leader = yes }
+			add = {
+				desc = "OPINION_OF_LEADER_TO_US"
+				value = "leader_country.opinion(scope:actor)"
+			}
+		}
+		if = {
+			limit = {
+				scope:actor = {
+					OR = {
+						has_ruler = yes
+						AND = {
+							has_regent = yes
+							has_heir = yes
+						}
+					}
+					ruler_or_heir_if_regent ?= {
+						has_dynasty = yes
+						dynasty ?= {
+							dynastic_power = {
+								international_organization = root
+								value != 0
+							}
+						}
+					}
+				}
+			}
+			add = {
+				desc = "DYNASTIC_POWER_IN_IO"
+				value = {
+					value = "scope:actor.ruler_or_heir_if_regent.dynasty.dynastic_power(root)"
+					multiply = 5
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:actor ?= {
+					country_rank_level > 1
+				}
+			}
+			subtract = {
+				desc = "game_concept_country_rank"
+				value = {
+					value = scope:actor.country_rank_level
+					multiply = 100
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:actor = {
+					OR = {
+						has_ruler = yes
+						AND = {
+							has_regent = yes
+							has_heir = yes
+						}
+					}
+					ruler_or_heir_if_regent ?= {
+						has_dynasty = yes
+						dynasty ?= {
+							dynasty_home ?= {
+								is_owned_by_international_organization = root
+							}
+						}
+					}
+				}
+			}
+			add = {
+				desc = "SEAT_OF_DYNASTY_IN_IO"
+				value = 50
+			}
+		}
+		add = {
+			desc = "game_concept_diplomatic_reputation"
+			value = {
+				value = "scope:actor.modifier:diplomatic_reputation"
+				multiply = 3
+			}
+		}
+		subtract = {
+			desc = "game_concept_tax_base"
+			value = "scope:actor.country_tax_base"
+		}
+		if = {
+			limit = {
+				scope:actor = { at_war = yes }
+			}
+			subtract = {
+				desc = "IS_AT_WAR"
+				value = 1000
+			}
+		}
+	}
+	
+	ai_issue_voting_bias = {		
+		#passing policies is what makes the empire great, so if the leader can enact one, they will
+		add = {
+			desc = "POLICY_BIAS_LEADER_ALWAYS_WANTS"
+			if = {
+				limit = {
+					scope:recipient = {
+						leader_country ?= scope:actor
+					}
+				}
+				#this should end up with 20 for yes and -20 for no from the leader
+				if = {
+					limit = {
+						is_set = scope:vote
+					}
+					value = 1
+				}
+				else = {
+					value = -1
+				}
+				multiply = 20
+			}
+		}
+		
+		#opinion of leader
+		add = {
+			desc = "POLICY_BIAS_OPINION_OF_EMPEROR"
+			if = {
+				limit = { not = { scope:actor = scope:recipient.leader_country } }
+				scope:recipient = {
+					leader_country = {
+						if = {
+							limit = {
+								is_set = scope:vote
+							}
+							value = 1
+						}
+						else = {
+							value = -1
+						}
+						multiply = {
+							scope:actor = {
+								value = this_opinion_of_prev
+							}
+						}
+						multiply = 0.1 
+					}
+				}
+			}
+		}
+		#Emperor modifiers
+		add = {
+			desc = "MODIFIER_TYPE_NAME_reasons_to_vote"
+			if = {
+				limit = { not = { scope:actor = scope:recipient.leader_country } }
+				value = scope:recipient.leader_country.modifier:reasons_to_vote
+			}
+		}
+	}
+}
