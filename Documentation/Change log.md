@@ -18,6 +18,11 @@ Date: 2025-11-30
   - Noble %, Burgher %, Laborer %, Peasant %  
   - Market food balance  
   - Market food stockpile
+- Centers of Importance:
+  - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
+  - Each type has an associated score dependent on multiple factors and a absolute minimum threshold per tier.
+  - Additionally per geographical area only one center of each tier can exist.
+  - Each location center tier gives bonuses to the location.
 
 #### Bugfixes
 
