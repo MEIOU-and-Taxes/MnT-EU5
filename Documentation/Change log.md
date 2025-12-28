@@ -30,9 +30,26 @@ Date: 2025-11-30
 
 #### Balancing
 
--Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
--Reduced use of masonry by granaries.
--Reduced use of tools by lumber mills.
+- Made siege events more deadly for defenders.
+  - Increased the siege impact of supply/food/water shortages and increased impact on the overall siege progress
+  - Assaulting is more damaging to both defender and attackers.
+  - Reduced levy assault ability further.
+  - Max breaches increased, decreased breach impact.
+  - Reduced siege phase from 30 to 25 days, but increased minimum siege phase from 7 to 10.
+- Battles are more deadly.
+  - Strength and morale damage buffed.
+  - Base initiative slightly nerfed to buff initiative units a bit, as they already have strength debuffs.
+  - River, straight and landing debuffs unified. Impact is higher.
+  - Experience gain increased for units to compensate for higher loss of troops.
+  - Retreat strength loss increased, minimum combat time increased. (Be wary of where and when you engage!)
+  - Bombardment phase is longer and base bombardment chance increased.
+- Warscore from battles stays constant through the ages. No more -80% in 'Age of Revolutions'. 
+- Warscore cost reduction from ages is now -10% starting in age 4 up until -40% in age 6 (Vanilla is -10% age 5; -20% age 6)
+  - This is to balance out the increased control from later ages (Vanilla does decrease cost more, the higher the age and the lower the control, but this is negligible)
+
+- Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+- Reduced use of masonry by granaries.
+- Reduced use of tools by lumber mills.
 
 ##### Diplomacy
 
