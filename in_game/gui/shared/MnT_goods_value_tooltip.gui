@@ -40,6 +40,88 @@ template Mnt_Goods_Value_Tooltip {
 					datacontext = "[GetMapMode('goods_value_rural')]"
 				}
 			}
+
+			hbox = {
+				layoutpolicy_horizontal = expanding
+				vbox = {
+					spacing = 6
+					using = bg_text_mask_container_dark_brown
+					using = bg_cabinet_card_frame
+					margin = { 6 6 }
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = {
+							align = left|nobaseline
+							autoresize = yes
+							default_format = "#t"
+							raw_text = "Goods Output Share"
+						}
+						expand = {}
+					}
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						expand = {}
+						piechart = {
+							using = bg_circle
+							size = { 80 80 }
+
+							using = piechart_angles
+							tooltipwidget = {
+								ContextualTooltipType = {
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/resources/gold.dds"
+										}
+									}
+									blockoverride "title_text" {
+										text = "Goods Output Share"
+									}
+
+									blockoverride "tooltip_content" {
+										TooltipTextBlock = {
+											blockoverride "text" {
+												raw_text = "Urban [Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0')|%0] ([Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue|2]@gold!)"
+												default_format = "#W"
+											}
+										}
+										TooltipTextBlock = {
+											blockoverride "text" {
+												raw_text = "Rural [Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_rural_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0')|%0] ([Player.MakeScope.GetVariable('mnt_country_rural_goods_value').GetValue|2]@gold!)"
+												default_format = "#W"
+											}
+										}
+									}
+								}
+							}
+
+							pieslice_no_highlight = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+								value = "[FixedPointToFloat(Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0'))]"
+								color = { 1.0 0.6 0.1 1.0 }
+							}
+
+							pieslice_no_highlight = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+								value = "[Subtract_float('(float)1.0', FixedPointToFloat(Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0')))]"
+								color = { 1 1 1 1 }
+							}
+
+							icon = {
+								size = { 36 36 }
+								parentanchor = center
+								texture = "gfx/interface/icons/resources/gold.dds"
+							}
+
+							using = bg_circle_piechart
+						}
+						expand = {}
+					}
+				}
+				expand = {}
+			}
 		}
 	}
 }
