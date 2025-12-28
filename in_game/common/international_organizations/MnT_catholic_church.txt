@@ -1,0 +1,208 @@
+﻿REPLACE:catholic_church = {
+	has_target = no
+	unique = yes
+	expel_members_who_are_targets_of_other_members = no
+	disband_if_no_leader = no
+	show_leave_message = no
+
+	max_active_resolutions = 1
+
+	has_leader_country = yes
+	leader_title_key = "CATHOLIC_CHURCH_LEADER"
+	leader_type = character
+	leader = {
+		leader_country ?= {
+			ruler ?= {
+				add_to_list = leaders
+			}
+		}
+	}
+
+	can_initiate_policy_votes = {
+		is_member_of_international_organization = scope:recipient
+		is_situation_active = situation:council_of_trent
+	}
+	
+	can_declare_war = {
+		always = yes
+	}
+
+	no_cb_price_modifier_for_fellow_member = 0.50 # Default: None --> Make Catholic Church members get a 50% higher cost for no CB wars against other members
+
+	variables = {
+		#keep this as a var so it gets auto-added to the religion
+		religion = {
+			format = "RELIGION_FORMAT"
+			start = religion:catholic
+		}
+	}
+
+	create_visible_trigger = {
+		always = no
+	}
+
+	invite_visible_trigger = {
+		always = no
+	}
+
+	can_lead_trigger = {
+		this = c:PAP
+	}
+
+	can_join_trigger = {
+		religion = religion:catholic
+		is_rebel_country = no
+	}
+	
+	can_leave_trigger = {
+		always = no
+	}
+	
+	auto_leave_trigger = {
+		not = {
+			religion = religion:catholic
+		}
+	}
+
+	auto_disband_trigger = {
+		always = no
+	}
+
+	on_joined = {
+		if = {
+			limit = {
+				scope:recipient = {
+					or = {
+						not = { has_variable = religion }
+						not = { exists = var:religion }
+					}
+				}
+			}
+			#default the religion to that of the leader
+			scope:recipient = {
+				set_variable = {
+					name = religion
+					value = root.religion
+				}
+				var:religion = {
+					add_international_organization = scope:recipient
+				}
+			}
+		}
+		if = {
+			limit = { is_situation_active = situation:council_of_trent }
+			add_to_global_variable_list = { name = council_of_trent_voters target = scope:actor }
+		}
+	}
+
+	on_left = {
+		if = {
+			limit = { is_situation_active = situation:council_of_trent }
+			remove_list_global_variable = { name = council_of_trent_voters target = scope:actor }
+			remove_list_global_variable = { name = council_of_trent_unvoters target = scope:actor }
+			remove_list_global_variable = { name = council_of_trent_voting_for_debate target = scope:actor }
+			remove_list_global_variable = { name = council_of_trent_voting_against_debate target = scope:actor }
+		}
+	}
+	
+	ai_desire_to_join = {
+	}
+
+	payments_implemented = {
+		tithe
+	}
+
+	special_statuses_implemented = {
+		curia
+		military_order
+		bishopric
+	}
+
+	secondary_map_color_override = {
+		#show cardinal locations
+		if = {
+			limit = {
+				exists = cardinal
+			}
+			value = rgb { 250 250 70 }
+		}
+	}
+	tooltip = {
+		if = {
+			limit = {
+				exists = cardinal
+			}
+			custom_tooltip = { text = LOCATION_HAS_CARDINAL }
+		}
+	}
+	
+	ai_desire_to_allow_new_member = {
+		add = {
+			desc = "WE_WANT_THE_ORGANIZATION_TO_GROW"
+			value = 20
+		}
+	}
+
+	ai_issue_voting_bias = {
+		add = {
+			desc = "INERTIA"
+			value = -1
+		}
+		
+		#The Pope wants reforms only if desire is high
+		add = {
+			desc = "POLICY_BIAS_REFORM_DESIRE"
+			if = {
+				limit = {
+					scope:recipient = {
+						leader_country = scope:actor
+					}
+				}
+				#this should end up with 20 for high reform desire and -20 for low reform desire
+				if = {
+					limit = {
+						religion:catholic = {
+							reform_desire >= 0.7
+						}
+					}
+					value = 1
+				}
+				else = {
+					value = -1
+				}
+				multiply = 20
+			}
+		}
+		
+		#Member Vote
+		add = {
+			desc = "POLICY_BIAS_REFORM_DESIRE"
+			if = {
+				limit = { not = { scope:actor = scope:recipient.leader_country } }
+				scope:recipient = {
+					leader_country = {
+						if = {
+							limit = {
+								is_set = scope:vote
+							}
+							value = 1
+						}
+						else = {
+							value = -1
+						}
+						multiply = scope:actor.religion.reform_desire
+						multiply = 20
+					}
+				}
+			}
+		}
+		#Pope modifiers
+		add = {
+			desc = "MODIFIER_TYPE_NAME_reasons_to_vote"
+			if = {
+				limit = { not = { scope:actor = scope:recipient.leader_country } }
+				value = scope:recipient.leader_country.modifier:reasons_to_vote
+			}
+		}
+	}
+}
