@@ -28,6 +28,15 @@ Date: 2025-11-30
 -Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
 -Reduced use of masonry by granaries.
 -Reduced use of tools by lumber mills.
+-Higher literacy lowers stability.
+-Peasant percentage improves stability.
+-Buffed cabinet stability improving action.
+-Stability effects prosperity negatively as well as positively.
+-Reduced stability cost of destroying markets.
+-Reduced stability cost of revoking privileges.
+-Made hiring new characters scale somewhat less with income.
+-Local population growth removed from having positive food.
+
 
 ##### Diplomacy
 
