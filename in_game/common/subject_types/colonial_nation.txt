@@ -1,0 +1,157 @@
+﻿colonial_nation = { 
+	subject_pays = subject_pays_colonial
+	color = subject_colonial_nation
+	level = 1
+
+	join_offensive_wars_always = {
+		NOT = { scope:actor ?= { is_subject_of = scope:recipient } }
+	}
+	join_offensive_wars_can_call = {
+		trigger_if = {
+			limit = {
+				scope:recipient = {
+					is_subject_of = scope:actor
+				}
+			}
+			scope:recipient ?= {
+				NOT = {
+					any_international_organizations_member_of = {
+						international_organization_type = international_organization_type:colonial_federation
+					}
+				}
+			}
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+	join_defensive_wars_always = {
+		trigger_if = {
+			limit = {
+				scope:recipient = {
+					is_subject_of = scope:actor
+				}
+			}
+			scope:recipient ?= {
+				NOT = {
+					any_international_organizations_member_of = {
+						international_organization_type = international_organization_type:colonial_federation
+					}
+				}
+			}
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+	
+	has_overlords_ruler = no
+	can_be_annexed = no
+	is_colonial_subject = yes
+
+	diplomatic_capacity_cost_scale = 0.5
+
+	strength_vs_overlord = -0.10 #M&T from -0.05
+
+
+	subject_can_cancel = no
+	overlord_can_cancel = no
+	
+	has_limited_diplomacy = yes
+	allow_declaring_wars = { 
+		colonial_nation_can_declare_wars_trigger = yes
+	}
+	
+	fleet_basing_rights = yes
+	food_access = yes
+	
+	overlord_share_exploration = yes
+	
+	allow_subjects = no
+	
+	can_change_rank = yes
+	can_change_heir_selection = no
+	
+	minimum_opinion_for_offer = 100
+
+	great_power_score_transfer = 0.75 # the amount of Great Power Score that is transferred from the Subject to the Overlord
+	merchants_to_overlord_fraction = 0.33 #percentage of merchant power that goes to the overlord
+
+	
+	government = republic
+	
+	institution_spread_to_overlord = monthly_institution_spread_severe
+	institution_spread_to_subject = monthly_institution_spread_severe
+	
+	
+	overlord_modifier = {
+		stability_cost = 0.04 #added by M&T
+	}
+
+	subject_modifier = {
+		global_population_capacity_modifier = 0.10
+		allow_rgo_slave_demand = yes
+		loyalty_to_overlord = 20
+	}
+
+	creation_visible = {
+	}
+
+	subject_creation_enabled = {
+		scope:target_province ?= { is_overseas_for_owner = yes }
+	}
+
+	release_country_enabled = {
+		scope:target_province ?= { is_overseas_for_owner = yes }
+	}
+
+	visible_through_diplomacy = {
+		always = no
+	}
+
+	visible_through_treaty = {
+		always = no
+	}
+
+	on_enable = {
+		ordered_owned_location = {
+			max = 1
+			order_by = best_capital_for_colony
+			
+			save_scope_as = new_town
+		}
+	
+		add_policy = policy:colonial_representation_law_no
+		setup_colonial_nation = yes
+		scope:new_town = {
+			if = {
+				limit = {
+					location_rank = location_rank:rural_settlement		
+				}
+				change_location_rank = location_rank:town
+			}
+			cc_setup_new_town = yes
+		}
+		set_capital = scope:new_town
+	}
+	on_disable = {
+	}
+	#on_monthly = { }
+	
+	can_rival = {
+		or = {
+			scope:recipient ?= {
+				is_subject = no
+			}
+			not = {
+				scope:recipient ?= {
+					is_subject_type = colonial_nation
+				}
+				scope:actor = {
+					overlord = scope:recipient.overlord
+				}
+			}
+		}
+	}
+}
+

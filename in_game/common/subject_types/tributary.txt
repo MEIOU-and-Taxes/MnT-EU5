@@ -1,0 +1,195 @@
+﻿
+tributary = { 
+	subject_pays = subject_pays_tributary
+	color = subject_tributary
+	level = 0
+	visible_through_diplomacy = {
+		country_rank_level >= scope:target.country_rank_level
+		scope:target = { subject_type_is_not_locked = yes }
+		OR = {
+			government_type = government_type:steppe_horde
+			scope:target = { government_type = government_type:tribe }
+			scope:target = { government_type = government_type:steppe_horde }
+			modifier:allow_tributary_subject = yes
+		}
+		trigger_if = {
+			limit = {
+				exists = international_organization:japanese_shogunate
+				scope:target = { is_member_of_international_organization = international_organization:japanese_shogunate }
+				NOT = { is_member_of_international_organization = international_organization:japanese_shogunate }
+			}
+			scope:target = { is_leader_of_international_organization = international_organization:japanese_shogunate }
+		}
+		
+		#Japanese Imperial Courts Exception
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:japanese_shogunate
+				is_situation_active = situation:nanbokuchou
+			}
+			NOT = {
+				scope:target = {
+					has_special_status_in_international_organization = {
+						type = special_status:japanese_emperor
+						international_organization = international_organization:japanese_shogunate
+					}
+				}
+			}
+		}
+	}
+
+	visible_through_treaty = {
+		country_rank_level >= scope:target.country_rank_level
+		scope:target = { subject_type_is_not_locked = yes }
+		OR = {
+			government_type = government_type:steppe_horde
+			scope:target = { government_type = government_type:tribe }
+			scope:target = { government_type = government_type:steppe_horde }
+			modifier:allow_tributary_subject = yes
+		}
+		trigger_if = {
+			limit = {
+				exists = international_organization:japanese_shogunate
+				scope:target = { is_member_of_international_organization = international_organization:japanese_shogunate }
+				NOT = { is_member_of_international_organization = international_organization:japanese_shogunate }
+			}
+			scope:target = { is_leader_of_international_organization = international_organization:japanese_shogunate }
+		}
+		
+		#Japanese Imperial Courts Exception
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:japanese_shogunate
+				is_situation_active = situation:nanbokuchou
+			}
+			NOT = {
+				scope:target = {
+					has_special_status_in_international_organization = {
+						type = special_status:japanese_emperor
+						international_organization = international_organization:japanese_shogunate
+					}
+				}
+			}
+		}
+	}
+
+	creation_visible = {
+		OR = {
+			government_type = government_type:steppe_horde
+			government_type = government_type:tribe
+			modifier:allow_tributary_subject = yes
+		}
+	}
+	
+	join_defensive_wars_always = {
+		custom_tooltip = {
+			text = tributary_join_defensive_wars_always_tt
+			scope:actor = {
+				is_subject_of = scope:recipient
+			}
+			scope:target ?= {
+				OR = {
+					NOT = { is_subject_of = scope:recipient }
+					AND = {
+						is_subject_of = scope:recipient
+						NOT = { is_subject_type = tributary }
+					}
+				}
+			}
+		}
+	}
+	has_overlords_ruler = no
+	can_be_annexed = no
+	
+	strength_vs_overlord = -0.5 #M&T from -0.25
+
+	subject_can_cancel = yes
+	overlord_can_cancel = yes
+	allow_declaring_wars = { always = yes }
+	can_change_rank = yes
+	can_change_heir_selection = yes
+	diplomatic_capacity_cost_scale = 0.2
+	use_overlord_map_color = no
+	use_overlord_map_name = no
+	
+	institution_spread_to_overlord = monthly_institution_spread_weak
+	institution_spread_to_subject = monthly_institution_spread_weak
+	
+	minimum_opinion_for_offer = 150
+	
+	has_limited_diplomacy = no
+
+	great_power_score_transfer = 0.25 # the amount of Great Power Score that is transferred from the Subject to the Overlord
+	
+	overlord_modifier = {
+		stability_cost = 0.04 #added by M&T
+		monthly_prestige = 0.01
+	}
+	
+	subject_modifier = {
+		country_cabinet_efficiency = 0.05
+	}
+	
+	on_enable = {
+	}
+
+	on_disable = {
+	}
+	
+	diplo_chance_accept_subject = {
+		base = -70
+		
+		
+		current_strength = 0.1
+		border_distance = -0.3
+		negative_opinion = -5
+		positive_opinion = 0.25
+		rank_difference = -5
+		giving_defensive_support = 2
+		receiving_defensive_support = 5
+		royal_ties = 1
+
+		num_of_unlimited_subjects = -5
+		culture_war = 3
+		diplomatic_reputation = 1
+		different_religion = -20
+		same_common_language = 5
+		same_court_language = 10
+		different_culture = -10
+		different_government_type = -20
+		actor_at_war = -20
+		competing_power = -200
+		tax_base = -0.25
+		
+		reject_subjugation_reasons = -1
+		accept_subjugation_reasons = 1
+	}
+
+	diplo_chance_accept_overlord = {
+		base = 11
+		border_distance = -0.3
+		negative_opinion = -5
+		positive_opinion = 0.25
+		same_common_language = 5
+		same_court_language = 10
+		different_culture = -10
+		different_government_type = -25
+		actor_at_war = -20
+		competing_power = -200
+	}
+
+	ai_wants_to_be_overlord = {
+        scope:subject = {
+			add = {
+                desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
+                value = {
+                    every_country_with_coalition_grade_antagonism_against_us = {                    
+                        add = {
+                            value = -10
+                        }
+                    }
+                }
+            }
+        }
+	}
+}
