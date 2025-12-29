@@ -15,7 +15,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 # Define which analyses are text-only - so that plots are removed
-TEXT_ONLY_ANALYSES = ["Top Correlation Pairs", "Export Summary Statistics"]
+TEXT_ONLY_ANALYSES = ["Top Correlation Pairs", "Export Summary Statistics", "Correlation Matrix"]
+ANALYSIS_WITH_RUN_BUTTON = ["Top Correlation Pairs"]
 FORCED_CATEGORICAL_COLS = ["age"]
 
 def format_col_name(name, _):
@@ -154,11 +155,11 @@ class AnalysisToolkitDialog(QDialog):
 		self.analysis_selector = QComboBox()
 		self.analysis_selector.addItems([
 			"Select Analysis...",
-			"Exploratory Data Analysis (EDA)",
+			# "Exploratory Data Analysis (EDA)",
+			"Export Summary Statistics",
 			"Correlation Matrix",
 			"Top Correlation Pairs",
-			"Country Clustering (K-Means)",
-			"Export Summary Statistics"
+			# "Country Clustering (K-Means)",
 		])
 		self.controls_layout.addWidget(self.analysis_selector)
 
@@ -168,13 +169,14 @@ class AnalysisToolkitDialog(QDialog):
 
 		# Add empty widget for the "Select..." state
 		self.controls_stack.addWidget(QWidget())
+
 		# Add control widgets for each analysis type
 		# self.controls_stack.addWidget(QWidget()) # Empty widget
-		self.controls_stack.addWidget(self._create_eda_controls())
+		# self.controls_stack.addWidget(self._create_eda_controls())
+		self.controls_stack.addWidget(self._create_summary_export_controls())
 		self.controls_stack.addWidget(self._create_correlation_controls())
 		self.controls_stack.addWidget(self._create_top_corr_controls())
-		self.controls_stack.addWidget(self._create_clustering_controls())
-		self.controls_stack.addWidget(self._create_summary_export_controls())
+		# self.controls_stack.addWidget(self._create_clustering_controls())
 
 		self.analysis_selector.currentIndexChanged.connect(self._on_analysis_changed)
 
@@ -220,11 +222,11 @@ class AnalysisToolkitDialog(QDialog):
 
 		analysis_type = self.analysis_selector.currentText()
 
-		# Show or hide the plot canvas based on the analysis type
-		if analysis_type in TEXT_ONLY_ANALYSES:
-			self.canvas.setVisible(False)
-		else:
-			self.canvas.setVisible(True)
+		# Show plot canvas based on the analysis type
+		if self.canvas:
+			self.canvas.setVisible(analysis_type not in TEXT_ONLY_ANALYSES)
+		# Show run button if the correct analysis type
+		self.run_button.setVisible(analysis_type in ANALYSIS_WITH_RUN_BUTTON)
 
 	def _get_numeric_columns(self):
 		if self.df.empty:
@@ -307,21 +309,20 @@ class AnalysisToolkitDialog(QDialog):
 		self.corr_export_full_button.clicked.connect(self.export_correlation_csv)
 		layout.addWidget(self.corr_export_full_button)
 
-		layout.addWidget(QWidget())  # Spacer
-
-		# --- UI for generating a selective heatmap ---
-		layout.addWidget(QLabel("Heatmap Generation (for visualization):"))
-		layout.addWidget(QLabel("Select 2 or more variables to generate a heatmap:"))
-
-		self.corr_variable_list = QListWidget()
-		self.corr_variable_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-		self.corr_variable_list.addItems(self._get_numeric_columns())
-		layout.addWidget(self.corr_variable_list)
-
-		self.corr_export_button = QPushButton("Export Matrix to CSV")
-		self.corr_export_button.setEnabled(True)
-		self.corr_export_button.clicked.connect(self.export_correlation_csv)
-		layout.addWidget(self.corr_export_button)
+		# layout.addWidget(QWidget())  # Spacer
+		# --- UI for generating a partial (selective) heatmap ---
+		# layout.addWidget(QLabel("Heatmap Generation (for visualization):"))
+		# layout.addWidget(QLabel("Select 2 or more variables to generate a heatmap:"))
+		#
+		# self.corr_variable_list = QListWidget()
+		# self.corr_variable_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+		# self.corr_variable_list.addItems(self._get_numeric_columns())
+		# layout.addWidget(self.corr_variable_list)
+		#
+		# self.corr_export_button = QPushButton("Export Matrix to CSV")
+		# self.corr_export_button.setEnabled(True)
+		# self.corr_export_button.clicked.connect(self.export_correlation_csv)
+		# layout.addWidget(self.corr_export_button)
 
 		return widget
 
@@ -348,6 +349,7 @@ class AnalysisToolkitDialog(QDialog):
 		self.fig, self.ax = plt.subplots()
 		self.canvas = FigureCanvas(self.fig)
 		self.results_layout.addWidget(self.canvas, 2)  # Plot takes more space
+		self.canvas.setVisible(False)
 
 		# Text/Table output area
 		self.output_area = QTextEdit()
@@ -372,7 +374,6 @@ class AnalysisToolkitDialog(QDialog):
 		elif analysis_type == "Country Clustering (K-Means)":
 			self._perform_clustering()
 		elif analysis_type == "Export Summary Statistics":
-			# For this mode, the "Run" button will just generate a preview.
 			self._perform_summary_preview()
 
 		self.canvas.draw()
@@ -395,10 +396,10 @@ class AnalysisToolkitDialog(QDialog):
 		ax2 = self.ax.twinx()
 		sns.lineplot(x='year', y=variable, data=country_df, ax=ax2, color='red', marker='o', label="Trend over Time")
 		ax2.set_ylabel(f"{variable} (Time Trend)")
-		self.fig.legend()
+		# self.fig.legend()
 
 	def _perform_summary_preview(self):
-		"""Calculates and displays a preview of the transposed summary statistics."""
+		"""Calculates and displays a preview of the summary statistics."""
 		if self.df.empty:
 			return
 
@@ -410,7 +411,7 @@ class AnalysisToolkitDialog(QDialog):
 		font.setFamily("Courier New")
 		self.output_area.setFont(font)
 
-		self.output_area.setText("--- Transposed Summary Statistics Preview ---\n\n" + transposed_summary.to_string())
+		self.output_area.setText("--- Summary Statistics Preview ---\n\n" + transposed_summary.to_string())
 
 
 	def _export_ungrouped_summary(self):
