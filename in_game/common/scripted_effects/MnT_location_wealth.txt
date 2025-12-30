@@ -159,7 +159,6 @@ mnt_location_pop_income_distribution_per_estate = {
 ### --- Variables ---
 # mnt_estate_wealth_$estate$						  | tracks the current wealth of an estate
 # mnt_estate_prev_wealth_$estate$					  | tracks the previous calculation iteration wealth of the estate
-# mnt_estate_wealth_change_$estate$					  | tracks the diff between prev and current wealth aka income
 # mnt_estate_wealth_income_lost_from_control_$estate$ | tracks the expected income lost due to lack of control
 # mnt_estate_wealth_expected_income_$estate$		  | tracks the expected income based on taxable income - Taxes Paid + expected income lost from control
 # mnt_estate_wealth_untracked_change_$estate$		  | tracks changes to estate wealth not explained by expected income (events, etc)
@@ -183,9 +182,11 @@ mnt_init_estate_wealth_variables_per_estate = {
 	if = {
 		limit = { country_has_estate = estate_type:$estate$_estate }
 
-		if = { limit = { NOT = { has_variable = mnt_estate_wealth_$estate$ } } 			set_variable = { name = mnt_estate_wealth_$estate$ 			value = 0 } }
-		if = { limit = { NOT = { has_variable = mnt_estate_prev_wealth_$estate$ } } 	set_variable = { name = mnt_estate_prev_wealth_$estate$ 	value = 0 } }
-		if = { limit = { NOT = { has_variable = mnt_estate_wealth_change_$estate$ } } 	set_variable = { name = mnt_estate_wealth_change_$estate$ 	value = 0 } }
+		if = { limit = { NOT = { has_variable = mnt_estate_wealth_$estate$ } } 							set_variable = { name = mnt_estate_wealth_$estate$ 							value = 0 } }
+		if = { limit = { NOT = { has_variable = mnt_estate_prev_wealth_$estate$ } } 					set_variable = { name = mnt_estate_prev_wealth_$estate$ 					value = 0 } }
+		if = { limit = { NOT = { has_variable = mnt_estate_wealth_income_lost_from_control_$estate$ } } set_variable = { name = mnt_estate_wealth_income_lost_from_control_$estate$ value = 0 } }
+		if = { limit = { NOT = { has_variable = mnt_estate_wealth_expected_income_$estate$ } } 			set_variable = { name = mnt_estate_wealth_expected_income_$estate$ 			value = 0 } }
+		if = { limit = { NOT = { has_variable = mnt_estate_wealth_untracked_change_$estate$ } } 		set_variable = { name = mnt_estate_wealth_untracked_change_$estate$ 		value = 0 } }
 	}
 }
 
@@ -383,6 +384,9 @@ mnt_init_global_vars = {
 update_location_wealth = {
 	# Initialize global variables, such as maximum location wealth
 	mnt_init_global_vars = yes
+
+	# Initialize Estate Wealth Variables if not present
+	mnt_init_estate_wealth_variables = yes
 
 	# Update Wealth Pools of the Estates in the Country
 	mnt_update_estate_wealth_pools = yes
