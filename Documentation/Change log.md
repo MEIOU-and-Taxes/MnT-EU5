@@ -59,6 +59,8 @@ Date: 2025-11-30
 
 - Income lost due to control shortfall is given to the estates  
 - Location wealth pools tracked per pop type with estate reconciliation (Item 1/2 deltas), updated monthly  
+- Location wealth map mode added  
+- Location wealth income shares now support per-pop-type weighting  
 - Diplomatic spending gives to the noble estate 50% of it   
 - 0.5 building cap levels are now given per 1K pops rather than per 100K  
 - The bailiff building is also allowed in towns and cities  
