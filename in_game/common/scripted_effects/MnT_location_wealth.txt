@@ -1,0 +1,676 @@
+# Location wealth flow aligned to estate/pop reconciliation.
+# Calculates total location income from taxes, goods production, and control modifier
+mnt_calc_location_wealth_income = {
+	calc_urban_goods_value_produced_location = yes
+	calc_rural_goods_value_produced_location = yes
+
+	set_local_variable = {
+		name = mnt_loc_total_income
+		value = {
+			value = location_tax_base
+			add = var:mnt_urban_goods_value
+			add = var:mnt_rural_goods_value
+			multiply = local_control
+			multiply = mnt_location_wealth_income_factor
+			min = 0
+		}
+	}
+}
+
+# Main wealth update effect: calculates and distributes wealth to estates and populations
+mnt_update_location_wealth_pools = {
+	mnt_calc_location_wealth_income = yes
+
+	if = {
+		limit = { population > 0 }
+
+		# ===== STEP 1: Calculate estate population counts =====
+		set_local_variable = { name = mnt_estate_pop_nobles value = num_pop_type:nobles }
+		set_local_variable = { name = mnt_estate_pop_clergy value = num_pop_type:clergy }
+		set_local_variable = { name = mnt_estate_pop_burghers value = num_pop_type:burghers }
+		# Peasant estate includes all lower class pops for distribution purposes
+		set_local_variable = {
+			name = mnt_estate_pop_peasants
+			value = {
+				value = num_pop_type:peasants
+				add = num_pop_type:laborers
+				add = num_pop_type:soldiers
+				add = num_pop_type:slaves
+			}
+		}
+		set_local_variable = { name = mnt_estate_pop_tribes value = num_pop_type:tribesmen }
+
+		# ===== STEP 2: Distribute total location income to estates =====
+		# Income per estate proportional to population in that estate
+		set_local_variable = { name = mnt_estate_income_nobles value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_nobles > 0 }
+			set_local_variable = {
+				name = mnt_estate_income_nobles
+				value = {
+					value = local_var:mnt_loc_total_income
+					multiply = local_var:mnt_estate_pop_nobles
+					divide = population
+				}
+			}
+		}
+		set_local_variable = { name = mnt_estate_income_clergy value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_clergy > 0 }
+			set_local_variable = {
+				name = mnt_estate_income_clergy
+				value = {
+					value = local_var:mnt_loc_total_income
+					multiply = local_var:mnt_estate_pop_clergy
+					divide = population
+				}
+			}
+		}
+		set_local_variable = { name = mnt_estate_income_burghers value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_burghers > 0 }
+			set_local_variable = {
+				name = mnt_estate_income_burghers
+				value = {
+					value = local_var:mnt_loc_total_income
+					multiply = local_var:mnt_estate_pop_burghers
+					divide = population
+				}
+			}
+		}
+		set_local_variable = { name = mnt_estate_income_peasants value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = {
+				name = mnt_estate_income_peasants
+				value = {
+					value = local_var:mnt_loc_total_income
+					multiply = local_var:mnt_estate_pop_peasants
+					divide = population
+				}
+			}
+		}
+		set_local_variable = { name = mnt_estate_income_tribes value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_tribes > 0 }
+			set_local_variable = {
+				name = mnt_estate_income_tribes
+				value = {
+					value = local_var:mnt_loc_total_income
+					multiply = local_var:mnt_estate_pop_tribes
+					divide = population
+				}
+			}
+		}
+
+		# ===== STEP 3: Calculate income shares for individual pops within estates =====
+		# Flag indicating if pop type exists (1 = exists, 0 = doesn't exist)
+		set_local_variable = { name = mnt_pop_income_share_nobles value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_nobles > 0 } set_local_variable = { name = mnt_pop_income_share_nobles value = 1 } }
+		set_local_variable = { name = mnt_pop_income_share_clergy value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_clergy > 0 } set_local_variable = { name = mnt_pop_income_share_clergy value = 1 } }
+		set_local_variable = { name = mnt_pop_income_share_burghers value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_burghers > 0 } set_local_variable = { name = mnt_pop_income_share_burghers value = 1 } }
+		# Peasant subtypes: calculate share of peasant income each receives
+		set_local_variable = { name = mnt_pop_income_share_peasants value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_income_share_peasants
+				value = {
+					value = num_pop_type:peasants
+					divide = local_var:mnt_estate_pop_peasants
+				}
+			}
+		}
+		set_local_variable = { name = mnt_pop_income_share_laborers value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_income_share_laborers
+				value = {
+					value = num_pop_type:laborers
+					divide = local_var:mnt_estate_pop_peasants
+				}
+			}
+		}
+		set_local_variable = { name = mnt_pop_income_share_soldiers value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_income_share_soldiers
+				value = {
+					value = num_pop_type:soldiers
+					divide = local_var:mnt_estate_pop_peasants
+				}
+			}
+		}
+		set_local_variable = { name = mnt_pop_income_share_slaves value = 0 }
+		if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_income_share_slaves
+				value = {
+					value = num_pop_type:slaves
+					divide = local_var:mnt_estate_pop_peasants
+				}
+			}
+		}
+		set_local_variable = { name = mnt_pop_income_share_tribesmen value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_tribes > 0 } set_local_variable = { name = mnt_pop_income_share_tribesmen value = 1 } }
+
+		# ===== STEP 4: Calculate initial pop wealth (previous + pending changes) =====
+		set_local_variable = {
+			name = mnt_pop_initial_nobles
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_nobles
+				add = var:mnt_loc_pop_wealth_change_nobles
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_clergy
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_clergy
+				add = var:mnt_loc_pop_wealth_change_clergy
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_burghers
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_burghers
+				add = var:mnt_loc_pop_wealth_change_burghers
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_laborers
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_laborers
+				add = var:mnt_loc_pop_wealth_change_laborers
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_soldiers
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_soldiers
+				add = var:mnt_loc_pop_wealth_change_soldiers
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_peasants
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_peasants
+				add = var:mnt_loc_pop_wealth_change_peasants
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_tribesmen
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_tribesmen
+				add = var:mnt_loc_pop_wealth_change_tribesmen
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_initial_slaves
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_slaves
+				add = var:mnt_loc_pop_wealth_change_slaves
+			}
+		}
+
+		# ===== STEP 5: Calculate initial estate wealth (previous + pending changes) =====
+		set_local_variable = {
+			name = mnt_estate_initial_nobles
+			value = {
+				value = var:mnt_loc_estate_wealth_prev_nobles
+				add = var:mnt_loc_estate_wealth_change_nobles
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_initial_clergy
+			value = {
+				value = var:mnt_loc_estate_wealth_prev_clergy
+				add = var:mnt_loc_estate_wealth_change_clergy
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_initial_burghers
+			value = {
+				value = var:mnt_loc_estate_wealth_prev_burghers
+				add = var:mnt_loc_estate_wealth_change_burghers
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_initial_peasants
+			value = {
+				value = var:mnt_loc_estate_wealth_prev_peasants
+				add = var:mnt_loc_estate_wealth_change_peasants
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_initial_tribes
+			value = {
+				value = var:mnt_loc_estate_wealth_prev_tribes
+				add = var:mnt_loc_estate_wealth_change_tribes
+			}
+		}
+
+		# ===== STEP 6: Calculate wealth shares for peasant subtypes =====
+		# Determine how to distribute peasant wealth between peasants, laborers, soldiers, and slaves
+		set_local_variable = {
+			name = mnt_pop_initial_total_peasants
+			value = {
+				value = local_var:mnt_pop_initial_peasants
+				add = local_var:mnt_pop_initial_laborers
+				add = local_var:mnt_pop_initial_soldiers
+				add = local_var:mnt_pop_initial_slaves
+			}
+		}
+
+		# ===== STEP 7: Calculate wealth share flags for estate pops =====
+		set_local_variable = { name = mnt_pop_wealth_share_nobles value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_nobles > 0 } set_local_variable = { name = mnt_pop_wealth_share_nobles value = 1 } }
+		set_local_variable = { name = mnt_pop_wealth_share_clergy value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_clergy > 0 } set_local_variable = { name = mnt_pop_wealth_share_clergy value = 1 } }
+		set_local_variable = { name = mnt_pop_wealth_share_burghers value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_burghers > 0 } set_local_variable = { name = mnt_pop_wealth_share_burghers value = 1 } }
+		set_local_variable = { name = mnt_pop_wealth_share_tribesmen value = 0 }
+		if = { limit = { local_var:mnt_estate_pop_tribes > 0 } set_local_variable = { name = mnt_pop_wealth_share_tribesmen value = 1 } }
+
+		# ===== STEP 8: Calculate wealth shares for peasant subtypes =====
+		# If no previous peasant wealth, calculate based on current population
+		set_local_variable = { name = mnt_pop_wealth_share_peasants value = 0 }
+		if = {
+			limit = { local_var:mnt_pop_initial_total_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_wealth_share_peasants
+				value = {
+					value = local_var:mnt_pop_initial_peasants
+					divide = local_var:mnt_pop_initial_total_peasants
+				}
+			}
+		}
+		else_if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = { name = mnt_pop_wealth_share_peasants value = local_var:mnt_pop_income_share_peasants }
+		}
+		set_local_variable = { name = mnt_pop_wealth_share_laborers value = 0 }
+		if = {
+			limit = { local_var:mnt_pop_initial_total_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_wealth_share_laborers
+				value = {
+					value = local_var:mnt_pop_initial_laborers
+					divide = local_var:mnt_pop_initial_total_peasants
+				}
+			}
+		}
+		else_if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = { name = mnt_pop_wealth_share_laborers value = local_var:mnt_pop_income_share_laborers }
+		}
+		set_local_variable = { name = mnt_pop_wealth_share_soldiers value = 0 }
+		if = {
+			limit = { local_var:mnt_pop_initial_total_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_wealth_share_soldiers
+				value = {
+					value = local_var:mnt_pop_initial_soldiers
+					divide = local_var:mnt_pop_initial_total_peasants
+				}
+			}
+		}
+		else_if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = { name = mnt_pop_wealth_share_soldiers value = local_var:mnt_pop_income_share_soldiers }
+		}
+		set_local_variable = { name = mnt_pop_wealth_share_slaves value = 0 }
+		if = {
+			limit = { local_var:mnt_pop_initial_total_peasants > 0 }
+			set_local_variable = {
+				name = mnt_pop_wealth_share_slaves
+				value = {
+					value = local_var:mnt_pop_initial_slaves
+					divide = local_var:mnt_pop_initial_total_peasants
+				}
+			}
+		}
+		else_if = {
+			limit = { local_var:mnt_estate_pop_peasants > 0 }
+			set_local_variable = { name = mnt_pop_wealth_share_slaves value = local_var:mnt_pop_income_share_slaves }
+		}
+
+		# ===== STEP 9: Calculate final pop wealth =====
+		# Final = initial + estate wealth changes + income share
+		set_local_variable = {
+			name = mnt_pop_final_nobles
+			value = {
+				value = local_var:mnt_pop_initial_nobles
+				add = {
+					value = var:mnt_loc_estate_wealth_change_nobles
+					multiply = local_var:mnt_pop_wealth_share_nobles
+				}
+				add = {
+					value = local_var:mnt_estate_income_nobles
+					multiply = local_var:mnt_pop_income_share_nobles
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_clergy
+			value = {
+				value = local_var:mnt_pop_initial_clergy
+				add = {
+					value = var:mnt_loc_estate_wealth_change_clergy
+					multiply = local_var:mnt_pop_wealth_share_clergy
+				}
+				add = {
+					value = local_var:mnt_estate_income_clergy
+					multiply = local_var:mnt_pop_income_share_clergy
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_burghers
+			value = {
+				value = local_var:mnt_pop_initial_burghers
+				add = {
+					value = var:mnt_loc_estate_wealth_change_burghers
+					multiply = local_var:mnt_pop_wealth_share_burghers
+				}
+				add = {
+					value = local_var:mnt_estate_income_burghers
+					multiply = local_var:mnt_pop_income_share_burghers
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_peasants
+			value = {
+				value = local_var:mnt_pop_initial_peasants
+				add = {
+					value = var:mnt_loc_estate_wealth_change_peasants
+					multiply = local_var:mnt_pop_wealth_share_peasants
+				}
+				add = {
+					value = local_var:mnt_estate_income_peasants
+					multiply = local_var:mnt_pop_income_share_peasants
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_laborers
+			value = {
+				value = local_var:mnt_pop_initial_laborers
+				add = {
+					value = var:mnt_loc_estate_wealth_change_peasants
+					multiply = local_var:mnt_pop_wealth_share_laborers
+				}
+				add = {
+					value = local_var:mnt_estate_income_peasants
+					multiply = local_var:mnt_pop_income_share_laborers
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_soldiers
+			value = {
+				value = local_var:mnt_pop_initial_soldiers
+				add = {
+					value = var:mnt_loc_estate_wealth_change_peasants
+					multiply = local_var:mnt_pop_wealth_share_soldiers
+				}
+				add = {
+					value = local_var:mnt_estate_income_peasants
+					multiply = local_var:mnt_pop_income_share_soldiers
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_slaves
+			value = {
+				value = local_var:mnt_pop_initial_slaves
+				add = {
+					value = var:mnt_loc_estate_wealth_change_peasants
+					multiply = local_var:mnt_pop_wealth_share_slaves
+				}
+				add = {
+					value = local_var:mnt_estate_income_peasants
+					multiply = local_var:mnt_pop_income_share_slaves
+				}
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_tribesmen
+			value = {
+				value = local_var:mnt_pop_initial_tribesmen
+				add = {
+					value = var:mnt_loc_estate_wealth_change_tribes
+					multiply = local_var:mnt_pop_wealth_share_tribesmen
+				}
+				add = {
+					value = local_var:mnt_estate_income_tribes
+					multiply = local_var:mnt_pop_income_share_tribesmen
+				}
+			}
+		}
+
+		# ===== STEP 10: Save calculated pop wealth =====
+		set_variable = { name = mnt_loc_pop_wealth_nobles value = local_var:mnt_pop_final_nobles }
+		set_variable = { name = mnt_loc_pop_wealth_clergy value = local_var:mnt_pop_final_clergy }
+		set_variable = { name = mnt_loc_pop_wealth_burghers value = local_var:mnt_pop_final_burghers }
+		set_variable = { name = mnt_loc_pop_wealth_peasants value = local_var:mnt_pop_final_peasants }
+		set_variable = { name = mnt_loc_pop_wealth_laborers value = local_var:mnt_pop_final_laborers }
+		set_variable = { name = mnt_loc_pop_wealth_soldiers value = local_var:mnt_pop_final_soldiers }
+		set_variable = { name = mnt_loc_pop_wealth_slaves value = local_var:mnt_pop_final_slaves }
+		set_variable = { name = mnt_loc_pop_wealth_tribesmen value = local_var:mnt_pop_final_tribesmen }
+
+		# ===== STEP 11: Calculate estate wealth adjustments =====
+		# Estate wealth changes to account for pop wealth differences (reconciliation)
+		set_local_variable = {
+			name = mnt_estate_adjust_nobles
+			value = {
+				value = var:mnt_loc_pop_wealth_nobles
+				subtract = var:mnt_loc_pop_wealth_prev_nobles
+				subtract = var:mnt_loc_pop_wealth_change_nobles
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_adjust_clergy
+			value = {
+				value = var:mnt_loc_pop_wealth_clergy
+				subtract = var:mnt_loc_pop_wealth_prev_clergy
+				subtract = var:mnt_loc_pop_wealth_change_clergy
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_adjust_burghers
+			value = {
+				value = var:mnt_loc_pop_wealth_burghers
+				subtract = var:mnt_loc_pop_wealth_prev_burghers
+				subtract = var:mnt_loc_pop_wealth_change_burghers
+			}
+		}
+		# Aggregate peasant subtypes for estate wealth adjustment
+		set_local_variable = {
+			name = mnt_pop_prev_sum_peasants
+			value = {
+				value = var:mnt_loc_pop_wealth_prev_peasants
+				add = var:mnt_loc_pop_wealth_prev_laborers
+				add = var:mnt_loc_pop_wealth_prev_soldiers
+				add = var:mnt_loc_pop_wealth_prev_slaves
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_final_sum_peasants
+			value = {
+				value = var:mnt_loc_pop_wealth_peasants
+				add = var:mnt_loc_pop_wealth_laborers
+				add = var:mnt_loc_pop_wealth_soldiers
+				add = var:mnt_loc_pop_wealth_slaves
+			}
+		}
+		set_local_variable = {
+			name = mnt_pop_change_sum_peasants
+			value = {
+				value = var:mnt_loc_pop_wealth_change_peasants
+				add = var:mnt_loc_pop_wealth_change_laborers
+				add = var:mnt_loc_pop_wealth_change_soldiers
+				add = var:mnt_loc_pop_wealth_change_slaves
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_adjust_peasants
+			value = {
+				value = local_var:mnt_pop_final_sum_peasants
+				subtract = local_var:mnt_pop_prev_sum_peasants
+				subtract = local_var:mnt_pop_change_sum_peasants
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_adjust_tribes
+			value = {
+				value = var:mnt_loc_pop_wealth_tribesmen
+				subtract = var:mnt_loc_pop_wealth_prev_tribesmen
+				subtract = var:mnt_loc_pop_wealth_change_tribesmen
+			}
+		}
+
+		# ===== STEP 12: Calculate final estate wealth =====
+		# Apply adjustments to get final estate wealth
+		set_local_variable = {
+			name = mnt_estate_final_nobles
+			value = {
+				value = local_var:mnt_estate_initial_nobles
+				add = local_var:mnt_estate_adjust_nobles
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_final_clergy
+			value = {
+				value = local_var:mnt_estate_initial_clergy
+				add = local_var:mnt_estate_adjust_clergy
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_final_burghers
+			value = {
+				value = local_var:mnt_estate_initial_burghers
+				add = local_var:mnt_estate_adjust_burghers
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_final_peasants
+			value = {
+				value = local_var:mnt_estate_initial_peasants
+				add = local_var:mnt_estate_adjust_peasants
+			}
+		}
+		set_local_variable = {
+			name = mnt_estate_final_tribes
+			value = {
+				value = local_var:mnt_estate_initial_tribes
+				add = local_var:mnt_estate_adjust_tribes
+			}
+		}
+
+		# ===== STEP 13: Save calculated estate wealth =====
+		set_variable = { name = mnt_loc_estate_wealth_nobles 	value = local_var:mnt_estate_final_nobles }
+		set_variable = { name = mnt_loc_estate_wealth_clergy 	value = local_var:mnt_estate_final_clergy }
+		set_variable = { name = mnt_loc_estate_wealth_burghers 	value = local_var:mnt_estate_final_burghers }
+		set_variable = { name = mnt_loc_estate_wealth_peasants 	value = local_var:mnt_estate_final_peasants }
+		set_variable = { name = mnt_loc_estate_wealth_tribes 	value = local_var:mnt_estate_final_tribes }
+
+		# ===== STEP 14: Calculate total location wealth =====
+		set_variable = {
+			name = mnt_loc_wealth_total
+			value = {
+				value = var:mnt_loc_estate_wealth_nobles
+				add = var:mnt_loc_estate_wealth_clergy
+				add = var:mnt_loc_estate_wealth_burghers
+				add = var:mnt_loc_estate_wealth_peasants
+				add = var:mnt_loc_estate_wealth_tribes
+			}
+		}
+
+		# ===== STEP 15: Update previous values for next calculation cycle =====
+		set_variable = { name = mnt_loc_pop_wealth_prev_nobles 		value = var:mnt_loc_pop_wealth_nobles }
+		set_variable = { name = mnt_loc_pop_wealth_prev_clergy 		value = var:mnt_loc_pop_wealth_clergy }
+		set_variable = { name = mnt_loc_pop_wealth_prev_burghers 	value = var:mnt_loc_pop_wealth_burghers }
+		set_variable = { name = mnt_loc_pop_wealth_prev_peasants 	value = var:mnt_loc_pop_wealth_peasants }
+		set_variable = { name = mnt_loc_pop_wealth_prev_laborers 	value = var:mnt_loc_pop_wealth_laborers }
+		set_variable = { name = mnt_loc_pop_wealth_prev_soldiers 	value = var:mnt_loc_pop_wealth_soldiers }
+		set_variable = { name = mnt_loc_pop_wealth_prev_slaves 		value = var:mnt_loc_pop_wealth_slaves }
+		set_variable = { name = mnt_loc_pop_wealth_prev_tribesmen 	value = var:mnt_loc_pop_wealth_tribesmen }
+
+		set_variable = { name = mnt_loc_estate_wealth_prev_nobles 	value = var:mnt_loc_estate_wealth_nobles }
+		set_variable = { name = mnt_loc_estate_wealth_prev_clergy 	value = var:mnt_loc_estate_wealth_clergy }
+		set_variable = { name = mnt_loc_estate_wealth_prev_burghers value = var:mnt_loc_estate_wealth_burghers }
+		set_variable = { name = mnt_loc_estate_wealth_prev_peasants value = var:mnt_loc_estate_wealth_peasants }
+		set_variable = { name = mnt_loc_estate_wealth_prev_tribes 	value = var:mnt_loc_estate_wealth_tribes }
+		# ===== STEP 16: Reset pending wealth changes for next cycle =====
+		set_variable = { name = mnt_loc_pop_wealth_change_nobles 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_clergy 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_burghers 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_peasants 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_laborers 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_soldiers 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_slaves 	value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_tribesmen value = 0 }
+
+		set_variable = { name = mnt_loc_estate_wealth_change_nobles 	value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_clergy 	value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_burghers 	value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_peasants 	value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_tribes 	value = 0 }
+	}
+	else = {
+		# ===== FALLBACK: Zero population handling =====
+		# If location has no population, reset all wealth to zero
+		set_variable = { name = mnt_loc_wealth_total value = 0 }
+
+		set_variable = { name = mnt_loc_estate_wealth_nobles value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_clergy value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_burghers value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_peasants value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_tribes value = 0 }
+
+		set_variable = { name = mnt_loc_estate_wealth_prev_nobles value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_prev_clergy value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_prev_burghers value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_prev_peasants value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_prev_tribes value = 0 }
+
+		set_variable = { name = mnt_loc_estate_wealth_change_nobles value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_clergy value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_burghers value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_peasants value = 0 }
+		set_variable = { name = mnt_loc_estate_wealth_change_tribes value = 0 }
+
+		set_variable = { name = mnt_loc_pop_wealth_nobles value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_clergy value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_burghers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_peasants value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_laborers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_soldiers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_slaves value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_tribesmen value = 0 }
+
+		set_variable = { name = mnt_loc_pop_wealth_prev_nobles value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_clergy value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_burghers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_peasants value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_laborers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_soldiers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_slaves value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_prev_tribesmen value = 0 }
+
+		set_variable = { name = mnt_loc_pop_wealth_change_nobles value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_clergy value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_burghers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_peasants value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_laborers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_soldiers value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_slaves value = 0 }
+		set_variable = { name = mnt_loc_pop_wealth_change_tribesmen value = 0 }
+	}
+}
