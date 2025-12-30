@@ -1,10 +1,19 @@
-namespace = mnt_location_wealth
+﻿namespace = mnt_location_wealth
 
 # Hidden event to update location wealth pools each month.
 mnt_location_wealth.1 = {
 	type = country_event
 	title = mnt_location_wealth.1.title
 	hidden = yes
+
+	trigger = {
+		exists = yes
+		OR = {
+			country_type = location
+			country_type = army
+			country_type = navy
+		}
+	}
 
 	immediate = {
 		# Update Wealth Pools of the Estates in the Country
@@ -19,6 +28,40 @@ mnt_location_wealth.1 = {
 
 			# Update Location Wealth Pools based on Estate Power and Pop Types
 			mnt_update_location_wealth_pools = yes
+		}
+	}
+}
+
+# Hidden event to update location wealth pools at game start
+mnt_location_wealth.2 = {
+	type = country_event
+	title = mnt_location_wealth.2.title
+	hidden = yes
+
+	immediate = {
+		every_country = {
+			limit = {
+				exists = yes
+				OR = {
+					country_type = location
+					country_type = army
+					country_type = navy
+				}
+			}
+
+			# Update Wealth Pools of the Estates in the Country
+			mnt_update_estate_wealth_pools = yes
+
+			# Sum Total Country Estate Local Power for Distribution
+			mnt_country_pop_income_proportion_sum = yes
+
+			every_owned_location = {
+				# Initialize Location Pop Wealth Variables if not present
+				mnt_init_location_pop_wealth_variables = yes
+
+				# Update Location Wealth Pools based on Estate Power and Pop Types
+				mnt_update_location_wealth_pools = yes
+			}
 		}
 	}
 }

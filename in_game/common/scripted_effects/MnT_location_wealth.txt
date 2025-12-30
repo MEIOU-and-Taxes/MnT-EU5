@@ -1,4 +1,4 @@
-### Location Wealth Pool Tracking:
+﻿### Location Wealth Pool Tracking:
 ### --- Variables ---
 mnt_init_location_pop_wealth_variables = {
 	if = { 
@@ -89,7 +89,7 @@ mnt_location_pop_power_ratio_per_estate = {
 			}
 		}
 
-		set_variable = {
+		set_local_variable = {
 			name = mnt_location_estate_power_ratio_$pop$
 			value = {
 				value = local_var:mnt_location_estate_power_$estate$
@@ -107,7 +107,7 @@ mnt_location_pop_ratio_per_estate = {
 	if = {
 		limit = { num_pop_type:$pop$ > 0 }
 
-		set_variable = {
+		set_local_variable = {
 			name = mnt_location_estate_pop_ratio_$pop$
 			value = {
 				value = num_pop_type:$pop$
@@ -122,19 +122,19 @@ mnt_location_pop_ratio_per_estate = {
 
 mnt_location_pop_income_distribution_per_estate = {
 	# Calc location pop wealth income from expected tax base income distributed by local power
-	set_variable = {
+	set_local_variable = {
 		name = mnt_location_pop_wealth_income_$estate$
 		value = {
 			value = owner.var:mnt_estate_wealth_expected_income_$estate$
-			multiply = var:mnt_location_estate_power_ratio_$pop$
+			multiply = local_var:mnt_location_estate_power_ratio_$pop$
 		}
 	}
 	# Calc location pop wealth income from untracked changes to estate wealth distributed by local population proportion
-	set_variable = {
+	set_local_variable = {
 		name = mnt_location_pop_wealth_untracked_change_income_$estate$
 		value = {
 			value = owner.var:mnt_estate_wealth_untracked_change_$estate$
-			multiply = var:mnt_location_estate_pop_ratio_$pop$
+			multiply = local_var:mnt_location_estate_pop_ratio_$pop$
 		}
 	}
 	# Update Location Pop Wealth Pool
@@ -142,8 +142,8 @@ mnt_location_pop_income_distribution_per_estate = {
 		name = mnt_location_pop_wealth_$pop$
 		value = {
 			value = var:mnt_location_pop_wealth_$pop$
-			add = var:mnt_location_pop_wealth_income_$estate$
-			add = var:mnt_location_pop_wealth_untracked_change_income_$estate$
+			add = local_var:mnt_location_pop_wealth_income_$estate$
+			add = local_var:mnt_location_pop_wealth_untracked_change_income_$estate$
 		}
 	}
 	change_variable = {
