@@ -108,7 +108,7 @@ mnt_location_pop_power_ratio_per_estate = {
 # Calculate the proportion of population from this estate in the location
 mnt_location_pop_ratio_per_estate = {
 	if = {
-		limit = { num_pop_type:$pop$ > 0 }
+		limit = { owner = { country_has_estate = estate_type:$estate$_estate } }
 
 		set_local_variable = {
 			name = mnt_location_estate_pop_ratio_$pop$
@@ -124,34 +124,37 @@ mnt_location_pop_ratio_per_estate = {
 }
 
 mnt_location_pop_income_distribution_per_estate = {
-	# Calc location pop wealth income from expected tax base income distributed by local power
-	set_local_variable = {
-		name = mnt_location_pop_wealth_income_$estate$
-		value = {
-			value = owner.var:mnt_estate_wealth_expected_income_$estate$
-			multiply = local_var:mnt_location_estate_power_ratio_$pop$
+	if = {
+		limit = { owner = { country_has_estate = estate_type:$estate$_estate } }
+		# Calc location pop wealth income from expected tax base income distributed by local power
+		set_local_variable = {
+			name = mnt_location_pop_wealth_income_$estate$
+			value = {
+				value = owner.var:mnt_estate_wealth_expected_income_$estate$
+				multiply = local_var:mnt_location_estate_power_ratio_$pop$
+			}
 		}
-	}
-	# Calc location pop wealth income from untracked changes to estate wealth distributed by local population proportion
-	set_local_variable = {
-		name = mnt_location_pop_wealth_untracked_change_income_$estate$
-		value = {
-			value = owner.var:mnt_estate_wealth_untracked_change_$estate$
-			multiply = local_var:mnt_location_estate_pop_ratio_$pop$
+		# Calc location pop wealth income from untracked changes to estate wealth distributed by local population proportion
+		set_local_variable = {
+			name = mnt_location_pop_wealth_untracked_change_income_$estate$
+			value = {
+				value = owner.var:mnt_estate_wealth_untracked_change_$estate$
+				multiply = local_var:mnt_location_estate_pop_ratio_$pop$
+			}
 		}
-	}
-	# Update Location Pop Wealth Pool
-	set_variable = {
-		name = mnt_location_pop_wealth_$pop$
-		value = {
-			value = var:mnt_location_pop_wealth_$pop$
-			add = local_var:mnt_location_pop_wealth_income_$estate$
-			add = local_var:mnt_location_pop_wealth_untracked_change_income_$estate$
+		# Update Location Pop Wealth Pool
+		set_variable = {
+			name = mnt_location_pop_wealth_$pop$
+			value = {
+				value = var:mnt_location_pop_wealth_$pop$
+				add = local_var:mnt_location_pop_wealth_income_$estate$
+				add = local_var:mnt_location_pop_wealth_untracked_change_income_$estate$
+			}
 		}
-	}
-	change_variable = {
-		name = mnt_location_pop_wealth_total
-		add = var:mnt_location_pop_wealth_$pop$
+		change_variable = {
+			name = mnt_location_pop_wealth_total
+			add = var:mnt_location_pop_wealth_$pop$
+		}
 	}
 }
 
@@ -254,7 +257,7 @@ mnt_update_estate_wealth_income_per_estate = {
 							divide = local_control
 							subtract = location_tax_base
 							multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage 
-							multiply = "this.local_relative_estate_power(scope:target_estate)"
+							multiply = "local_relative_estate_power(scope:target_estate)"
 						}
 					}
 					else = {
@@ -262,7 +265,7 @@ mnt_update_estate_wealth_income_per_estate = {
 						add = {
 							value = local_var:mnt_loc_total_value_added
 							multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage 
-							multiply = "this.local_relative_estate_power(scope:target_estate)"
+							multiply = "local_relative_estate_power(scope:target_estate)"
 						}
 					}
 				}
@@ -270,7 +273,10 @@ mnt_update_estate_wealth_income_per_estate = {
 			min = 0
 		}
 
-		scope:target_estate ?= { estate_add_gold = { value = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ } }
+		random_estate = {
+			limit = { estate_type = estate_type:$estate$_estate }
+			estate_add_gold = { value = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ }
+		}
 
 		set_variable = {
 			name = mnt_estate_wealth_expected_income_$estate$
