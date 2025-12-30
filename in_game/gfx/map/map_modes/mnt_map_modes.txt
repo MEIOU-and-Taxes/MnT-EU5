@@ -1119,12 +1119,40 @@ location_wealth = {
 				has_owner = yes
 				has_variable = mnt_location_pop_wealth_total
 			}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
-				factor = {
-					value = var:mnt_location_pop_wealth_total
-					divide = mnt_mapmode_max_saturation_wealth
+			if = {
+				limit = { var:mnt_location_pop_wealth_total < 0 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MIN
+					factor = {
+						value = var:mnt_location_pop_wealth_total
+						divide = global_var:mnt_location_pop_wealth_total_max
+						multiply = -5
+					}
+				}
+			}
+			else_if = {
+				limit = { var:mnt_location_pop_wealth_total > mnt_location_pop_wealth_half_max }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
+					factor = {
+						value = var:mnt_location_pop_wealth_total
+						divide = global_var:mnt_location_pop_wealth_total_max
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+					factor = {
+						value = var:mnt_location_pop_wealth_total
+						divide = global_var:mnt_location_pop_wealth_total_max
+						multiply = 2
+					}
 				}
 			}
 		}
@@ -1132,6 +1160,23 @@ location_wealth = {
 
 	tooltip_key = {
 		value = mapmode_location_wealth_tooltip
+	}
+
+	legend_key = {
+		desc = "mapmode_location_wealth_max"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "mapmode_location_wealth_half"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "mapmode_location_wealth_none"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
+	legend_key = {
+		desc = "mapmode_location_wealth_negative"
+		color = define:NMapColors|MAP_COLOR_MIN
 	}
 
 	small_map_names = location
@@ -1170,7 +1215,7 @@ location_wealth = {
 
 	refresh_colors_on_selection_change = yes
 	color_refresh_counters = { Month }
-	color_and_names_refresh_counters = { Month LocationPopulationChanged LocationOwnerChanged }
+	color_and_names_refresh_counters = { Month }
 }
 
 ###############################################
