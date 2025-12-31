@@ -365,6 +365,21 @@ calc_rural_goods_value_produced_location = {
 	set_variable = { name = mnt_gv_beeswax value = { value = "goods_output(goods:beeswax)" multiply = "goods:beeswax.price_in_market(scope:target_location.market)" } }
 }
 
+# Calculates total value added for a single location (building profit + RGO value).
+calc_location_total_profit_value_added = {
+	save_scope_as = target_location
+	# Sum building profits in this location.
+	set_variable = { name = mnt_loc_building_profit value = 0 }
+	every_buildings_in_location = {
+		scope:target_location = {
+			change_variable = {
+				name = mnt_loc_building_profit
+				add = prev.building_profit
+			}
+		}
+	}
+}
+
 # Calculates the combined urban + rural goods value across all owned locations for a country.
 	calc_country_goods_value_produced = {
 		set_variable = { name = mnt_country_urban_goods_value value = 0 }
@@ -558,6 +573,7 @@ calc_rural_goods_value_produced_location = {
 		every_owned_location = {
 			hidden_effect = { calc_urban_goods_value_produced_location = yes }
 			hidden_effect = { calc_rural_goods_value_produced_location = yes }
+			hidden_effect = { calc_location_total_profit_value_added = yes }
 
 			remove_variable = mnt_urban_ranked
 			remove_variable = mnt_rural_ranked
@@ -565,32 +581,122 @@ calc_rural_goods_value_produced_location = {
 			set_variable = {
 				name = mnt_goods_value_total
 				value = {
-					value = var:mnt_urban_goods_value
+					value = var:mnt_loc_building_profit
 					add = var:mnt_rural_goods_value
 				}
 			}
 
+			set_variable = { name = mnt_va_cloth value = 0 }
+			set_variable = { name = mnt_va_fine_cloth value = 0 }
+			set_variable = { name = mnt_va_furniture value = 0 }
+			set_variable = { name = mnt_va_glass value = 0 }
+			set_variable = { name = mnt_va_jewelry value = 0 }
+			set_variable = { name = mnt_va_lacquerware value = 0 }
+			set_variable = { name = mnt_va_naval_supplies value = 0 }
+			set_variable = { name = mnt_va_paper value = 0 }
+			set_variable = { name = mnt_va_porcelain value = 0 }
+			set_variable = { name = mnt_va_pottery value = 0 }
+			set_variable = { name = mnt_va_tools value = 0 }
+			set_variable = { name = mnt_va_books value = 0 }
+			set_variable = { name = mnt_va_weaponry value = 0 }
+			set_variable = { name = mnt_va_firearms value = 0 }
+			set_variable = { name = mnt_va_cannons value = 0 }
+			set_variable = { name = mnt_va_leather value = 0 }
+			set_variable = { name = mnt_va_beer value = 0 }
+
+			if = {
+				limit = { var:mnt_urban_goods_value > 0 }
+				set_variable = {
+					name = mnt_va_cloth
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_cloth divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_fine_cloth
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_fine_cloth divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_furniture
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_furniture divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_glass
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_glass divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_jewelry
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_jewelry divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_lacquerware
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_lacquerware divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_naval_supplies
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_naval_supplies divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_paper
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_paper divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_porcelain
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_porcelain divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_pottery
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_pottery divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_tools
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_tools divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_books
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_books divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_weaponry
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_weaponry divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_firearms
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_firearms divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_cannons
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_cannons divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_leather
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_leather divide = var:mnt_urban_goods_value }
+				}
+				set_variable = {
+					name = mnt_va_beer
+					value = { value = var:mnt_loc_building_profit multiply = var:mnt_gv_beer divide = var:mnt_urban_goods_value }
+				}
+			}
+
 			owner = {
-				change_variable = { name = mnt_country_urban_goods_value add = prev.var:mnt_urban_goods_value }
+				change_variable = { name = mnt_country_urban_goods_value add = prev.var:mnt_loc_building_profit }
 				change_variable = { name = mnt_country_rural_goods_value add = prev.var:mnt_rural_goods_value }
 				# Per-good accumulation
-				change_variable = { name = mnt_country_goods_value_cloth add = prev.var:mnt_gv_cloth }
-				change_variable = { name = mnt_country_goods_value_fine_cloth add = prev.var:mnt_gv_fine_cloth }
-				change_variable = { name = mnt_country_goods_value_furniture add = prev.var:mnt_gv_furniture }
-				change_variable = { name = mnt_country_goods_value_glass add = prev.var:mnt_gv_glass }
-				change_variable = { name = mnt_country_goods_value_jewelry add = prev.var:mnt_gv_jewelry }
-				change_variable = { name = mnt_country_goods_value_lacquerware add = prev.var:mnt_gv_lacquerware }
-				change_variable = { name = mnt_country_goods_value_naval_supplies add = prev.var:mnt_gv_naval_supplies }
-				change_variable = { name = mnt_country_goods_value_paper add = prev.var:mnt_gv_paper }
-				change_variable = { name = mnt_country_goods_value_porcelain add = prev.var:mnt_gv_porcelain }
-				change_variable = { name = mnt_country_goods_value_pottery add = prev.var:mnt_gv_pottery }
-				change_variable = { name = mnt_country_goods_value_tools add = prev.var:mnt_gv_tools }
-				change_variable = { name = mnt_country_goods_value_books add = prev.var:mnt_gv_books }
-				change_variable = { name = mnt_country_goods_value_weaponry add = prev.var:mnt_gv_weaponry }
-				change_variable = { name = mnt_country_goods_value_firearms add = prev.var:mnt_gv_firearms }
-				change_variable = { name = mnt_country_goods_value_cannons add = prev.var:mnt_gv_cannons }
-				change_variable = { name = mnt_country_goods_value_leather add = prev.var:mnt_gv_leather }
-				change_variable = { name = mnt_country_goods_value_beer add = prev.var:mnt_gv_beer }
+				change_variable = { name = mnt_country_goods_value_cloth add = prev.var:mnt_va_cloth }
+				change_variable = { name = mnt_country_goods_value_fine_cloth add = prev.var:mnt_va_fine_cloth }
+				change_variable = { name = mnt_country_goods_value_furniture add = prev.var:mnt_va_furniture }
+				change_variable = { name = mnt_country_goods_value_glass add = prev.var:mnt_va_glass }
+				change_variable = { name = mnt_country_goods_value_jewelry add = prev.var:mnt_va_jewelry }
+				change_variable = { name = mnt_country_goods_value_lacquerware add = prev.var:mnt_va_lacquerware }
+				change_variable = { name = mnt_country_goods_value_naval_supplies add = prev.var:mnt_va_naval_supplies }
+				change_variable = { name = mnt_country_goods_value_paper add = prev.var:mnt_va_paper }
+				change_variable = { name = mnt_country_goods_value_porcelain add = prev.var:mnt_va_porcelain }
+				change_variable = { name = mnt_country_goods_value_pottery add = prev.var:mnt_va_pottery }
+				change_variable = { name = mnt_country_goods_value_tools add = prev.var:mnt_va_tools }
+				change_variable = { name = mnt_country_goods_value_books add = prev.var:mnt_va_books }
+				change_variable = { name = mnt_country_goods_value_weaponry add = prev.var:mnt_va_weaponry }
+				change_variable = { name = mnt_country_goods_value_firearms add = prev.var:mnt_va_firearms }
+				change_variable = { name = mnt_country_goods_value_cannons add = prev.var:mnt_va_cannons }
+				change_variable = { name = mnt_country_goods_value_leather add = prev.var:mnt_va_leather }
+				change_variable = { name = mnt_country_goods_value_beer add = prev.var:mnt_va_beer }
 
 				change_variable = { name = mnt_country_goods_value_horses add = prev.var:mnt_gv_horses }
 				change_variable = { name = mnt_country_goods_value_clay add = prev.var:mnt_gv_clay }
@@ -928,82 +1034,82 @@ calc_rural_goods_value_produced_location = {
 	# Capture top 10 urban locations
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_1
-		owner = { set_variable = { name = mnt_top_urban_value_1 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_1 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_2
-		owner = { set_variable = { name = mnt_top_urban_value_2 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_2 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_3
-		owner = { set_variable = { name = mnt_top_urban_value_3 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_3 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_4
-		owner = { set_variable = { name = mnt_top_urban_value_4 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_4 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_5
-		owner = { set_variable = { name = mnt_top_urban_value_5 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_5 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_6
-		owner = { set_variable = { name = mnt_top_urban_value_6 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_6 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_7
-		owner = { set_variable = { name = mnt_top_urban_value_7 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_7 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_8
-		owner = { set_variable = { name = mnt_top_urban_value_8 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_8 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_9
-		owner = { set_variable = { name = mnt_top_urban_value_9 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_9 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 	ordered_owned_location = {
 		limit = { NOT = { has_variable = mnt_urban_ranked } }
-		order_by = { value = var:mnt_urban_goods_value }
+		order_by = { value = var:mnt_loc_building_profit }
 		max = 1
 		save_scope_as = mnt_top_urban_location_10
-		owner = { set_variable = { name = mnt_top_urban_value_10 value = prev.var:mnt_urban_goods_value } }
+		owner = { set_variable = { name = mnt_top_urban_value_10 value = prev.var:mnt_loc_building_profit } }
 		set_variable = { name = mnt_urban_ranked value = 1 }
 	}
 
