@@ -1,0 +1,1318 @@
+template Mnt_Goods_Value_Tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "Goods Domestic Product"
+		}
+
+		blockoverride "tooltip_content" {
+			datacontext = "[Player]"
+
+			hbox = {
+				layoutpolicy_horizontal = expanding
+				spacing = 6
+				TooltipTextBlock = {
+					blockoverride "text" {
+						text = "MNT_URBAN_GDP_LINE"
+						default_format = "#help"
+					}
+					tooltip = "MNT_URBAN_GDP_DESC"
+					tooltipwidget = { using = Mnt_Goods_Value_Urban_Breakdown }
+				}
+				expand = {}
+				mapmode_tooltip_button = {
+					datacontext = "[GetMapMode('goods_value_urban')]"
+				}
+			}
+
+			hbox = {
+				layoutpolicy_horizontal = expanding
+				spacing = 6
+				TooltipTextBlock = {
+					blockoverride "text" {
+						text = "MNT_RURAL_GDP_LINE"
+						default_format = "#help"
+					}
+					tooltip = "MNT_RURAL_GDP_DESC"
+					tooltipwidget = { using = Mnt_Goods_Value_Rural_Breakdown }
+				}
+				expand = {}
+				mapmode_tooltip_button = {
+					datacontext = "[GetMapMode('goods_value_rural')]"
+				}
+			}
+
+			hbox = {
+				layoutpolicy_horizontal = expanding
+				vbox = {
+					spacing = 6
+					using = bg_text_mask_container_dark_brown
+					using = bg_cabinet_card_frame
+					margin = { 6 6 }
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = {
+							align = left|nobaseline
+							autoresize = yes
+							default_format = "#t"
+							raw_text = "Goods Output Share"
+						}
+						expand = {}
+					}
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						expand = {}
+						piechart = {
+							using = bg_circle
+							size = { 80 80 }
+
+							using = piechart_angles
+							tooltipwidget = {
+								ContextualTooltipType = {
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/resources/gold.dds"
+										}
+									}
+									blockoverride "title_text" {
+										text = "Goods Output Share"
+									}
+
+									blockoverride "tooltip_content" {
+										TooltipTextBlock = {
+											blockoverride "text" {
+												raw_text = "Urban [Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0')|%0] ([Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue|2]@gold!)"
+												default_format = "#W"
+											}
+										}
+										TooltipTextBlock = {
+											blockoverride "text" {
+												raw_text = "Rural [Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_rural_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0')|%0] ([Player.MakeScope.GetVariable('mnt_country_rural_goods_value').GetValue|2]@gold!)"
+												default_format = "#W"
+											}
+										}
+									}
+								}
+							}
+
+							pieslice_no_highlight = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+								value = "[FixedPointToFloat(Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0'))]"
+								color = { 1.0 0.6 0.1 1.0 }
+							}
+
+							pieslice_no_highlight = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+								value = "[Subtract_float('(float)1.0', FixedPointToFloat(Select_CFixedPoint(GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue, '(CFixedPoint)0'), Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_urban_goods_value').GetValue, Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue), '(CFixedPoint)0')))]"
+								color = { 1 1 1 1 }
+							}
+
+							icon = {
+								size = { 36 36 }
+								parentanchor = center
+								texture = "gfx/interface/icons/resources/gold.dds"
+							}
+
+							using = bg_circle_piechart
+						}
+						expand = {}
+					}
+				}
+				expand = {}
+			}
+		}
+	}
+}
+
+template Mnt_Goods_Value_Urban_Breakdown {
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "Urban Goods Output Breakdown"
+		}
+
+		blockoverride "tooltip_content" {
+			datacontext = "[Player]"
+
+			TooltipListScrollArea = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 700 } }
+				blockoverride "scrollarea_content" {
+					vbox = {
+						spacing = 4
+						set_parent_dimension_to_minimum = height
+							TooltipManualTableField = {
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } raw_text = "[goods|e]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[location|e]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[gold|e]" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[gold|e] / [location|e]" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cloth').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_cloth.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('cloth')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_cloth').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_cloth').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cloth').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_cloth').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fine_cloth').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_fine_cloth.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('fine_cloth')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_fine_cloth').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_fine_cloth').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fine_cloth').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_fine_cloth').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_furniture').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_furniture.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('furniture')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_furniture').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_furniture').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_furniture').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_furniture').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_glass').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_glass.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('glass')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_glass').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_glass').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_glass').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_glass').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_jewelry').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_jewelry.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('jewelry')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_jewelry').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_jewelry').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_jewelry').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_jewelry').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_lacquerware').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_lacquerware.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('lacquerware')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_lacquerware').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_lacquerware').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_lacquerware').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_lacquerware').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_naval_supplies').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_naval_supplies.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('naval_supplies')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_naval_supplies').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_naval_supplies').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_naval_supplies').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_naval_supplies').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_paper').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_paper.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('paper')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_paper').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_paper').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_paper').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_paper').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_porcelain').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_porcelain.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('porcelain')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_porcelain').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_porcelain').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_porcelain').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_porcelain').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_pottery').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_pottery.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('pottery')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_pottery').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_pottery').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_pottery').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_pottery').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tools').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_tools.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('tools')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_tools').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_tools').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tools').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_tools').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_books').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_books.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('books')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_books').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_books').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_books').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_books').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_weaponry').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_weaponry.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('weaponry')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_weaponry').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_weaponry').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_weaponry').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_weaponry').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_firearms').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_firearms.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('firearms')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_firearms').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_firearms').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_firearms').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_firearms').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cannons').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_cannons.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('cannons')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_cannons').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_cannons').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cannons').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_cannons').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_leather').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_leather.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('leather')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_leather').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_leather').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_leather').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_leather').GetValue)|2]@gold!"
+									}
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_beer').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" {
+									maximumsize = { -1 22 }
+									minimumsize = { -1 22 }
+								}
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_beer.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('beer')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_beer').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_beer').GetValue|2]@gold!" }
+									expand = {}
+									text_single = {
+										align = right|nobaseline
+										autoresize = no
+										minimumsize = { 90 -1 }
+										maximumsize = { 90 -1 }
+										raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_beer').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_beer').GetValue)|2]@gold!"
+									}
+								}
+							}
+					}
+				}
+			}
+		}
+	}
+}
+
+template Mnt_Goods_Value_Rural_Breakdown {
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "Rural Goods Output Breakdown"
+		}
+
+		blockoverride "tooltip_title_size" {
+			minimumsize = { 460 -1 }
+		}
+
+		blockoverride "tooltip_content" {
+			datacontext = "[Player]"
+
+			TooltipListScrollArea = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 700 } }
+				blockoverride "scrollarea_content" {
+					vbox = {
+						spacing = 4
+						set_parent_dimension_to_minimum = height
+							TooltipManualTableField = {
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } raw_text = "[goods|e]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[location|e]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[gold|e]" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[gold|e] / [location|e]" }
+							}
+						}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_horses').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_horses.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('horses')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_horses').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_horses').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_horses').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_horses').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_clay').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_clay.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('clay')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_clay').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_clay').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_clay').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_clay').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_sand').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_sand.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('sand')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_sand').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_sand').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_sand').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_sand').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_coal').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_coal.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('coal')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_coal').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_coal').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_coal').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_coal').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_iron').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_iron.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('iron')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_iron').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_iron').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_iron').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_iron').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_copper').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_copper.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('copper')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_copper').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_copper').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_copper').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_copper').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_goods_gold').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_goods_gold.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('goods_gold')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_goods_gold').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_goods_gold').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_goods_gold').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_goods_gold').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_silver').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_silver.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('silver')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_silver').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_silver').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_silver').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_silver').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_stone').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_stone.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('stone')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_stone').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_stone').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_stone').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_stone').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tin').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_tin.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('tin')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_tin').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_tin').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tin').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_tin').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_lead').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_lead.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('lead')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_lead').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_lead').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_lead').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_lead').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_silk').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_silk.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('silk')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_silk').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_silk').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_silk').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_silk').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_dyes').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_dyes.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('dyes')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_dyes').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_dyes').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_dyes').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_dyes').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_incense').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_incense.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('incense')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_incense').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_incense').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_incense').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_incense').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tea').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_tea.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('tea')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_tea').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_tea').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tea').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_tea').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cocoa').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_cocoa.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('cocoa')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_cocoa').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_cocoa').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cocoa').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_cocoa').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_coffee').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_coffee.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('coffee')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_coffee').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_coffee').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_coffee').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_coffee').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fiber_crops').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_fiber_crops.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('fiber_crops')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_fiber_crops').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_fiber_crops').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fiber_crops').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_fiber_crops').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_ivory').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_ivory.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('ivory')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_ivory').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_ivory').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_ivory').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_ivory').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_lumber').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_lumber.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('lumber')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_lumber').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_lumber').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_lumber').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_lumber').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_salt').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_salt.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('salt')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_salt').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_salt').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_salt').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_salt').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_medicaments').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_medicaments.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('medicaments')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_medicaments').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_medicaments').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_medicaments').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_medicaments').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_gems').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_gems.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('gems')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_gems').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_gems').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_gems').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_gems').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_pearls').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_pearls.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('pearls')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_pearls').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_pearls').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_pearls').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_pearls').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_amber').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_amber.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('amber')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_amber').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_amber').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_amber').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_amber').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_saltpeter').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_saltpeter.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('saltpeter')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_saltpeter').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_saltpeter').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_saltpeter').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_saltpeter').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_alum').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_alum.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('alum')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_alum').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_alum').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_alum').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_alum').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wine').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_wine.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('wine')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_wine').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_wine').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wine').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_wine').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_elephants').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_elephants.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('elephants')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_elephants').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_elephants').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_elephants').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_elephants').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_marble').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_marble.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('marble')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_marble').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_marble').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_marble').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_marble').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_mercury').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_mercury.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('mercury')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_mercury').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_mercury').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_mercury').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_mercury').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_saffron').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_saffron.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('saffron')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_saffron').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_saffron').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_saffron').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_saffron').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_pepper').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_pepper.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('pepper')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_pepper').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_pepper').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_pepper').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_pepper').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cloves').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_cloves.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('cloves')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_cloves').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_cloves').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cloves').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_cloves').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_chili').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_chili.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('chili')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_chili').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_chili').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_chili').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_chili').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cotton').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_cotton.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('cotton')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_cotton').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_cotton').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_cotton').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_cotton').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_sugar').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_sugar.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('sugar')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_sugar').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_sugar').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_sugar').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_sugar').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tobacco').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_tobacco.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('tobacco')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_tobacco').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_tobacco').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_tobacco').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_tobacco').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wool').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_wool.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('wool')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_wool').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_wool').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wool').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_wool').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wild_game').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_wild_game.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('wild_game')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_wild_game').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_wild_game').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wild_game').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_wild_game').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fur').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_fur.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('fur')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_fur').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_fur').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fur').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_fur').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fish').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_fish.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('fish')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_fish').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_fish').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fish').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_fish').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wheat').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_wheat.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('wheat')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_wheat').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_wheat').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_wheat').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_wheat').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_maize').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_maize.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('maize')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_maize').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_maize').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_maize').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_maize').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_rice').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_rice.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('rice')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_rice').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_rice').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_rice').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_rice').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_millet').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_millet.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('millet')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_millet').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_millet').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_millet').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_millet').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_legumes').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_legumes.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('legumes')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_legumes').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_legumes').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_legumes').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_legumes').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_potato').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_potato.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('potato')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_potato').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_potato').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_potato').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_potato').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_livestock').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_livestock.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('livestock')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_livestock').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_livestock').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_livestock').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_livestock').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_olives').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_olives.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('olives')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_olives').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_olives').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_olives').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_olives').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fruit').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_fruit.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('fruit')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_fruit').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_fruit').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_fruit').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_fruit').GetValue)|2]@gold!" }
+								}
+							}
+							TooltipManualTableField = {
+								blockoverride "visibility" { visible = "[GreaterThan_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_beeswax').GetValue, '(CFixedPoint)0')]" }
+								blockoverride "row_size" { maximumsize = { -1 22 } minimumsize = { -1 22 } }
+								blockoverride "field_content" {
+									block "table_field_margin" { margin = { 6 0 } }
+									spacing = 6
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/trade_goods/icon_goods_beeswax.dds" texture_density = 2 }
+									text_single = { align = left|nobaseline autoresize = no minimumsize = { 130 -1 } maximumsize = { 130 -1 } text = "[ShowGoodsName('beeswax')]" }
+									text_single = { align = center|nobaseline autoresize = no minimumsize = { 50 -1 } maximumsize = { 50 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_locations_beeswax').GetValue|0]" }
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Player.MakeScope.GetVariable('mnt_country_goods_value_beeswax').GetValue|2]@gold!" }
+									expand = {}
+									text_single = { align = right|nobaseline autoresize = no minimumsize = { 90 -1 } maximumsize = { 90 -1 } raw_text = "[Divide_CFixedPoint(Player.MakeScope.GetVariable('mnt_country_goods_value_beeswax').GetValue, Player.MakeScope.GetVariable('mnt_country_goods_locations_beeswax').GetValue)|2]@gold!" }
+								}
+							}
+					}
+				}
+			}
+		}
+	}
+}
