@@ -1,4 +1,6 @@
 ﻿mnt_estate_control_loss_wealth_local_wastage_ratio = 0.9
+mnt_location_pop_wealth_threshold_low = 0.01
+mnt_location_pop_wealth_threshold_high = 0.1
 
 mnt_location_wealth_total = {
 	if = {
@@ -70,10 +72,42 @@ mnt_location_pop_wealth_max = {
 
 mnt_location_pop_wealth_high = {
     value = global_var:mnt_location_pop_wealth_total_max
-    divide = 10
+    multiply = mnt_location_pop_wealth_threshold_high
 }
 
 mnt_location_pop_wealth_low = {
     value = global_var:mnt_location_pop_wealth_total_max
-    divide = 100
+    multiply = mnt_location_pop_wealth_threshold_low
+}
+
+# e.g. 0.01 -> 100
+mnt_location_pop_wealth_threshold_low_inverse = {
+	value = 1
+	divide = mnt_location_pop_wealth_threshold_low
+
+}
+
+# e.g. 0.1 -> 10
+mnt_location_pop_wealth_threshold_high_inverse = {
+	value = 1
+	divide = mnt_location_pop_wealth_threshold_high
+
+}
+
+# e.g. 0.1 -> 1.1
+mnt_location_pop_wealth_multiplier_high = {
+	value = 1
+	divide = {
+		value = 1
+		subtract = mnt_location_pop_wealth_threshold_high
+	}
+}
+
+# e.g. (0.1, 0.01) -> 11.1
+mnt_location_pop_wealth_multiplier_low = {
+	value = 1
+	divide = {
+		value = mnt_location_pop_wealth_threshold_high
+		subtract = mnt_location_pop_wealth_threshold_low
+	}
 }
