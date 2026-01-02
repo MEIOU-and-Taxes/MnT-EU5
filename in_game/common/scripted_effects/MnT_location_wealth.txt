@@ -178,15 +178,11 @@ mnt_init_estate_wealth_variables = {
 }
 
 mnt_init_estate_wealth_variables_per_estate = {
-	if = {
-		limit = { country_has_estate = estate_type:$estate$_estate }
-
-		if = { limit = { NOT = { has_variable = mnt_estate_wealth_$estate$ } } 							set_variable = { name = mnt_estate_wealth_$estate$ 							value = 0 } }
-		if = { limit = { NOT = { has_variable = mnt_estate_prev_wealth_$estate$ } } 					set_variable = { name = mnt_estate_prev_wealth_$estate$ 					value = 0 } }
-		if = { limit = { NOT = { has_variable = mnt_estate_wealth_income_lost_from_control_$estate$ } } set_variable = { name = mnt_estate_wealth_income_lost_from_control_$estate$ value = 0 } }
-		if = { limit = { NOT = { has_variable = mnt_estate_wealth_expected_income_$estate$ } } 			set_variable = { name = mnt_estate_wealth_expected_income_$estate$ 			value = 0 } }
-		if = { limit = { NOT = { has_variable = mnt_estate_wealth_untracked_change_$estate$ } } 		set_variable = { name = mnt_estate_wealth_untracked_change_$estate$ 		value = 0 } }
-	}
+	if = { limit = { NOT = { has_variable = mnt_estate_wealth_$estate$ } } 							set_variable = { name = mnt_estate_wealth_$estate$ 							value = 0 } }
+	if = { limit = { NOT = { has_variable = mnt_estate_prev_wealth_$estate$ } } 					set_variable = { name = mnt_estate_prev_wealth_$estate$ 					value = 0 } }
+	if = { limit = { NOT = { has_variable = mnt_estate_wealth_income_lost_from_control_$estate$ } } set_variable = { name = mnt_estate_wealth_income_lost_from_control_$estate$ value = 0 } }
+	if = { limit = { NOT = { has_variable = mnt_estate_wealth_expected_income_$estate$ } } 			set_variable = { name = mnt_estate_wealth_expected_income_$estate$ 			value = 0 } }
+	if = { limit = { NOT = { has_variable = mnt_estate_wealth_untracked_change_$estate$ } } 		set_variable = { name = mnt_estate_wealth_untracked_change_$estate$ 		value = 0 } }
 }
 
 mnt_update_estate_wealth_pools = {
@@ -242,31 +238,33 @@ mnt_update_estate_wealth_income_per_estate = {
 
 		estate_type:$estate$_estate = { save_temporary_scope_as = target_estate }
 
-		set_variable = {
-			name = mnt_estate_wealth_income_lost_from_control_$estate$
-			value = {
-				every_owned_location = {
-					if = {
-						limit = { local_control > 0 }
-						add = {
-							value = location_tax_base
-							divide = local_control
-							subtract = location_tax_base
-							multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage 
-							multiply = "local_relative_estate_power(scope:target_estate)"
-						}
-					}
-					else = {
-						calc_location_total_profit_value_added = yes
-						add = {
-							value = local_var:mnt_loc_total_value_added
-							multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage 
-							multiply = "local_relative_estate_power(scope:target_estate)"
-						}
+		every_owned_location = {
+			if = {
+				limit = { local_control > 0 }
+				set_variable = {
+					name = mnt_estate_wealth_income_lost_from_control_$estate$
+					value = {
+						value = location_tax_base
+						divide = local_control
+						subtract = location_tax_base
+						multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage
+						multiply = "local_relative_estate_power(scope:target_estate)"
+						min = 0
 					}
 				}
 			}
-			min = 0
+			else = {
+				calc_location_total_profit_value_added = yes
+				set_variable = {
+					name = mnt_estate_wealth_income_lost_from_control_$estate$
+					value = {
+						value = local_var:mnt_loc_total_value_added
+						multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage
+						multiply = "local_relative_estate_power(scope:target_estate)"
+						min = 0
+					}
+				}
+			}
 		}
 
 		random_estate = {
