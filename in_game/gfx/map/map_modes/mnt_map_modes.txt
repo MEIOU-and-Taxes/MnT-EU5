@@ -1132,15 +1132,28 @@ location_wealth = {
 				}
 			}
 			else_if = {
-				limit = { var:mnt_location_pop_wealth_total > mnt_location_pop_wealth_half_max }
+				limit = { var:mnt_location_pop_wealth_total > mnt_location_pop_wealth_high }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_HIGH
+					max_color = define:NMapColors|MAP_COLOR_TOP
+					factor = {
+						value = var:mnt_location_pop_wealth_total
+						divide = global_var:mnt_location_pop_wealth_total_max
+						subtract = 0.1
+						multiply = 1.11
+					}
+				}
+			}
+			else_if = {
+				limit = { var:mnt_location_pop_wealth_total > mnt_location_pop_wealth_low }
 				lerp = {
 					min_color = define:NMapColors|MAP_COLOR_MID
 					max_color = define:NMapColors|MAP_COLOR_HIGH
 					factor = {
 						value = var:mnt_location_pop_wealth_total
 						divide = global_var:mnt_location_pop_wealth_total_max
-						subtract = 0.5
-						multiply = 2
+						subtract = 0.01
+						multiply = 11.1
 					}
 				}
 			}
@@ -1151,7 +1164,7 @@ location_wealth = {
 					factor = {
 						value = var:mnt_location_pop_wealth_total
 						divide = global_var:mnt_location_pop_wealth_total_max
-						multiply = 2
+						multiply = 100
 					}
 				}
 			}
@@ -1164,10 +1177,14 @@ location_wealth = {
 
 	legend_key = {
 		desc = "mapmode_location_wealth_max"
+		color = define:NMapColors|MAP_COLOR_TOP
+	}
+	legend_key = {
+		desc = "mapmode_location_wealth_high"
 		color = define:NMapColors|MAP_COLOR_HIGH
 	}
 	legend_key = {
-		desc = "mapmode_location_wealth_half"
+		desc = "mapmode_location_wealth_medium"
 		color = define:NMapColors|MAP_COLOR_MID
 	}
 	legend_key = {
