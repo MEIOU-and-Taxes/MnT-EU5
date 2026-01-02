@@ -1,0 +1,350 @@
+@zoom_step_flatmap_far = 	21 	# the furthest zoom out
+@zoom_step_flatmap = 		12 	# zoom step where the paper map kicks in
+@zoom_step_far = 			11	# furthest zoom before the paper map
+@zoom_step_mid = 			4 	# intorduce some color
+@zoom_step_near = 			2	# closest zoom
+
+# Zoomed in terrain map
+@hollow_near_gradient_alpha_inside = 	0
+@hollow_near_gradient_alpha_outside = 	0
+@hollow_near_gradient_width = 			0.0
+@hollow_near_gradient_color_mult = 		0.25
+@hollow_near_edge_width = 				0
+@hollow_near_edge_sharpness = 			0.0000
+@hollow_near_edge_alpha = 				0.5
+@hollow_near_edge_color_mult = 			0.7
+@hollow_near_before_lighting_blend = 	0.5
+@hollow_near_after_lighting_blend = 	0
+
+# Mid zoom terrain map
+@hollow_mid_gradient_alpha_inside = 	0.00
+@hollow_mid_gradient_alpha_outside = 	0.25
+@hollow_mid_gradient_width = 			0.1
+@hollow_mid_gradient_color_mult = 		@hollow_near_gradient_color_mult
+@hollow_mid_edge_width = 				0.00
+@hollow_mid_edge_sharpness = 			@hollow_near_edge_sharpness
+@hollow_mid_edge_alpha = 				@hollow_near_edge_alpha
+@hollow_mid_edge_color_mult = 			@hollow_near_edge_color_mult
+@hollow_mid_before_lighting_blend = 	@hollow_near_before_lighting_blend
+@hollow_mid_after_lighting_blend = 		@hollow_near_after_lighting_blend
+
+# Zoomed out terrain map
+@hollow_far_gradient_alpha_inside = 	0.25
+@hollow_far_gradient_alpha_outside = 	1
+@hollow_far_gradient_width = 			0.25
+@hollow_far_gradient_color_mult = 		@hollow_mid_gradient_color_mult
+@hollow_far_edge_width = 				0.0
+@hollow_far_edge_sharpness = 			@hollow_mid_edge_sharpness
+@hollow_far_edge_alpha = 				0.0
+@hollow_far_edge_color_mult = 			@hollow_mid_edge_color_mult
+@hollow_far_before_lighting_blend = 	@hollow_mid_before_lighting_blend
+@hollow_far_after_lighting_blend = 		@hollow_mid_after_lighting_blend
+
+# Paper map
+@flatmap_gradient_alpha_inside = 		0.75
+@flatmap_gradient_alpha_outside = 		1
+@flatmap_gradient_width = 				0.25
+@flatmap_gradient_color_mult = 			0.9
+@flatmap_edge_width = 					0.03
+@flatmap_edge_sharpness = 				0.01
+@flatmap_edge_alpha = 					1.0
+@flatmap_edge_color_mult = 				@hollow_near_edge_color_mult
+@flatmap_before_lighting_blend = 		0.5
+@flatmap_after_lighting_blend = 		0.5
+
+# Paper map (far out)
+@flatmap_far_gradient_alpha_inside = 	@flatmap_gradient_alpha_inside
+@flatmap_far_gradient_alpha_outside = 	@flatmap_gradient_alpha_outside
+@flatmap_far_gradient_width = 			@[flatmap_edge_color_mult*1.25]
+@flatmap_far_gradient_color_mult = 		@flatmap_gradient_color_mult
+@flatmap_far_edge_width = 				@[flatmap_edge_width*1.5]
+@flatmap_far_edge_sharpness = 			@flatmap_edge_sharpness
+@flatmap_far_edge_alpha = 				@flatmap_edge_alpha
+@flatmap_far_edge_color_mult = 			@flatmap_edge_color_mult
+@flatmap_far_before_lighting_blend = 	@flatmap_before_lighting_blend
+@flatmap_far_after_lighting_blend = 	@flatmap_after_lighting_blend
+
+# Zoomed out political map
+@filled_far_gradient_alpha_inside = 	1
+@filled_far_gradient_alpha_outside = 	1
+@filled_far_gradient_width = 			1
+@filled_far_gradient_color_mult = 		0.4
+@filled_far_edge_width = 				0.03
+@filled_far_edge_sharpness = 			@hollow_mid_edge_sharpness
+@filled_far_edge_alpha = 				1
+@filled_far_edge_color_mult = 			0.3
+@filled_far_before_lighting_blend = 	1
+@filled_far_after_lighting_blend = 		0.5
+# Zoomed in political map
+@filled_near_gradient_alpha_inside = 	1
+@filled_near_gradient_alpha_outside = 	1
+@filled_near_gradient_width = 			1
+@filled_near_gradient_color_mult = 		0.4
+@filled_near_edge_width = 				0.03
+@filled_near_edge_sharpness = 			@hollow_mid_edge_sharpness
+@filled_near_edge_alpha = 				1
+@filled_near_edge_color_mult = 			0.3
+@filled_near_before_lighting_blend = 	1
+@filled_near_after_lighting_blend = 	0.25
+
+# Map mode that works well with data and heatmaps
+@data_gradient_alpha_inside = 			1
+@data_gradient_alpha_outside = 			1
+@data_gradient_width = 					@flatmap_far_gradient_width
+@data_gradient_color_mult = 			@flatmap_far_gradient_color_mult
+@data_edge_width = 						0
+@data_edge_sharpness = 					@flatmap_far_edge_sharpness
+@data_edge_alpha = 						0
+@data_edge_color_mult = 				0
+@data_before_lighting_blend = 			@flatmap_far_before_lighting_blend
+@data_after_lighting_blend = 			@flatmap_far_after_lighting_blend
+
+missing_control = {
+	map_color = {
+	 	if = {
+	 		limit = {
+	 			has_owner = yes
+	 			is_owned_or_owned_by_subjects_or_below_of = scope:actor
+				max_control != local_control
+	 		}
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+
+				factor = {
+					value = max_control
+					subtract = local_control
+					add = 0.25 #0 for 25% control missing, 1.25 for 100% excess
+					divide = 1.25 #0 for 25% control missing, 1 for 25% excess
+				}
+			}
+		}
+	}
+
+	tooltip_key = {
+	}
+
+	legend_key = {
+		desc = "CURRENT_CONTROL_BELOW_MAX"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "CURRENT_CONTROL_ABOVE_MAX"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
+
+	small_map_names = location
+	medium_map_names = province
+	large_map_names = province
+
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+
+	map_lines_mode = ToCapital #experimental
+
+	flatmap_behaviour = Always
+	use_fow = no
+
+	category = economy
+	index = 2
+
+	map_markers = {
+		market_marker = no
+		fort_marker = no
+		toll_marker = no
+		unit_marker = no
+	}
+
+	gradient_parameters = {
+		zoom_step = @zoom_step_near
+
+		gradient_alpha_inside = 	@data_gradient_alpha_inside
+		gradient_alpha_outside = 	@data_gradient_alpha_outside
+		gradient_width = 			@data_gradient_width
+		gradient_color_mult =		@data_gradient_color_mult
+		edge_width = 				@data_edge_width
+		edge_sharpness = 			@data_edge_sharpness
+		edge_alpha = 				@data_edge_alpha
+		edge_color_mult = 			@data_edge_color_mult
+		before_lighting_blend =		@data_before_lighting_blend
+		after_lighting_blend =		@data_after_lighting_blend
+	}
+
+	refresh_colors_on_selection_change = yes
+	color_refresh_counters = { LocationControlChanged }
+	color_and_names_refresh_counters = { LocationOwnerChanged CountryStatus }
+}
+
+max_control = {
+	map_color = {
+		if = {
+			limit = {
+				has_owner = yes
+				owner = scope:actor
+			}
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+
+				factor = {
+					value = max_control
+				}
+			}
+		}
+	}
+	tooltip_key = {
+	}
+
+	small_map_names = location_control
+	medium_map_names = location_control
+	large_map_names = province_control
+
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+
+	map_lines_mode = ToCapital #experimental
+
+	flatmap_behaviour = Always
+	use_fow = no
+
+	category = economy
+	index = 2
+
+	map_markers = {
+		market_marker = no
+		fort_marker = no
+		toll_marker = no
+		unit_marker = no
+	}
+
+	gradient_parameters = {
+		zoom_step = @zoom_step_near
+
+		gradient_alpha_inside = 	@data_gradient_alpha_inside
+		gradient_alpha_outside = 	@data_gradient_alpha_outside
+		gradient_width = 			@data_gradient_width
+		gradient_color_mult =		@data_gradient_color_mult
+		edge_width = 				@data_edge_width
+		edge_sharpness = 			@data_edge_sharpness
+		edge_alpha = 				@data_edge_alpha
+		edge_color_mult = 			@data_edge_color_mult
+		before_lighting_blend =		@data_before_lighting_blend
+		after_lighting_blend =		@data_after_lighting_blend
+	}
+
+	refresh_colors_on_selection_change = yes
+	color_refresh_counters = { LocationControlChanged }
+	color_and_names_refresh_counters = { LocationOwnerChanged CountryStatus }
+}
+
+max_control_with_location_rank = {
+	map_color = {
+		if = {
+			limit = {
+				has_owner = yes
+				owner = scope:actor
+			}
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+
+				factor = {
+					value = max_control
+				}
+			}
+		}
+	}
+	secondary_map_color = {
+		if = {
+			limit = {
+				has_owner = yes
+				owner = scope:actor
+				location_rank = location_rank:rural_settlement
+			}
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+
+				factor = {
+					value = max_control
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				has_owner = yes
+				owner = scope:actor
+				location_rank = location_rank:town
+			}
+			value = blue #grey in Location Rank vanilla mapmode, but it is overlapping with colors present in lerp
+		}
+		else_if = {
+			limit = {
+				has_owner = yes
+				owner = scope:actor
+				location_rank = location_rank:city
+			}
+			value = purple #yellow in Location Rank vanilla mapmode, but it is overlapping with colors present in lerp
+		}
+	}
+
+	tooltip_key = {
+	}
+
+	legend_key = {
+		desc = "town"
+		color = purple
+	}
+
+	legend_key = {
+		desc = "city"
+		color = blue
+	}
+
+	small_map_names = location_control
+	medium_map_names = location_control
+	large_map_names = province_control
+
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+
+	map_lines_mode = ToCapital #experimental
+
+	flatmap_behaviour = Always
+	use_fow = no
+
+	category = economy
+	index = 2
+
+	map_markers = {
+		market_marker = no
+		fort_marker = no
+		toll_marker = no
+		unit_marker = no
+	}
+
+	gradient_parameters = {
+		zoom_step = @zoom_step_near
+
+		gradient_alpha_inside = 	@data_gradient_alpha_inside
+		gradient_alpha_outside = 	@data_gradient_alpha_outside
+		gradient_width = 			@data_gradient_width
+		gradient_color_mult =		@data_gradient_color_mult
+		edge_width = 				@data_edge_width
+		edge_sharpness = 			@data_edge_sharpness
+		edge_alpha = 				@data_edge_alpha
+		edge_color_mult = 			@data_edge_color_mult
+		before_lighting_blend =		@data_before_lighting_blend
+		after_lighting_blend =		@data_after_lighting_blend
+	}
+
+	refresh_colors_on_selection_change = yes
+	color_refresh_counters = { LocationControlChanged }
+	color_and_names_refresh_counters = { LocationOwnerChanged CountryStatus }
+}
