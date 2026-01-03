@@ -27,6 +27,7 @@ Date: 2025-11-30
 #### Bugfixes
 
 - Stability map mode works, where it is red at \<25 and green at \>50 stability
+- Backend error fixes
 
 #### Balancing
 
