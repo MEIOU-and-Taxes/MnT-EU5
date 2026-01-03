@@ -175,6 +175,7 @@ mnt_init_estate_wealth_variables = {
 		mnt_init_estate_wealth_variables_per_estate = { estate = dhimmi }
 		mnt_init_estate_wealth_variables_per_estate = { estate = cossacks }
 	}
+	if = { limit = { check_valid_local_wealth_test_country = yes } set_local_variable = is_valid_local_wealth_test_country}
 }
 
 mnt_init_estate_wealth_variables_per_estate = {
@@ -193,7 +194,10 @@ mnt_update_estate_wealth_pools = {
 	mnt_estate_wealth_export_current_value_update_prev_per_estate = { estate = peasants }
 	mnt_estate_wealth_export_current_value_update_prev_per_estate = { estate = tribes }
 
+	mnt_debug_local_economy_estate_wealth = yes
+
 	# Update Estate Wealth Income
+
 	mnt_update_estate_wealth_income_per_estate = { estate = nobles }
 	mnt_update_estate_wealth_income_per_estate = { estate = clergy }
 	mnt_update_estate_wealth_income_per_estate = { estate = burghers }
@@ -201,6 +205,9 @@ mnt_update_estate_wealth_pools = {
 	mnt_update_estate_wealth_income_per_estate = { estate = tribes }
 	mnt_update_estate_wealth_income_per_estate = { estate = dhimmi }
 	mnt_update_estate_wealth_income_per_estate = { estate = cossacks }
+
+
+	mnt_debug_local_economy_estate_wealth_income_per_estate = yes
 
 	# Update Estate Wealth Untracked Income
 	mnt_update_estate_wealth_untracked_income_per_estate = { estate = nobles }
@@ -220,7 +227,7 @@ mnt_estate_wealth_export_current_value_update_prev_per_estate = {
 			set_variable = { 
 				name = mnt_estate_prev_wealth_$estate$
 				value = var:mnt_estate_wealth_$estate$
-			}	
+			}
 		}
 
 		estate_type:$estate$_estate = { save_temporary_scope_as = target_estate }
@@ -237,7 +244,7 @@ mnt_update_estate_wealth_income_per_estate = {
 		limit = { country_has_estate = estate_type:$estate$_estate }
 
 		estate_type:$estate$_estate = { save_temporary_scope_as = target_estate }
-
+		mnt_debug_print_estate = { estate = $estate$ }
 		every_owned_location = {
 			if = {
 				limit = { local_control > 0 }
@@ -254,6 +261,7 @@ mnt_update_estate_wealth_income_per_estate = {
 				}
 			}
 			else = {
+				mnt_debug_print_location_control_zero = yes
 				calc_location_total_profit_value_added = yes
 				set_variable = {
 					name = mnt_estate_wealth_income_lost_from_control_$estate$
@@ -390,5 +398,59 @@ update_location_wealth = {
 
 		# Update Location Wealth Pools based on Estate Power and Pop Types
 		mnt_update_location_wealth_pools = yes
+	}
+}
+
+mnt_debug_local_economy_estate_wealth = {
+	if = { limit = { has_local_variable = is_valid_local_wealth_test_country }
+		if = { limit = { has_variable = mnt_estate_wealth_nobles }
+			error_log = "::LW:mnt_estate_prev_wealth_nobles:[THIS.GetVariable('mnt_estate_prev_wealth_nobles').GetValue]" }
+		error_log = "::LW:mnt_estate_wealth_nobles:[THIS.GetVariable('mnt_estate_wealth_nobles').GetValue]"
+		if = { limit = { has_variable = mnt_estate_wealth_clergy }
+			error_log = "::LW:mnt_estate_prev_wealth_clergy:[THIS.GetVariable('mnt_estate_prev_wealth_clergy').GetValue]" }
+		error_log = "::LW:mnt_estate_wealth_clergy:[THIS.GetVariable('mnt_estate_wealth_clergy').GetValue]"
+		if = { limit = { has_variable = mnt_estate_wealth_burghers }
+			error_log = "::LW:mnt_estate_prev_wealth_burghers:[THIS.GetVariable('mnt_estate_prev_wealth_burghers').GetValue]" }
+		error_log = "::LW:mnt_estate_wealth_burghers:[THIS.GetVariable('mnt_estate_wealth_burghers').GetValue]"
+		if = { limit = { has_variable = mnt_estate_wealth_peasants }
+			error_log = "::LW:mnt_estate_prev_wealth_peasants:[THIS.GetVariable('mnt_estate_prev_wealth_peasants').GetValue]" }
+		error_log = "::LW:mnt_estate_wealth_peasants:[THIS.GetVariable('mnt_estate_wealth_peasants').GetValue]"
+		if = { limit = { has_variable = mnt_estate_wealth_tribes }
+			error_log = "::LW:mnt_estate_prev_wealth_tribes:[THIS.GetVariable('mnt_estate_prev_wealth_tribes').GetValue]" }
+		error_log = "::LW:mnt_estate_wealth_tribes:[THIS.GetVariable('mnt_estate_wealth_tribes').GetValue]"
+	}
+}
+
+mnt_debug_print_estate = {
+	if = { limit = { has_local_variable = is_valid_local_wealth_test_country } error_log = "::LW:$estate$" }
+}
+
+mnt_debug_print_location_control_zero = {
+	if = { limit = { has_local_variable = is_valid_local_wealth_test_country } error_log = "::LW:L(C=0):[THIS.GetLocation.GetNameWithNoTooltip]" }
+}
+
+mnt_debug_print_building_profit = {
+	if = { limit = { has_local_variable = is_valid_local_wealth_test_country }
+		error_log = "::LW:mnt_loc_building_profit:[THIS.GetBuilding.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('mnt_loc_building_profit').GetValue]" }
+}
+
+mnt_debug_print_location_value_added = {
+	if = { limit = { has_local_variable = is_valid_local_wealth_test_country }
+		error_log = "::LW:mnt_loc_rgo_value:[SCOPE.GetLocalVariable('mnt_loc_rgo_value').GetValue]:mnt_loc_total_value_added:[SCOPE.GetLocalVariable('mnt_loc_total_value_added').GetValue]" }
+}
+
+
+mnt_debug_local_economy_estate_wealth_income_per_estate = {
+	if = { limit = { has_local_variable = is_valid_local_wealth_test_country }
+		if = { limit = { country_has_estate = estate_type:nobles_estate }
+			error_log = "::LW:mnt_estate_wealth_income_lost_from_control_nobles:[THIS.GetVariable('mnt_estate_wealth_income_lost_from_control_nobles').GetValue]:mnt_estate_wealth_expected_income_nobles:[THIS.GetVariable('mnt_estate_wealth_expected_income_nobles').GetValue]" }
+		if = { limit = { country_has_estate = estate_type:clergy_estate }
+			error_log = "::LW:mnt_estate_wealth_income_lost_from_control_clergy:[THIS.GetVariable('mnt_estate_wealth_income_lost_from_control_clergy').GetValue]:mnt_estate_wealth_expected_income_clergy:[THIS.GetVariable('mnt_estate_wealth_expected_income_clergy').GetValue]" }
+		if = { limit = { country_has_estate = estate_type:burghers_estate }
+			error_log = "::LW:mnt_estate_wealth_income_lost_from_control_burghers:[THIS.GetVariable('mnt_estate_wealth_income_lost_from_control_burghers').GetValue]:mnt_estate_wealth_expected_income_burghers:[THIS.GetVariable('mnt_estate_wealth_expected_income_burghers').GetValue]" }
+		if = { limit = { country_has_estate = estate_type:peasants_estate }
+			error_log = "::LW:mnt_estate_wealth_income_lost_from_control_peasants:[THIS.GetVariable('mnt_estate_wealth_income_lost_from_control_peasants').GetValue]:mnt_estate_wealth_expected_income_peasants:[THIS.GetVariable('mnt_estate_wealth_expected_income_peasants').GetValue]" }
+		if = { limit = { country_has_estate = estate_type:tribes_estate }
+			error_log = "::LW:mnt_estate_wealth_income_lost_from_control_tribes:[THIS.GetVariable('mnt_estate_wealth_income_lost_from_control_tribes').GetValue]:mnt_estate_wealth_expected_income_tribes:[THIS.GetVariable('mnt_estate_wealth_expected_income_tribes').GetValue]" }
 	}
 }
