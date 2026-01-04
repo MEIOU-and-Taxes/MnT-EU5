@@ -1,0 +1,599 @@
+# A crude heuristic before we have proper location level wealth tracking
+# Calculate the share of potential tax base of the losing side's locations
+# Then, transfer that percentage of the losing side's estate to the winner's corresponding ones
+# When the winning side does not have that estate, transfer it to their treasury
+# It's not very refined, just a first step to solve the economic leakage
+
+# When a peace is signed, the order of execution is
+# on_pre_losing_war => on_took_location_in_peace_treaty => on_losing_war
+# Both on_pre_losing_war and on_losing_war seems to be triggered twice though
+
+#root = country, scope:winner = country, scope:loser = country, scope:war = war
+on_pre_losing_war = {
+    on_actions = {
+        MnT_on_pre_losing_war
+    }
+}
+
+#root = winner, scope:location = location, scope:winner = new owner, scope:loser = old owner
+on_took_location_in_peace_treaty = {
+    on_actions = {
+        MnT_took_location_in_peace_treaty
+    }
+}
+
+#root = country, scope:winner = country, scope:loser = country, scope:war = war
+on_losing_war = {
+    on_actions = {
+        MnT_on_losing_war
+    }
+}
+
+# fired before the annexation happens; root =  country doing the annexing ,  scope:target = country being annexed
+on_annex = {
+    on_actions = {
+        MnT_on_annex
+    }
+}
+
+#root = country, scope:winner = country, scope:loser = country, scope:war = war
+MnT_on_pre_losing_war = {
+    effect = {
+        scope:loser = {
+            set_local_variable = {
+                name = total_potential_tax_base
+                value = 0
+            }
+            every_owned_location = {
+                limit = { local_control > 0 }
+                set_variable = {
+                    name = potential_tax_base
+                    value = {
+                        value = location_tax_base
+                        divide = local_control
+                    }
+                }
+                change_local_variable = {
+                    name = total_potential_tax_base
+                    add = var:potential_tax_base
+                }
+
+            }
+            set_variable = {
+                name = total_potential_tax_base
+                value = local_var:total_potential_tax_base
+            }
+            set_variable = {
+                name = estate_nobles_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_burghers_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_clergy_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_peasants_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_tribes_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_dhimmi_war_lost
+                value = 0
+            }
+            set_variable = {
+                name = estate_cossacks_war_lost
+                value = 0
+            }
+            # My testing suggests that on_losing_war is always executed twice
+            # We need to ensure that we don't transfer wealth twice
+            set_variable = {
+                name = on_losing_war_not_triggered
+                value = 1
+            }
+        }
+    }
+}
+
+#root = winner, scope:location = location, scope:winner = new owner, scope:loser = old owner
+#Note that the location's ownership is already transferred when this triggers
+MnT_took_location_in_peace_treaty = {
+    effect = {
+        scope:location = {
+            set_local_variable = {
+                # Proportion of total national estates wealth to be transferred because of this location
+                name = local_tax_base_share
+                value = {
+                    value = var:potential_tax_base
+                    divide = scope:loser.var:total_potential_tax_base
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:nobles_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_nobles_war_lost
+                        add = {
+                            value = "estate(estate_type:nobles_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:burghers_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_burghers_war_lost
+                        add = {
+                            value = "estate(estate_type:burghers_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:clergy_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_clergy_war_lost
+                        add = {
+                            value = "estate(estate_type:clergy_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:peasants_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_peasants_war_lost
+                        add = {
+                            value = "estate(estate_type:peasants_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:tribes_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_tribes_war_lost
+                        add = {
+                            value = "estate(estate_type:tribes_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:dhimmi_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_dhimmi_war_lost
+                        add = {
+                            value = "estate(estate_type:dhimmi_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    scope:loser = {
+                        country_has_estate = estate_type:cossacks_estate
+                    }
+                }
+                scope:loser = {
+                    change_variable = {
+                        name = estate_cossacks_war_lost
+                        add = {
+                            value = "estate(estate_type:cossacks_estate).estate_gold"
+                            multiply = local_var:local_tax_base_share
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#root = country, scope:winner = country, scope:loser = country, scope:war = war
+MnT_on_losing_war = {
+    trigger = {
+        scope:loser = {
+            has_variable = on_losing_war_not_triggered
+        }
+    }
+    effect = {
+        scope:loser = {
+            remove_variable = on_losing_war_not_triggered
+        }
+        scope:winner= {
+            if = {
+                limit = {
+                    country_has_estate = estate_type:nobles_estate
+                }
+                "estate(estate_type:nobles_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_nobles_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_nobles_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:burghers_estate
+                }
+                "estate(estate_type:burghers_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_burghers_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_burghers_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:clergy_estate
+                }
+                "estate(estate_type:clergy_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_clergy_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_clergy_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:peasants_estate
+                }
+                "estate(estate_type:peasants_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_peasants_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_peasants_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:tribes_estate
+                }
+                "estate(estate_type:tribes_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_tribes_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_tribes_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:dhimmi_estate
+                }
+                "estate(estate_type:dhimmi_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_dhimmi_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_dhimmi_war_lost
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:cossacks_estate
+                }
+                "estate(estate_type:cossacks_estate)" = {
+                    estate_add_gold = {
+                        value = scope:loser.var:estate_cossacks_war_lost
+                    }
+                }
+            } else = {
+                add_gold = {
+                    value = scope:loser.var:estate_cossacks_war_lost
+                }
+            }
+        }
+
+        scope:loser = {
+            "estate(estate_type:nobles_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_nobles_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:burghers_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_burghers_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:clergy_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_clergy_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:peasants_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_peasants_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:tribes_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_tribes_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:dhimmi_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_dhimmi_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+            "estate(estate_type:cossacks_estate)" = {
+                estate_add_gold = {
+                    value = {
+                        value = scope:loser.var:estate_cossacks_war_lost
+                        multiply = -1
+                    }
+                }
+            }
+        }
+    }
+}
+
+# fired before the annexation happens; root =  country doing the annexing ,  scope:target = country being annexed
+MnT_on_annex = {
+    trigger = {
+        scope:target = {
+            NOT = {
+                has_variable = on_annex_triggered
+            }
+        }
+    }
+    effect = {
+        scope:target = {
+            set_variable = {
+                name = on_annex_triggered
+                value = 1
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:nobles_estate
+                }
+                if = {
+                    limit = {
+                        root = {
+                            country_has_estate = estate_type:nobles_estate
+                        }
+                    }
+                    "root.estate(estate_type:nobles_estate)" = {
+						print_annex_estate_before = { text = "nobles:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:nobles_estate).estate_gold" }
+                        estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "nobles" }
+                    }
+
+                } else = {
+                    root = {
+						print_annex_crown_before = { text = "crown<-nobles:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:nobles_estate).estate_gold" }
+                        add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-nobles" }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:burghers_estate
+                }
+                if = {
+                    limit = {
+                        root = {
+                            country_has_estate = estate_type:burghers_estate
+                        }
+                    }
+                    "root.estate(estate_type:burghers_estate)" = {
+						print_annex_estate_before = { text = "burghers:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:burghers_estate).estate_gold" }
+                        estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "burghers" }
+                    }
+                } else = {
+                    root = {
+						print_annex_crown_before = { text = "crown<-burghers:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:burghers_estate).estate_gold" }
+                        add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-burghers" }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:clergy_estate
+                }
+                if = {
+                    limit = {
+                        root = {
+                            country_has_estate = estate_type:clergy_estate
+                        }
+                    }
+                    "root.estate(estate_type:clergy_estate)" = {
+						print_annex_estate_before = { text = "clergy:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:clergy_estate).estate_gold" }
+                        estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "clergy" }
+                    }
+                } else = {
+                    root = {
+						print_annex_crown_before = { text = "crown<-clergy:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:clergy_estate).estate_gold" }
+                        add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-clergy" }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:peasants_estate
+                }
+                if = {
+                    limit = {
+                        root = {
+                            country_has_estate = estate_type:peasants_estate
+                        }
+                    }
+                    "root.estate(estate_type:peasants_estate)" = {
+						print_annex_estate_before = { text = "peasants:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:peasants_estate).estate_gold" }
+                        estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "peasants" }
+                    }
+                } else = {
+                    root = {
+						print_annex_crown_before = { text = "crown<-peasants:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:peasants_estate).estate_gold" }
+                        add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-peasants" }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:tribes_estate
+                }
+                if = {
+                    limit = {
+                        root = {
+                            country_has_estate = estate_type:tribes_estate
+                        }
+                    }
+                    "root.estate(estate_type:tribes_estate)" = {
+						print_annex_estate_before = { text = "tribes:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:tribes_estate).estate_gold" }
+                        estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "tribes" }
+                    }
+                } else = {
+                    root = {
+                        print_annex_crown_before = { text = "crown<-tribes:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:tribes_estate).estate_gold" }
+                        add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-tribes" }
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    country_has_estate = estate_type:dhimmi_estate
+                }
+                if = {
+                    limit = {
+                        root = {
+                            country_has_estate = estate_type:dhimmi_estate
+                        }
+                    }
+                    "root.estate(estate_type:dhimmi_estate)" = {
+						print_annex_estate_before = { text = "dhimmi:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:dhimmi_estate).estate_gold" }
+                        estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "dhimmi" }
+                    }
+                } else = {
+                    root = {
+						print_annex_crown_before = { text = "crown<-dhimmi:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:dhimmi_estate).estate_gold" }
+                        add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-dhimmi" }
+                    }
+                }
+            }
+            if = {
+				limit = {
+					country_has_estate = estate_type:cossacks_estate
+				}
+				if = {
+					limit = {
+						root = {
+							country_has_estate = estate_type:cossacks_estate
+						}
+					}
+					"root.estate(estate_type:cossacks_estate)" = {
+						print_annex_estate_before = { text = "cossacks:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:cossacks_estate).estate_gold" }
+						estate_add_gold = { value = local_var:ducats_to_add }
+						print_annex_estate_after = { text = "cossacks" }
+					}
+				} else = {
+					root = {
+						print_annex_crown_before = { text = "crown<-cossacks:Before" }
+						set_local_variable = { name = ducats_to_add value = "scope:target.estate(estate_type:cossacks_estate).estate_gold" }
+						add_gold = { value = local_var:ducats_to_add }
+						print_annex_crown_after = { text = "crown<-cossacks" }
+					}
+				}
+			}
+        }
+    }
+}
