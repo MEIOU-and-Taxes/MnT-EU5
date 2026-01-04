@@ -23,7 +23,7 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
 from tools.plot import log_parser
-from tools.shared.fetch_logs import get_log_directory_from_config
+from tools.shared.fetch_logs import get_from_config
 
 TARGET_FILE_NAME_ROOT = 'error'
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
 		self.setStyleSheet("QPushButton:checked { background-color: #cce8ff; border: 1px solid #99c8ef; }")
 
 		# --- Data and State ---
-		self.log_folder = get_log_directory_from_config()
+		self.log_folder = get_from_config('Paths', 'log_directory')
 		self.logs = []
 		self.data = ""
 		self.graphs = {}
