@@ -337,16 +337,23 @@ goods_value = {
 	 	if = {
 	 		limit = {
 	 			has_owner = yes
-	 			owner = { is_ai = no }
-				has_variable = mnt_loc_building_profit
+	 			owner = {
+					is_ai = no
+					has_variable = mnt_top_total_value_1
+					var:mnt_top_total_value_1 > 0
+				}
+	 			OR = {
+					has_variable = mnt_loc_building_profit
+					has_variable = mnt_rural_goods_value
+				}
 	 		}
 			lerp = {
 				min_color = define:NMapColors|MAP_COLOR_LOW
 				max_color = define:NMapColors|MAP_COLOR_HIGH
 
 				factor = {
-					value = var:mnt_goods_value_total
-					divide = 100 # adjust scaling
+					value = mnt_location_total_goods_value
+					divide = owner.var:mnt_top_total_value_1 # scale relative to top total producer in owner
 				}
 			}
 		}
@@ -372,7 +379,7 @@ goods_value = {
 	map_markers = {
 		all = no
 	}
-	
+
 	gradient_parameters = {
 		zoom_step = @zoom_step_near
 
@@ -387,17 +394,21 @@ goods_value = {
 		before_lighting_blend =		@data_before_lighting_blend
 		after_lighting_blend =		@data_after_lighting_blend
 	}
-	
+
 	color_refresh_counters = { Month }
-color_and_names_refresh_counters = { LocationVariableChanged LocationOwnerChanged }
+	color_and_names_refresh_counters = { LocationVariableChanged LocationOwnerChanged }
 }
 
 goods_value_urban = {
-	map_color = {	
+	map_color = {
 	 	if = {
 	 		limit = {
 	 			has_owner = yes
-	 			owner = { is_ai = no }
+	 			owner = {
+					is_ai = no
+					has_variable = mnt_top_urban_value_1
+					var:mnt_top_urban_value_1 > 0
+				}
 				has_variable = mnt_loc_building_profit
 	 		}
 			lerp = {
@@ -405,7 +416,7 @@ goods_value_urban = {
 				max_color = define:NMapColors|MAP_COLOR_HIGH
 
 				factor = {
-					value = var:mnt_loc_building_profit
+					value = mnt_location_urban_goods_value
 					divide = owner.var:mnt_top_urban_value_1 # scale relative to top urban producer in owner
 				}
 			}
@@ -413,7 +424,7 @@ goods_value_urban = {
 	}
 
 	tooltip_key = { value = mapmode_goods_value_urban_location_tooltip }
-	
+
 	small_map_names = location
 	medium_map_names = location
 	large_map_names = location
@@ -432,7 +443,7 @@ goods_value_urban = {
 	map_markers = {
 		all = no
 	}
-	
+
 	gradient_parameters = {
 		zoom_step = @zoom_step_near
 
@@ -447,25 +458,29 @@ goods_value_urban = {
 		before_lighting_blend =		@data_before_lighting_blend
 		after_lighting_blend =		@data_after_lighting_blend
 	}
-	
+
 	color_refresh_counters = { Month }
 	color_and_names_refresh_counters = { LocationVariableChanged LocationOwnerChanged }
 }
 
 goods_value_rural = {
-	map_color = {	
+	map_color = {
 	 	if = {
 	 		limit = {
 	 			has_owner = yes
-	 			owner = { is_ai = no }
-				has_variable = mnt_loc_building_profit
+	 			owner = {
+					is_ai = no
+					has_variable = mnt_top_rural_value_1
+					var:mnt_top_rural_value_1 > 0
+				}
+				has_variable = mnt_rural_goods_value
 	 		}
 			lerp = {
 				min_color = define:NMapColors|MAP_COLOR_LOW
 				max_color = define:NMapColors|MAP_COLOR_HIGH
 
 				factor = {
-					value = var:mnt_rural_goods_value
+					value = mnt_location_rural_goods_value
 					divide = owner.var:mnt_top_rural_value_1 # scale relative to top rural producer in owner
 				}
 			}

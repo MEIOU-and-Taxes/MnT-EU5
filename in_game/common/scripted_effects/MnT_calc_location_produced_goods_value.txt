@@ -534,6 +534,9 @@ calc_location_total_profit_value_added = {
 		set_variable = { name = mnt_top_rural_value_1 value = 0 }
 		clear_saved_scope = mnt_top_rural_location_1
 
+		set_variable = { name = mnt_top_total_value_1 value = 0 }
+		clear_saved_scope = mnt_top_total_location_1
+
 		every_owned_location = {
 			hidden_effect = { calc_urban_goods_value_produced_location = yes }
 			hidden_effect = { calc_rural_goods_value_produced_location = yes }
@@ -541,6 +544,7 @@ calc_location_total_profit_value_added = {
 
 			remove_variable = mnt_urban_ranked
 			remove_variable = mnt_rural_ranked
+			remove_variable = mnt_total_ranked
 
 			set_variable = {
 				name = mnt_goods_value_total
@@ -1013,6 +1017,16 @@ calc_location_total_profit_value_added = {
 		save_scope_as = mnt_top_rural_location_1
 		owner = { set_variable = { name = mnt_top_rural_value_1 value = prev.var:mnt_rural_goods_value } }
 		set_variable = { name = mnt_rural_ranked value = 1 }
+	}
+
+	# Capture top total location
+	ordered_owned_location = {
+		limit = { NOT = { has_variable = mnt_total_ranked } }
+		order_by = { value = var:mnt_goods_value_total }
+		max = 1
+		save_scope_as = mnt_top_total_location_1
+		owner = { set_variable = { name = mnt_top_total_value_1 value = prev.var:mnt_goods_value_total } }
+		set_variable = { name = mnt_total_ranked value = 1 }
 	}
 
 	set_variable = {
