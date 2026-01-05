@@ -255,6 +255,56 @@ mnt_estate_wealth_export_current_value_update_prev_per_estate = {
 	}
 }
 
+mnt_update_control_income_loss_per_estate = {
+	set_variable = { name = mnt_estate_wealth_income_lost_from_control_$estate$ value = 0 }
+	every_owned_location = {
+		if = {
+			limit = { local_control > 0 }
+			set_variable = {
+				name = mnt_estate_wealth_income_lost_from_control_$estate$
+				value = {
+					value = location_tax_base
+					divide = local_control
+					subtract = location_tax_base
+					multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage
+					multiply = "local_relative_estate_power(scope:target_estate)"
+					min = 0
+				}
+			}
+			prev = { # PREV scope is the country, value of all locations is summed up
+				change_variable = { 
+					name = mnt_estate_wealth_income_lost_from_control_$estate$ 
+					add = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ # here prev scope is the location
+				}
+			}
+		}
+		else = {
+			mnt_debug_print_location_control_zero = yes
+			calc_location_total_profit_value_added = yes
+			set_variable = {
+				name = mnt_estate_wealth_income_lost_from_control_$estate$
+				value = {
+					value = local_var:mnt_loc_total_value_added
+					multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage
+					multiply = "local_relative_estate_power(scope:target_estate)"
+					min = 0
+				}
+			}
+			prev = { # PREV scope is the country, value of all locations is summed up
+				change_variable = { 
+					name = mnt_estate_wealth_income_lost_from_control_$estate$ 
+					add = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ # here prev scope is the location
+				}
+			}
+		}
+	}
+
+	random_estate = {
+		limit = { estate_type = estate_type:$estate$_estate }
+		estate_add_gold = { value = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ }
+	}
+}
+
 # Calc expected estate income
 mnt_update_estate_wealth_income_per_estate = {
 	if = {
@@ -262,53 +312,8 @@ mnt_update_estate_wealth_income_per_estate = {
 
 		estate_type:$estate$_estate = { save_temporary_scope_as = target_estate }
 		mnt_debug_print_estate = { estate = $estate$ }
-		set_variable = { name = mnt_estate_wealth_income_lost_from_control_$estate$ value = 0 }
-		every_owned_location = {
-			if = {
-				limit = { local_control > 0 }
-				set_variable = {
-					name = mnt_estate_wealth_income_lost_from_control_$estate$
-					value = {
-						value = location_tax_base
-						divide = local_control
-						subtract = location_tax_base
-						multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage
-						multiply = "local_relative_estate_power(scope:target_estate)"
-						min = 0
-					}
-				}
-				prev = { # PREV scope is the country, value of all locations is summed up
-					change_variable = { 
-						name = mnt_estate_wealth_income_lost_from_control_$estate$ 
-						add = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ # here prev scope is the location
-					}
-				}
-			}
-			else = {
-				mnt_debug_print_location_control_zero = yes
-				calc_location_total_profit_value_added = yes
-				set_variable = {
-					name = mnt_estate_wealth_income_lost_from_control_$estate$
-					value = {
-						value = local_var:mnt_loc_total_value_added
-						multiply = mnt_estate_control_loss_wealth_local_wastage_ratio #for the locals and wastage
-						multiply = "local_relative_estate_power(scope:target_estate)"
-						min = 0
-					}
-				}
-				prev = { # PREV scope is the country, value of all locations is summed up
-					change_variable = { 
-						name = mnt_estate_wealth_income_lost_from_control_$estate$ 
-						add = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ # here prev scope is the location
-					}
-				}
-			}
-		}
 
-		random_estate = {
-			limit = { estate_type = estate_type:$estate$_estate }
-			estate_add_gold = { value = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ }
-		}
+		mnt_update_control_income_loss_per_estate = { estate = $estate$ }
 
 		set_variable = {
 			name = mnt_estate_wealth_expected_income_$estate$
