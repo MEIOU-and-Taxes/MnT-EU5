@@ -23,7 +23,7 @@ Date: 2025-11-30
   - Each type has an associated score dependent on multiple factors and a absolute minimum threshold per tier.
   - Additionally per geographical area only one center of each tier can exist.
   - Each location center tier gives bonuses to the location.
-
+- Goods Domestic Production (proxy for GDP goods domestic product ), sum of goods value * amount
 #### Bugfixes
 
 - Stability map mode works, where it is red at \<25 and green at \>50 stability
@@ -198,3 +198,5 @@ Date: 2025-11-30
   - modify mapmode and tooltips, so previous and new good is visible to a player
   - remove ability to plant Tobacco in Oceanic climate
   
+##### GUI
+- Added Goods Domestic Product UI in the Economy panel
