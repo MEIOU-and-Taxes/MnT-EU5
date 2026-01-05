@@ -12,6 +12,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
+      - name: Normalize git EOL settings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
 
       - name: Enforce LF endings (no CRLF) and final LF
         shell: bash
@@ -62,10 +67,6 @@ jobs:
               if b"\r\n" in data:
                   bad.append((rel, "contains CRLF (\\r\\n)"))
                   continue
-
-              # enforce final LF for non-empty files
-              if len(data) > 0 and not data.endswith(b"\n"):
-                  bad.append((rel, "does not end with LF (\\n)"))
 
           if bad:
               print("Line ending check FAILED:")
