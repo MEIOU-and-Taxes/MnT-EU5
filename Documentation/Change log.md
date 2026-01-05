@@ -18,16 +18,31 @@ Date: 2025-11-30
   - Noble %, Burgher %, Laborer %, Peasant %  
   - Market food balance  
   - Market food stockpile
-
+- Centers of Importance:
+  - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
+  - Each type has an associated score dependent on multiple factors and a absolute minimum threshold per tier.
+  - Additionally per geographical area only one center of each tier can exist.
+  - Each location center tier gives bonuses to the location.
+- Goods Domestic Production (proxy for GDP goods domestic product ), sum of goods value * amount
 #### Bugfixes
 
 - Stability map mode works, where it is red at \<25 and green at \>50 stability
+- Backend error fixes
 
 #### Balancing
 
 -Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
 -Reduced use of masonry by granaries.
 -Reduced use of tools by lumber mills.
+-Higher literacy lowers stability.
+-Peasant percentage improves stability.
+-Buffed cabinet stability improving action.
+-Stability effects prosperity negatively as well as positively.
+-Reduced stability cost of destroying markets.
+-Reduced stability cost of revoking privileges.
+-Made hiring new characters scale somewhat less with income.
+-Local population growth removed from having positive food.
+
 
 ##### Diplomacy
 
@@ -183,3 +198,5 @@ Date: 2025-11-30
   - modify mapmode and tooltips, so previous and new good is visible to a player
   - remove ability to plant Tobacco in Oceanic climate
   
+##### GUI
+- Added Goods Domestic Product UI in the Economy panel
