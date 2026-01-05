@@ -1,0 +1,77 @@
+﻿name: M&T - Line Endings (LF)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  eol-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce LF endings (no CRLF) and final LF
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          TEXT_EXTS = {
+              ".txt", ".yml", ".yaml", ".gui", ".gfx", ".asset", ".json", ".csv", ".md",
+              ".lua", ".xml", ".sql"
+          }
+          SKIP_EXTS = {
+              ".png", ".jpg", ".jpeg", ".webp", ".dds", ".tga", ".psd", ".xcf",
+              ".ogg", ".mp3", ".wav", ".bin", ".zip", ".7z", ".rar", ".pdf", ".ttf", ".otf"
+          }
+
+          def git(*args: str) -> str:
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          base = os.environ.get("GITHUB_BASE_REF", "")
+          subprocess.check_call(["git", "fetch", "origin", base, "--depth=1"])
+
+          changed = git("diff", "--name-only", "--diff-filter=ACMRT", f"origin/{base}...HEAD").splitlines()
+
+          def is_text_file(p: Path) -> bool:
+              ext = p.suffix.lower()
+              if ext in SKIP_EXTS:
+                  return False
+              return ext in TEXT_EXTS
+
+          bad = []
+          checked = 0
+
+          for rel in changed:
+              p = Path(rel)
+              if not p.exists() or not p.is_file():
+                  continue
+              if not is_text_file(p):
+                  continue
+
+              data = p.read_bytes()
+              checked += 1
+
+              # reject CRLF anywhere
+              if b"\r\n" in data:
+                  bad.append((rel, "contains CRLF (\\r\\n)"))
+                  continue
+
+              # enforce final LF for non-empty files
+              if len(data) > 0 and not data.endswith(b"\n"):
+                  bad.append((rel, "does not end with LF (\\n)"))
+
+          if bad:
+              print("Line ending check FAILED:")
+              for f, reason in bad:
+                  print(f" - {f}: {reason}")
+              raise SystemExit(1)
+
+          print(f"Line ending check OK. Checked {checked} file(s).")
+          PY
