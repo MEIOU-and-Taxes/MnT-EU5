@@ -1,0 +1,185 @@
+﻿appanage = { 
+	subject_pays = subject_pays_vassal
+	color = subject_appanage
+	level = 3
+	join_offensive_wars_always = {
+		NOR = {
+			scope:actor ?= { is_subject_of = scope:recipient }
+			custom_tooltip = {
+				text = has_not_been_exempted_tt
+				scope:recipient ?= { has_variable = demanded_exemption_longterm_variable }
+			}
+		}
+	}
+
+	#root = subject type, scope:actor = caller, scope:recipient = callee, scope:target (optional) = against who)
+	join_defensive_wars_always = {
+		scope:recipient ?= { 
+			NOT = { has_country_modifier = appanage_diplomatic_betrayal_modifier } 
+		}
+		custom_tooltip = {
+			text = wont_join_vs_other_appanages_with_granted_autonomy_to_expand_modifier_during_hyw_tt
+			trigger_if = {
+				limit = {
+					scope:target ?= {
+						is_subject_type = appanage
+					}
+				}
+				NOT = { 
+					scope:target ?= { has_country_modifier = granted_autonomy_to_expand_modifier } 
+				}
+			}
+		}
+	}
+	#(root = subject type scope:overlord = overlord in relation scope:subject = subject in relation scope:attacker = country that wants to attack (will be either overlord or subject), scope:defender = country they want to attack)
+	can_attack = {
+		trigger_if = {
+			limit = {
+				scope:attacker = { is_subject_of = c:FRA }
+				scope:defender = { is_subject = yes }
+				is_situation_active = situation:hundred_years_war
+			}
+			scope:attacker = {
+				is_subject_type = appanage
+				custom_tooltip = {
+					text = has_demanded_autonomy_tt
+					has_country_modifier = granted_autonomy_to_expand_modifier
+				}
+			}
+			scope:defender = {
+				top_overlord = scope:subject.top_overlord
+			}
+		}	
+	}
+	has_overlords_ruler = no
+	annexation_speed = 1
+	annexation_min_years_before = 15
+	annexation_min_opinion = 190
+	annexation_stall_opinion = 175
+	subject_can_cancel = no
+	overlord_can_cancel = no
+	overlord_inherit_if_no_heir = yes
+	
+	allow_declaring_wars = { always = yes }
+	has_limited_diplomacy = yes
+	food_access = yes
+	
+	can_change_rank = no
+	can_change_heir_selection = yes
+
+	minimum_opinion_for_offer = 200
+
+	great_power_score_transfer = 0.25
+	
+	strength_vs_overlord = -0.50 #M&T from -0.33
+	
+	diplomatic_capacity_cost_scale = 0.25
+	
+	
+	can_overlord_build_roads = yes
+	can_overlord_build_buildings = yes
+	can_overlord_build_rgos = yes
+	
+	institution_spread_to_overlord = monthly_institution_spread_severe
+	institution_spread_to_subject = monthly_institution_spread_severe
+	
+	overlord_modifier = {
+		stability_cost = 0.04 #added by M&T
+		stability_decay = 0.001
+		monthly_legitimacy = 0.03
+		global_crown_estate_power = -0.025
+	}
+	subject_modifier = {
+		monthly_prestige = 0.1
+		country_cabinet_efficiency = 0.15
+		global_manpower_modifier = 0.15		
+	}
+	
+	creation_visible = {
+		government_type = government_type:monarchy
+		has_reform = government_reform:french_feudal_nobility
+	}
+
+	subject_creation_enabled = {
+		government_type = government_type:monarchy
+		has_reform = government_reform:french_feudal_nobility
+
+		scope:target_province = { region = region:france_region }
+	}
+	
+	release_country_enabled = {
+		government_type = government_type:monarchy
+		has_reform = government_reform:french_feudal_nobility
+
+		scope:target = {
+			capital = { region = region:france_region }
+			culture = { has_culture_group = culture_group:french_group }
+		}
+	}
+
+	visible_through_diplomacy = {
+		government_type = government_type:monarchy
+		has_reform = government_reform:french_feudal_nobility
+		scope:target = {
+			government_type = government_type:monarchy
+			capital = { region = region:france_region }
+			culture = { has_culture_group = culture_group:french_group }			
+		}		
+	}
+
+	visible_through_treaty = {
+		government_type = government_type:monarchy
+		has_reform = government_reform:french_feudal_nobility
+		scope:target = {
+			government_type = government_type:monarchy
+			capital = { region = region:france_region }
+			culture = { has_culture_group = culture_group:french_group }			
+		}
+	}
+
+	enabled_through_diplomacy = {
+		scope:target = {
+			is_subject_of = root		
+			government_type = government_type:monarchy		
+			ruler.dynasty = overlord.ruler.dynasty
+			capital = { region = region:france_region }
+			culture = { has_culture_group = culture_group:french_group }			
+		}	
+	}	
+
+	on_enable = {
+		if = {
+			limit = {
+				government_reform:french_appanage_reform = { is_available_for = root }
+			}
+			add_reform = government_reform:french_appanage_reform
+		}
+	}
+	
+	on_disable = {
+	}
+	
+	diplo_chance_accept_subject = { # Should never appear in normal gameplay but set to -9999 in case
+		base = -9999
+	}
+	
+	diplo_chance_accept_overlord = { # Should never appear in normal gameplay but set to -9999 in case
+		base = -9999
+	}
+
+	ai_wants_to_be_overlord = {
+        scope:subject = {
+			add = {
+                desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
+                value = {
+                    every_country_with_coalition_grade_antagonism_against_us = {                    
+                        add = {
+                            value = -10
+                        }
+                    }
+                }
+            }
+        }
+	}
+}
+
