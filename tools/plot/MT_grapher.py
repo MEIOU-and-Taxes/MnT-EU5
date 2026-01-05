@@ -24,7 +24,7 @@ import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
 from tools.dataset_analysis.analysis_toolkit import AnalysisToolkitDialog
 from tools.plot import log_parser
-from tools.shared import fetch_logs
+from tools.shared.fetch_logs import get_from_config
 
 TARGET_FILE_NAME_ROOT = 'error'
 columns_not_to_multiply_by_num_of_locations = ['num_locations', 'year', 'age', 'century', 'decade']
@@ -106,7 +106,7 @@ class MainWindow(QMainWindow):
 		self.setStyleSheet("QPushButton:checked { background-color: #cce8ff; border: 1px solid #99c8ef; }")
 
 		# --- Data and State ---
-		self.log_folder = fetch_logs.get_log_directory_from_config()
+		self.log_folder = get_from_config('Paths', 'log_directory')
 		self.logs = []
 		self.data = ""
 		self.graphs = {}
