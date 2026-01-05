@@ -42,7 +42,7 @@ Date: 2025-11-30
 -Reduced stability cost of revoking privileges.
 -Made hiring new characters scale somewhat less with income.
 -Local population growth removed from having positive food.
-
+-Capital Location gives no max control or population capacity anymore.
 
 ##### Diplomacy
 
