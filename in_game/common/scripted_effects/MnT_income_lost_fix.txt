@@ -1,47 +1,50 @@
-﻿prepare_country_estate_variables_for_income_lost = {
-	owner = {
-		every_owned_location = {
-			limit = { local_control = 0 }
-			calc_location_total_profit_value_added = yes
-		}
-	}
-	set_local_variable = {
-		name = income_lost
-		value = {
-			owner = {
-				every_owned_location = {
-					if = {
-						limit = { local_control > 0 }
-						add = {
-							value = location_tax_base
-							divide = local_control
-							subtract = location_tax_base
-						}
-					}
-					else = {
-						add = {
-							value = var:mnt_loc_total_value_added
-						}
-					}
+﻿mnt_update_control_income_loss_per_estate = {
+	estate_type:$estate$_estate = { save_temporary_scope_as = target_estate }
+
+	set_variable = { name = mnt_estate_wealth_income_lost_from_control_$estate$ value = 0 }
+	every_owned_location = {
+		if = {
+			limit = { local_control > 0 }
+			set_variable = {
+				name = mnt_estate_wealth_income_lost_from_control_$estate$
+				value = {
+					value = location_tax_base
+					divide = local_control
+					subtract = location_tax_base
+					multiply = 0.95 #for the locals and wastage
+					multiply = "local_relative_estate_power(scope:target_estate)"
+					min = 0
 				}
 			}
-			multiply = 0.95 #for the locals and wastage 
-			multiply = power #TODO: refactor when able to coherently work out the proper income based on an estate's tax_per_pop
-			min = 0
+			prev = { # PREV scope is the country, value of all locations is summed up
+				change_variable = { 
+					name = mnt_estate_wealth_income_lost_from_control_$estate$ 
+					add = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ # here prev scope is the location
+				}
+			}
+		}
+		else = {
+			calc_location_total_profit_value_added = yes
+			set_variable = {
+				name = mnt_estate_wealth_income_lost_from_control_$estate$
+				value = {
+					value = local_var:mnt_loc_total_value_added
+					multiply = 0.95 #for the locals and wastage
+					multiply = "local_relative_estate_power(scope:target_estate)"
+					min = 0
+				}
+			}
+			prev = { # PREV scope is the country, value of all locations is summed up
+				change_variable = { 
+					name = mnt_estate_wealth_income_lost_from_control_$estate$ 
+					add = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ # here prev scope is the location
+				}
+			}
 		}
 	}
-	if = { limit = { estate_type = estate_type:nobles_estate }
-		owner = { set_variable = { name = estate_nobles_income_lost value = local_var:income_lost } } }
-	else_if = { limit = { estate_type = estate_type:burghers_estate }
-		owner = { set_variable = { name = estate_burghers_income_lost value = local_var:income_lost } } }
-	else_if = { limit = { estate_type = estate_type:clergy_estate }
-		owner = { set_variable = { name = estate_clergy_income_lost value = local_var:income_lost } } }
-	else_if = { limit = { estate_type = estate_type:peasants_estate }
-		owner = { set_variable = { name = estate_peasants_income_lost value = local_var:income_lost } } }
-	else_if = { limit = { estate_type = estate_type:tribes_estate }
-		owner = { set_variable = { name = estate_tribes_income_lost value = local_var:income_lost } } }
-	else_if = { limit = { estate_type = estate_type:dhimmi_estate }
-		owner = { set_variable = { name = estate_dhimmi_income_lost value = local_var:income_lost } } }
-	else_if = { limit = { estate_type = estate_type:cossacks_estate }
-		owner = { set_variable = { name = estate_cossacks_income_lost value = local_var:income_lost } } }
+
+	random_estate = {
+		limit = { estate_type = estate_type:$estate$_estate }
+		estate_add_gold = { value = prev.var:mnt_estate_wealth_income_lost_from_control_$estate$ }
+	}
 }
