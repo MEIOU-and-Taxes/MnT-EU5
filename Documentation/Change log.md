@@ -42,6 +42,7 @@ Date: 2025-11-30
 -Reduced stability cost of revoking privileges.
 -Made hiring new characters scale somewhat less with income.
 -Local population growth removed from having positive food.
+-Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 -Capital Location gives no max control or population capacity anymore.
 
 ##### Diplomacy
