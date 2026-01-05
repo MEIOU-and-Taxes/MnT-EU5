@@ -7,12 +7,12 @@ CONFIG_FILE = CONFIG_PATH + r"config.ini"
 DEFAULT_PATH = ''
 
 def _create_default_config():
-	"""
-	Creates a new, default configuration file if one does not exist.
-	"""
+	"""Creates a new, default configuration file if one does not exist."""
 	print(f"INFO: Config file not found. Creating a default one at '{CONFIG_FILE}'...")
 	try:
-		os.makedirs(CONFIG_PATH, exist_ok=True)
+		# The directory is guaranteed to exist since the script is in it,
+		# but os.makedirs is safe to call anyway.
+		os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
 		config = configparser.ConfigParser()
 		config['Paths'] = {
 			'log_directory': DEFAULT_PATH,
@@ -47,3 +47,18 @@ def get_from_config(section, option):
 	except Exception as e:
 		print(f"ERROR: An unexpected error occurred while reading the config file: {e}")
 	return DEFAULT_PATH
+
+
+def update_config_file(section, setting, value):
+	"""Safely updates a setting in the correct config.ini file."""
+	config = configparser.ConfigParser()
+	try:
+		config.read(CONFIG_FILE)
+		if section not in config:
+			config.add_section(section)
+		config.set(section, setting, value)
+		with open(CONFIG_FILE, 'w') as f:
+			config.write(f)
+		print(f"Successfully updated '{CONFIG_FILE}' with new setting: {setting} = {value}")
+	except Exception as e:
+		print(f"ERROR: Failed to write to {CONFIG_FILE}:\n{e}")

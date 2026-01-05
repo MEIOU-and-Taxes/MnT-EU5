@@ -10,26 +10,29 @@ from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL.PSDraw import ERROR_PS
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
+import pandas as pd
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel)
+							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel, QProgressDialog, QProgressBar)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
+from tools.dataset_analysis.analysis_toolkit import AnalysisToolkitDialog
 from tools.plot import log_parser
 from tools.shared.fetch_logs import get_from_config
 
 TARGET_FILE_NAME_ROOT = 'error'
+columns_not_to_multiply_by_num_of_locations = ['num_locations', 'year', 'age', 'century', 'decade']
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
 icon_path = 'icon.png'
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 graph_introduction = """
 Welcome to the M&T graphing tool!
 
@@ -139,12 +142,14 @@ class MainWindow(QMainWindow):
 		# --- Top Buttons Layout ---
 		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
-		self.btn_export = QPushButton("Export to CSV [Ctrl+E]")
+		self.btn_change_log_folder = QPushButton("Open log folder [Ctrl+O]")
+		self.btn_analysis = QPushButton("Data analysis toolkit [A]")
+		self.btn_export_all = QPushButton("Export data [Ctrl+E]")
 		self.btn_fullscreen = QPushButton("Fullscreen [F]")
 		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
 		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
-		self.btn_log_scale = QPushButton("Log Scale [L]")
-		self.btn_moving_avg = QPushButton("Moving Avg [W]")
+		self.btn_log_scale = QPushButton("Log scale [L]")
+		self.btn_moving_avg = QPushButton("Moving avg [W]")
 
 		self.btn_fullscreen.setCheckable(True)
 		self.btn_log_scale.setCheckable(True)
@@ -158,10 +163,12 @@ class MainWindow(QMainWindow):
 		self.slider_period.setVisible(False)
 		self.lbl_period_value.setVisible(False)
 
+		self.top_button_layout.addWidget(self.btn_change_log_folder)
 		self.top_button_layout.addWidget(self.btn_charts)
+		self.top_button_layout.addWidget(self.btn_analysis)
 		self.top_button_layout.addWidget(self.btn_refresh)
 		self.top_button_layout.addWidget(self.btn_backup)
-		self.top_button_layout.addWidget(self.btn_export)
+		self.top_button_layout.addWidget(self.btn_export_all)
 		self.top_button_layout.addWidget(self.btn_fullscreen)
 		self.top_button_layout.addWidget(self.btn_log_scale)
 		self.top_button_layout.addWidget(self.btn_moving_avg)
@@ -181,17 +188,19 @@ class MainWindow(QMainWindow):
 		self.btn_refresh.clicked.connect(self.reload_log)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
-		self.btn_export.clicked.connect(self.export_to_csv)
+		self.btn_export_all.clicked.connect(self.export_all_data)
 		self.btn_fullscreen.toggled.connect(self.set_fullscreen_state)
 		self.btn_log_scale.toggled.connect(self.toggle_log_scale)
 		self.btn_moving_avg.toggled.connect(self.toggle_moving_average)
 		self.slider_period.valueChanged.connect(self.on_period_slider_change)
+		self.btn_analysis.clicked.connect(self.open_analysis_toolkit)
+		self.btn_change_log_folder.clicked.connect(self.change_log_folder)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
 		self.load_key_configs()
 		self.load_graph_definitions()
-		self.reload_log()
+		self.display_info_screen()
 
 	def load_key_configs(self):
 		try:
@@ -200,18 +209,27 @@ class MainWindow(QMainWindow):
 				print("Successfully loaded key_configs.json")
 		except FileNotFoundError:
 			self.key_configs = {}
-			print("key_configs.json not found, no function key presets will be available.")
+			QMessageBox.warning(self, "No hotkeys", "key_configs.json not found, no function key presets will be available.")
 		except json.JSONDecodeError as e:
 			self.key_configs = {}
 			QMessageBox.critical(self, "Config Error", f"Error parsing key_configs.json:\n{e}")
+
+	def load_initial_data(self):
+		"""
+		Performs the initial, potentially slow, loading of log data.
+		This should be called after the main window is shown.
+		"""
+		self.reload_log(is_interactive=True)
 
 	def setup_shortcuts(self):
 		"""Setup global keyboard shortcuts."""
 		QShortcut(QKeySequence("Shift+S"), self, self.reload_log)
 		QShortcut(QKeySequence("Ctrl+S"), self, self.backup_log)
+		QShortcut(QKeySequence("Ctrl+O"), self, self.change_log_folder)
+		QShortcut(QKeySequence("A"), self, self.open_analysis_toolkit)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
 		QShortcut(QKeySequence("F"), self, self.btn_fullscreen.toggle)
-		QShortcut(QKeySequence("Ctrl+E"), self, self.export_to_csv)
+		QShortcut(QKeySequence("Ctrl+E"), self, self.export_all_data)
 		QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
 		QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
 
@@ -227,6 +245,8 @@ class MainWindow(QMainWindow):
 			self.btn_fullscreen.setChecked(self.isFullScreen())
 			self.btn_fullscreen.blockSignals(False)
 		super().changeEvent(event)
+
+		# In MT_grapher.py, inside the MainWindow class
 
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""
@@ -600,37 +620,215 @@ class MainWindow(QMainWindow):
 			self.canvas.draw_idle()
 			QMessageBox.warning(self, "Scaling Error", "Could not apply logarithmic scale.\nData may contain non-positive values.")
 
-	def export_to_csv(self):
-		"""Exports the complete, unfiltered data for the current chart type to a CSV file."""
-		if not self.current_dataset:
-			QMessageBox.warning(self, "Export Error", "No data available to export. Please select a chart first.")
-			return
+	def _check_file_locks(self, export_folder_path, filenames):
+		"""
+		Checks if any of the target CSV files in the export directory are locked.
+		Returns the full path of the first locked file found, or None if all are writable.
+		"""
+		# Also check for the derived 'normalized' file
+		filenames_to_check = list(filenames)
+		if "country_stats" in filenames_to_check:
+			filenames_to_check.append("country_stats_normalized")
 
-		default_filename = "export.csv"
-		if self.current_graph_info:
-			safe_title = self.current_graph_info['title'].lower().replace(" ", "_").replace("/", "")
-			default_filename = f"{safe_title}_full_export.csv"
+		for name in filenames_to_check:
+			full_path = os.path.join(export_folder_path, f"{name}.csv")
 
-		file_path, _ = QFileDialog.getSaveFileName(
-			self, "Save Full Dataset as CSV", default_filename, "CSV Files (*.csv);;All Files (*)"
-		)
+			if os.path.exists(full_path):
+				try:
+					# The most reliable way to check for a lock is to try to open it.
+					# We use append mode ('a') as it's a non-destructive write test.
+					file = open(full_path, 'a')
+					file.close()
+				except (IOError, PermissionError):
+					# This exception means the file is locked by another process.
+					print(f"Lock detected on file: {full_path}")
+					return full_path  # Return the path of the locked file
 
-		if not file_path:
-			return
+		return None  # No locks found
+
+
+	def export_all_data(self):
+		"""
+		Exports all parsable data. For country_stats, it also generates a second CSV
+		where numeric values are multiplied by the number of locations.
+		Returns True on success, False on failure or cancellation."""
+
+		if not self.data:
+			QMessageBox.warning(self, "Export Error", "No log data loaded. Please refresh data first.")
+			return False
+
+		# Define all available parsers and their desired filenames
+		all_parsers = {
+			"building_types": log_parser.parse_data_building_types,
+			"goods_prices": log_parser.parse_data_goods_prices,
+			"markets": log_parser.parse_data_markets,
+			"population": log_parser.parse_data_population,
+			"road_types": log_parser.parse_data_road_types,
+			"country_stats": log_parser.parse_data_countries,
+		}
+
+		# Define a fixed export path inside the log folder
+		export_folder_path = os.path.join(self.log_folder, "csv_export")
+
+		# Pre-check for locked files
+		locked_file = self._check_file_locks(export_folder_path, list(all_parsers.keys()))
+		if locked_file:
+			QMessageBox.critical(self, "File In Use", f"Please close the file and try again:\n\n{locked_file}")
+			return False
+
+		print(f"Exporting CSV files to: {export_folder_path}")
+
+		# --- Load the location lookup data ---
+		location_lookup = self._load_location_data()
+
+		# --- Setup Progress Dialog ---
+		progress_dialog = QProgressDialog("Preparing to export...", "Cancel", 0, len(all_parsers), self)
+		progress_dialog.setWindowTitle("Export Progress")
+		progress_dialog.setModal(True)
+
+		# Style
+		progress_dialog.resize(650, 150)
+		progress_style = """
+			QProgressBar {
+				border: 2px solid grey;
+				border-radius: 8px;
+				text-align: center;
+				font-size: 16px;
+				font-weight: bold;
+				min-height: 50px;
+			}
+			QProgressBar::chunk {
+				background-color: #337ab7;
+				border-radius: 8px;
+			}
+		"""
+		progress_dialog.setStyleSheet(progress_style)
+
+		progress_dialog.show()
+		QApplication.processEvents() # Ensure the dialog is shown immediately
 
 		try:
-			headers = self.current_dataset[0].keys()
-			with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
-				writer = csv.DictWriter(output_file, fieldnames=headers)
-				writer.writeheader()
-				writer.writerows(self.current_dataset)
+			os.makedirs(export_folder_path, exist_ok=True)
+			exported_files = []
+			was_cancelled = False
 
-			QMessageBox.information(self, "Export Successful", f"Full dataset successfully exported to:\n{file_path}")
+			for i, (filename_root, parser_func) in enumerate(all_parsers.items()):
+				# Update progress and check for cancellation
+				progress_dialog.setValue(i)
+				progress_dialog.setLabelText(f"Parsing and writing {filename_root}...")
+				QApplication.processEvents()
+
+				if progress_dialog.wasCanceled():
+					was_cancelled = True
+					break
+
+				dataset = parser_func(self.data)
+
+				if not dataset:
+					print(f"No data found for {filename_root}, skipping.")
+					continue
+
+				# Add region, subcontinent & continent based on the location.csv file
+				if filename_root == "country_stats" and location_lookup:
+					print("Enriching country data with geographical information...")
+					enhanced_dataset = []
+					for record in dataset:
+						capital_area = record.get('capital_area')
+						# Use .get() with a default empty dict for safe lookups
+						geo_data = location_lookup.get(capital_area, {})
+
+						# Create a new record with geo data first for nice column order
+						enhanced_record = {
+							'continent': geo_data.get('continent', 'N/A'),
+							'subcontinent': geo_data.get('subcontinent', 'N/A'),
+							'region': geo_data.get('region', 'N/A'),
+						}
+						enhanced_record.update(record) # Add all original data
+						enhanced_dataset.append(enhanced_record)
+
+					dataset_to_write = enhanced_dataset
+				else:
+					dataset_to_write = dataset
+
+
+				file_path = os.path.join(export_folder_path, f"{filename_root}.csv")
+				try:
+					headers = dataset_to_write[0].keys()
+					with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
+						writer = csv.DictWriter(output_file, fieldnames=headers)
+						writer.writeheader()
+						writer.writerows(dataset_to_write)
+					exported_files.append(file_path)
+
+					# Generate the location-multiplied CSV
+					if filename_root == "country_stats" and dataset_to_write:
+						print("Generating cleaned and filtered country stats for analysis...")
+
+						df = pd.DataFrame(dataset_to_write)
+						if 'num_locations' not in df.columns:
+							print("  - Warning: Cannot create cleaned dataset, 'num_locations' column is missing.")
+							continue
+
+						# Filter out countries that are too small to be meaningful in averages
+						# This removes Societies of Pops
+						df_cleaned = df[df['num_locations'] > 0].copy()
+
+						# Clean estate data: set stats to NaN where an estate has no power
+						estate_types = ['nobles', 'clergy', 'burghers', 'peasants', 'dhimmi', 'tribes', 'cossacks']
+						for estate in estate_types:
+							power_col = f'{estate}_relative_power'
+							if power_col in df_cleaned.columns:
+								# Find rows where this estate has no power
+								no_power_mask = df_cleaned[power_col] == 0
+
+								# Get all columns related to this estate
+								stats_cols = [col for col in df_cleaned.columns if col.startswith(f'{estate}_')]
+
+								# Set their values to NaN for these rows
+								df_cleaned.loc[no_power_mask, stats_cols] = np.nan
+
+						# Write the new, cleaned dataset to its own file
+						new_filepath = os.path.join(export_folder_path, "country_stats_cleaned.csv")
+						df_cleaned.to_csv(new_filepath, index=False)
+						exported_files.append(new_filepath)
+						print(f"Successfully created {new_filepath}")
+
+				except Exception as e:
+					QMessageBox.critical(self, "File Write Error", f"Failed to write {filename_root}.csv: {e}")
+					# Continue to the next file even if one fails
+
+			# Finalize the progress bar
+			progress_dialog.setValue(len(all_parsers))
+
+			# --- Show Final Status Message ---
+			if was_cancelled:
+				QMessageBox.information(self, "Export Cancelled", f"Export process was cancelled.\nPartial files may exist in:\n{export_folder_path}")
+				return False # Return failure status
+			elif exported_files:
+				# --- Create a custom message box with an "Open Directory" button ---
+				msg_box = QMessageBox(self)
+				msg_box.setIcon(QMessageBox.Icon.Information)
+				msg_box.setWindowTitle("Export Successful")
+				msg_box.setText(f"All data successfully exported to the 'csv_export' subfolder in your log directory:\n{export_folder_path}")
+
+				open_button = msg_box.addButton("Open Directory", QMessageBox.ButtonRole.ActionRole)
+				msg_box.addButton(QMessageBox.StandardButton.Ok)
+
+				msg_box.exec()
+
+				if msg_box.clickedButton() == open_button:
+					# Use QDesktopServices for cross-platform compatibility to open the folder
+					QDesktopServices.openUrl(QUrl.fromLocalFile(export_folder_path))
+				return True # Return success status
+			else:
+				QMessageBox.warning(self, "Export Warning", "No data was available to export.")
+				return False # Return failure status
 
 		except Exception as e:
-			QMessageBox.critical(self, "Export Failed", f"An error occurred while writing the file:\n{e}")
+			progress_dialog.close() # Ensure dialog is closed on error
+			QMessageBox.critical(self, "Export Failed", f"A critical error occurred:\n{e}")
 			traceback.print_exc()
-
+			return False # Return failure status
 	def backup_log(self):
 		"""Backs up the current game.log."""
 		if not self.logs:
@@ -649,7 +847,7 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "Back-up failed", f"Error backing up log: {e}")
 		self.display_info_screen()
 
-	def reload_log(self):
+	def reload_log(self, is_interactive=True):
 		"""Reads all log files and refreshes the current view."""
 		print("Reloading log data...")
 		# Clear the parser caches to force a re-read of the data.
@@ -669,6 +867,23 @@ class MainWindow(QMainWindow):
 
 		# Read the raw text from the log files.
 		self.logs, self.data = self.read_all_logs()
+
+		# Prompt user if no logs are found during an interactive load
+		if is_interactive and not self.logs:
+			msg_box = QMessageBox(self)
+			msg_box.setIcon(QMessageBox.Icon.Warning)
+			msg_box.setWindowTitle("No Log Files Found")
+			msg_box.setText(f"No log files were found in the configured directory:\n\n{self.log_folder}")
+			msg_box.setInformativeText("Would you like to select the correct log folder now?")
+			msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+			msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+
+			response = msg_box.exec()
+
+			if response == QMessageBox.StandardButton.Yes:
+				# This will trigger its own non-interactive reload upon success.
+				self.change_log_folder()
+				return # Stop the current reload process, as a new one will be started.
 
 		if saved_graph_info:
 			print(f"Refreshing current graph: {saved_graph_info['title']}")
@@ -743,16 +958,174 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical (self, "No logs found", "Could not find any log files to read.")
 		return files, "".join(content_list)
 
+	def _load_location_data(self, filepath="locations.csv"):
+		"""
+		Loads the locations.csv file and returns a dictionary for quick lookups.
+		The dictionary maps an area name to its continent, subcontinent, and region.
+		"""
+		location_map = {}
+		try:
+			with open(filepath, mode='r', encoding='utf-8') as infile:
+				reader = csv.DictReader(infile)
+				for row in reader:
+					area = row.get('area')
+					if area:
+						location_map[area] = {
+							'continent': row.get('continent', 'N/A'),
+							'subcontinent': row.get('subcontinent', 'N/A'),
+							'region': row.get('region', 'N/A')
+						}
+			print(f"Successfully loaded {len(location_map)} entries from {filepath}")
+		except FileNotFoundError:
+			QMessageBox.critical(self, "Error", f"Warning: '{filepath}' not found. Geographical data will not be added to the export.")
+		except Exception as e:
+			QMessageBox.critical(self, "Error", f"Error while reading '{filepath}'")
+		return location_map
 
+	def open_analysis_toolkit(self):
+		"""
+		Opens the analysis toolkit by reading the pre-generated country_stats.csv file
+		from the 'csv_export' subfolder in the log directory.
+		"""
+		csv_path = os.path.join(self.log_folder, "csv_export", "country_stats.csv")
+
+		if not os.path.exists(csv_path):
+			# File is missing, so we ask the user if they want to create it.
+			msg_box = QMessageBox(self)
+			msg_box.setIcon(QMessageBox.Icon.Question)
+			msg_box.setWindowTitle("CSV File Not Found")
+			msg_box.setText("The required 'country_stats.csv' file was not found.")
+			msg_box.setInformativeText("Would you like to generate it now? This may take a moment.")
+			msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+			msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+
+			response = msg_box.exec()
+
+			if response == QMessageBox.StandardButton.Yes:
+				# User agreed. Run the export process.
+				# The export function will now return True on success.
+				success = self.export_all_data()
+				if success:
+					# If the export was successful, we call this function again.
+					# This time, the file will exist and the analysis will proceed.
+					self.open_analysis_toolkit()
+			return # Exit the function here, as the flow is handled by the user's choice.
+
+		# If we get here, the file exists (either from the start or after generation).
+		try:
+			# Get total number of rows for the progress bar maximum1
+			print("Counting rows for progress bar...")
+			with open(csv_path, 'r', encoding='utf-8') as f:
+				total_rows = sum(1 for row in f) - 1  # Subtract 1 for the header
+
+			# Setup and show the progress dialog
+			progress_dialog = QProgressDialog("Loading data...", "Cancel", 0, total_rows, self)
+			progress_dialog.setWindowTitle("Loading Analysis Data")
+			progress_dialog.setModal(True)
+			progress_dialog.show()
+			QApplication.processEvents()
+
+			# Read the CSV in chunks and update the progress
+			chunk_size = 50000  # Rows to process at a time
+			chunks = []
+			rows_processed = 0
+
+			user_cancelled = False
+
+			reader = pd.read_csv(csv_path, chunksize=chunk_size, low_memory=False)
+			for chunk in reader:
+				if progress_dialog.wasCanceled():
+					user_cancelled = True
+					break
+
+				chunks.append(chunk)
+				rows_processed += len(chunk)
+				progress_dialog.setValue(rows_processed)
+				QApplication.processEvents() # Keep the UI responsive
+
+			progress_dialog.close()
+
+			# If not cancelled, combine chunks into the final DataFrame
+			if not user_cancelled:
+				print("Concatenating chunks into final DataFrame...")
+				country_df = pd.concat(chunks, ignore_index=True)
+
+				if country_df.empty:
+					QMessageBox.warning(self, "No Data", "The 'country_stats.csv' file is empty.")
+					return
+
+				# Launch the toolkit with the loaded data
+				dialog = AnalysisToolkitDialog(country_df, self)
+				dialog.exec()
+			else:
+				print("Data loading was cancelled by the user.")
+
+		except FileNotFoundError:
+			# This case is now handled by the initial check, but kept as a fallback.
+			QMessageBox.warning(self, "File Not Found", "The 'country_stats.csv' file was not found.")
+		except Exception as e:
+			QMessageBox.critical(self, "Error Loading Data", f"An error occurred while reading the CSV file:\n{e}")
+
+	def change_log_folder(self):
+		"""Opens a dialog to select a new log folder and updates the config."""
+		path_new_folder = QFileDialog.getExistingDirectory(self, "Select Log Folder", self.log_folder)
+
+		if path_new_folder and path_new_folder != self.log_folder:
+			print(f"Changing log folder to: {path_new_folder}")
+			self.log_folder = path_new_folder
+
+			# --- Use the centralized function to update the config file ---
+			fetch_logs.update_config_file('Paths', 'log_directory', path_new_folder)
+
+			QMessageBox.information(self, "Log Folder Changed",
+									f"The log folder has been updated.\n"
+									f"The application will now refresh data from:\n{path_new_folder}")
+
+			self.reload_log()
+
+
+class LoadingDialog(QDialog):
+	"""A simple, frameless dialog to show while the main application is loading."""
+
+	def __init__(self):
+		super().__init__()
+		self.setWindowTitle("Loading Application")
+		self.setFixedSize(350, 120)
+		# Make it a frameless dialog that stays on top
+		self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+		self.setModal(True)
+
+		layout = QVBoxLayout(self)
+
+		self.label = QLabel("Loading log files, please wait...")
+		self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		font = self.label.font()
+		font.setPointSize(10)
+		self.label.setFont(font)
+		layout.addWidget(self.label)
+
+		# An "indeterminate" progress bar shows a busy animation without needing a specific value.
+		self.progress = QProgressBar()
+		self.progress.setRange(0, 0)  # Setting min and max to 0 enables indeterminate mode
+		layout.addWidget(self.progress)
 
 if __name__ == '__main__':
 	try:
-		# Must change directory to script's location for config/log files
-		os.chdir(os.path.dirname(__file__) or '.')
-
 		app = QApplication(sys.argv)
+
 		main_window = MainWindow()
 		main_window.show()
+
+		# Show the loading screen on top of the main window.
+		loading_dialog = LoadingDialog()
+		loading_dialog.show()
+		app.processEvents() # Ensure the loading dialog appears immediately.
+
+		# Run the slow data loading process.
+		main_window.load_initial_data()
+		# Once loading is complete, close the loading screen.
+		loading_dialog.close()
+		# Start the main application event loop.
 		sys.exit(app.exec())
 
 	except Exception as e:
