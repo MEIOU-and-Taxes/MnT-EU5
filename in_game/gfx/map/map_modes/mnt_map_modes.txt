@@ -106,15 +106,27 @@ max_tax_base = {
 	 			has_owner = yes
 	 			is_owned_or_owned_by_subjects_or_below_of = scope:actor
 	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { mnt_max_tax_base_factor > 0.1 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = location_tax_base
-					divide = local_control
-					subtract = 0
-					divide = 70 #every location with potential tax base >= 70 will be fully green, it can be adjusted to get better fidelity
+					factor = {
+						value = mnt_max_tax_base_factor
+						subtract = 0.1
+						multiply = 1.11
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_max_tax_base_factor
+						multiply = 10
+					}
 				}
 			}
 		}
@@ -122,6 +134,18 @@ max_tax_base = {
 
 	tooltip_key = {
 
+	}
+	legend_key = {
+		desc = "tax_base_max"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "tax_base_mid"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "tax_base_min"
+		color = define:NMapColors|MAP_COLOR_LOW
 	}
 
 	small_map_names = location
@@ -170,15 +194,27 @@ max_tax_base_global = {
 	 		limit = {
 	 			has_owner = yes
 	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { mnt_max_tax_base_factor > 0.1 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = location_tax_base
-					divide = local_control
-					subtract = 0
-					divide = 70 #every location with potential tax base >= 70 will be fully green, it can be adjusted to get better fidelity
+					factor = {
+						value = mnt_max_tax_base_factor
+						subtract = 0.1
+						multiply = 1.11
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_max_tax_base_factor
+						multiply = 10
+					}
 				}
 			}
 		}
@@ -186,6 +222,18 @@ max_tax_base_global = {
 
 	tooltip_key = {
 
+	}
+	legend_key = {
+		desc = "tax_base_max"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "tax_base_mid"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "tax_base_min"
+		color = define:NMapColors|MAP_COLOR_LOW
 	}
 	
 	small_map_names = location
@@ -273,14 +321,27 @@ market_access = {
 	 		limit = {
 	 			has_owner = yes
 	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { market_access > 0.5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = market_access
-					subtract = 0.5
-					multiply = 2
+					factor = {
+						value = market_access
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = market_access
+						multiply = 2
+					}
 				}
 			}
 		}
@@ -335,31 +396,58 @@ market_access = {
 goods_value = {
 	map_color = {	
 	 	if = {
-	 		limit = {
-	 			has_owner = yes
-	 			owner = {
+			limit = {
+				has_owner = yes
+				owner = {
 					is_ai = no
 					has_variable = mnt_top_total_value_1
 					var:mnt_top_total_value_1 > 0
 				}
-	 			OR = {
+				OR = {
 					has_variable = mnt_loc_building_profit
 					has_variable = mnt_rural_goods_value
 				}
-	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			}
+			if = {
+				limit = { mnt_location_total_goods_value_relative > 0.5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = mnt_location_total_goods_value
-					divide = owner.var:mnt_top_total_value_1 # scale relative to top total producer in owner
+					factor = {
+						value = mnt_location_total_goods_value_relative
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_location_total_goods_value_relative
+						multiply = 2
+					}
 				}
 			}
 		}
 	}
 
 	tooltip_key = { value = mapmode_goods_value_location_tooltip }
+	legend_key = {
+		desc = "GDP_MAX"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "GDP_MID"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "GDP_MIN"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
 
 	small_map_names = location
 	medium_map_names = location
@@ -411,19 +499,45 @@ goods_value_urban = {
 				}
 				has_variable = mnt_loc_building_profit
 	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { mnt_location_urban_goods_value_relative > 0.5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = mnt_location_urban_goods_value
-					divide = owner.var:mnt_top_urban_value_1 # scale relative to top urban producer in owner
+					factor = {
+						value = mnt_location_urban_goods_value_relative
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_location_urban_goods_value_relative
+						multiply = 2
+					}
 				}
 			}
 		}
 	}
 
 	tooltip_key = { value = mapmode_goods_value_urban_location_tooltip }
+	legend_key = {
+		desc = "GDP_MAX"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "GDP_MID"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "GDP_MIN"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
 
 	small_map_names = location
 	medium_map_names = location
@@ -475,20 +589,46 @@ goods_value_rural = {
 				}
 				has_variable = mnt_rural_goods_value
 	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { mnt_location_rural_goods_value_relative > 0.5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = mnt_location_rural_goods_value
-					divide = owner.var:mnt_top_rural_value_1 # scale relative to top rural producer in owner
+					factor = {
+						value = mnt_location_rural_goods_value_relative
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_location_rural_goods_value_relative
+						multiply = 2
+					}
 				}
 			}
 		}
 	}
 
 	tooltip_key = { value = mapmode_goods_value_rural_location_tooltip }
-	
+	legend_key = {
+		desc = "GDP_MAX"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "GDP_MID"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "GDP_MIN"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
+
 	small_map_names = location
 	medium_map_names = location
 	large_map_names = location
@@ -533,18 +673,43 @@ REPLACE:stability = {
 			limit = {
 				has_owner = yes
 			}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
-				factor = {
-					value = owner.stability
-					add = 25 # everything below -25 is red
-					divide = 75 # everything above +50 is green
+			if = { limit = { owner.stability > 0 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
+
+					factor = {
+						value = owner.stability
+						multiply = 0.02
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_LOW
+
+					factor = {
+						value = owner.stability
+						multiply = -0.02
+					}
 				}
 			}
 		}
 	}
 	tooltip_key = {
+	}
+	legend_key = {
+		desc = "Stability_High"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "Stability_Medium"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "Stability_Low"
+		color = define:NMapColors|MAP_COLOR_LOW
 	}
 	
 	small_map_names = location
@@ -615,17 +780,21 @@ missing_control = {
 	 		limit = {
 	 			has_owner = yes
 	 			is_owned_or_owned_by_subjects_or_below_of = scope:actor
-				max_control != local_control
 	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { mnt_abs_diff_max_vs_local_control < 0.03 }
+				value = yellow
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = max_control
-					subtract = local_control
-					add = 0.25 #0 for 25% control missing, 1.25 for 100% excess
-					divide = 1.25 #0 for 25% control missing, 1 for 25% excess
+					factor = {
+						value = max_control
+						subtract = local_control
+						add = 0.25 #0 for 25% control missing, 1.25 for 100% excess
+						divide = 1.25 #0 for 25% control missing, 1 for 25% excess
+					}
 				}
 			}
 		}
@@ -637,6 +806,10 @@ missing_control = {
 	legend_key = {
 		desc = "CURRENT_CONTROL_BELOW_MAX"
 		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "CURRENT_CONTROL_BALANCED"
+		color = define:NMapColors|MAP_COLOR_MID
 	}
 	legend_key = {
 		desc = "CURRENT_CONTROL_ABOVE_MAX"
@@ -694,17 +867,51 @@ max_control = {
 				has_owner = yes
 				owner = scope:actor
 			}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { max_control = 1 }
+				value = blue
+			}
+			else_if = { limit = { max_control > 0.5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = max_control
+					factor = {
+						value = max_control
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = max_control
+						multiply = 2
+					}
 				}
 			}
 		}
 	}
 	tooltip_key = {
+	}
+	legend_key = {
+		desc = "Control_Max"
+		color = blue
+	}
+	legend_key = {
+		desc = "Control_High"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+	legend_key = {
+		desc = "Control_Medium"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "Control_Low"
+		color = define:NMapColors|MAP_COLOR_LOW
 	}
 
 	small_map_names = location_control
@@ -758,12 +965,27 @@ max_control_with_location_rank = {
 				has_owner = yes
 				owner = scope:actor
 			}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
+			if = { limit = { max_control > 0.5 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_HIGH
 
-				factor = {
-					value = max_control
+					factor = {
+						value = max_control
+						subtract = 0.5
+						multiply = 2
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = max_control
+						multiply = 2
+					}
 				}
 			}
 		}
