@@ -1,0 +1,205 @@
+﻿# this name is hardcoded, so dependent subjects in PUs will become fiefdoms
+fiefdom = { # like a personal union except the subject has much less power
+	subject_pays = subject_pays_vassal
+	color = subject_fiefdom
+	level = 3
+	join_offensive_wars_always = {
+		NOT = { scope:actor ?= { is_subject_of = scope:recipient } }
+	}
+	join_offensive_wars_can_call = {
+		scope:actor ?= { is_subject_of = scope:recipient }
+	}
+	join_defensive_wars_always = {
+		always = yes
+	}
+	has_overlords_ruler = yes
+	annexation_speed = 1
+	annexation_min_years_before = 10
+	annexation_min_opinion = 150
+	annexation_stall_opinion = 125
+	subject_can_cancel = no
+	overlord_can_cancel = yes
+
+	war_score_cost = 0.5
+	
+	can_overlord_build_roads = yes
+	can_overlord_build_buildings = yes
+	can_overlord_build_rgos = yes
+
+	
+	strength_vs_overlord = -1 #M&T from -0.50
+	
+	diplomatic_capacity_cost_scale = 1.0
+	
+	can_change_rank = no
+	can_change_heir_selection = no
+	
+	minimum_opinion_for_offer = 150
+	
+	has_limited_diplomacy = yes
+	food_access = yes
+	
+	great_power_score_transfer = 0.25 # the amount of Great Power Score that is transferred from the Subject to the Overlord
+	
+	institution_spread_to_overlord = monthly_institution_spread_severe
+	institution_spread_to_subject = monthly_institution_spread_severe
+	
+	overlord_modifier = {
+		stability_cost = 0.04 #added by M&T
+		monthly_towards_decentralization = societal_value_tiny_monthly_move
+	}
+
+	subject_modifier = {
+		country_cabinet_efficiency = 0.05
+		loyalty_to_overlord = 10
+		blocked_from_conversion = no
+	}
+
+	creation_visible = {
+		government_type = government_type:monarchy
+	}
+
+	subject_creation_enabled = {
+		has_ruler = yes
+	}
+
+	release_country_enabled = {
+		has_ruler = yes
+	}
+
+	visible_through_diplomacy = {
+		has_ruler = yes
+		religion.group = scope:target.religion.group
+		government_type = government_type:monarchy
+		country_rank_level >= scope:target.country_rank_level
+		
+		#Japanese Imperial Courts Exception
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:japanese_shogunate
+				is_situation_active = situation:nanbokuchou
+			}
+			NOT = {
+				scope:target = {
+					has_special_status_in_international_organization = {
+						type = special_status:japanese_emperor
+						international_organization = international_organization:japanese_shogunate
+					}
+				}
+			}
+		}
+	}
+
+	visible_through_treaty = {
+		has_ruler = yes
+		religion.group = scope:target.religion.group
+		government_type = government_type:monarchy
+		country_rank_level >= scope:target.country_rank_level
+		scope:target = {
+			government_type = government_type:monarchy
+		}
+		
+		#Japanese Imperial Courts Exception
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:japanese_shogunate
+				is_situation_active = situation:nanbokuchou
+			}
+			NOT = {
+				scope:target = {
+					has_special_status_in_international_organization = {
+						type = special_status:japanese_emperor
+						international_organization = international_organization:japanese_shogunate
+					}
+				}
+			}
+		}
+	}
+
+	enabled_through_diplomacy = {
+		has_ruler = yes
+		government_type = government_type:monarchy
+		
+		religion.group = scope:target.religion.group
+
+		scope:target = { 
+			government_type = government_type:monarchy
+			OR = {
+				ruler ?= root.ruler
+				regent ?= root.ruler
+			}
+		}
+	}
+
+	on_enable = {
+		if = {
+			limit = {
+				exists = scope:future_overlord
+				scope:future_overlord = { has_ruler = yes }
+				NOT = { ruler ?= scope:future_overlord.ruler }
+			}
+			set_new_foreign_ruler = scope:future_overlord.ruler
+		}
+	}
+	
+	on_disable = {
+	}
+	#on_monthly = { }
+	
+	diplo_chance_accept_subject = {
+		base = -90
+		
+		
+		current_strength = 0.2
+		border_distance = -0.3
+		negative_opinion = -5
+		positive_opinion = 0.25
+		rank_difference = -5
+		giving_defensive_support = 2
+		receiving_defensive_support = 5
+		royal_ties = 1
+		
+		num_of_limited_subjects = -5
+		culture_war = 3
+		diplomatic_reputation = 1
+		different_religion = -20
+		same_common_language = 5
+		same_court_language = 10
+		different_culture = -10
+		different_government_type = -25
+		actor_at_war = -20
+		competing_power = -200
+		tax_base = -0.25
+		
+		reject_subjugation_reasons = -1
+		accept_subjugation_reasons = 1
+	}
+
+	diplo_chance_accept_overlord = {
+		base = 10
+		border_distance = -0.3
+		negative_opinion = -5
+		positive_opinion = 0.25
+		same_common_language = 5
+		same_court_language = 10
+		different_culture = -10
+		different_government_type = -25
+		actor_at_war = -20
+		competing_power = -200
+	}
+
+	ai_wants_to_be_overlord = {
+        scope:subject = {
+			add = {
+                desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
+                value = {
+                    every_country_with_coalition_grade_antagonism_against_us = {                    
+                        add = {
+                            value = -10
+                        }
+                    }
+                }
+            }
+        }
+	}
+}
