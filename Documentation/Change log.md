@@ -73,26 +73,27 @@ Date: 2025-11-30
   - Climate, topography & vegetation impact maintenance cost:
     - Climate:
       - Oceanic: base
-      - Tropical: 2.4X
-      - Subtropical: 1.8X
-      - Arid: 2X
-      - Cold arid: 1.6X
-      - Mediterranean: 1.65X
-      - Continental: 2.75X
-      - Arctic: 6X
+      - Tropical: 1.56X
+      - Subtropical: 1.32X
+      - Arid: 1.4X
+      - Cold arid: 1.24X
+      - Mediterranean: 1.26X
+      - Continental: 1.7X
+      - Arctic: 3X
     - Topography:
       - Flatlands: base
-      - Mountains: 4.5X
-      - Hills: 2X
-      - Plateau: 1.6X
-      - Wetlands: 6X
+      - Mountains: 2.4X
+      - Hills: 1.4X
+      - Plateau: 1.24X
+      - Wetlands: 3X
     - Vegetation:
       - Desert: base
-      - Grasslands: 2X
-      - Farmland: 2.4X
-      - Woods: 3.5X
-      - Forest: 5.5X
-      - Jungle: 8X
+      - Sparse: 1.08X
+      - Grasslands: 1.4X
+      - Farmland: 1.56X
+      - Woods: 2X
+      - Forest: 2.8X
+      - Jungle: 3X
 - Market  
   - Market access cost reduction doubled for roads:  
     - Gravel: \-10% → \-20%  
