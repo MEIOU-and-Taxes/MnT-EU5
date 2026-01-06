@@ -1096,49 +1096,42 @@ road_maintenance_cost = {
 	 	if = {
 	 		limit = {
 	 			is_land = yes
+				has_variable = road_maintenance_cost
 	 		}
-			if = { limit = { var:road_maintenance_cost > 68 }
-				value = define:NMapColors|MAP_COLOR_MIN
-			}
-			else_if = { limit = { var:road_maintenance_cost < 2 }
-				value = define:NMapColors|MAP_COLOR_MAX
-			}
-			else_if = {
-				limit = { var:road_maintenance_cost < 18 }
+			if = {
+				limit = { mnt_road_maintenance_cost_relative_to_max > 0.66 }
 				lerp = {
-					min_color = define:NMapColors|MAP_COLOR_HIGH
-					max_color = define:NMapColors|MAP_COLOR_MID
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MIN
 
 					factor = {
-						value = var:road_maintenance_cost
-						subtract = 5
-						divide = 13.2
+						value = mnt_road_maintenance_cost_relative_to_max
+						subtract = 0.66
+						multiply = 3
 					}
 				}
 			}
 			else_if = {
-				limit = { var:road_maintenance_cost < 4.8 }
-				lerp = {
-					min_color = define:NMapColors|MAP_COLOR_MAX
-					max_color = define:NMapColors|MAP_COLOR_HIGH
-
-					factor = {
-						value = var:road_maintenance_cost
-						subtract = 2
-						divide = 4.8
-						subtract = 1
-					}
-				}
-			}
-			else = {
+				limit = { mnt_road_maintenance_cost_relative_to_max > 0.33 }
 				lerp = {
 					min_color = define:NMapColors|MAP_COLOR_MID
 					max_color = define:NMapColors|MAP_COLOR_LOW
 
 					factor = {
-						value = var:road_maintenance_cost
-						subtract = 20
-						divide = 50
+						value = mnt_road_maintenance_cost_relative_to_max
+						subtract = 0.33
+						multiply = 3
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_HIGH
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_road_maintenance_cost_relative_to_max
+						multiply = 3
 					}
 				}
 			}
@@ -1179,10 +1172,6 @@ road_maintenance_cost = {
 	legend_key = {
 		desc = "ROAD_MAINTENANCE_GREEN_DARK"
 		color = define:NMapColors|MAP_COLOR_HIGH
-	}
-	legend_key = {
-		desc = "ROAD_MAINTENANCE_GREEN"
-		color = define:NMapColors|MAP_COLOR_MAX
 	}
 
 	map_markers = {
