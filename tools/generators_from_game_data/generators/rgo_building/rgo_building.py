@@ -66,7 +66,7 @@ if __name__ == '__main__':
 			all_generated_blocks.append(generated_block)
 
 		# Join all blocks with double newlines for spacing
-		final_output = "\n\n".join(all_generated_blocks)
+		final_output = "\n".join(all_generated_blocks)
 
 		# Write the final concatenated string to the corresponding output file
 		try:
