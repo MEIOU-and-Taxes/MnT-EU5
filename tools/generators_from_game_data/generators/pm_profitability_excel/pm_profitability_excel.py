@@ -3,11 +3,10 @@ import sys
 
 import pandas as pd
 
-from tools.script_generator.parsing_logic.file_parser import extract_building_unlocks, extract_goods_and_prices, \
+from tools.generators_from_game_data.parsing_logic.file_parser import extract_building_unlocks, extract_goods_and_prices, \
 	parse_building_file_content, GOODS_RELATIVE_PATH, ADVANCES_RELATIVE_PATH, BUILDINGS_RELATIVE_PATH
 from tools.shared.fetch_logs import get_from_config
 
-DEFAULT_AGE = 'age_1_traditions'
 OUTPUT_FILENAME = 'production_methods.xlsx'
 
 if __name__ == '__main__':
