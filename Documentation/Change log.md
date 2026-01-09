@@ -59,7 +59,7 @@ Date: 2025-11-30
 
 ##### Economy
 
-- Income lost due to control shortfall is given to the estates  
+- Income lost due to control shortfall is given to the estates (for >0 control locations it is exact, for =0 locations it uses an approximation for potential tax base)
 - Diplomatic spending gives to the noble estate 50% of it   
 - 0.5 building cap levels are now given per 1K pops rather than per 100K  
 - The bailiff building is also allowed in towns and cities  
