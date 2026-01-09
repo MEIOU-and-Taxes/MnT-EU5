@@ -74,7 +74,7 @@ Date: 2025-11-30
     - Proximity Cost through Roads: 20 → 15  
     - Proximity Cost through Land: 40 → 30  
     - Proximity Cost through Port: 40 → 30  
-    - Proximity Cost of going upstream along a River: 30 → 22  
+    - Proximity Cost of going upstream along a River: 30 → 7  
     - Proximity Cost of going downstream along a River: 10 → 7  
     - Proximity Cost on Frozen Water: 20 → 15  
   - Roads  
@@ -90,6 +90,7 @@ Date: 2025-11-30
     - Paved road: \-15% → \-30%  
     - Modern road: \-20% → \-40%  
     - Railroad: \-25% → \-50%  
+  - Market access cost of rivers equalized up and downstream from 0.9 → 0.5
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
     - Diplomatic expenses: paper, jewelry  
