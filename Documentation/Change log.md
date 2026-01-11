@@ -137,6 +137,7 @@ Date: 2025-11-30
     - Local burgher food consumption: 20% → 10%
 -Sand added to several production methods, including masonry, weapons, and tools.
 -Estate built buildings do not consume goods directly, now add pop to consume goods for them.
+-Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
 
 ##### Population
 
