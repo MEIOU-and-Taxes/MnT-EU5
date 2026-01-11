@@ -59,7 +59,7 @@ Date: 2025-11-30
 
 ##### Economy
 
-- Income lost due to control shortfall is given to the estates  
+- Income lost due to control shortfall is given to the estates (for >0 control locations it is exact, for =0 locations it uses an approximation for potential tax base)
 - Diplomatic spending gives to the noble estate 50% of it   
 - 0.5 building cap levels are now given per 1K pops rather than per 100K  
 - The bailiff building is also allowed in towns and cities  
@@ -74,8 +74,8 @@ Date: 2025-11-30
     - Proximity Cost through Roads: 20 → 15  
     - Proximity Cost through Land: 40 → 30  
     - Proximity Cost through Port: 40 → 30  
-    - Proximity Cost of going upstream along a River: 30 → 22  
-    - Proximity Cost of going downstream along a River: 10 → 7  
+    - Proximity Cost of going upstream along a River: 30 → 11
+    - Proximity Cost of going downstream along a River: 10 → 11  
     - Proximity Cost on Frozen Water: 20 → 15  
   - Roads  
     - Build cost scaled & maintenance market demands scaled  
@@ -90,6 +90,7 @@ Date: 2025-11-30
     - Paved road: \-15% → \-30%  
     - Modern road: \-20% → \-40%  
     - Railroad: \-25% → \-50%  
+  - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
     - Diplomatic expenses: paper, jewelry  
@@ -137,6 +138,7 @@ Date: 2025-11-30
     - Local burgher food consumption: 20% → 10%
 -Sand added to several production methods, including masonry, weapons, and tools.
 -Estate built buildings do not consume goods directly, now add pop to consume goods for them.
+-Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
 
 ##### Population
 
