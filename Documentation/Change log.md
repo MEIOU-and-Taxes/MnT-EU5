@@ -94,7 +94,7 @@ Date: 2025-11-30
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
     - Diplomatic expenses: paper, jewelry  
--RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
+- RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
 - Massive rework of the food system, focused on tying up much more of the early game population in food production as peasants.
   - Farming villages  
     - Are split into common pastures & the new farming villages  
