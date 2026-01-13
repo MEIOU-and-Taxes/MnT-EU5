@@ -1,0 +1,594 @@
+﻿##############################################################
+# This is a special demands, as it has a hardcoded tag
+#
+# code also checks for scriptvalue from the pop scope
+#
+# This scales with the demands in the goods scripted per pop_type
+#
+############################################################
+
+pop_demand = {
+	
+	###########################
+	# Food
+	###########################
+	
+	potato = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				culture = { has_culture_group = culture_group:andean_group }
+			}
+			
+			multiply = {
+				value = 2.0
+				desc = "POP_DEMAND_ANDES"
+			}
+		}
+		
+		if = {
+			limit = { religion = religion:jain }
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_JAIN"
+			}
+		}
+	}
+		
+
+	maize = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.continent != continent:america
+			}
+			
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_NOT_AMERICA"
+			}
+		}
+		#Some Cultures have preferences
+		if = {
+			limit = {
+				#Andeans favor the Potato
+				culture = { has_culture_group = culture_group:andean_group }
+			}
+			multiply = {
+				desc = "POP_DEMAND_CULTURAL_PREFERENCES"
+				value = 0.5
+			}
+		}
+
+	}	
+	
+	millet = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.sub_continent = sub_continent:south_asia
+			}
+			
+			multiply = {
+				value = 2
+				desc = "POP_DEMAND_INDIA"
+			}
+		}
+		if = {
+			limit = { #Egyptians use millet very rarely
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			multiply = {
+				value = 0.1
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+		if = {
+			limit = { #Maghrebis use barley as its main grain
+				culture = { has_culture_group = culture_group:maghrebi_group }
+			}
+			multiply = {
+				value = 1.5
+				desc = "POP_DEMAND_MAGHREBI"
+			}
+		}
+		if = {
+			limit = { #Baltics use rye as its main grain
+				culture = { has_culture_group = culture_group:baltic_group }
+			}
+			multiply = {
+				value = 2.0
+				desc = "POP_DEMAND_BALTIC"
+			}
+		}
+		
+		if = {
+			limit = {
+				NOT = {
+					location.market ?= { is_produced_in_market = goods:millet }
+				}
+			}
+			multiply = {
+				value = 0
+				
+				desc = "POP_DEMAND_LOCAL_CUISINE"
+			}
+		}
+
+	}	
+		
+	wild_game = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.market ?= { produced_in_market:wild_game <= 0 } 
+			}
+			
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_LOCAL_CUISINE"
+			}
+		}
+
+		
+		#Some Cultures have preferences
+		if = {
+			limit = {
+				#Andeans use many exotic feathers
+				culture = { has_culture_group = culture_group:andean_group }
+			}
+			multiply = {
+				desc = "POP_DEMAND_CULTURAL_PREFERENCES"
+				value = 2
+			}
+		}
+		if = {
+			limit = { #Egyptians use wild_game rarely
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			multiply = {
+				value = 0.25
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+		if = {
+			limit = { #Baltics hunt over livestock
+				culture = { has_culture_group = culture_group:baltic_group }
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_BALTIC"
+			}
+		}
+		if = {
+			limit = { religion = religion:jain }
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_JAIN"
+			}
+		}
+		
+		if = {
+			limit = {
+				NOT = {
+					location.market ?= { is_produced_in_market = goods:wild_game }
+				}
+			}
+			multiply = {
+				value = 0
+				
+				desc = "POP_DEMAND_LOCAL_CUISINE"
+			}
+		}
+
+	}
+	
+	fish = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				religion = religion:catholic
+			}
+			
+			multiply = {
+				value = 1.25
+				desc = "POP_DEMAND_CATHOLIC"
+			}
+		}
+		if = {
+			limit = { religion = religion:jain }
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_JAIN"
+			}
+		}
+		if = {
+			limit = { #Egyptians use fish rarely
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			multiply = {
+				value = 0.5
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+	}
+	
+	legumes = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.market ?= { produced_in_market:legumes <= 0 } 
+			}
+			
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_LOCAL_CUISINE"
+			}
+		}
+		if = {
+			limit = { #Turks use vegetables extensively
+				OR = {
+					culture = culture:turkish_culture
+					culture = culture:turkoman_culture
+				}
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_TURKISH"
+			}
+		}
+		if = {
+			limit = { #Egyptians use vegetables heavily
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			multiply = {
+				value = 2
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+		if = {
+			limit = { #Maghrebis use vegetables
+				culture = { has_culture_group = culture_group:maghrebi_group }
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_MAGHREBI"
+			}
+		}
+		if = {
+			limit = { #Baltics use legumes a lot
+				culture = { has_culture_group = culture_group:baltic_group }
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_BALTIC"
+			}
+		}
+	}
+
+
+	olives = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.market ?= { produced_in_market:olives <= 0 }
+			}
+			
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_LOCAL_CUISINE"
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					culture = culture:turkish_culture
+					culture = culture:turkoman_culture
+				}
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_TURKISH"
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					culture = culture:languedocien
+					culture = culture:provencal
+					culture = culture:albanian
+				}
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_CULTURAL_PREFERENCES"
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					culture = { has_culture_group = culture_group:iberian_group }
+					culture = { has_culture_group = culture_group:italian_group }
+					culture = { has_culture_group = culture_group:greek_group }
+				}
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_CULTURAL_PREFERENCES"
+			}
+		}
+		if = {
+			limit = { #Maghrebis use olives
+				culture = { has_culture_group = culture_group:maghrebi_group }
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_MAGHREBI"
+			}
+		}
+	}
+	
+	wheat = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.continent = continent:europe
+			}
+			
+			multiply = {
+				value = 2.0
+				desc = "POP_DEMAND_EUROPE"
+			}
+		}
+		if = {
+			limit = { #Asia prefers Rice
+				location.continent = continent:asia
+				OR = {
+					location = { climate = subtropical }
+					location = { climate = tropical }
+				}
+			}
+			multiply = {
+				value = 0.5
+				desc = "POP_DEMAND_ASIA"
+			}
+		}
+		if = {
+			limit = { #Egyptians use wheat a lot
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			multiply = {
+				value = 1.5
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+		if = {
+			limit = { #Maghrebis use barley as its main grain
+				culture = { has_culture_group = culture_group:maghrebi_group }
+			}
+			multiply = {
+				value = 0.8
+				desc = "POP_DEMAND_MAGHREBI"
+			}
+		}
+		if = {
+			limit = { #Baltics use rye as its main grain
+				culture = { has_culture_group = culture_group:baltic_group }
+			}
+			multiply = {
+				value = 0.8
+				desc = "POP_DEMAND_BALTIC"
+			}
+		}
+
+	}
+	
+	fruit = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location = { climate = arctic }
+			}
+			
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_ARCTIC"
+			}
+		}
+		if = {
+			limit = {
+				location = { climate = cold_arid }
+			}
+			
+			multiply = {
+				value = 0.5
+				desc = "POP_DEMAND_COLD_ARID"
+			}
+		}
+		if = {
+			limit = {
+				location = { climate = tropical }
+			}
+			
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_TROPICAL"
+			}
+		}
+		if = {
+			limit = {
+				location = { climate = mediterranean }
+			}
+			
+			multiply = {
+				value = 1.4
+				desc = "POP_DEMAND_TEMPERATE"
+			}
+		}
+		if = {
+			limit = { #Maghrebis use fruit a lot
+				culture = { has_culture_group = culture_group:maghrebi_group }
+			}
+			multiply = {
+				value = 1.1
+				desc = "POP_DEMAND_MAGHREBI"
+			}
+		}
+
+	}
+	
+	livestock = {
+		value = 1.5 #M&T from 1
+
+		if = {
+			limit = {
+				#Andeans use the Llama as sacrifice
+				religion.group = religion_group:folk_peruvian_group
+				pop_type = pop_type:clergy
+			}
+			multiply = {
+				value = 1.5
+				desc = "POP_DEMAND_CLERGY"
+			}
+		}
+		#some cultures have preferences
+		if = {
+			limit = { #Hindus use Livestock only partially
+				religion = religion:hindu
+			}
+			multiply = {
+				value = 0.25
+				desc = "POP_DEMAND_INDIA"
+			}
+		}
+		if = {
+			limit = { #miaphysite use Livestock only partially
+				religion = religion:miaphysite
+			}
+			multiply = {
+				value = 0.5
+				desc = "POP_DEMAND_MIAPHYSITE"
+			}
+		}
+		if = {
+			limit = { #Turks use Livestock extensevly
+				OR = {
+					culture = culture:turkish_culture
+					culture = culture:turkoman_culture
+				}
+			}
+			multiply = {
+				value = 1.5
+				desc = "POP_DEMAND_TURKISH"
+			}
+		}
+		if = {
+			limit = { #Egyptians use livestock rarely
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			multiply = {
+				value = 0.5
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+		if = {
+			limit = { #Maghrebis use livestock (lamb mainly)				
+				culture = { has_culture_group = culture_group:maghrebi_group }
+			}
+			multiply = {
+				value = 1.2
+				desc = "POP_DEMAND_MAGHREBI"
+			}
+		}
+		if = {
+			limit = { #Baltics hunt over livestock
+				culture = { has_culture_group = culture_group:baltic_group }
+			}
+			multiply = {
+				value = 0.8
+				desc = "POP_DEMAND_BALTIC"
+			}
+		}
+		if = {
+			limit = { religion = religion:jain }
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_JAIN"
+			}
+		}
+		if = {
+			limit = {
+				location.owner ?= {
+					has_religious_aspect = religious_aspect:pescatarianism
+				}
+			}
+			multiply = {
+				value = 0
+				desc = "POP_DEMAND_PESCATARIANISM"
+			}
+		}
+	}
+
+	rice = {
+		value = 1.5 #M&T from 1
+		if = {
+			limit = {
+				location.continent = continent:asia
+				OR = {
+					location = { climate = subtropical }
+					location = { climate = tropical }
+				}
+			}
+			multiply = {
+				value = 2
+				
+				desc = "POP_DEMAND_ASIA"
+			}
+		}
+		if = {
+			limit = { #Egyptians use rice
+				OR = {
+					culture = culture:lower_egyptian_culture
+					culture = culture:upper_egyptian_culture
+				}
+			}
+			add = {
+				value = 0.002
+				desc = "POP_DEMAND_EGYPT"
+			}
+		}
+		
+		if = {
+			limit = {
+				NOT = {
+					location.market ?= { is_produced_in_market = goods:rice }
+				}
+			}
+			multiply = {
+				value = 0
+				
+				desc = "POP_DEMAND_LOCAL_CUISINE"
+			}
+		}
+
+	}
+	category = pop_needs
+}
