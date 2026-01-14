@@ -1,0 +1,166 @@
+﻿center_trade_local_threshold = 50
+center_trade_regional_threshold = 250
+center_trade_continental_threshold = 500
+center_trade_world_threshold = 1000
+
+center_culture_local_threshold = 50
+center_culture_regional_threshold = 250
+center_culture_continental_threshold = 500
+center_culture_world_threshold = 1000
+
+center_education_local_threshold = 50
+center_education_regional_threshold = 250
+center_education_continental_threshold = 500
+center_education_world_threshold = 1000
+
+center_production_local_threshold = 50
+center_production_regional_threshold = 250
+center_production_continental_threshold = 500
+center_production_world_threshold = 1000
+
+# Trade score components and total
+mnt_center_trade_score_market_access = {
+	desc = mnt_center_trade_score_market_access_desc
+	value = market_access
+	multiply = 10
+}
+mnt_center_trade_score_merchant_power = {
+	desc = mnt_center_trade_score_merchant_power_desc
+	value = modifier:local_merchant_power
+	multiply = 15
+}
+mnt_center_trade_score_trades_per_burgher = {
+	desc = mnt_center_trade_score_trades_per_burgher_desc
+	value = modifier:local_trades_per_burgher
+	multiply = num_pop_type:burghers
+	multiply = 5
+}
+mnt_center_trade_score_building_capacity = {
+	desc = mnt_center_trade_score_building_capacity_desc
+	value = modifier:merchant_capacity_from_building
+	multiply = 15
+}
+mnt_center_trade_score_maritime_presence = {
+	desc = mnt_center_trade_score_maritime_presence_desc
+	value = modifier:local_maritime_presence
+	multiply = 20
+}
+
+mnt_center_trade_score = {
+	desc = mnt_center_trade_score_desc
+	value = mnt_center_trade_score_market_access
+	add = mnt_center_trade_score_merchant_power
+	add = mnt_center_trade_score_trades_per_burgher
+	add = mnt_center_trade_score_building_capacity
+	add = mnt_center_trade_score_maritime_presence
+}
+
+# Production score components and total
+mnt_center_production_score_goods_value = {
+	desc = mnt_center_production_score_goods_value_desc
+	value = var:mnt_urban_goods_value
+	multiply = 10
+}
+
+mnt_center_production_score = {
+	desc = mnt_center_production_score_desc
+	value = mnt_center_production_score_goods_value
+}
+
+# Culture score components and total
+mnt_center_culture_score_influence = {
+	desc = mnt_center_culture_score_influence_desc
+	value = modifier:local_cultural_influence
+	multiply = 75
+}
+mnt_center_culture_score_tradition = {
+	desc = mnt_center_culture_score_tradition_desc
+	value = modifier:local_cultural_tradition
+	multiply = 33
+}
+mnt_center_culture_score_art_quality = {
+	desc = mnt_center_culture_score_art_quality_desc
+	value = location_art_quality
+}
+
+mnt_center_culture_score = {
+	desc = mnt_center_culture_score_desc
+	value = mnt_center_culture_score_influence
+	add = mnt_center_culture_score_tradition
+	add = mnt_center_culture_score_art_quality
+}
+
+# Education score components and total
+mnt_center_education_score_clergy = {
+	desc = mnt_center_education_score_clergy_desc
+	value = num_pop_type:clergy
+	multiply = 10
+}
+mnt_center_education_score_nobles = {
+	desc = mnt_center_education_score_nobles_desc
+	value = num_pop_type:nobles
+	multiply = 5
+}
+mnt_center_education_score_literacy = {
+	desc = mnt_center_education_score_literacy_desc
+	value = average_location_literacy
+}
+mnt_center_education_score_university = {
+	desc = mnt_center_education_score_university_desc
+	value = 0
+	if = {
+		limit = { has_building = building_type:university }
+		add = 100
+	}
+}
+mnt_center_education_score_monastery = {
+	desc = mnt_center_education_score_monastery_desc
+	value = 0
+	if = {
+		limit = { has_building = building_type:monastery }
+		add = 25
+	}
+}
+mnt_center_education_score_library = {
+	desc = mnt_center_education_score_library_desc
+	value = 0
+	if = {
+		limit = { has_building = building_type:library }
+		add = 30
+	}
+}
+
+mnt_center_education_score_books_produced = {
+	desc = mnt_center_education_score_books_produced_desc
+	value = "goods_output(goods:books)"
+	multiply = 7.5
+}
+
+mnt_center_education_score = {
+	desc = mnt_center_education_score_desc
+	value = mnt_center_education_score_clergy
+	add = {
+		desc = mnt_center_education_score_nobles_desc
+		value = mnt_center_education_score_nobles
+	}
+	add = {
+		desc = mnt_center_education_score_literacy_desc
+		value = mnt_center_education_score_literacy
+	}
+	add = {
+		desc = mnt_center_education_score_university_desc
+		value = mnt_center_education_score_university
+	}
+	add = {
+		desc = mnt_center_education_score_monastery_desc
+		value = mnt_center_education_score_monastery
+	}
+	add = {
+		desc = mnt_center_education_score_library_desc
+		value = mnt_center_education_score_library
+	}
+	add = {
+		desc = mnt_center_education_score_books_produced_desc
+		value = mnt_center_education_score_books_produced
+	}
+}
