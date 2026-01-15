@@ -1,0 +1,245 @@
+﻿lutheran_preachers = {
+	max_levels = reformation_preachers_max_level
+	pop_type = clergy
+	
+	category = religious_category
+	
+	can_close = no
+	
+	employment_size = religious_building_employment
+	
+	rural_settlement = yes
+	town = yes
+	city = yes
+	
+	conversion_religion = lutheran
+	
+	country_potential = {
+		custom_tooltip = {
+			text = not_buildable_only_situation
+			always = no
+		}
+	}
+	allow = {
+		custom_tooltip = {
+			text = not_buildable_only_situation
+			always = no
+		}
+	}
+	can_destroy = {
+		custom_tooltip = {
+			text = jesuits_allowed_or_non_catholic
+			owner = {
+				OR = {
+					has_policy = jesuits_allowed
+					religion != religion:catholic
+				}
+			}
+		}
+
+	}
+	
+	remove_if = {
+		OR = {
+			location = {
+				dominant_religion = religion:lutheran
+				situation:council_of_trent = {
+					situation_is_active = yes
+				}
+			}
+			AND = {
+				situation:reformation = {
+					situation_is_active = no
+					situation_has_ended = yes
+				}
+			}
+		}
+	}
+	
+	price = free_building
+	destroy_price = remove_lutheran_preacher
+	on_built = {
+		hidden_effect = {
+			if = {
+				limit = { is_situation_active = situation:reformation }
+				situation:reformation = {
+					if = {
+						limit = { has_variable = reformation_lutheran_preachers_counter }
+						change_variable = {
+							name = reformation_lutheran_preachers_counter
+							add = 1
+						}
+					}
+					else = {
+						set_variable = {
+							name = reformation_lutheran_preachers_counter
+							value = 1
+						}
+					}
+				}
+			}
+		}
+	}
+	on_destroyed = {
+		hidden_effect = {
+			if = {
+				limit = { is_situation_active = situation:reformation }
+				situation:reformation = {
+					if = {
+						limit = { has_variable = reformation_lutheran_preachers_counter }
+						change_variable = {
+							name = reformation_lutheran_preachers_counter
+							subtract = 1
+						}
+					}
+					if = {
+						limit = {
+							OR = {
+								NOT = { has_variable = reformation_lutheran_preachers_counter }
+								AND = {
+									has_variable = reformation_lutheran_preachers_counter
+									var:reformation_lutheran_preachers_counter < 0
+								}
+							}
+						}
+						set_variable = {
+							name = reformation_lutheran_preachers_counter
+							value = 0
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	
+	possible_production_methods = {
+		lutheran_preacher_maintenance
+	}
+
+	construction_demand = estate_construct_building
+	
+	build_time = generic_event_building
+	
+	modifier = {
+		building_missionary_effort_scaled = 0.01		#1% each month
+	}
+}
+
+calvinist_preachers = {
+	max_levels = reformation_preachers_max_level
+	pop_type = clergy
+	
+	category = religious_category
+	
+	
+	employment_size = religious_building_employment
+	
+	rural_settlement = yes
+	town = yes
+	city = yes
+	
+	conversion_religion = calvinist
+	
+	country_potential = {
+		always = no
+	}
+	allow = {
+		always = no
+	}
+	
+	remove_if = {
+		OR = {
+			location = {
+				dominant_religion = religion:calvinist
+				situation:council_of_trent = {
+					situation_has_ended = yes
+				}
+			}
+			AND = {
+				situation:reformation = {
+					situation_is_active = no
+					situation_has_ended = yes
+				}
+			}
+		}
+	}
+	can_destroy = {
+		custom_tooltip = {
+			text = jesuits_allowed_or_non_catholic
+			owner = {
+				OR = {
+					has_policy = jesuits_allowed
+					religion != religion:catholic
+				}
+			}
+		}
+	}
+	
+	price = free_building
+	destroy_price = remove_lutheran_preacher
+	on_built = {
+		hidden_effect = {
+			if = {
+				limit = { is_situation_active = situation:reformation }
+				situation:reformation = {
+					if = {
+						limit = { has_variable = reformation_calvinist_preachers_counter }
+						change_variable = {
+							name = reformation_calvinist_preachers_counter
+							add = 1
+						}
+					}
+					else = {
+						set_variable = {
+							name = reformation_calvinist_preachers_counter
+							value = 1
+						}
+					}
+				}
+			}
+		}
+	}
+	on_destroyed = {
+		hidden_effect = {
+			if = {
+				limit = { is_situation_active = situation:reformation }
+				situation:reformation = {
+					if = {
+						limit = { has_variable = reformation_calvinist_preachers_counter }
+						change_variable = {
+							name = reformation_calvinist_preachers_counter
+							subtract = 1
+						}
+					}
+					if = {
+						limit = {
+							OR = {
+								NOT = { has_variable = reformation_calvinist_preachers_counter }
+								AND = {
+									has_variable = reformation_calvinist_preachers_counter
+									var:reformation_calvinist_preachers_counter < 0
+								}
+							}
+						}
+						set_variable = {
+							name = reformation_calvinist_preachers_counter
+							value = 0
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	possible_production_methods = {
+		lutheran_preacher_maintenance
+	}
+	construction_demand = estate_construct_building
+	
+	build_time = generic_event_building
+	
+	modifier = {
+		building_missionary_effort_scaled = 0.01		#1% each month
+	}
+}

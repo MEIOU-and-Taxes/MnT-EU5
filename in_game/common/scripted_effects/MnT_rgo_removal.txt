@@ -5,19 +5,13 @@
 
 	every_owned_location = {
 		change_max_raw_material_workers = -100
-		add_location_modifier = {
-			modifier = remove_market_access
-			years = -1
-			mode = add
-			# desc = remove_market_access_desc
-		}
 	}
 
 	add_country_modifier = {
 		modifier = fill_vacancies
 		months = 2
 		mode = add
-		# desc = fill_vacancies_desc
+		desc = fill_vacancies_desc
 	}
 }
 
@@ -48,7 +42,7 @@ replace_rgos_with_buildings = {
 	if = { limit = { raw_material = goods:lead } change_building_level_in_location = { building = building_type:RGO_building_lead value = rgo_building_level } }
 	if = { limit = { raw_material = goods:legumes } change_building_level_in_location = { building = building_type:RGO_building_legumes value = rgo_building_level } }
 	if = { limit = { raw_material = goods:livestock } change_building_level_in_location = { building = building_type:RGO_building_livestock value = rgo_building_level } }
-	if = { limit = { raw_material = goods:lumber } change_building_level_in_location = { building = building_type:RGO_building_lumber value = rgo_building_level } }
+	if = { limit = { raw_material = goods:lumber } change_building_level_in_location = { building = building_type:RGO_building_lumber value = rgo_building_level_double } }
 	if = { limit = { raw_material = goods:maize } change_building_level_in_location = { building = building_type:RGO_building_maize value = rgo_building_level } }
 	if = { limit = { raw_material = goods:marble } change_building_level_in_location = { building = building_type:RGO_building_marble value = rgo_building_level } }
 	if = { limit = { raw_material = goods:medicaments } change_building_level_in_location = { building = building_type:RGO_building_medicaments value = rgo_building_level } }
@@ -74,4 +68,23 @@ replace_rgos_with_buildings = {
 	if = { limit = { raw_material = goods:wild_game } change_building_level_in_location = { building = building_type:RGO_building_wild_game value = rgo_building_level } }
 	if = { limit = { raw_material = goods:wine } change_building_level_in_location = { building = building_type:RGO_building_wine value = rgo_building_level } }
 	if = { limit = { raw_material = goods:wool } change_building_level_in_location = { building = building_type:RGO_building_wool value = rgo_building_level } }
+}
+
+REPLACE:cc_setup_new_town = {
+	change_building_level_in_location = { building = building_type:clay_pit		value = 1 }
+	change_building_level_in_location = { building = building_type:RGO_building_lumber	value = 1 }
+	change_building_level_in_location = { building = building_type:mason		value = 1 }
+	change_max_raw_material_workers = 1
+	
+	if = {
+		limit = { market_access <= 0 }
+	
+		create_market = {
+			builder = root
+			location = scope:new_town
+			price = price:create_market
+			instant = yes
+			price_modifier = 0
+		}	
+	}
 }
