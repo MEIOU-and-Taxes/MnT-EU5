@@ -31,19 +31,19 @@ Date: 2025-11-30
 
 #### Balancing
 
--Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
--Reduced use of masonry by granaries.
--Reduced use of tools by lumber mills.
--Higher literacy lowers stability.
--Peasant percentage improves stability.
--Buffed cabinet stability improving action.
--Stability effects prosperity negatively as well as positively.
--Reduced stability cost of destroying markets.
--Reduced stability cost of revoking privileges.
--Made hiring new characters scale somewhat less with income.
--Local population growth removed from having positive food.
--Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
--Capital Location gives no max control or population capacity anymore.
+- Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+- Reduced use of masonry by granaries.
+- Reduced use of tools by lumber mills.
+- Higher literacy lowers stability.
+- Peasant percentage improves stability.
+- Buffed cabinet stability improving action.
+- Stability effects prosperity negatively as well as positively.
+- Reduced stability cost of destroying markets.
+- Reduced stability cost of revoking privileges.
+- Made hiring new characters scale somewhat less with income.
+- Local population growth removed from having positive food.
+- Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
+- Capital Location gives no max control or population capacity anymore.
 
 ##### Diplomacy
 
@@ -94,7 +94,8 @@ Date: 2025-11-30
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
     - Diplomatic expenses: paper, jewelry  
-- Food  
+- RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
+- Massive rework of the food system, focused on tying up much more of the early game population in food production as peasants.
   - Farming villages  
     - Are split into common pastures & the new farming villages  
     - They are given at game start based on starting peasant population  
