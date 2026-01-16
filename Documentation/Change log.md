@@ -24,6 +24,8 @@ Date: 2025-11-30
   - Additionally per geographical area only one center of each tier can exist.
   - Each location center tier gives bonuses to the location.
 - Goods Domestic Production (proxy for GDP goods domestic product ), sum of goods value * amount
+  - Road maintenance cost
+
 #### Bugfixes
 
 - Stability map mode works, where it is red at \<25 and green at \>50 stability
@@ -77,13 +79,38 @@ Date: 2025-11-30
     - Proximity Cost of going upstream along a River: 30 → 11
     - Proximity Cost of going downstream along a River: 10 → 11  
     - Proximity Cost on Frozen Water: 20 → 15  
-  - Roads  
-    - Build cost scaled & maintenance market demands scaled  
-      - Gravel roads: 2X
-      - Paved roads: 3X  
-      - Modern roads: 10X  
-      - Railroads: 50X
-    - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
+- Roads
+  - Estates & government pay for road maintenance, based on effective political power   
+  - Build cost scaled & maintenance market demands scaled  
+    - Gravel roads: 2X
+    - Paved roads: 3X  
+    - Modern roads: 10X  
+    - Railroads: 50X
+  - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
+  - Climate, topography & vegetation impact maintenance cost:
+    - Climate:
+      - Oceanic: base
+      - Tropical: 1.56X
+      - Subtropical: 1.32X
+      - Arid: 1.4X
+      - Cold arid: 1.24X
+      - Mediterranean: 1.26X
+      - Continental: 1.7X
+      - Arctic: 3X
+    - Topography:
+      - Flatlands: base
+      - Mountains: 2.4X
+      - Hills: 1.4X
+      - Plateau: 1.24X
+      - Wetlands: 3X
+    - Vegetation:
+      - Desert: base
+      - Sparse: 1.08X
+      - Grasslands: 1.4X
+      - Farmland: 1.56X
+      - Woods: 2X
+      - Forest: 2.8X
+      - Jungle: 3X
 - Market  
   - Market access cost reduction doubled for roads:  
     - Gravel: \-10% → \-20%  

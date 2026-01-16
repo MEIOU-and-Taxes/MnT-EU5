@@ -333,7 +333,7 @@ market_access = {
 }
 
 goods_value = {
-	map_color = {	
+	map_color = {
 	 	if = {
 	 		limit = {
 	 			has_owner = yes
@@ -488,7 +488,7 @@ goods_value_rural = {
 	}
 
 	tooltip_key = { value = mapmode_goods_value_rural_location_tooltip }
-	
+
 	small_map_names = location
 	medium_map_names = location
 	large_map_names = location
@@ -507,7 +507,7 @@ goods_value_rural = {
 	map_markers = {
 		all = no
 	}
-	
+
 	gradient_parameters = {
 		zoom_step = @zoom_step_near
 
@@ -522,7 +522,7 @@ goods_value_rural = {
 		before_lighting_blend =		@data_before_lighting_blend
 		after_lighting_blend =		@data_after_lighting_blend
 	}
-	
+
 	color_refresh_counters = { Month }
 	color_and_names_refresh_counters = { LocationVariableChanged LocationOwnerChanged }
 }
@@ -1307,11 +1307,119 @@ market_food_stockpile = {
 	map_lines_mode = ToMarketCenter
 }
 
+road_maintenance_cost = {
+	map_color = {
+	 	if = {
+	 		limit = {
+	 			is_land = yes
+				has_variable = road_maintenance_cost
+	 		}
+			if = {
+				limit = { mnt_road_maintenance_cost_relative_to_max > 0.33 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_LOW
+					max_color = define:NMapColors|MAP_COLOR_MIN
+
+					factor = {
+						value = mnt_road_maintenance_cost_relative_to_max
+						subtract = 0.33
+						multiply = 1.5
+					}
+				}
+			}
+			else_if = {
+				limit = { mnt_road_maintenance_cost_relative_to_max > 0.11 }
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_MID
+					max_color = define:NMapColors|MAP_COLOR_LOW
+
+					factor = {
+						value = mnt_road_maintenance_cost_relative_to_max
+						subtract = 0.11
+						multiply = 4.54
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = define:NMapColors|MAP_COLOR_HIGH
+					max_color = define:NMapColors|MAP_COLOR_MID
+
+					factor = {
+						value = mnt_road_maintenance_cost_relative_to_max
+						multiply = 3
+					}
+				}
+			}
+		}
+	}
+
+	tooltip_key = {
+
+	}
+
+	small_map_names = location
+	medium_map_names = location
+	large_map_names = location
+
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+
+	flatmap_behaviour = Always
+	use_fow = no
+
+	category = economy
+	index = 0
+
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_BLACK"
+		color = define:NMapColors|MAP_COLOR_MIN
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_RED"
+		color = define:NMapColors|MAP_COLOR_LOW
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_YELLOW"
+		color = define:NMapColors|MAP_COLOR_MID
+	}
+	legend_key = {
+		desc = "ROAD_MAINTENANCE_GREEN_DARK"
+		color = define:NMapColors|MAP_COLOR_HIGH
+	}
+
+	map_markers = {
+		market_marker = no
+		fort_marker = no
+		toll_marker = no
+		unit_marker = no
+	}
+
+	gradient_parameters = {
+		zoom_step = @zoom_step_near
+
+		gradient_alpha_inside = 	@data_gradient_alpha_inside
+		gradient_alpha_outside = 	@data_gradient_alpha_outside
+		gradient_width = 			@data_gradient_width
+		gradient_color_mult =		@data_gradient_color_mult
+		edge_width = 				@data_edge_width
+		edge_sharpness = 			@data_edge_sharpness
+		edge_alpha = 				@data_edge_alpha
+		edge_color_mult = 			@data_edge_color_mult
+		before_lighting_blend =		@data_before_lighting_blend
+		after_lighting_blend =		@data_after_lighting_blend
+	}
+
+	color_and_names_refresh_counters = {}
+}
+
 ###############################################
 ### MEIOU and Taxes - Centers of Importance ###
 ###############################################
 center_trade = {
- 	map_color = {	
+ 	map_color = {
  	 	if = {
  	 		limit = {
  	 			has_location_modifier = mnt_center_trade_world
@@ -1376,11 +1484,11 @@ center_trade = {
  		desc = "Local Trade Center"
 		color = rgb { 89 102 133 }
  	}
-	
+
 	map_markers = {
 		all = no
 	}
-	
+
 	small_map_names = location
 	medium_map_names = none
 	large_map_names = none
@@ -1411,7 +1519,7 @@ center_trade = {
 }
 
 center_culture = {
- 	map_color = {	
+ 	map_color = {
  	 	if = {
  	 		limit = {
  	 			has_location_modifier = mnt_center_culture_world
@@ -1476,11 +1584,11 @@ center_culture = {
  		desc = "Local Cultural Center"
 		color = rgb { 89 102 133 }
  	}
-	
+
 	map_markers = {
 		all = no
 	}
-	
+
 	small_map_names = location
 	medium_map_names = location
 	large_map_names = location
@@ -1494,7 +1602,7 @@ center_culture = {
 	use_fow = no
 
 	category = geopolitics
-	
+
 	gradient_parameters = {
 		zoom_step = @zoom_step_near
 
@@ -1512,7 +1620,7 @@ center_culture = {
 }
 
 center_education = {
- 	map_color = {	
+ 	map_color = {
  	 	if = {
  	 		limit = {
  	 			has_location_modifier = mnt_center_education_world
@@ -1581,7 +1689,7 @@ center_education = {
 	map_markers = {
 		all = no
 	}
-	
+
 	small_map_names = location
 	medium_map_names = location
 	large_map_names = location
@@ -1595,7 +1703,7 @@ center_education = {
 	use_fow = no
 
 	category = geopolitics
-	
+
 	gradient_parameters = {
 		zoom_step = @zoom_step_near
 
@@ -1613,7 +1721,7 @@ center_education = {
 }
 
 center_production = {
- 	map_color = {	
+ 	map_color = {
  	 	if = {
  	 		limit = {
  	 			has_location_modifier = mnt_center_production_world
