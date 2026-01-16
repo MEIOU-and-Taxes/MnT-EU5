@@ -1,4 +1,4 @@
-﻿on_game_start = {
+on_game_start = {
 	on_actions = {
 		on_game_start_MnT
 	}
@@ -14,6 +14,7 @@ yearly_country_pulse = {
 biyearly_country_pulse  = {
 	on_actions = {
 		player_auto_marry
+		biyearly_country_pulse_MnT
 	}
 }
 
@@ -25,16 +26,31 @@ monthly_country_pulse = {
 
 on_game_start_MnT = {
 	effect = {
+		# Initialize center of importance systems on game start
+		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
+
+		# Initialize GDP update frequency variable and trigger first update
+		every_country = {
+			limit = { is_ai = no }
+			if = {
+				limit = { NOT = { has_variable = mnt_goods_value_update_freq } }
+				set_variable = { name = mnt_goods_value_update_freq value = 1 }
+			}
+			trigger_event_silently = { id = mnt_goods_value.1 }
+		}
+
+		# Handle Pop and Food building startup
+		every_country = { limit = { num_locations > 0 }	trigger_event_silently = { id = mnt_food.1 } }
 	}
 }
 
 pulse_yearly_MnT = {
 	trigger = {
-		country_exists = c:FRA
-		this = c:FRA
+		great_power_ranking = 1
 	}
 	effect = {
-		c:FRA = {
+		random_country = {
+			trigger_event_silently = { id = mnt_centers.1 }
 			trigger_event_silently = { id = road_maintenance.03 }
 			trigger_event_silently = { id = road_maintenance.01 }
 			trigger_event_silently = { id = LOGGER_CHARTS.02 }
@@ -45,6 +61,14 @@ pulse_yearly_MnT = {
 pulse_yearly_per_country_MnT = {
 	events = {
 		estate_income_fix.2
+		mnt_food.2
+		mnt_goods_value.2
+	}
+}
+
+biyearly_country_pulse_MnT = {
+	events = {
+		mnt_food.3
 	}
 }
 
@@ -57,6 +81,7 @@ player_auto_marry = {
 monthly_country_pulse_MnT = {
 	events = {
 		estate_income_fix.1
+		mnt_goods_value.1
 
 		# Calculate demands of individual countries
 		cost_of_the_court.1
