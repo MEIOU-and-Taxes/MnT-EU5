@@ -24,6 +24,7 @@ import chart_library as all_graphs
 from interactive_tooltip import InteractiveLineTooltip
 from tools.dataset_analysis.analysis_toolkit import AnalysisToolkitDialog
 from tools.plot import log_parser
+from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
 TARGET_FILE_NAME_ROOT = 'error'
