@@ -37,20 +37,6 @@ rgo_$GOOD$_max_level = {
 			value = population
 			multiply = 0.01
 		}
-		add = {
-			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-			value = { 
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
-			}
-		}
-		add = {
-			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-			value = { 
-				value = scope:base_value
-				multiply = owner.modifier:global_raw_material_output
-			}
-		}
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -66,7 +52,7 @@ rgo_$GOOD$_max_level = {
 			}
 		}
 	}
-	if = { limit = { owner.modifier:global_max_rgo_size_modifier > 0}
+	if = { limit = { owner.modifier:global_max_rgo_size_modifier != 0}
         add = { desc = "GLOBAL_MAX_RGO"
             value = { value = scope:base_value
                 multiply = owner.modifier:global_max_rgo_size_modifier
@@ -79,7 +65,7 @@ rgo_$GOOD$_max_level = {
 				location_rank ?= location_rank:town
 				location_rank ?= location_rank:city
 			}
-	        owner.modifier:global_max_rgo_size_modifier_in_non_rural > 0
+	        owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
 	    }
 		add = { desc = "URBAN_MAX_RGO"
 			value = scope:base_value
@@ -89,11 +75,31 @@ rgo_$GOOD$_max_level = {
 	else_if = { 
 		limit = {
 			location_rank ?= location_rank:rural_settlement
-			owner.modifier:global_max_rgo_size_modifier_in_rural > 0 
+			owner.modifier:global_max_rgo_size_modifier_in_rural != 0 
 		}
 	    add = { desc = "RURAL_MAX_RGO"
 			value = scope:base_value
 			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+	}
+	if = {
+		limit = { owner.modifier:global_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
 		}
 	}
 }
