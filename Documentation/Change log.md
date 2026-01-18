@@ -204,3 +204,6 @@ Date: 2025-11-30
   
 ##### GUI
 - Added Goods Domestic Product UI in the Economy panel
+
+##### Modding
+- Added automated check for correct encodings via GitHub Actions
