@@ -1,4 +1,4 @@
-﻿rgo_$GOOD$_max_level = {
+rgo_$GOOD$_max_level = {
 	save_temporary_value_as = { 
 		name = base_value
 		value = 0
@@ -37,6 +37,20 @@
 			value = population
 			multiply = 0.01
 		}
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
+		}
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -60,14 +74,23 @@
         }
 	}
 	if = {
-	    limit = { is_city = yes
+	    limit = { 
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+			}
 	        owner.modifier:global_max_rgo_size_modifier_in_non_rural > 0
 	    }
 		add = { desc = "URBAN_MAX_RGO"
 			value = scope:base_value
 			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
 		}
-	} else_if = { limit = { owner.modifier:global_max_rgo_size_modifier_in_rural > 0 }
+	}
+	else_if = { 
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner.modifier:global_max_rgo_size_modifier_in_rural > 0 
+		}
 	    add = { desc = "RURAL_MAX_RGO"
 			value = scope:base_value
 			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
