@@ -1,0 +1,182 @@
+﻿time_of_troubles = {
+
+	image = "gfx/interface/illustrations/disaster/time_of_troubles.dds"
+
+	monthly_spawn_chance = monthly_spawn_chance_ultimate
+
+	can_start = {
+		always = no
+		current_age_or_later = { age = age_4_reformation }
+		OR = {
+			tag = RUS
+			tag = MOS
+		}
+		has_any_active_disaster = no
+		government_type = government_type:monarchy
+		custom_tooltip = {
+			text = had_csd_disaster_variable_tt
+			NOT = { has_variable = concluded_tot_variable }
+		}
+		OR = {
+			government_power < 60
+			stability < 25
+		}
+	}
+
+	can_end = {
+		always = yes
+	}
+	modifier = {
+		monthly_legitimacy = -0.3
+		global_monthly_food_modifier = -0.25
+		global_estate_target_satisfaction = big_permanent_target_satisfaction_penalty
+	}
+	
+	on_start = {
+		set_variable = {
+			name = time_of_troubles_stability_var
+			value = {
+				add = stability
+				add = 20
+				min = 0
+				max = 75
+			}
+		}
+		set_variable = {
+			name = time_of_troubles_gov_power_var
+			value = {
+				add = government_power
+				add = 25
+				min = 50
+				max = 90
+			}
+		}
+		trigger_event_non_silently = time_of_troubles.1
+	}
+
+	on_monthly = {
+
+		random_list = {
+			9 = { custom_tooltip = an_event_occurs_tt }
+			91 = { custom_tooltip = no_event_occurs_tt }
+		}
+		hidden_effect = {
+			random_list = {
+				900 = { }
+				5 = { 
+					trigger_event_silently = time_of_troubles.2	#Insanity 
+				}
+				8 = { 
+					trigger_event_silently = time_of_troubles.3	#Forbidden Years 
+				}
+				8 = { 
+					trigger_event_silently = time_of_troubles.4	#Famine 
+				}
+				8 = {
+					trigger_event_silently = time_of_troubles.5	#Brigands 
+				}
+				8 = {
+					trigger_event_silently = time_of_troubles.6	#First Dmitry
+				}
+				8 = {
+					trigger_event_silently = time_of_troubles.7	#Hunger Riots 
+				}
+				8 = {
+					trigger_event_silently = time_of_troubles.8	#Khlopko Rebellion 
+				}
+				8 = {
+					trigger = {
+						any_rebel = {
+							rebel_name_key = fake_dmitry_pretender_rebels
+							any_character_supporting_rebel = { count > 0 }
+						}
+						exists = var:dead_heir_variable
+						ruler_or_regent ?= { exists = dynasty }
+						any_rival = {
+							at_war = no
+							NOT = { has_truce_with = ROOT }
+							NOT = { has_variable = dmitry_event_cd_variable }
+						}
+					}
+					random_rival = {
+						limit = {
+							at_war = no
+							NOT = { has_truce_with = ROOT }
+							NOT = { has_variable = dmitry_event_cd_variable }
+						}
+						trigger_event_silently = time_of_troubles.9 #Foreign Support for Pretender 
+					}
+				}
+				8 = {
+					trigger = {
+						any_rebel = { 
+							rebel_name_key = fake_dmitry_pretender_rebels
+							any_character_supporting_rebel = { count > 0 }
+						}
+						exists = var:dead_heir_variable
+						ruler_or_regent ?= { exists = dynasty }
+						any_enemy = {
+							at_war = no
+							NOT = { has_truce_with = ROOT }
+							NOT = { has_variable = dmitry_event_cd_variable }
+						}
+					}
+					random_enemy = {
+						limit = {
+							at_war = no
+							NOT = { has_truce_with = ROOT }
+							NOT = { has_variable = dmitry_event_cd_variable }
+						}
+						trigger_event_silently = time_of_troubles.9 #Foreign Support for Pretender 
+					}
+				}
+				8 = {
+					trigger = {
+						any_neighbor_country = {
+							NOT = { has_truce_with = ROOT }
+							NOT = { is_allied_with = { target = ROOT } }
+							at_war = no
+							is_subject = no 
+							OR = {
+								opinion = {
+									target = ROOT
+									value <= 5
+								}
+								is_rival_of = root
+								is_enemy_of = root
+							}
+						}
+					}
+					random_neighbor_country = {
+						limit = {
+							NOT = { has_truce_with = ROOT }
+							NOT = { is_allied_with = { target = ROOT } }
+							at_war = no
+							is_subject = no 
+							OR = {
+								opinion = {
+									target = ROOT
+									value <= 5
+								}
+								is_rival_of = root
+								is_enemy_of = root
+							}
+						}
+						trigger_event_silently = time_of_troubles.10	#Border Country Claims Land/Declares War (?)
+					}
+				}
+				8 = { trigger_event_silently = time_of_troubles.11 }	#Disease claims victims 
+				25 = {
+					trigger_event_silently = time_of_troubles.12	#Death of the Heir 
+				}
+			}
+		}
+		
+	}
+	on_end = {
+		remove_variable = time_of_troubles_stability_var
+		remove_variable = time_of_troubles_gov_power_var
+		set_variable = concluded_tot_variable
+		trigger_event_non_silently = time_of_troubles.13
+	}
+}

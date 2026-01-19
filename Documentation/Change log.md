@@ -190,6 +190,7 @@ Date: 2026-01-09
 ##### Disasters
 
 - ‘Decline of empires’ removed, now is ‘Time of struggle’, applies to everyone with more complex logic and less impossible to escape.
+- ‘Time of Troubles’ removed, it was bad in vanilla, and needs to be fundamentally redesigned to be reimplemented
 
 ##### Warfare
 
