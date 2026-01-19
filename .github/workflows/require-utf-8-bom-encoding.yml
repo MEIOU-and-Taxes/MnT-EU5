@@ -87,14 +87,22 @@ jobs:
               "jomini/loading_screen/sound",
           ]
 
+          # Exclude these path prefixes from BOM enforcement (even if under BOM_PATH_PREFIXES)
+          EXCLUDE_BOM_PATH_PREFIXES = [
+            "main_menu/setup/",
+            "main_menu/common/named_colors/",
+            "loading_screen/common/named_colors/"
+          ]
+
           # File extensions we treat as "text to validate"
+          # All .gui files are skipped as they don't support BOM.
           TEXT_EXTS = {
-              ".txt", ".yml", ".gui", ".gfx", ".lua"
+              ".txt", ".yml", ".gfx", ".lua"
           }
 
           # Extensions to skip as binary/irrelevant
           SKIP_EXTS = {
-              ".png", ".jpg", ".jpeg", ".webp", ".dds", ".tga", ".psd", ".xcf",
+              ".png", ".jpg", ".jpeg", ".webp", ".dds", ".tga", ".psd", ".xcf", ".gui",
               ".ogg", ".mp3", ".wav", ".bin", ".zip", ".7z", ".rar", ".pdf", ".ttf", ".otf"
           }
 
@@ -122,6 +130,8 @@ jobs:
 
           def requires_bom(p: Path) -> bool:
               s = str(p).replace("\\", "/")
+              if any(s.startswith(pref) for pref in EXCLUDE_BOM_PATH_PREFIXES):
+                  return False
               return any(s.startswith(pref) for pref in BOM_PATH_PREFIXES)
 
           bad = []

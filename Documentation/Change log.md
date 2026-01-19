@@ -1,4 +1,4 @@
-# Release
+﻿# Release
 
 ### 0.0.1
 
@@ -7,6 +7,7 @@ Date: 2026-01-09
 #### Features
 
 - RGOs are replaced by buildings
+    - Similar buildings such as clay/sand pits, fruit orchards etc. got merged into the RGO-building 
 - Naval levies  
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
@@ -189,6 +190,7 @@ Date: 2026-01-09
 ##### Disasters
 
 - ‘Decline of empires’ removed, now is ‘Time of struggle’, applies to everyone with more complex logic and less impossible to escape.
+- ‘Time of Troubles’ removed, it was bad in vanilla, and needs to be fundamentally redesigned to be reimplemented
 
 ##### Warfare
 
@@ -206,3 +208,6 @@ Date: 2026-01-09
   
 ##### GUI
 - Added Goods Domestic Product UI in the Economy panel
+
+##### Modding
+- Added automated check for correct encodings via GitHub Actions
