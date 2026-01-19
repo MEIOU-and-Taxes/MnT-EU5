@@ -15,15 +15,17 @@ def find_bom_exceptions(root_dir: str) -> list[dict]:
 	UTF-8 with BOM.
 
 	An exception is a file without a BOM in a folder where either:
-	1. It is the *only* file without a BOM.
-	2. Over 90% of the other relevant files have a BOM.
+	1. There are few files without a BOM.
+	2. Over X% of the other relevant files have a BOM.
 
 	Returns a list of dictionaries, each containing details about an exception.
 	"""
 	exception_files = []
+	root_path = Path(root_dir)
 
-	for dirpath, _, filenames in os.walk(root_dir):
+	for dirpath, _, filenames in os.walk(root_path):
 		current_dir = Path(dirpath)
+
 		relevant_files = [
 			current_dir / f for f in filenames if f.endswith(('.txt', '.yml'))
 		]
@@ -52,8 +54,9 @@ def find_bom_exceptions(root_dir: str) -> list[dict]:
 			# This folder is a "near miss". Report the files causing it.
 			for file_path in non_bom_files:
 				exception_files.append({
-					'file': str(file_path),
-					'folder': str(current_dir),
+					# Change these lines to make paths relative
+					'file': str(file_path.relative_to(root_path)),
+					'folder': str(current_dir.relative_to(root_path)),
 					'reason': f"Folder has {bom_count}/{total_count} files with BOM ({bom_percentage:.1f}%)"
 				})
 
@@ -82,6 +85,6 @@ if __name__ == '__main__':
 			print(f"  Reason: {data['reason']}")
 			print("  Exception files (missing BOM):")
 			for file in data['files']:
-				print(f"    - {file}")
+				print(f"	- {file}")
 	else:
 		print("\nNo folders with BOM exceptions were found based on the criteria.")
