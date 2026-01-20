@@ -20,33 +20,33 @@ jobs:
         run: |
           base_sha="${{ github.event.pull_request.base.sha }}"
           head_sha="${{ github.event.pull_request.head.sha }}"
-          # Use NUL-delimited subjects to safely handle embedded newlines
-          msgs=$(git log --format=%s%00 "$base_sha..$head_sha" || true)
-
-          echo "messages<<EOF" >> $GITHUB_OUTPUT
-          echo "$msgs" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use a unique delimiter to safely handle all characters
+          delimiter=$(openssl rand -hex 8)
+          echo "messages<<${delimiter}" >> $GITHUB_OUTPUT
+          git log --format=%s "$base_sha..$head_sha" >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
 
       - name: Check if all commits are in ignored types
         id: check_ignored
+        # Pass the multiline string as an environment variable
+        env:
+          COMMIT_MESSAGES: "${{ steps.commits.outputs.messages }}"
         run: |
           allowed_re='^((build|chore|ci|docs|style|refactor|perf|test)(\([^)]+\))?:|Merge )'
           all_allowed=true
 
-          # Recompute range and iterate NUL-delimited commit subjects to avoid
-          # breaking on multiline messages or special characters
-          base_sha="${{ github.event.pull_request.base.sha }}"
-          head_sha="${{ github.event.pull_request.head.sha }}"
-
-          while IFS= read -r -d '' msg; do
+          # Read from the environment variable line by line
+          while IFS= read -r msg; do
+            # Skip empty lines which can result from the git log
             [ -z "$msg" ] && continue
             if ! printf "%s\n" "$msg" | grep -Eqi "$allowed_re"; then
               all_allowed=false
+              echo "Commit requiring changelog: '$msg'"
               break
             fi
-          done < <(git log --format=%s%00 "$base_sha..$head_sha")
+          done <<< "$COMMIT_MESSAGES"
 
-          printf "%s\n" "all_allowed=$all_allowed" >> $GITHUB_OUTPUT
+          echo "all_allowed=$all_allowed" >> $GITHUB_OUTPUT
 
       - name: Skip changelog requirement for pure non-user-facing changes
         if: steps.check_ignored.outputs.all_allowed == 'true'
