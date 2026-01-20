@@ -2,12 +2,12 @@
 
 ### 0.0.1
 
-Date: 2026-01-09
+Date: 2026-01-20
 
 #### Features
 
 - RGOs are replaced by buildings
-    - Similar buildings such as clay/sand pits, fruit orchards etc. got merged into the RGO-building 
+  - More in a seperate section below
 - Naval levies  
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
@@ -26,6 +26,15 @@ Date: 2026-01-09
   - Additionally, per geographical area only one center of each tier can exist.
   - Each location center tier gives bonuses to the location.
 - Goods Domestic Production (proxy for GDP goods domestic product ), sum of goods value * amount
+
+#### RGO Substitution
+  - RGOs are fully replaced by buildings
+  - Basegame RGO sizes hard-locked to zero by removing all base RGO size
+  - Added new RGO replacement buildings, localized them, gave them the pictures of the previous RGOs
+  - Buildings that have similar functionality as RGOs are now merged
+    - E.g. clay/sand pits, Lumbermills, fruit orchards etc. got merged into the RGO-building
+  - Balance changes done with calculation in excel spreadsheet, balance is still a bit rough but should mostly work fine
+  - Addapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
 
 #### Bugfixes
 
