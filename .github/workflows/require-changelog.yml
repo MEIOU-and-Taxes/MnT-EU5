@@ -20,7 +20,8 @@ jobs:
         run: |
           base_sha="${{ github.event.pull_request.base.sha }}"
           head_sha="${{ github.event.pull_request.head.sha }}"
-          msgs=$(git log --format=%s "$base_sha..$head_sha" || true)
+          # Use NUL-delimited subjects to safely handle embedded newlines
+          msgs=$(git log --format=%s%00 "$base_sha..$head_sha" || true)
 
           echo "messages<<EOF" >> $GITHUB_OUTPUT
           echo "$msgs" >> $GITHUB_OUTPUT
@@ -32,13 +33,18 @@ jobs:
           allowed_re='^((build|chore|ci|docs|style|refactor|perf|test)(\([^)]+\))?:|Merge )'
           all_allowed=true
 
-          while IFS= read -r msg; do
+          # Recompute range and iterate NUL-delimited commit subjects to avoid
+          # breaking on multiline messages or special characters
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.event.pull_request.head.sha }}"
+
+          while IFS= read -r -d '' msg; do
             [ -z "$msg" ] && continue
             if ! printf "%s\n" "$msg" | grep -Eqi "$allowed_re"; then
               all_allowed=false
               break
             fi
-          done <<< "${{ steps.commits.outputs.messages }}"
+          done < <(git log --format=%s%00 "$base_sha..$head_sha")
 
           printf "%s\n" "all_allowed=$all_allowed" >> $GITHUB_OUTPUT
 
