@@ -34,13 +34,13 @@ jobs:
 
           while IFS= read -r msg; do
             [ -z "$msg" ] && continue
-            if ! echo "$msg" | grep -Eqi "$allowed_re"; then
+            if ! printf "%s\n" "$msg" | grep -Eqi "$allowed_re"; then
               all_allowed=false
               break
             fi
           done <<< "${{ steps.commits.outputs.messages }}"
 
-          echo "all_allowed=$all_allowed" >> $GITHUB_OUTPUT
+          printf "%s\n" "all_allowed=$all_allowed" >> $GITHUB_OUTPUT
 
       - name: Skip changelog requirement for pure non-user-facing changes
         if: steps.check_ignored.outputs.all_allowed == 'true'
