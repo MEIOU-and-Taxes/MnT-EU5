@@ -11,7 +11,7 @@ yearly_country_pulse = {
 	}
 }
 
-biyearly_country_pulse  = {
+biyearly_country_pulse = {
 	on_actions = {
 		biyearly_country_pulse_MnT
 	}
@@ -30,14 +30,16 @@ on_game_start_MnT = {
 
 		# Initialize GDP update frequency variable and trigger first update
 		every_country = {
-			limit = { is_ai = no }
+			trigger_event_silently = { id = rgo_removal.01 }
 			if = {
-				limit = { NOT = { has_variable = mnt_goods_value_update_freq } }
-				set_variable = { name = mnt_goods_value_update_freq value = 1 }
+				limit = { is_ai = no }
+				if = {
+					limit = { NOT = { has_variable = mnt_goods_value_update_freq } }
+					set_variable = { name = mnt_goods_value_update_freq value = 1 }
+				}
 			}
 			trigger_event_silently = { id = mnt_goods_value.1 }
 		}
-
 		# Handle Pop and Food building startup
 		every_country = { limit = { num_locations > 0 }	trigger_event_silently = { id = mnt_food.1 } }
 	}
@@ -66,6 +68,7 @@ pulse_yearly_per_country_MnT = {
 biyearly_country_pulse_MnT = {
 	events = {
 		mnt_food.3
+		auto_marry.1
 	}
 }
 
