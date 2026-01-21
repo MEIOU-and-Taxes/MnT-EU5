@@ -2,10 +2,12 @@
 
 ### 0.0.1
 
-Date: 2025-11-30
+Date: 2026-01-09
 
 #### Features
 
+- RGOs are replaced by buildings
+    - Similar buildings such as clay/sand pits, fruit orchards etc. got merged into the RGO-building 
 - Naval levies  
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
@@ -18,16 +20,33 @@ Date: 2025-11-30
   - Noble %, Burgher %, Laborer %, Peasant %  
   - Market food balance  
   - Market food stockpile
+- Centers of Importance:
+  - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
+  - Each type has an associated score dependent on multiple factors and an absolute minimum threshold per tier.
+  - Additionally, per geographical area only one center of each tier can exist.
+  - Each location center tier gives bonuses to the location.
+- Goods Domestic Production (proxy for GDP goods domestic product ), sum of goods value * amount
 
 #### Bugfixes
 
 - Stability map mode works, where it is red at \<25 and green at \>50 stability
+- Backend error fixes
 
 #### Balancing
 
--Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
--Reduced use of masonry by granaries.
--Reduced use of tools by lumber mills.
+- Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+- Reduced use of masonry by granaries.
+- Reduced use of tools by lumber mills.
+- Higher literacy lowers stability.
+- Peasant percentage improves stability.
+- Buffed cabinet stability improving action.
+- Stability effects prosperity negatively as well as positively.
+- Reduced stability cost of destroying markets.
+- Reduced stability cost of revoking privileges.
+- Made hiring new characters scale somewhat less with income.
+- Local population growth removed from having positive food.
+- Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
+- Capital Location gives no max control or population capacity anymore.
 
 ##### Diplomacy
 
@@ -43,7 +62,7 @@ Date: 2025-11-30
 
 ##### Economy
 
-- Income lost due to control shortfall is given to the estates  
+- Income lost due to control shortfall is given to the estates (for >0 control locations it is exact, for =0 locations it uses an approximation for potential tax base)
 - Diplomatic spending gives to the noble estate 50% of it   
 - 0.5 building cap levels are now given per 1K pops rather than per 100K  
 - The bailiff building is also allowed in towns and cities  
@@ -58,8 +77,8 @@ Date: 2025-11-30
     - Proximity Cost through Roads: 20 → 15  
     - Proximity Cost through Land: 40 → 30  
     - Proximity Cost through Port: 40 → 30  
-    - Proximity Cost of going upstream along a River: 30 → 22  
-    - Proximity Cost of going downstream along a River: 10 → 7  
+    - Proximity Cost of going upstream along a River: 30 → 11
+    - Proximity Cost of going downstream along a River: 10 → 11  
     - Proximity Cost on Frozen Water: 20 → 15  
   - Roads  
     - Build cost scaled & maintenance market demands scaled  
@@ -74,10 +93,12 @@ Date: 2025-11-30
     - Paved road: \-15% → \-30%  
     - Modern road: \-20% → \-40%  
     - Railroad: \-25% → \-50%  
+  - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
     - Diplomatic expenses: paper, jewelry  
-- Food  
+- RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
+- Massive rework of the food system, focused on tying up much more of the early game population in food production as peasants.
   - Farming villages  
     - Are split into common pastures & the new farming villages  
     - They are given at game start based on starting peasant population  
@@ -120,6 +141,7 @@ Date: 2025-11-30
     - Local burgher food consumption: 20% → 10%
 -Sand added to several production methods, including masonry, weapons, and tools.
 -Estate built buildings do not consume goods directly, now add pop to consume goods for them.
+-Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
 
 ##### Population
 
@@ -170,6 +192,7 @@ Date: 2025-11-30
 ##### Disasters
 
 - ‘Decline of empires’ removed, now is ‘Time of struggle’, applies to everyone with more complex logic and less impossible to escape.
+- ‘Time of Troubles’ removed, it was bad in vanilla, and needs to be fundamentally redesigned to be reimplemented
 
 ##### Warfare
 
@@ -182,6 +205,11 @@ Date: 2025-11-30
 - Fixes to Colombian Exchange situation
   - adapt logic of RGO changing to new mechanics related to demand on goods absent in the market
   - remove prestige cost on changing the RGO
-  - modify mapmode and tooltips, so previous and new good is visible to a player
+  - modify map mode and tooltips, so previous and new good is visible to a player
   - remove ability to plant Tobacco in Oceanic climate
   
+##### GUI
+- Added Goods Domestic Product UI in the Economy panel
+
+##### Modding
+- Added automated check for correct encodings via GitHub Actions

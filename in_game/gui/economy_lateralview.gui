@@ -1,0 +1,2387 @@
+types EconomyLateralviewTypes
+{
+	type budget_card = widget {
+		background = {
+			using = tile_card_bg_texture
+			alpha = 0.5
+
+			# block "background_color" {
+				using = color_dark_blue
+			# }
+
+			modify_texture = {
+				using = overlay_stone_texture
+				blend_mode = overlay
+				alpha = 0.3
+			}
+		}
+
+		hbox = {
+			margin = { 5 0 }
+			spacing = 5
+			using = bg_paper_card
+
+			icon = {
+				size = { 24 24 }
+				block "icon_texture" {
+					texture = "gfx/interface/icons/flat_icons/balance/others.dds"
+				}
+
+				texture_density = 2
+			}
+
+			text_single = {
+				using = layoutpolicy_expanding
+				autoresize = no
+				align = left|nobaseline
+				block "label" {
+					text = ""
+				}
+			}
+		}
+
+		hbox = {
+			margin = { 5 0 }
+
+			text_single = {
+				using = layoutpolicy_expanding
+				autoresize = no
+				align = right|nobaseline
+				block "income_text" {
+					raw_text = ""
+				}
+			}
+		}
+	}
+
+	type adjustable_budget_card = widget {
+		using = bg_paper_card
+		vbox = {
+			widget = {
+				using = layoutpolicy_expanding
+				using = bg_card_header_01
+				
+				block "top_widget" {}
+				using = bg_cabinet_card_frame
+			}
+
+			widget = {
+				using = layoutpolicy_expanding
+				block "bottom_widget" {}
+			}
+		}
+	}
+
+	type economy_slider = ranged_slider {
+		direction = horizontal
+		allow_outside = yes
+
+		
+
+		step = 0.01
+		wheelstep = 0.01
+
+		track = {
+			using = economy_slider_track
+			
+		}
+
+		track_range = { # Available progress
+			using = economy_slider_track_range
+		}
+
+		track_highlight = { # Active Progress
+			using = economy_slider_track_highlight
+		}
+
+		slider = {
+			using = economy_slider_slider
+		}
+
+		dec_button = {
+			using = economy_slider_dec_button
+
+			# blockoverride "economy_slider_dec_button_config"{
+			#	
+			#	alpha = 0
+			#
+			#	state = {
+			#		name = show_slider_buttons
+			#		alpha = 1
+			#		position_x = 0
+			#		duration = 0.25
+			#		using = Animation_Curve_Default
+			#	}
+			#	state = {
+			#		name = hide_slider_buttons
+			#		alpha = 0
+			#		position_x = -5
+			#		duration = 0.25
+			#		using = Animation_Curve_Default
+			#	}
+			# }
+		}
+
+		inc_button = {
+			using = economy_slider_inc_button
+
+			# blockoverride "economy_slider_inc_button_config"{
+			#	alpha = 0
+			#	
+			#	state = {
+			#		name = show_slider_buttons
+			#		alpha = 1
+			#		position_x = 123
+			#		duration = 0.25
+			#		using = Animation_Curve_Default
+			#	}
+			#	state = {
+			#		name = hide_slider_buttons
+			#		alpha = 0
+			#		position_x = 128
+			#		duration = 0.25
+			#		using = Animation_Curve_Default
+			#	}
+			# }
+		}
+	}
+}
+
+# template income_card {
+# 	blockoverride "background_color" {
+# 		using = color_light_blue
+# 	}
+# }
+
+template economy_main_tabs {
+	button_main_tab_alt = {
+		layoutpolicy_horizontal = expanding
+		tooltipwidget = {
+			using = SubTabBalanceTooltip
+		}
+		widget = {
+			visible = "[Not(IsLateralViewOpened('economy'))]"
+			size = { 100% 100% }
+			name = "tab_balance"
+		}
+		down = "[IsLateralViewOpened('economy')]"
+		datacontext = "[GetAutomatedSystemItem('finances')]"
+		using = automated_tab
+
+		blockoverride "on_action_left" { on_action = "[OpenLateralView('economy')]" }
+		blockoverride "text" { text = "BALANCE_TEXT" }
+	}
+
+	button_main_tab_alt = {
+		name = "tab_markets"
+		using = layoutpolicy_expanding
+		blockoverride "text" { text = "SUBTAB_TRADE_MARKETS" }
+		tooltipwidget = {
+			using = SubTabMarketsTooltip
+		}
+		block "trade_down" { down = "[TradeOverview.Vars.NotExistOrHasValue( 'subtab', 'markets' )]" }
+		
+		datacontext = "[GetAutomatedSystemItem('trade')]"
+		using = automated_tab
+
+		blockoverride "on_action_left" { on_action = "[OpenLateralViewWithParams('trade', 'subtab = markets')]" }
+	}
+
+	button_main_tab_alt = {
+		name = "tab_trading"
+		using = layoutpolicy_expanding
+		blockoverride "text" { text = "TRADE_TAB" }
+		tooltipwidget = {
+			using = SubTabTradingTooltip
+		}
+		block "trade_down" { down = "[TradeOverview.Vars.HasValue( 'subtab', 'trades' )]" }
+		
+		datacontext = "[GetAutomatedSystemItem('trade')]"
+		using = automated_tab
+
+		blockoverride "on_action_left" { on_action = "[OpenLateralViewWithParams('trade', 'subtab = trades')]" }
+	}
+}
+
+template EstateIncomeBreakdownTooltip {
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			datacontext = "[TaxRateSetting.GetEstate]"
+			text = "TAXING_ESTATE_INCOME_BREAKDOWN"
+		}
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[GetEstateIcon(TaxRateSetting.GetEstate.GetType)]"
+				
+				datacontext = "[TaxRateSetting.GetEstate]"
+				tooltipwidget = {
+					using = Estate_tooltip
+				}
+			}
+		}
+
+		blockoverride "concept_link" {
+			text = [estate_tax_base|E]
+		}
+		blockoverride "tooltip_content" {
+			datacontext = "[TaxRateSetting.GetEstate]"
+			TooltipTextBlock = {																						
+				blockoverride "text"	{
+					text = "ESTATE_CURRENT_TAX_TT"
+				}
+			}
+			
+			TooltipStringPairList = {
+				visible = "[Not(StringIsEmpty(TaxRateSetting.GetTaxSettingsTooltip))]"
+				textcontext = "[TaxRateSetting.GetTaxSettingsTooltip]"
+			}
+
+			TooltipTextBlock = {
+				visible = "[Not(TaxRateSetting.GetEstate.CanCollectTaxes)]"
+				blockoverride "text" {
+					text = "[TaxRateSetting.GetEstate.GetCollectTaxesInfo]"
+				}
+			}
+		
+			TooltipStringPairList = {
+				visible = "[And(TaxRateSetting.GetEstate.CanCollectTaxes, Not(StringIsEmpty(TaxRateSetting.GetIncomeBreakdown)))]"
+				textcontext = "[TaxRateSetting.GetIncomeBreakdown]"
+			}
+		}
+	}
+}
+
+
+lateralview = {
+	name = "economy_lateralview"
+	widgetid = "economy_lateralview"
+
+	blockoverride "panel_header" {
+		window_header_alt = {
+			blockoverride "header_text" {
+				text = "THE_ECONOMY_OVERVIEW_TITLE"
+			}
+			blockoverride "window_header_alt_color_texture"{
+				using = color_economy_texture
+			}
+		}
+	}
+
+	blockoverride "panel_content" {
+		header_main_tabs = {
+			blockoverride "content" {
+				using = economy_main_tabs
+				blockoverride "trade_down" {}
+			}
+		}
+
+		vbox = {
+			using = layoutpolicy_expanding
+			using = bg_main_inner_alt
+			using = window_main_tabs_margin_alt
+			spacing = 3
+
+			AutomatedSection = {
+				datacontext = "[GetAutomatedSystemItem('finances')]"
+				
+				blockoverride "glow_anim_automation_visible" {
+					visible = "[AutomatedSystemsItem.IsEnabled]"
+				}
+			}
+			
+
+			widget = {
+				layoutpolicy_horizontal = expanding
+				size = { -1 45 }
+				hbox = {
+					subheader_unified_icon = {
+						name = "tax_base"
+						datacontext = "[Player]"
+						tooltipwidget = {
+							using = TaxBaseTooltip
+						}
+
+						blockoverride "subheader_unified_icon_texture" {
+							texture = "gfx/interface/icons/map_modes/tax_base.dds"
+						}
+						blockoverride "subheader_unified_top_text" {
+							text = "game_concept_tax_base"
+							default_format = "#explanation_link"
+							align = nobaseline
+						}
+						blockoverride "subheader_unified_bottom_text" {
+							text = "[Player.GetTotalTaxBase]"
+							align = nobaseline
+						}
+					}
+
+					subheader_unified_icon = {
+						name = "tax_base_2"
+						datacontext = "[Player]"
+						tooltipwidget = {
+							using = Mnt_Goods_Value_Tooltip }
+
+						blockoverride "subheader_unified_icon_texture" {
+							texture = "gfx/interface/icons/map_modes/GDP.dds"
+						}
+						blockoverride "subheader_unified_top_text" {
+							raw_text = "Gross Domestic Product"
+							align = nobaseline
+						}
+						blockoverride "subheader_unified_bottom_text" {
+							raw_text = "#color_green [Player.MakeScope.GetVariable('mnt_country_total_goods_value').GetValue|2]@gold!#!"
+							align = nobaseline
+						}
+					}
+
+
+					expand = {}
+					
+					subheader_unified_icon = {
+						blockoverride "mirror_layout" { righttoleft = yes }
+						datacontext = "[Player]"
+						tooltipwidget = {
+							using = TaxEfficiencyTooltip
+						}
+						blockoverride "subheader_unified_icon_texture" {
+							texture = "gfx/interface/icons/flat_icons/balance/tax_efficiency.dds"
+						}
+						blockoverride "subheader_unified_top_text" {
+							text = "game_concept_tax_efficiency"
+							align = nobaseline
+						}
+						blockoverride "subheader_unified_bottom_text" {
+							text = "[Player.GetModifierValueNoFormat('tax_income_efficiency')]"
+							align = nobaseline
+						}
+					}
+				}
+			}
+
+			economy_plotline = {
+				using = bg_age_event_frame
+				
+				blockoverride "size" {
+					layoutpolicy_horizontal = expanding
+					size = { -1 220 }
+				}
+				blockoverride "header" {
+					# raw_text = "[balance|e]: [EconomyView.GetEstimatedBalance|2+=]@gold!"
+				}
+				blockoverride "line_color" {
+					color = { .9 .9 .9 1.0 }
+				}
+				blockoverride "line_plotpoints" {
+					plotpoints = "[EconomyView.GetRecentBalance]"
+				}
+				blockoverride "maxvalue" {
+					raw_text = "[EconomyView.GetHistoricalMaxBalance|2]@gold!"
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/resources/gold.dds"
+								}
+							}
+
+							blockoverride "concept_link" {
+								text = "[balance|e]"
+							}
+
+							textcontext = "[EconomyView.GetHistoricalMaxBalanceTooltip]"
+
+						}
+					}
+				}
+				blockoverride "minvalue" {
+					raw_text = "[EconomyView.GetHistoricalMinBalance|2]@gold!"
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/resources/gold.dds"
+								}
+							}
+
+							blockoverride "concept_link" {
+								text = "[balance|e]"
+							}
+
+							textcontext = "[EconomyView.GetHistoricalMinBalanceTooltip]"
+
+						}
+					}
+				}
+				blockoverride "startdate" {
+					text = "[EconomyView.GetBalanceStartData]"
+					# visible = no
+				}
+				blockoverride "enddate" {
+					text = "[EconomyView.GetBalanceEndData]"
+					# visible = no
+				}
+				blockoverride "multiitem" {}
+
+				blockoverride "extra_plotlines" {
+					### Base Price line
+					# plotline = {
+					#	size = { 100% 100% }
+					#	using = plot_line
+					#	width = 3
+					#	using = color_value_progress_blue
+					#	plotpoints = "[EconomyView.GetBasePlotPoints]"
+					# }
+				}
+
+				blockoverride "empty_state_visibility" {}
+
+				blockoverride "empty_state_text" {}
+
+
+				widget = {
+					parentanchor = center
+					size = { 100% 40 }
+					visible = "[GetPlayer.GetEconomy.IsDuringBankruptcy]"
+					
+					
+					tooltipwidget = {
+										
+						ContextualTooltipType = {
+							blockoverride "title_text" {
+								
+								text = "IN_BANKRUPTCY"
+							}
+							
+							blockoverride "title_icon_texture" {
+								texture = "[GetConceptTexture('bankrupt')]"
+							}
+
+							
+							blockoverride "concept_link" {
+								text = [bankrupt|e]
+							}
+							
+							blockoverride "tooltip_content" {
+								datacontext = "[GetPlayer]"
+								TooltipStringPairList = {
+									blockoverride "block_title" { text = "BANKRUPTCY_UNTIL" }
+									textcontext = "[ShowModifierEffect('is_bankrupt')]"
+								}
+							}
+						}
+					}
+					
+
+					background = {
+						texture = "gfx/interface/colors/black.dds"
+						alpha = 1
+
+						modify_texture = {
+							texture = "gfx/interface/component_masks/mask_fade_horizontal_middle.dds"
+							blend_mode = alphamultiply
+						}
+					}
+
+					background = {
+						texture = "gfx/interface/colors/red.dds"
+						alpha = 0.5
+
+						modify_texture = {
+							texture = "gfx/interface/component_masks/mask_fade_horizontal_middle.dds"
+							blend_mode = alphamultiply
+						}
+					}
+					
+					hbox = {
+						spacing = 5
+
+						expand = {}
+						piechart = {
+							size = { 32 32 }
+
+							using = piechart_angles
+							using = bg_circle_alt_brown
+							using = bg_circle_piechart
+
+							icon = {
+								texture = "[GetConceptTexture('bankrupt')]"
+								size = { 60% 60% }
+								parentanchor = center
+							}
+
+							pieslice_no_highlight = {
+								texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+								value = "[Subtract_float('(float)1.0', GetPlayer.GetBankruptcyProgress)]"
+								color = { 1 1 1 1 }
+							}
+
+							pieslice_no_highlight = {
+								texture = "gfx/interface/pie_charts/pie_chart_blue_progress.dds"
+								value = "[GetPlayer.GetBankruptcyProgress]"
+								color = { 1 1 1 0 }
+							}
+						}
+
+						text_single = {
+							maximumsize = { 200 -1}
+							text = "IN_BANKRUPTCY"
+							using = Font_Type_Headers
+							using = Font_Size_Big
+						}
+						expand = {}
+					}
+				}
+			}
+
+			widget = {
+				using = layoutpolicy_expanding
+
+				vbox = {
+					widget = {
+						layoutpolicy_horizontal = expanding
+						size = { -1 40 }
+
+						background = {
+							using = tile_card_bg_up_texture
+							modify_texture = {
+								using = color_bg_blue_texture
+							}
+						}
+
+						hbox = {
+							# margin = { 10 0 }
+							
+							header_action_button_left = {
+								title = "game_concept_loan"
+								actor = "[GetPlayer]"
+								left_action = { action_name = "take_estate_loan" }
+								right_action = {
+									action_name = "request_loan"
+									action_direction = "request"
+								}
+								tooltipwidget = {
+									using = LoansTooltip
+								}
+
+								blockoverride "header_button_text_layout" {
+									hbox = {
+										using = layoutpolicy_expanding
+										set_parent_size_to_minimum = yes
+										minimumsize = { 100 40 }
+										vbox = {
+											using = layoutpolicy_expanding
+											margin_right = 10
+
+											expand = {}
+
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												maximumsize = {160 18}
+												autoresize = yes
+												minimumsize = {80 -1}
+												fontsize = 13
+												align = nobaseline
+												margin = {2 0}
+												
+												text = "game_concept_loan"
+												default_format = "#explanation_link"
+											}
+
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												maximumsize = {160 18}
+												autoresize = yes
+												fontsize = 13
+												align = nobaseline
+												margin = {2 0}
+
+												raw_text = "[EconomyView.GetNextLoanSize|2]@gold!"
+											}
+
+											expand = {}
+										}
+
+										widget = {
+											size = {13 1}
+										}
+									}
+								}
+
+								blockoverride "icon_texture" {
+									texture = "gfx/interface/icons/flat_icons/gold.dds"
+								}
+
+								blockoverride "icon_overlay" {}
+
+								blockoverride "adjust_to_content" {
+									set_parent_size_to_minimum = yes
+									minimumsize = { -1 40 }
+								}
+							}
+
+							expand = {}
+
+							widget = {
+								size = { 255 40 }								
+								using = bg_paper_card
+								using = bg_cabinet_card_frame
+								widget = {
+									size = { 100% 100% }
+									ignore_layout = yes
+									background = {
+										texture = "gfx/interface/component_masks/age_event_mask_frame_horizontal.dds"
+										texture_density = 2
+										margin = {30 -4}
+		
+										modify_texture = {
+											visible = "[GreaterThanOrEqualTo_CFixedPoint(EconomyView.GetEstimatedBalance, '(CFixedPoint)0')]"
+											using = color_light_green_texture
+										}
+		
+										modify_texture = {
+											visible = "[LessThanOrEqualTo_CFixedPoint(EconomyView.GetEstimatedBalance, '(CFixedPoint)0')]"
+											using = color_red_texture
+										}
+		
+										modify_texture = {
+											texture = "gfx/interface/component_masks/mask_fade_horizontal_middle.dds"
+											blend_mode = alphamultiply
+										}
+									}
+								}
+
+								text_single = {
+									parentanchor = center
+									autoresize = yes
+									align = nobaseline
+									raw_text = "[EconomyView.GetEstimatedBalance|2+=]@gold!"
+									using = Font_Size_Big
+
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_icon_texture" {
+												texture = "[GetConceptTexture('balance')]"
+											}
+										
+											blockoverride "title_text" {
+												text = "BALANCE_TOOLTIP_T"
+											}
+											blockoverride "concept_link" {
+												text = [balance|e]
+											}
+											
+											blockoverride "tooltip_content" {
+												TooltipScrolledStringPairList = {
+													blockoverride "block_scrollarea" { maximumsize = { -1 450 } }
+													textcontext = "[EconomyView.GetEstimatedBalanceInfo]"
+												}
+											}
+										}
+									}
+								}
+							}
+
+							expand = {}
+
+							header_button_right = {
+								title = "PAY_LOANS_TITLE"
+								enabled = "[EconomyView.HasLoans]"
+								tooltipwidget = {
+									using = DebtTooltip
+								}
+
+								action_tooltip = {
+									click_type = left
+									click_mode = confirm
+
+									title = "REPAY_ALL_POSSIBLE_LOANS_TITLE"
+									enabled = "[EconomyView.CanRepayAllPossibleLoans]"
+									description = "[EconomyView.GetRepayAllPossibleLoansDesc]"
+									on_action = "[EconomyView.RepayAllPossibleLoans]"
+								}
+
+								action_tooltip = {
+									click_type = right
+									click_mode = single
+
+									title = "PAY_LOANS_TITLE"
+									enabled = "[EconomyView.HasLoans]"
+									on_action = "[EconomyView.GoToLoans]"
+								}
+
+								mirror = horizontal
+								blockoverride "header_button_orientation" { righttoleft = yes }
+								blockoverride "header_button_text_margins" {
+									margin_left = 20
+									margin_right = 5
+								}
+								blockoverride "header_button_text_align" { 	align = right|nobaseline }
+
+								blockoverride "header_button_text_layout" {
+									hbox = {
+										using = layoutpolicy_expanding
+										set_parent_size_to_minimum = yes
+										minimumsize = { 100 40 }
+										vbox = {
+											using = layoutpolicy_expanding
+											margin_right = -10
+
+											expand = {}
+
+											text_single = {
+												layoutpolicy_horizontal = expanding
+												maximumsize = {160 18}
+												autoresize = yes
+												minimumsize = {80 -1}
+												fontsize = 13
+												align = right|nobaseline
+												margin = {2 0}
+												
+												text = "game_concept_debt"
+												default_format = "#explanation_link"
+											}
+
+											hbox = {
+												layoutpolicy_horizontal = expanding
+											
+												expand = {}
+											
+												text_single = {
+													maximumsize = {160 18}
+													autoresize = yes
+													fontsize = 13
+													fontsize_min = 10
+													align = nobaseline
+													margin = {2 0}
+
+													text = "TOTAL_DEBT"
+												}
+											}
+
+
+											expand = {}
+										}
+
+										widget = {
+											size = {13 1}
+										}
+									}
+								}
+
+								blockoverride "icon_texture" {
+									texture = "gfx/interface/icons/flat_icons/debt.dds"
+								}
+
+								blockoverride "icon_overlay" {}
+
+								blockoverride "adjust_to_content" {
+									set_parent_size_to_minimum = yes
+									minimumsize = { -1 40 }
+								}
+							}
+						}
+					}
+
+					vbox = {
+						using = layoutpolicy_expanding
+						using = bg_secondary_inner_alt
+
+						# onmousehierarchyenter = "[PdxGuiInterruptThenTriggerAllAnimations('hide_slider_buttons','show_slider_buttons')]"
+						# onmousehierarchyleave = "[PdxGuiInterruptThenTriggerAllAnimations('show_slider_buttons','hide_slider_buttons')]"
+
+						vbox = {
+							using = layoutpolicy_expanding
+
+							hbox = {
+								name = income_and_expenses
+								layoutpolicy_horizontal = expanding
+								margin = { 0 4 }
+
+								widget = {
+									layoutpolicy_horizontal = expanding
+									size = { -1 30 }
+
+									background = {
+										texture = "gfx/interface/component_masks/age_event_mask_frame_horizontal.dds"
+										texture_density = 2
+
+										modify_texture = {
+											using = color_light_green_texture
+										}
+										modify_texture = {
+											texture = "gfx/interface/component_masks/mask_fade_horizontal_middle.dds"
+											blend_mode = alphamultiply
+										}
+									}
+
+									text_single = {
+										size = { 100% 100% }
+										autoresize = no
+										align = center|nobaseline
+
+										text = "INCOME_TITLE"
+										tooltipwidget = {
+												ContextualTooltipType = {
+													name = "BALANCE_INCOME_TOOLTIP"		
+													blockoverride "title_icon_texture" {
+														texture = "[GetConceptTexture('income')]"
+													}					
+													blockoverride "title_text" { text = "INCOME_TOOLTIP_T" }
+													blockoverride "concept_link" { text = "[income|e]"}
+													blockoverride "tooltip_content" {
+														TooltipScrolledStringPairList = {
+															blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
+															textcontext = "[EconomyView.GetAllIncomeInfo]"
+														}
+													}
+												}
+										}
+									}
+								}
+
+								# Button for unused maintenance settings visibility
+								button_checkbox_visibility = {
+									size = { 32 32 }
+									tooltipwidget = {
+										SimpleContextualTooltipType = {
+											blockoverride "title_icon" {
+												icon = {
+													using = tooltip_title_icon_size
+													texture = "gfx/interface/icons/resources/gold.dds"
+												}
+											}
+				
+											blockoverride "concept_link" {
+												text = "[balance|e]"
+											}
+				
+											lowpriotextcontext = "[SelectLocalization( EconomyView.UnusedMaintenanceSettingsVisible, 'UNUSED_MAINTENANCE_SETTINGS_TOGGLE_IS_ON', 'UNUSED_MAINTENANCE_SETTINGS_TOGGLE_IS_OFF' )]"
+				
+										}
+									}
+									checked = "[EconomyView.UnusedMaintenanceSettingsVisible]"
+									onclick = "[EconomyView.ToggleUnusedMaintenanceSettings]"
+
+								}
+
+								widget = {
+									layoutpolicy_horizontal = expanding
+									size = { -1 30 }
+
+									background = {
+										texture = "gfx/interface/component_masks/age_event_mask_frame_horizontal.dds"
+										texture_density = 2
+
+										modify_texture = {
+											using = color_red_texture
+										}
+										modify_texture = {
+											texture = "gfx/interface/component_masks/mask_fade_horizontal_middle.dds"
+											blend_mode = alphamultiply
+										}
+									}
+
+									text_single = {
+										size = { 100% 100% }
+										autoresize = no
+										align = center|nobaseline
+
+										text = "EXPENSE_TITLE"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												name = "BALANCE_EXPENSE_TOOLTIP"		
+												blockoverride "title_icon_texture" {
+													texture = "[GetConceptTexture('expenses')]"
+												}					
+												blockoverride "title_text" { text = "EXPENSE_TOOLTIP_T" }
+												blockoverride "concept_link" { text = "[expense|e]"}
+												blockoverride "tooltip_content" {
+													TooltipScrolledStringPairList = {
+														blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
+														textcontext = "[EconomyView.GetAllExpenseInfo]"
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							scroll_list = {
+								using = bg_secondary_inner_image_alt
+								blockoverride "image" {
+									texture = "gfx/interface/illustrations/bg/bg_economy.dds"
+								}
+								
+								blockoverride "scroll_list_layout" {
+									hbox = {
+										using = layoutpolicy_expanding
+										margin_left = 5
+										margin_right = 10
+										spacing = 5
+
+										#income
+										vbox = {
+											name = income
+											using = layoutpolicy_expanding
+											spacing = 5
+
+											#minting
+											adjustable_budget_card = {
+												name = mint_slider
+												layoutpolicy_horizontal = expanding
+												size = { -1 55 }
+												blockoverride "header_color" {
+													using = color_economy_texture
+												}
+
+												visible = "[EconomyView.HasTaxes]"
+
+												blockoverride "top_widget" {
+													hbox = {
+														margin = { 5 0 }
+														spacing = 5
+
+														icon = {
+															size = { 24 24 }
+															texture = "gfx/interface/icons/flat_icons/balance/minting_coins.dds"
+															texture_density = 2
+														}
+
+														text_single = {
+															using = layoutpolicy_expanding
+															autoresize = no
+															align = left|nobaseline
+															text = "INCOME_MINTING"
+														}
+
+														text_single = {
+															autoresize = yes
+															align = right|nobaseline
+															raw_text = "[EconomyView.GetCoinMintingIncome|2+=]@gold!"
+														}
+
+														tooltipmeta = {
+															texture = "gfx/interface/icons/flat_icons/balance/minting_coins.dds"
+															game_concept = "[minting|e]"
+														}
+												
+														tooltipwidget = {
+															ContextualTooltipType = {
+																blockoverride "title_text" {
+																	text = "MINTING_TITLE"
+																}
+																blockoverride "title_icon" {
+																	icon = {
+																		using = tooltip_title_icon_size
+																		texture = "gfx/interface/icons/flat_icons/balance/minting_coins.dds"
+																	}
+																}
+
+																blockoverride "concept_link" {
+																	text = "[minting|e]"
+																}
+																blockoverride "tooltip_content" {
+																
+																	TooltipStringPairList = {
+																		textcontext = "[EconomyView.GetIncomeFromMintingInfo]"
+																	}
+																	TooltipStringPairList = {
+																		textcontext = "[EconomyView.GetInflationFromMintingInfo]"
+																	}
+																	TooltipStringPairList = {
+																		textcontext = "[EconomyView.GetInflationGoodDemand]"
+																	}
+																	TooltipTextBlock = {
+																		visible = "[Player.IsMintingInefficient]"																					
+																		blockoverride "text" {
+																			text = "[EconomyView.GetInefficientMintingInfo]"
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+
+												blockoverride "bottom_widget" {
+													hbox = {
+														margin = { 5 0 }
+														spacing = 5
+
+														widget = {
+															using = layoutpolicy_expanding
+															economy_slider = {
+																parentanchor = left|vcenter
+																size = { 120 10 }
+																min = 0
+																max = 1
+																value = "[EconomyView.GetDefaultCoinMinting]"
+																onvaluechanged = "[EconomyView.OnChangedCoinMinting]"
+																onchangefinish = "[EconomyView.PostTaxes]"
+																enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																alpha = "[TransparentIfFalse(Not(IsPlayerAIEnabled('finances')))]"
+																blockoverride "economy_slider_inc_button_config"{
+																	enabled = "[EconomyView.IsCoinMintingIncEnabled]"
+																}
+																blockoverride "economy_slider_dec_button_config"{
+																	enabled = "[EconomyView.IsCoinMintingDecEnabled]"
+																}
+															}
+														}
+
+														text_single = {
+															autoresize = no
+															align = center|nobaseline
+															size = { 110 20 }
+															raw_text = "[GetPlayer.GetFixedPointCurrencyValue('inflation')|2%] ([EconomyView.GetInflationChange|2-=%])@inflation!"
+															
+															datacontext = "[GetPlayer]"
+															tooltipwidget = {
+																using = InflationTooltip
+															}
+														}
+													}
+												}
+											}
+
+											#all the estates and their taxes
+											vbox = {
+												layoutpolicy_horizontal = expanding
+												spacing = 5
+												datamodel = "[EconomyView.GetTaxRateSettings]"
+												item = {
+													adjustable_budget_card = {
+														layoutpolicy_horizontal = expanding
+														size = { -1 55 }
+														blockoverride "header_color" {
+															using = color_economy_texture
+														}
+
+														visible = "[TaxRateSetting.ShouldShow]"
+
+														widget = {
+															size = { 100% 100% }
+															name = "tax_slider"
+															visible = "[Not(TaxRateSetting.IsUsingAutoTaxRate)]"
+														}
+														
+														blockoverride "top_widget" {
+															hbox = {
+																margin = { 5 0 }
+																spacing = 5
+
+																icon = {
+																	size = { 31 31 }
+																	texture = "[GetEstateIcon(TaxRateSetting.GetEstate.GetType)]"
+																	texture_density = 2
+																	
+																	datacontext = "[TaxRateSetting.GetEstate]"
+																	tooltipwidget = {
+																		using = Estate_tooltip
+																	}
+																}
+
+																text_single = {
+																	using = layoutpolicy_expanding
+																	maximumsize = {175 -1}
+																	autoresize = no
+																	align = left|nobaseline
+																	text = "[TaxRateSetting.GetName]"
+																}
+
+																text_single = {
+																	autoresize = yes
+																	visible = "[TaxRateSetting.GetEstate.CanCollectTaxes]"
+																	align = right|nobaseline
+																	raw_text = "[TaxRateSetting.GetIncome|2+=]@gold!"
+																	
+																}
+																icon = {
+																	size = { 20 20 }
+																	using = warning_icon_texture
+																	visible = "[Not(TaxRateSetting.GetEstate.CanCollectTaxes)]"
+																}
+															}
+
+															tooltipwidget = {
+																using = EstateIncomeBreakdownTooltip
+															}
+														}
+
+														blockoverride "bottom_widget" {
+															hbox = {
+																margin = { 5 0 }
+																spacing = 2
+
+																widget = {
+																	using = layoutpolicy_expanding
+																	economy_slider = {
+																		parentanchor = left|vcenter
+																		size = { 120 10 }
+																		min = 0
+																		max = 1
+																		mincap = "[TaxRateSetting.GetMin]"
+																		maxcap = "[TaxRateSetting.GetMax]"
+
+																		tooltipwidget = {
+																			ContextualTooltipType = {
+																				blockoverride "title_icon" {
+																					icon = {
+																						using = tooltip_title_icon_size
+																						texture = "[GetEstateIcon(TaxRateSetting.GetEstate.GetType)]"
+																						texture_density = 2
+																						datacontext = "[TaxRateSetting.GetEstate]"
+																						datacontext = "[TaxRateSetting.GetEstate.GetCountry]"
+																						tooltipwidget = {
+																							using = Estate_tooltip
+																						}
+																					}
+																				}
+		
+																				blockoverride "title_text" {
+																					datacontext = "[TaxRateSetting.GetEstate]"
+																					text = "ESTATE_TAX_MIN_MAX_T"
+																				}
+
+																				blockoverride "concept_link" {
+																					text = [tax|E]
+																				}
+																				
+																				blockoverride "tooltip_content" {
+																					datacontext = "[TaxRateSetting.GetEstate]"
+																					TooltipTextBlock = {																						
+																						blockoverride "text"	{
+																							text = "ESTATE_CURRENT_TAX_TT"
+																						}
+																					}
+																					
+																					TooltipStringPairList = {
+																						textcontext = "[TaxRateSetting.GetTaxSettingsTooltip]"
+																					}
+
+																					TooltipTextBlock = {
+																						visible = "[TaxRateSetting.IsUsingAutoTaxRate]"																			
+																						blockoverride "text"	{
+																							text = "ESTATE_CURRENT_TAX_AUTOMATED_TT"
+																						}
+																					}
+																				}
+																			}
+																		}
+
+																		value = "[TaxRateSetting.GetDefault]"
+																		onvaluechanged = "[TaxRateSetting.OnTaxChanged]"
+																		onchangefinish = "[TaxRateSetting.Post]"
+
+																		enabled = "[And(TaxRateSetting.IsTaxRateSliderEnabled, Or(TaxRateSetting.IsTaxRateSettingIncEnabled, TaxRateSetting.IsTaxRateSettingDecEnabled))]"
+																		alpha = "[TransparentIfFalse(Not(IsPlayerAIEnabled('finances')))]"
+																		blockoverride "economy_slider_inc_button_config"{
+																			enabled = "[TaxRateSetting.IsTaxRateSettingIncEnabled]"
+																		}
+																		blockoverride "economy_slider_dec_button_config"{
+																			enabled = "[TaxRateSetting.IsTaxRateSettingDecEnabled]"
+																		}
+																	}
+																}
+
+
+																text_single = {
+																	autoresize = no
+																	align = center|nobaseline
+																	size = { 50 20 }
+																	using = Font_Size_Very_Small
+																	visible = "[TaxRateSetting.HasImpact]"
+																	raw_text = "[TaxRateSetting.GetImpact]"
+																	
+																	datacontext = "[TaxRateSetting.GetEstate]"
+																	tooltipwidget = {
+																		using = estate_satisfaction_tooltip
+																	}
+																}
+
+																widget = {
+																	datacontext = "[TaxRateSetting.GetEstate]"
+																	tooltipwidget = {
+																		using = estate_satisfaction_tooltip
+																	}
+																	size = { 12 12 }
+
+																	icon = {
+																		name = "sad face"
+																		visible = "[LessThanOrEqualTo_CFixedPoint(TaxRateSetting.GetImpactValue,'(CFixedPoint)0.25')]"
+
+																		size = { 100% 100% }
+																		texture = "gfx/interface/icons/flat_icons/sad.dds"
+																		texture_density = 2
+																	}
+
+																	icon = {
+																		name = "neutral face"
+																		visible = "[BetweenInclusiveOfMax_CFixedPoint(TaxRateSetting.GetImpactValue,'(CFixedPoint)0.25', '(CFixedPoint)0.5')]"
+
+																		size = { 100% 100% }
+																		texture = "gfx/interface/icons/flat_icons/neutral.dds"
+																		texture_density = 2
+																	}
+
+																	icon = {
+																		name = "happy face"
+																		visible = "[GreaterThan_CFixedPoint(TaxRateSetting.GetImpactValue,'(CFixedPoint)0.5')]"
+
+																		size = { 100% 100% }
+																		texture = "gfx/interface/icons/flat_icons/happy.dds"
+																		texture_density = 2
+																	}
+																}
+
+																button_checkbox_auto = {
+																	
+																	size = { 22 22 }
+																	enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																	checked = "[TaxRateSetting.IsUsingAutoTaxRate]"
+																	onclick = "[TaxRateSetting.ToggleAutoTaxRate]"
+
+																	widget = {
+																		size = { 100% 100% }
+																		name = "tax_automation"
+																		visible = "[Not(TaxRateSetting.IsUsingAutoTaxRate)]"
+																	}
+
+																	tooltipwidget = {
+																		LeftClickButtonTooltip = {
+																			# blockoverride "tooltip_content" { 
+																			# 	TooltipTextBlock = {
+																			# 		blockoverride "text" {
+																			# 			text = ""
+																			# 		}
+																			# 	}
+																			#  }
+																			blockoverride "onclick_text" {
+																				text = "[SelectLocalization( TaxRateSetting.IsUsingAutoTaxRate, 'DEACTIVATE_AUTO_TAX_RATE', 'ACTIVATE_AUTO_TAX_RATE' )]"
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+
+											#shown when there are no taxes
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Not(EconomyView.HasTaxes)]"
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/efficiency.dds"
+
+													modify_texture = {
+														using = color_white_texture
+														alpha = 0.1
+														blend_mode = overlay
+													}
+
+													modify_texture = {
+														using = color_light_blue_texture
+														alpha = 1
+														blend_mode = overlay
+													}
+												}
+
+												blockoverride "label" {
+													text = "[EconomyView.GetNoTaxInfo]"
+												}
+
+												blockoverride "income_text" {
+													raw_text = " "
+												}
+											}
+
+											#interest
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('interest'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "INTEREST_INC_HEADER"
+														}
+														
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/interest.dds"
+															}
+														}
+
+														blockoverride "concept_link" {
+															text = [interest|E]
+														}
+
+														blockoverride "tooltip_content" {
+														
+															TooltipScrolledStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 400 } }
+																textcontext = "[EconomyView.GetIncomeInfo('interest')]"
+															}
+														}
+													}
+												}
+		
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/interest.dds"
+												}
+
+												blockoverride "label" {
+													text = "INTEREST_INCOME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('interest')|2+=]@gold!"
+												}
+											}
+
+											#trade
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('trade'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+												tooltipmeta = {
+													texture = "gfx/interface/icons/flat_icons/balance/trade.dds"
+													game_concept = "[trade_income|e]"
+												}
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "game_concept_trade_income"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/trade.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [trade_income|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetIncomeInfo('trade')]"
+															}
+														}
+													}
+												}
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/trade.dds"
+												}
+
+												blockoverride "label" {
+													text = "TRADE_INCOME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('trade')|2+=]@gold!"
+												}
+											}
+											
+											#food
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('food'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+												tooltipmeta = {
+													texture = "gfx/interface/icons/flat_icons/balance/food.dds"
+													game_concept = "[food|e]"
+												}
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "game_concept_food"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/food.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [food|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipScrolledStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
+																textcontext = "[EconomyView.GetIncomeInfo('food')]"
+															}
+														}
+													}
+												}
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/food.dds"
+												}
+
+												blockoverride "label" {
+													text = "FOOD_INCOME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('food')|2+=]@gold!"
+												}
+											}
+
+											#diplomacy
+											budget_card = {
+												tooltipmeta = {
+													texture = "gfx/interface/icons/flat_icons/balance/diplomacy.dds"
+													game_concept = "[diplomatic_income_s|E]"
+												}
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('diplomacy'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "DIPLOMACY_INCOME_H"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/diplomacy.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [diplomatic_income_s|E]
+														}
+														blockoverride "tooltip_content" {
+															TooltipScrolledStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 400 } }
+																textcontext = "[EconomyView.GetIncomeInfo('diplomacy')]"
+															}														
+														}
+													}
+												}
+												
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/diplomacy.dds"
+												}
+
+												blockoverride "label" {
+													text = "DIPLOMACY_INCOME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('diplomacy')|2+=]@gold!"
+												}
+											}
+
+											#io payments
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('io_payments'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "IO_PAYMENTS_ECONOMY"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/international_organizations/payments.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [payments|E]
+														}
+														blockoverride "tooltip_content" {
+															TooltipScrolledStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 400 } }
+																textcontext = "[EconomyView.GetIncomeInfo('io_payments')]"
+															}														
+														}
+													}
+												}
+												
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/international_organizations/payments.dds"
+												}
+
+												blockoverride "label" {
+													text = "IO_PAYMENTS_ECONOMY_ITEM_NAME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('io_payments')|2+=]@gold!"
+												}
+											}
+
+											#mercenaries
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('mercenary'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "game_concept_mercenary_income"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																size = { 48 48 }
+																texture = "gfx/interface/icons/flat_icons/balance/mercenary.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [mercenary|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetIncomeInfo('mercenary')]"
+															}
+														}
+													}
+												}
+
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/mercenary.dds"
+												}
+
+												blockoverride "label" {
+													text = "MERCENARY_INCOME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('mercenary')|2+=]@gold!"
+												}
+											}
+											
+											#foreign income
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('foreign'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "FOREIGN_GOLD_BUILDINGS_T"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/buildings_abroad.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [foreign_buildings|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetIncomeInfo('foreign')]"
+															}
+														}
+													}
+												}
+
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/buildings_abroad.dds"
+												}
+
+												blockoverride "label" {
+													text = "FOREIGN_GOLD_BUILDINGS"
+												}
+												
+												
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('foreign')|2+=]@gold!"
+												}
+											}
+
+											#other income
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetIncome('other'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "OTHER_INCOME"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/other_incomes.dds"
+															}
+														}
+
+
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetIncomeInfo('other')]"
+															}
+														}
+													}
+												}
+
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/other_incomes.dds"
+												}
+
+												blockoverride "label" {
+													text = "OTHER_INCOME"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetIncome('other')|2+=]@gold!"
+												}
+											}
+
+											expand = {}
+										}
+
+										#expenses
+										vbox = {
+											name = expenses
+											using = layoutpolicy_expanding
+											spacing = 5
+
+											#anything that uses maintenance settings
+											vbox = {
+												layoutpolicy_horizontal = expanding
+												spacing = 5
+
+												datamodel = "[EconomyView.GetMaintenanceSettings]"
+												item = {
+													adjustable_budget_card = {
+														layoutpolicy_horizontal = expanding
+														size = { -1 55 }
+														blockoverride "header_color" {
+															using = color_economy_texture
+														}
+														
+														visible = "[And3( MaintenanceSetting.ShowSlider,MaintenanceSetting.IsEnabled, Or(MaintenanceSetting.IsVisible, EconomyView.UnusedMaintenanceSettingsVisible))]"
+
+														blockoverride "top_widget" {
+															hbox = {
+																margin = { 5 0 }
+																spacing = 5
+
+																icon = {
+																	size = { 24 24 }
+																	texture = "[MaintenanceSetting.GetIcon]"
+																	texture_density = 2
+																}
+
+																text_single = {
+																	using = layoutpolicy_expanding
+																	autoresize = no
+																	align = left|nobaseline
+																	text = "[MaintenanceSetting.GetName]"
+																}
+
+																text_single = {
+																	autoresize = yes
+																	align = right|nobaseline
+																	raw_text = "[MaintenanceSetting.GetExpense|2+=]@gold!"
+																}
+																
+
+																
+																tooltipwidget = {
+																	using = ExpenseSettingTooltip			
+																}
+															}
+														}
+
+														blockoverride "bottom_widget" {
+															hbox = {
+																margin = { 5 0 }
+																spacing = 5
+
+																widget = {
+																	using = layoutpolicy_expanding
+																	economy_slider = {
+																		parentanchor = left|vcenter
+																		size = { 120 10 }
+																		min = 0
+																		max = 1
+																		value = "[MaintenanceSetting.GetDefault]"
+																		mincap = "[MaintenanceSetting.GetMin]"
+																		maxcap = "[MaintenanceSetting.GetMax]"
+
+																		onvaluechanged = "[MaintenanceSetting.OnChanged]"
+																		onchangefinish = "[MaintenanceSetting.Post]"
+																		enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																		alpha = "[TransparentIfFalse(Not(IsPlayerAIEnabled('finances')))]"
+																		blockoverride "economy_slider_inc_button_config"{
+																			enabled = "[MaintenanceSetting.IsIncEnabled]"
+																		}
+																		blockoverride "economy_slider_dec_button_config"{
+																			enabled = "[MaintenanceSetting.IsDecEnabled]"
+																		}
+
+																	}
+																	widget = {
+																		parentanchor = left|vcenter
+																		size = { 120 10 }
+																		visible = "[Or3(MaintenanceSetting.IsArmy, MaintenanceSetting.IsNavy, MaintenanceSetting.IsFort)]"
+																		tooltipwidget = {
+																			ContextualTooltipType = {
+																				blockoverride "title_icon" {
+																					icon = {
+																						using = tooltip_title_icon_size
+																						texture = "[MaintenanceSetting.GetIcon]"
+																					}
+																				}
+		
+																				blockoverride "title_text" {
+																					text = "[MaintenanceSetting.GetNameWithNoTooltip]"
+																				}
+
+																				blockoverride "concept_link" {
+																					text = "[maintenance|E]"
+																				}
+																				
+																				blockoverride "tooltip_content" {
+																					TooltipTextBlock = {
+																						blockoverride "text" {
+																							text = "EXPENSE_MAINT_TT_TEXT_LONG_ALT"
+																						}
+																					}
+																					
+																					TooltipStringPairList = {
+																						textcontext = "MAINTENANCE_INVESTMENT_MIN_MAX"
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
+
+																hbox = {
+																	spacing = 2
+																	text_single = {
+																		autoresize = no
+																		align = center|nobaseline
+																		size = { 60 20 }
+																		fontsize = 14
+																		text = "[MaintenanceSetting.GetExpenseBenefit]"
+																	}
+																	extra_list = {
+																		visible = "[GreaterThan_CFixedPoint(MaintenanceSetting.GetExpenseBenefitAmount, '(CFixedPoint)0')]"
+																		blockoverride "extra_list_size" {
+																			size = { 40 20 }
+																		}
+																		blockoverride "extra_list_text_size" {
+																			size = { 15 20 }
+																		}
+																		blockoverride "extra_list_text_content" {
+																			raw_text = "+[MaintenanceSetting.GetExpenseBenefitAmount]"
+																		}
+																		blockoverride "extra_list_icon" {
+																			texture = "gfx/interface/icons/modifiers/_default.dds"
+																			texture_density = 2
+																		}
+																	}
+
+																	tooltipwidget = {
+																		ContextualTooltipType = {
+																			blockoverride "title_text" {
+																				text = "[MaintenanceSetting.GetNameWithNoTooltip]"
+																			}
+																			blockoverride "title_icon" {
+																				icon = {
+																					using = tooltip_title_icon_size
+																					texture = "[MaintenanceSetting.GetIcon]"
+																				}
+																			}
+	
+	
+																			blockoverride "concept_link" {
+																				text = "[MaintenanceSetting.GetName]"
+																			}
+																			blockoverride "tooltip_content" {
+																				TooltipStringPairList = {
+																					textcontext = "[MaintenanceSetting.GetExpenseBenefitTooltip]"
+																				}
+																			}
+																		}
+																	}
+																}
+																
+
+																button_checkbox_auto = {
+																	size = { 22 22 }
+																	visible = "[MaintenanceSetting.IsArmy]"
+																	enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																	checked = "[Player.AutoRaiseMaintenanceAtWar('army')]"
+																	onclick = "[ToggleAutoMaintenance('army')]"
+																	tooltipwidget = { 
+																		LeftClickButtonTooltip = { 
+																			blockoverride "onclick_text" { 
+																				text = "[SelectLocalization( Player.AutoRaiseMaintenanceAtWar('army'), 'TOGGLE_AUTO_ARMY_MAINTENANCE_TOOLTIP_ON_TT', 'TOGGLE_AUTO_ARMY_MAINTENANCE_TOOLTIP_OFF_TT' )]"
+																			}																		
+																		}																
+																	}
+																}
+
+																button_checkbox_auto = {
+																	size = { 22 22 }
+																	visible = "[MaintenanceSetting.IsNavy]"
+																	enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																	checked = "[Player.AutoRaiseMaintenanceAtWar('navy')]"
+																	onclick = "[ToggleAutoMaintenance('navy')]"
+																	tooltipwidget = { 
+																		LeftClickButtonTooltip = { 
+																			blockoverride "onclick_text" { 																																						
+																				text = "[SelectLocalization( Player.AutoRaiseMaintenanceAtWar('navy'), 'TOGGLE_AUTO_NAVY_MAINTENANCE_TOOLTIP_ON_TT', 'TOGGLE_AUTO_NAVY_MAINTENANCE_TOOLTIP_OFF_TT' )]"
+																			}																																
+																		}
+																	}
+																}
+
+																button_checkbox_auto = {
+																	size = { 22 22 }
+																	visible = "[MaintenanceSetting.IsFort]"
+																	enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																	checked = "[Player.AutoRaiseMaintenanceAtWar('fort')]"
+																	onclick = "[ToggleAutoMaintenance('fort')]"
+																	tooltipwidget = { 
+																		LeftClickButtonTooltip = { 
+																			blockoverride "onclick_text" { 																																						
+																				text = "[SelectLocalization( Player.AutoRaiseMaintenanceAtWar('fort'), 'TOGGLE_AUTO_FORT_MAINTENANCE_TOOLTIP_IS_ON', 'TOGGLE_AUTO_FORT_MAINTENANCE_TOOLTIP_IS_OFF' )]"
+																			}
+																		}
+																	}
+																	# tooltipwidget = { LeftClickButtonTooltip = { blockoverride "onclick_text" { text = "[SelectLocalization( Player.AutoRaiseMaintenanceAtWar('fort'), 'TOGGLE_AUTO_FORT_MAINTENANCE_TOOLTIP_IS_ON', 'TOGGLE_AUTO_FORT_MAINTENANCE_TOOLTIP_IS_OFF' )]" } } }
+																}
+															}
+														}
+													}
+												}
+											}
+											
+											#stability investment
+											adjustable_budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 55 }
+												blockoverride "header_color" {
+													using = color_economy_texture
+												}
+
+												visible = "[EconomyView.CanDoStabilityInvestment]"
+
+												blockoverride "top_widget" {
+													hbox = {
+														margin = { 5 0 }
+														spacing = 5
+
+														icon = {
+															size = { 24 24 }
+															texture = "gfx/interface/icons/flat_icons/balance/cost_of_stability.dds"
+															texture_density = 2
+														}
+
+														text_single = {
+															using = layoutpolicy_expanding
+															autoresize = no
+															align = left|nobaseline
+															text = "EXPENSE_STABILITY"
+														}
+
+														text_single = {
+															autoresize = yes
+															align = right|nobaseline
+															raw_text = "[EconomyView.GetStabilityInvestmentExpense|2+=]@gold!"
+														}
+														
+														tooltipwidget = {
+															using = StabilityExpenseSettingParentTooltip	
+															blockoverride "content_datacontext" {
+																datacontext = "[Player.GetEconomy]"
+															}										
+														}
+													}
+												}
+
+												blockoverride "bottom_widget" {
+													hbox = {
+														margin = { 5 0 }
+														spacing = 5
+
+														widget = {
+															using = layoutpolicy_expanding
+															economy_slider = {
+																parentanchor = left|vcenter
+																size = { 120 10 }
+																min = 0
+																max = 1
+																value = "[EconomyView.GetDefaultStabilityInvestment]"
+																onvaluechanged = "[EconomyView.OnChangedStabilityInvestment]"
+																onchangefinish = "[EconomyView.PostStability]"
+																enabled = "[Not(IsPlayerAIEnabled('finances'))]"
+																blockoverride "economy_slider_dec_button_config"{
+																	enabled = "[EconomyView.IsStabilityDecEnabled]"
+																}
+																blockoverride "economy_slider_inc_button_config"{
+																	enabled = "[EconomyView.IsStabilityIncEnabled]"
+																}
+															}
+														}
+
+														text_single = {
+															autoresize = no
+															align = center|nobaseline
+															size = { 60 20 }
+															raw_text = "[EconomyView.GetStabilityChange|2+=]@stability!"
+															tooltipwidget = {
+																ContextualTooltipType = {
+																	blockoverride "title_text" {
+																		text = "MODIFIER_TYPE_NAME_stability_investment"
+																	}
+																	blockoverride "title_icon" {
+																		icon = {
+																			using = tooltip_title_icon_size
+																			using = icon_stability
+																		}
+																	}
+
+
+																	blockoverride "concept_link" {
+																		text = [stability|E]
+																	}
+																	blockoverride "tooltip_content" {
+																	
+																		TooltipStringPairList = {
+																			textcontext = "[EconomyView.GetStabilityInvestmentTooltip]"
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+
+											#unused maintenence settings
+											vbox = {
+												layoutpolicy_horizontal = expanding
+												spacing = 5
+
+												datamodel = "[EconomyView.GetMaintenanceSettings]"
+												item = {
+													budget_card = {
+														layoutpolicy_horizontal = expanding
+														size = { -1 30 }
+													
+
+														
+														visible = "[And3( Not(MaintenanceSetting.ShowSlider), MaintenanceSetting.IsEnabled, Or(MaintenanceSetting.IsVisible, EconomyView.UnusedMaintenanceSettingsVisible))]"
+
+														tooltipwidget = {
+															using = ExpenseSettingTooltip			
+														}
+
+
+														blockoverride "icon_texture" {
+															texture = "[MaintenanceSetting.GetIcon]"
+														}
+
+														blockoverride "label" {
+															text = "[MaintenanceSetting.GetName]"
+														}
+
+														blockoverride "income_text" {
+															raw_text = "[MaintenanceSetting.GetExpense|2+=]@gold!"
+														}
+														
+
+													}
+												}
+											}
+											
+											#interest
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('interest'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "INTEREST_COST_HEADER"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/interest.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [interest|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 250 } }	
+																textcontext = "[EconomyView.GetExpenseInfo('interest')]"															
+															}
+														}
+													}
+												}
+			
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/interest.dds"
+												}
+
+												blockoverride "label" {
+													text = "INTEREST_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('interest')|2+=]@gold!"
+												}
+											}
+
+											#trade
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('trade'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+												
+												tooltipmeta = {
+													texture = "gfx/interface/icons/flat_icons/balance/trade.dds"
+													game_concept = "[trade_expense|e]"
+												}
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "game_concept_trade_expense"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/trade.dds"
+															}
+														}
+
+
+														blockoverride "concept_link" {
+															text = [trade_expense|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetExpenseInfo('trade')]"
+															}
+														}
+													}
+												}
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/trade.dds"
+												}
+
+												blockoverride "label" {
+													text = "TRADE_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('trade')|2+=]@gold!"
+												}
+											}
+
+
+											#diplomacy
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('diplomacy'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "DIPLOMATIC_EXPENSES_H"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/diplomacy.dds"
+															}
+														}
+
+														blockoverride "concept_link" {
+															text = [diplomatic_expense_s|E]
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetExpenseInfo('diplomacy')]"
+															}
+														}
+													}
+												}
+
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/diplomacy.dds"
+												}
+
+												blockoverride "label" {
+													text = "DIPLOMACY_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('diplomacy')|2+=]@gold!"
+												}
+											}
+
+											#mercenaries
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('mercenary'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "MERCENARY_EXPENSES_H"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/mercenary.dds"
+															}
+														}
+
+														blockoverride "concept_link" {
+															text = "[mercenary_expense|e]"
+														}
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetExpenseInfo('mercenary')]"
+															}
+														}
+													}												
+												}
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/mercenary.dds"
+												}
+
+												blockoverride "label" {
+													text = "MERCENARY_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('mercenary')|2+=]@gold!"
+												}
+											}
+
+											#subsidising buildings
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('subsidize'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "SUBSIDIZE_EXPENSES_H"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/building_subsidize.dds"
+															}
+														}
+
+														blockoverride "concept_link" {
+															text = "[subsidy_expense|e]"
+														}
+														blockoverride "tooltip_content" {
+															TooltipStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 450 } }
+																textcontext = "[EconomyView.GetExpenseInfo('subsidize')]"
+															}
+														}
+													}												
+												}
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/building_subsidize.dds"
+												}
+
+
+												blockoverride "label" {
+													text = "SUBSIDIZE_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('subsidize')|2+=]@gold!"
+												}
+											}
+
+											#privateers
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('privateer'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "PRIVATEER_EXPENSES_H"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/geopolitics/privateer.dds"
+															}
+														}
+
+														blockoverride "concept_link" {
+															text = "[privateer_maintenance|e]"
+														}
+														blockoverride "tooltip_content" {
+															TooltipStringPairList = {
+																blockoverride "block_scrollarea" { maximumsize = { -1 450 } }
+																textcontext = "[EconomyView.GetExpenseInfo('privateer')]"
+															}
+														}
+													}												
+												}
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/geopolitics/privateer.dds"
+												}
+
+
+												blockoverride "label" {
+													text = "PRIVATEER_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('privateer')|2+=]@gold!"
+												}
+											}
+
+											#other expenses
+											budget_card = {
+												layoutpolicy_horizontal = expanding
+												size = { -1 30 }
+												visible = "[Or(Not(EqualTo_CFixedPoint(EconomyView.GetExpense('other'), '(CFixedPoint)0')), EconomyView.UnusedMaintenanceSettingsVisible)]"
+
+
+												tooltipwidget = {
+													ContextualTooltipType = {
+														blockoverride "title_text" {
+															text = "OTHER_EXPENSE"
+														}
+														blockoverride "title_icon" {
+															icon = {
+																using = tooltip_title_icon_size
+																texture = "gfx/interface/icons/flat_icons/balance/other_expenses.dds"
+															}
+														}
+
+
+														blockoverride "tooltip_content" {
+														
+															TooltipStringPairList = {
+																textcontext = "[EconomyView.GetExpenseInfo('other')]"
+															}
+														}
+													}
+												}
+
+												
+
+												blockoverride "icon_texture" {
+													texture = "gfx/interface/icons/flat_icons/balance/other_expenses.dds"
+												}
+
+												blockoverride "label" {
+													text = "OTHER_EXPENSE"
+												}
+
+												blockoverride "income_text" {
+													raw_text = "[EconomyView.GetExpense('other')|2+=]@gold!"
+												}
+											}
+
+											expand = {}
+										}
+									}
+								}
+							}
+						}
+					}
+
+					expand = {}
+				}
+			}
+		}
+	}
+}
