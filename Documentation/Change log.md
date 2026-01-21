@@ -186,6 +186,8 @@ Date: 2026-01-09
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
   - added requirement about govt. power above 60
+- Scale the impact from estate satisfaction with estate power
+  - At 25% of estate power, estate satisfaction has the same satisfaction impact as in Vanilla
 
 ##### Disasters
 
