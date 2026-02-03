@@ -244,14 +244,26 @@ lateralview = {
 							size = { 170 -1 }
 						}
 
+						# sort_by_key_button = {
+						# 	name = "building_profit"
+						# 	layoutpolicy_vertical = expanding
+						# 	size = { 95 -1 }
+						# }
+
+						# sort_by_key_button = {
+						# 	name = "rgo_profit"
+						# 	layoutpolicy_vertical = expanding
+						# 	size = { 115 -1 }
+						# }
+
 						sort_by_key_button = {
-							name = "building_profit"
+							name = "building_income"
 							layoutpolicy_vertical = expanding
 							size = { 95 -1 }
 						}
 
 						sort_by_key_button = {
-							name = "rgo_profit"
+							name = "rgo_income"
 							layoutpolicy_vertical = expanding
 							size = { 115 -1 }
 						}
@@ -785,9 +797,10 @@ lateralview = {
 														click_mode = single
 														enabled = "[GoodItem.CanBuildBuildings]"
 														conditions = "[MakeItFailIfLoc(Not(GoodItem.CanBuildBuildings), 'GOODS_EXPAND_BUILDING_REQUIREMENTS_NOT_MET')]"
-														title = "GOODS_EXPAND_BUILDING_TT"
-														on_action = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
-														on_action = "[OpenLateralViewWithParams('production', 'display = lists')]"
+												title = "GOODS_EXPAND_BUILDING_TT"
+												on_action = "[GetScriptedGui('mnt_force_show_non_rgo_category_on').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
+												on_action = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
+												on_action = "[OpenLateralViewWithParams('production', 'display = lists')]"
 													}
 													hbox = {
 														margin = {10 0}
@@ -803,7 +816,7 @@ lateralview = {
 															maximumsize = {55 -1}
 															align = nobaseline
 															fontsize = 14
-															raw_text = "[GoodItem.GetMaxBuildingProfit|+2]@tax_base!"
+												raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
 														}
 
 														text_single = {
@@ -817,7 +830,7 @@ lateralview = {
 													}
 
 													sort_by_small_highlight = {
-														name = "building_profit"
+											name = "building_income"
 													}
 												}
 
@@ -871,15 +884,15 @@ lateralview = {
 														click_type = left
 														click_mode = single
 														enabled = "[GoodItem.CanExpandRGO]"
-														title = "GOODS_EXPAND_RGO_TT"
-														conditions = "[MakeItFailIfLoc(Not(GoodItem.CanExpandRGO), 'GOODS_EXPAND_BUILDING_REQUIREMENTS_NOT_MET')]"
-												on_action = "[GetScriptedGui('mnt_force_show_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
+												title = "GOODS_EXPAND_RGO_TT"
+												conditions = "[MakeItFailIfLoc(Not(GoodItem.CanExpandRGO), 'GOODS_EXPAND_BUILDING_REQUIREMENTS_NOT_MET')]"
+												on_action = "[GetScriptedGui('mnt_force_show_rgo_category_on').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
 												on_action = "[GetScriptedGui('mnt_force_show_rgo_building').Execute(GuiScope.SetRoot(Player.MakeScope).AddScope('goods', GoodItem.GetGoods.MakeScope).End)]"
 												on_action = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
 													}
 
 													icon = {
-														visible = "[And(GoodItem.AreAllPossibleRGOAtMaxLvl, GreaterThan_CFixedPoint(GoodItem.GetMaxRGOProfit,'(CFixedPoint)0'))]"
+												visible = "[And(GoodItem.AreAllPossibleRGOAtMaxLvl, GreaterThan_CFixedPoint(GoodItem.GetMaxRGOIncome,'(CFixedPoint)0'))]"
 														size = { 100% 100% }
 														texture = "gfx/interface/buttons/card_header_button_01.dds"
 														frame_grid = {4 1}
@@ -888,32 +901,35 @@ lateralview = {
 														texture_density = 2
 													}
 								
-													hbox = {
-														margin = {10 0}
-														icon = {
-															size = {18 18}
-															texture = "gfx/interface/icons/map_modes/raw_material.dds"
-														}
-														text_single = {
-															visible = "[GreaterThan_CFixedPoint(GoodItem.GetMaxRGOProfit,'(CFixedPoint)0')]"
-															maximumsize = {55 -1}
-															align = nobaseline
-															fontsize = 14
-															raw_text = "[GoodItem.GetMaxRGOProfit|+2] @tax_base!"
-														}
-
-														text_single = {
-															layoutpolicy_horizontal = expanding
-															visible = "[Not(GreaterThan_CFixedPoint(GoodItem.GetMaxRGOProfit,'(CFixedPoint)0'))]"
-															maximumsize = {55 -1}
-															align = center|nobaseline
-															fontsize = 14
-															raw_text = "-"
-														}
+												hbox = {
+													margin = {10 0}
+													icon = {
+														size = {18 18}
+														texture = "gfx/interface/icons/map_modes/raw_material.dds"
 													}
 
+													expand = {}
+
+													text_single = {
+														visible = "[GoodItem.CanBuildBuildings]"
+														maximumsize = {55 -1}
+														align = nobaseline
+														fontsize = 14
+														raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
+													}
+
+													text_single = {
+														layoutpolicy_horizontal = expanding
+														visible = "[Not(GoodItem.CanBuildBuildings)]"
+														maximumsize = {55 -1}
+														align = center|nobaseline
+														fontsize = 14
+														raw_text = "-"
+													}
+												}
+
 													sort_by_small_highlight = {
-														name = "rgo_profit"
+											name = "rgo_income"
 													}
 												}
 
@@ -937,9 +953,9 @@ lateralview = {
 														}
 													}
 
-													sort_by_small_highlight = {
-														name = "rgo_profit"
-													}
+												sort_by_small_highlight = {
+													name = "rgo_income"
+												}
 												}
 												
 												# button_regular = {
@@ -999,7 +1015,7 @@ lateralview = {
 												# 	}
 
 												# 	icon = {
-												# 		visible = "[And(GoodItem.AreAllPossibleRGOAtMaxLvl, GreaterThan_CFixedPoint(GoodItem.GetMaxRGOProfit,'(CFixedPoint)0'))]"
+												# 		visible = "[And(GoodItem.AreAllPossibleRGOAtMaxLvl, GreaterThan_CFixedPoint(GoodItem.GetMaxRGOIncome,'(CFixedPoint)0'))]"
 												# 		size = { 100% 100% }
 												# 		texture = "gfx/interface/buttons/card_header_button_01.dds"
 												# 		frame_grid = {4 1}
@@ -1015,16 +1031,16 @@ lateralview = {
 												# 			texture = "gfx/interface/icons/map_modes/raw_material.dds"
 												# 		}
 												# 		text_single = {
-												# 			visible = "[GreaterThan_CFixedPoint(GoodItem.GetMaxRGOProfit,'(CFixedPoint)0')]"
+												# 			visible = "[GreaterThan_CFixedPoint(GoodItem.GetMaxRGOIncome,'(CFixedPoint)0')]"
 												# 			maximumsize = {55 -1}
 												# 			align = nobaseline
 												# 			fontsize = 14
-												# 			raw_text = "[GoodItem.GetMaxRGOProfit|+2] @gold!"
+												# 			raw_text = "[GoodItem.GetMaxRGOIncome|+2] @gold!"
 												# 		}
 
 												# 		text_single = {
 												# 			layoutpolicy_horizontal = expanding
-												# 			visible = "[Not(GreaterThan_CFixedPoint(GoodItem.GetMaxRGOProfit,'(CFixedPoint)0'))]"
+												# 			visible = "[Not(GreaterThan_CFixedPoint(GoodItem.GetMaxRGOIncome,'(CFixedPoint)0'))]"
 												# 			maximumsize = {55 -1}
 												# 			align = center|nobaseline
 												# 			fontsize = 14
