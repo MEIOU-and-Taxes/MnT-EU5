@@ -1,0 +1,210 @@
+﻿namespace = automatic_integration
+
+automatic_integration.1 = {
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+
+	immediate = {
+		set_variable = {
+			name = integration_pool
+			value = {
+				value = 4
+				if = {
+					limit = {
+						has_advance = integrate_area_advance
+					}
+					multiply = 5
+				}
+				multiply = {
+					add = 1
+					add = modifier:global_integration_speed_modifier
+					add = modifier:legislative_efficiency
+				}
+				multiply = {
+					add = root.average_country_literacy
+					divide = 100
+					add = 1
+				}
+			}
+		}
+
+		ordered_owned_location = {
+			limit = {
+				integration_level = conquered
+				root.var:integration_pool > 0.02
+			}
+			order_by = proximity
+			max = num_locations
+			check_range_bounds = no
+
+			set_variable = {
+				name = max_integration_gain
+				value = {
+					value = 100
+					subtract = integration_progress
+				}
+			}
+
+			set_variable = {
+				name = location_integration_gain
+				value = {
+					value = root.var:integration_pool
+					multiply = 0.5
+					max = 8.25
+					max = var:max_integration_gain
+					max = root.var:integration_pool
+				}
+			}
+
+			# Apply integration progress
+			change_integration_progress = {
+				value = var:location_integration_gain
+			}
+
+			# Reduce remaining pool
+			root = {
+				change_variable = {
+					name = integration_pool
+					subtract = prev.var:location_integration_gain
+				}
+			}
+
+			#if = {
+			#	limit = {
+			#		owner = { is_ai = no }
+			#	}
+			#	error_log = "[THIS.GetLocation.GetNameWithNoTooltip] - [THIS.GetLocation.MakeScope.GetVariable('integration_progress').GetValue]+[THIS.GetLocation.MakeScope.GetVariable('location_integration_gain').GetValue], remaining: [PREV.GetCountry.MakeScope.GetVariable('integration_pool').GetValue]"
+			#}
+
+			remove_variable = max_integration_gain
+			remove_variable = location_integration_gain
+		}
+		remove_variable = integration_pool
+	}
+}
+
+automatic_integration.2 = {
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+
+	immediate = {
+		every_owned_location = {
+			limit = {
+				integration_level = conquered
+				integration_progress < 100
+			}
+			#order_by = proximity
+			#max = num_locations
+			#check_range_bounds = no
+
+			set_variable = {
+				name = location_integration_gain
+				value = {
+					value = 0.2
+					if = {
+						limit = {
+							any_neighbor_location = {
+								is_ownable = yes
+								has_owner = yes
+								owner ?= root
+								NOT = { integration_level = conquered }
+							}
+						}
+						add = 0.4
+					}
+					multiply = {
+						add = 100
+						subtract = 50 #easier to paste from excel this way
+						add = proximity
+						divide = 100
+					}
+					multiply = {
+						# same culture bonus
+						add = 1
+						if = {
+							limit = {
+								dominant_culture = {
+									is_primary_or_accepted_in = root
+								}
+							}
+							add = 0.1
+						} else = {
+							if = {
+								limit = {
+									dominant_culture = {
+										NOT = { is_tolerated_in = root }
+									}
+								}
+								subtract = 0.15
+							}
+						}
+						if = {
+							limit = {
+								dominant_religion = root.religion
+							}
+							add = 0.1
+						} else = {
+							if = {
+								limit = {
+									NOT = { dominant_religion.group = root.religion.group }
+								}
+								subtract = 0.15
+							}
+						}
+						add = {
+							add = root.modifier:legislative_efficiency
+							add = {
+								add = root.average_country_literacy
+								divide = 100
+							}
+							multiply = 0.5
+							add = root.modifier:global_integration_speed_modifier
+						}
+					}
+					if = {
+						limit = {
+							root = {
+								has_advance = integrate_area_advance
+							}
+						}
+						multiply = 2
+					}
+					multiply = {
+						# baseline 20k population, 40k takes double time (50% speed), 60k takes triple time (33% speed) 80k which maxs out at 25% speed -75%
+						add = 20000
+						divide = {
+							value = population
+							min = 10000
+							max = 80000
+						}
+						min = 0.25
+						max = 1.75
+					}
+					#divide = {
+					#	value = 0.8
+					#	multiply = {
+					#		value = average_location_literacy
+					#		divide = 100
+					#	}
+					#}
+					min = 0.05
+				}
+			}
+
+			change_integration_progress = {
+				value = var:location_integration_gain
+			}
+
+			#if = {
+			#	limit = {
+			#		owner = { is_ai = no }
+			#	}
+			#	error_log = "[THIS.GetLocation.GetNameWithNoTooltip] - [THIS.GetLocation.MakeScope.GetVariable('integration_progress').GetValue]+[THIS.GetLocation.MakeScope.GetVariable('location_integration_gain').GetValue], remaining: [PREV.GetCountry.MakeScope.GetVariable('integration_pool').GetValue]"
+			#}
+
+			remove_variable = location_integration_gain
+		}
+	}
+}
