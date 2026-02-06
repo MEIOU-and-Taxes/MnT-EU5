@@ -12,6 +12,9 @@ REPLACE:move_nw_good_to_new_location = {
 	automation_tick = never
 	automation_tick_frequency = 12
 
+	maximum_targets_in_one_tick = 20
+	disallowed_duplicates_of_targets_for_ai = { target_location }
+
 	potential = {
 	}
 
@@ -135,12 +138,10 @@ REPLACE:move_nw_good_to_new_location = {
 		map_mode = raw_material
 		name = "choose_location"
 		none_available_msg_key = "move_nw_good_to_new_location_no_available_location"
-		column = { data = owner_flag }
+		column = { data = rank }
 		column = { data = name }
 		column = { data = raw_material }
 		column = { data = population }
-		column = { data = control}
-
 		visible = {
 			is_ownable = yes
 			has_owner = yes
@@ -330,11 +331,7 @@ REPLACE:move_nw_good_to_new_location = {
 	}
 
 	effect = {
-		scope:target_location ?= {		
-			set_variable = {
-				name = columbian_exchange_old_raw_material
-				value = this.raw_material
-			}	
+		scope:target_location ?= {			
 			change_max_raw_material_workers = {
 				value = rgo_workers
 				subtract = 1
@@ -343,63 +340,41 @@ REPLACE:move_nw_good_to_new_location = {
 			}
 			change_prosperity = prosperity_weak_penalty
 			change_raw_material = scope:target_good
-			set_variable = changed_to_new_world_rgo
-			error_log =  "::CEx::[GetCurrentYear]:[THIS.GetLocation.GetNameWithNoTooltip]:[THIS.GetLocation.GetOwner.GetNameWithNoTooltip]:[THIS.GetLocation.GetArea.GetNameWithNoTooltip]:[THIS.GetLocation.GetRegion.GetNameWithNoTooltip]:[THIS.GetLocation.MakeScope.GetVariable('columbian_exchange_old_raw_material').GetGoods.GetNameWithNoTooltip]:[THIS.GetLocation.GetRawMaterial.GetNameWithNoTooltip]:new_world_good"
 		}
 	}
 	
 	ai_will_do = {
+		value = -1 #Bias against doing anything
 		#scope:target_good, scope:target_location
-
-		#starting factor from price
-		# -10 if prices are equal
-		# 0 if new good price is 150% of replaced good price
-		# 10 if new good price is double the price of replaced good
-		value = 0
-
-
 		if = {
 			limit = {
 				exists = scope:target_good
 				exists = scope:target_location
 			}
-			add = "scope:target_good.price_in_market(scope:target_location.market)"
-			divide = "scope:target_location.raw_material.price_in_market(scope:target_location.market)"
-			subtract = 1.5
-			multiply = 20
-
-			scope:target_location.market = {
-				if = {
-					limit = {
-						NOT = { 
-							any_location_in_market = {
-      							has_owner = yes
-								raw_material = scope:target_good
-							}
-						}
-					}
-					add = 	10
-				}
-			}
-
 			scope:target_good = {
+				#We try to keep expensive resources
+				add = "price_in_market(scope:target_location.market)"
+				scope:target_location.raw_material = {
+					subtract = "price_in_market(scope:target_location.market)"
+				}
+				#Multiply the price result to make the action more common if positive
+				multiply = 10
 				#If there is surplus is less valuable
 				if = {
 					limit = {
-						is_in_surplus_in_market = { market = scope:target_location.market country = scope:target_location.owner value > 0 }
+						is_in_surplus_in_market = { market = scope:target_location.market country = root value > 0 }
 					}
 					subtract = 	100
 				}
-			}
-
-			scope:target_location.raw_material = {
-				#if replaced good is not in surplus, add heavy penalty
+				#If the good is food
 				if = {
 					limit = {
-						NOT = { is_in_surplus_in_market = { market = scope:target_location.market country = scope:target_location.owner value > 1 } }
+						is_food = yes
 					}
-					subtract = 	100
+					subtract = scope:target_good.food_value
+					add = scope:target_location.raw_material.food_value
 				}
+
 			}
 		}
 	}
@@ -422,6 +397,9 @@ REPLACE:move_ow_good_to_new_location = {
 	ai_tick_frequency = 60
 	automation_tick = never
 	automation_tick_frequency = 12
+
+	maximum_targets_in_one_tick = 20
+	disallowed_duplicates_of_targets_for_ai = { target_location }
 
 	potential = {
 	}
@@ -546,11 +524,8 @@ REPLACE:move_ow_good_to_new_location = {
 		}
 		name = "choose_location"
 		none_available_msg_key = "move_ow_good_to_new_location_no_available_location"
-		column = { data = owner_flag }
 		column = { data = name }
 		column = { data = raw_material }
-		column = { data = population }
-		column = { data = control}
 		visible = {
 			is_ownable = yes
 			has_owner = yes
@@ -857,11 +832,7 @@ REPLACE:move_ow_good_to_new_location = {
 	}
 
 	effect = {
-		scope:target_location ?= {		
-			set_variable = {
-				name = columbian_exchange_old_raw_material
-				value = this.raw_material
-			}	
+		scope:target_location ?= {			
 			change_max_raw_material_workers = {
 				value = rgo_workers
 				subtract = 1
@@ -870,64 +841,252 @@ REPLACE:move_ow_good_to_new_location = {
 			}
 			change_prosperity = prosperity_weak_penalty
 			change_raw_material = scope:target_good
-			set_variable = changed_to_old_world_rgo
-			error_log =  "::CEx::[GetCurrentYear]:[THIS.GetLocation.GetNameWithNoTooltip]:[THIS.GetLocation.GetOwner.GetNameWithNoTooltip]:[THIS.GetLocation.GetArea.GetNameWithNoTooltip]:[THIS.GetLocation.GetRegion.GetNameWithNoTooltip]:[THIS.GetLocation.MakeScope.GetVariable('columbian_exchange_old_raw_material').GetGoods.GetNameWithNoTooltip]:[THIS.GetLocation.GetRawMaterial.GetNameWithNoTooltip]:old_world_good"
 		}
 	}
 	
 	ai_will_do = {
-		#scope:target_good, scope:target_location
+		#If the action is doable by the AI, 
+		#meaning there is a combination of target good and target location where it can replace the RGO it should do it
+		add = 200
+	}
+}
 
-		#starting factor from price
-		# -10 if prices are equal
-		# 0 if new good price is 150% of replaced good price
-		# 10 if new good price is double the price of replaced good
-		value = 0
+#Only for natives
 
+learn_from_foreigners = {
+	type = situation
 
+	ai_tick = daily
+	ai_tick_frequency = 40
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	
+	potential = {
+		scope:actor ?= {
+			country_type = location		
+			culture = { is_culture_native_american =yes }
+		}
+	}
+
+	allow = {
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:learn_from_foreigners
+	
+	cooldown = {
+		type = learn_from_foreigners
+		years = 1
+	}
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:columbian_exchange = this
+			situation_is_active = yes
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		source = actor
+		source_flags = diplomatic_range
+		target_flag = target
+		name = "choose_country"
+		none_available_msg_key = "no_valid_countries"
+		column = { data = name }
+		visible = {
+			country_type = location
+		}
+		enabled = {
+			NOT = { is_at_war_with = scope:actor }
+			culture ?= {
+				NOT = {
+					is_culture_native_american =yes
+				}
+			}
+			num_of_advances_researched > scope:actor.num_of_advances_researched
+			is_discovered_by = scope:actor
+		}
+	}
+
+	#Get Research
+	effect = {
 		if = {
-			limit = {
-				exists = scope:target_good
-				exists = scope:target_location
-			}
-			add = "scope:target_good.price_in_market(scope:target_location.market)"
-			divide = "scope:target_location.raw_material.price_in_market(scope:target_location.market)"
-			subtract = 1.5
-			multiply = 20
-
-			if = {
-				limit = {
-					scope:target_location.market  = {
-						NOT = { 
-							any_location_in_market = {
-      							has_owner = yes
-								raw_material = scope:target_good
-							}
-						}
+			limit = {exists = scope:target}
+			scope:actor ?= { 
+				add_research_progress = {				
+					if = {
+						limit = { research_delta > 20  }
+						value = research_progress_ultimate_bonus
+					}
+					else_if = {
+						limit = { research_delta > 15  }
+						value = research_progress_extreme_bonus
+					}
+					else_if = {
+						limit = { research_delta > 10  }
+						value = research_progress_severe_bonus
+					}
+					else_if = {
+						limit = { research_delta > 5  }
+						value = research_progress_mild_bonus
+					}
+					else = {
+						value = research_progress_weak_bonus
 					}
 				}
-				add = 	10
-			}
-
-			scope:target_good = {
-				#If there is surplus is less valuable
-				if = {
-					limit = {
-						is_in_surplus_in_market = { market = scope:target_location.market country = scope:target_location.owner value > 0 }
-					}
-					subtract = 	100
-				}
-			}
-
-			scope:target_location.raw_material = {
-				#if replaced good is not in surplus, add heavy penalty
-				if = {
-					limit = {
-						NOT = { is_in_surplus_in_market = { market = scope:target_location.market country = scope:target_location.owner value > 1 } }
-					}
-					subtract = 	100
+				add_trust = {
+					modifier = trust_learn_from_foreigners
+					target = scope:target
 				}
 			}
 		}
+	}
+
+	ai_will_do = {
+		add = 5
+	}
+}
+
+absorb_institutions = {
+	type = situation
+	
+	potential = {
+		scope:actor ?= {
+			country_type = location		
+			culture = { is_culture_native_american =yes }
+		}
+	}
+
+	allow = {
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+	automation_tick = monthly
+	automation_tick_frequency = 3
+
+	price = price:absorb_institutions
+	
+	cooldown = {
+		type = absorb_institutions
+		years = 1
+	}
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:columbian_exchange = this
+			situation_is_active = yes
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		source = actor
+		source_flags = diplomatic_range
+		target_flag = target
+		name = "choose_country"
+		none_available_msg_key = "no_valid_countries"
+		column = { data = name }
+		visible = {
+			NOT = { is_at_war_with = scope:actor }
+			culture ?= {
+				NOT = {
+					is_culture_native_american =yes
+				}
+			}
+			num_embraced_institutions > scope:actor.num_embraced_institutions
+			OR = {
+				is_discovered_by = scope:actor
+				is_neighbor_of = scope:actor
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = institution
+		source = target
+		target_flag = target_institution
+		name = "choose_institution"
+		none_available_msg_key = "no_valid_institution"
+		column = { data = name }
+		visible = {
+			scope:target = { has_embraced_institution = root }
+		}
+	}
+
+	#Get Institution Progress
+	effect = {
+		scope:target ?= {
+			random_institutions_embraced = {
+				limit = {
+					NOT = { scope:actor = { has_embraced_institution = prev } }
+				}				
+				save_scope_as = institution_scope
+			}
+		}
+		if = {
+			limit = { 
+				exists = scope:target 
+				exists = scope:target_institution
+			}
+			scope:actor ?= {
+				every_owned_location = {				
+					limit = { is_province_capital = yes }
+									
+					if = {
+						limit = { scope:actor.institutions_delta > 3  }
+						change_institution_progress = { 
+							type = scope:target_institution
+							value = institution_progress_extreme_bonus
+						}
+					}
+					else_if = {
+						limit = { scope:actor.institutions_delta > 2  }
+						change_institution_progress = { 
+							type = scope:target_institution
+							value = institution_progress_severe_bonus
+						}
+					}
+					else_if = {
+						limit = { scope:actor.institutions_delta > 1  }
+						change_institution_progress = { 
+							type = scope:target_institution
+							value = institution_progress_mild_bonus
+						}
+					}
+					else = {
+						change_institution_progress = { 
+							type = scope:target_institution
+							value = institution_progress_weak_bonus
+						}
+					}
+				}
+				add_trust = {
+					modifier = trust_absorb_institutions
+					target = scope:target
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 5
 	}
 }
