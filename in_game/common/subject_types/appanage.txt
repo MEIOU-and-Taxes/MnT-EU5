@@ -1,6 +1,7 @@
 ﻿appanage = { 
 	subject_pays = subject_pays_vassal
 	color = subject_appanage
+	annullment_favours_required = 30
 	level = 3
 	join_offensive_wars_always = {
 		NOR = {
@@ -14,18 +15,16 @@
 
 	#root = subject type, scope:actor = caller, scope:recipient = callee, scope:target (optional) = against who)
 	join_defensive_wars_always = {
-		scope:recipient ?= { 
-			NOT = { has_country_modifier = appanage_diplomatic_betrayal_modifier } 
-		}
-		custom_tooltip = {
-			text = wont_join_vs_other_appanages_with_granted_autonomy_to_expand_modifier_during_hyw_tt
-			trigger_if = {
-				limit = {
-					scope:target ?= {
-						is_subject_type = appanage
+		NOR = {
+			scope:recipient ?= { modifier:appanage_prevented_from_call_to_war = yes }
+			custom_tooltip = {
+				text = wont_join_vs_other_appanages_with_granted_autonomy_to_expand_modifier_during_hyw_tt
+				trigger_if = {
+					limit = {
+						scope:target ?= {
+							is_subject_type = appanage
+						}
 					}
-				}
-				NOT = { 
 					scope:target ?= { has_country_modifier = granted_autonomy_to_expand_modifier } 
 				}
 			}
