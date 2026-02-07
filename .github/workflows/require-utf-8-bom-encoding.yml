@@ -1,0 +1,174 @@
+﻿name: EU5 - Encoding (UTF-8 BOM)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+jobs:
+  encoding-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate encodings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          # --- Config (adjust to your repo) ---
+          # Enforce UTF-8 BOM for these path prefixes (EU5 "code" + localization).
+          BOM_PATH_PREFIXES = [
+              "clausewitz/loading_screen/localization",
+              "game/dlc/D000_shared/main_menu",
+              "game/dlc/D015_ancient_monuments_pack/in_game",
+              "game/dlc/D017_sacred_sites_pack/in_game",
+              "game/in_game/common",
+              "game/in_game/content_source/map_objects/ambience_generators",
+              "game/in_game/events",
+              "game/in_game/gfx/city_materials",
+              "game/in_game/gfx/graphical_culture_types",
+              "game/in_game/gfx/images",
+              "game/in_game/gfx/map/biome_definitions",
+              "game/in_game/gfx/map/flatmap",
+              "game/in_game/gfx/map/locators_override",
+              "game/in_game/gfx/map/map_modes",
+              "game/in_game/gfx/map/map_objects/", # simplified
+              "game/in_game/gfx/map/spline_network",
+              "game/in_game/gfx/scenes",
+              "game/in_game/gfx/terrain2/materials.txt",
+              "game/in_game/gui/filters",
+              "game/in_game/gui/sort_keys",
+              "game/in_game/map_data/definitions.txt",
+              "game/in_game/map_data/named_locations",
+              "game/in_game/setup",
+              "game/loading_screen/common",
+              "game/loading_screen/credits.txt",
+              "game/loading_screen/gfx",
+              "game/loading_screen/localization",
+              "game/loading_screen/sound/persistent_objects",
+              "game/main_menu/common/achievements",
+              "game/main_menu/common/flag_definitions",
+              "game/main_menu/common/game_concepts",
+              "game/main_menu/common/game_rules",
+              "game/main_menu/common/modifier_icons",
+              "game/main_menu/common/modifier_type_definitions",
+              "game/main_menu/common/named_colors/02_map.txt",
+              "game/main_menu/common/scenarios",
+              "game/main_menu/common/script_values",
+              "game/main_menu/common/scripted_triggers",
+              "game/main_menu/common/static_modifiers",
+              "game/main_menu/gfx/map",
+              "game/main_menu/gfx/papermap_entities",
+              "game/main_menu/gfx/portraits/accessories",
+              "game/main_menu/gfx/portraits/accessory_variations",
+              "game/main_menu/gfx/portraits/cameras",
+              "game/main_menu/gfx/portraits/environments",
+              "game/main_menu/gfx/portraits/portrait_animations",
+              "game/main_menu/gfx/portraits/portrait_modifiers",
+              "game/main_menu/gfx/portraits/portraitdecalsettings.txt",
+              "game/main_menu/gfx/portraits/portraitsettings.txt",
+              "game/main_menu/gfx/trade_graphics",
+              "game/main_menu/gfx/unit_graphics",
+              "game/main_menu/gui",
+              "game/main_menu/localization",
+              "game/main_menu/music",
+              "game/main_menu/notifications",
+              "game/main_menu/setup/templates/", # simplified
+              "jomini/loading_screen/common/defines",
+              "jomini/loading_screen/common/trigger_localization",
+              "jomini/loading_screen/localization",
+              "jomini/loading_screen/notifications",
+              "jomini/loading_screen/sound",
+          ]
+
+          # Exclude these path prefixes from BOM enforcement (even if under BOM_PATH_PREFIXES)
+          EXCLUDE_BOM_PATH_PREFIXES = [
+            "main_menu/setup/",
+            "main_menu/common/named_colors/",
+            "loading_screen/common/named_colors/"
+          ]
+
+          # File extensions we treat as "text to validate"
+          # All .gui files are skipped as they don't support BOM.
+          TEXT_EXTS = {
+              ".txt", ".yml", ".gfx", ".lua"
+          }
+
+          # Extensions to skip as binary/irrelevant
+          SKIP_EXTS = {
+              ".png", ".jpg", ".jpeg", ".webp", ".dds", ".tga", ".psd", ".xcf", ".gui",
+              ".ogg", ".mp3", ".wav", ".bin", ".zip", ".7z", ".rar", ".pdf", ".ttf", ".otf"
+          }
+
+          def git(*args: str) -> str:
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          base = os.environ.get("GITHUB_BASE_REF", "")
+          if not base:
+              # fallback (shouldn't happen on pull_request)
+              base = git("rev-parse", "--abbrev-ref", "HEAD~1")
+
+          # Ensure we have the base ref
+          subprocess.check_call(["git", "fetch", "origin", base, "--depth=1"])
+
+          changed = git("diff", "--name-only", "--diff-filter=ACMRT", f"origin/{base}...HEAD").splitlines()
+
+          def is_text_file(p: Path) -> bool:
+              ext = p.suffix.lower()
+              if ext in SKIP_EXTS:
+                  return False
+              if ext in TEXT_EXTS:
+                  return True
+              # if no extension, treat as text only if it’s in a known EU5 code folder
+              return ext == "" and any(str(p).replace("\\","/").startswith(pref) for pref in BOM_PATH_PREFIXES)
+
+          def requires_bom(p: Path) -> bool:
+              s = str(p).replace("\\", "/")
+              if any(s.startswith(pref) for pref in EXCLUDE_BOM_PATH_PREFIXES):
+                  return False
+              return any(s.startswith(pref) for pref in BOM_PATH_PREFIXES)
+
+          bad = []
+          checked = 0
+
+          for rel in changed:
+              p = Path(rel)
+              if not p.exists() or not p.is_file():
+                  continue
+              if not is_text_file(p):
+                  continue
+              if not requires_bom(p):
+                  # Only enforce in configured EU5 folders
+                  continue
+
+              data = p.read_bytes()
+              checked += 1
+
+              # UTF-8 BOM bytes
+              has_bom = data.startswith(b"\xEF\xBB\xBF")
+
+              # Must have BOM
+              if not has_bom:
+                  bad.append((rel, "missing UTF-8 BOM"))
+                  continue
+
+              # Must decode as UTF-8 (utf-8-sig strips BOM)
+              try:
+                  data.decode("utf-8-sig")
+              except UnicodeDecodeError:
+                  bad.append((rel, "not valid UTF-8 (with BOM)"))
+
+          if bad:
+              print("Encoding check FAILED. These files must be UTF-8 with BOM:")
+              for f, reason in bad:
+                  print(f" - {f}: {reason}")
+              raise SystemExit(1)
+
+          print(f"Encoding check OK. Checked {checked} file(s).")
+          PY
