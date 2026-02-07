@@ -184,7 +184,12 @@ Date: 2026-01-20
   - Shia: enemy → negative
 
 ##### Politics
-
+- Base Estate Power split
+  - Commoners (Peasants) estate power per pop: 0.025 → 0.2
+  - Dhimmi estate power per pop: 0.02 → 0.1
+  - Tribes estate power per pop: 0.01 → 0.2
+  - Cossacks estate power per pop: 0.02 → 0.2
+  - Burghers estate power per pop: 2 → 3
 - Dhimmi estate privileges:  
   - ‘Abrahamic communities’
     - No longer reduce local Unrest by 0.1  
@@ -228,12 +233,6 @@ Date: 2026-01-20
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
   - added requirement about govt. power above 60
-- Base Estate Power split
-  - Commoners (Peasants) estate power per pop: 0.025 → 0.2
-  - Dhimmi estate power per pop: 0.02 → 0.1
-  - Tribes estate power per pop: 0.01 → 0.2
-  - Cossacks estate power per pop: 0.02 → 0.2
-  - Burghers estate power per pop: 2 → 3
 - Scaling of lower class estate power moved to free subjects/serfdom slider, with -100% power at full serfdom slider and +50% at full free subjects
 - Added impact of sefdom slider on noble estate power with +100% at full sefdom slider
 - Scaling of Tribes Estate added to centralization slider, with -50% power at full centralization and +50% at full 
