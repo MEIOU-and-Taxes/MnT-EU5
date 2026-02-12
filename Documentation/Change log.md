@@ -56,6 +56,7 @@ Date: 2026-01-20
 - Local population growth removed from having positive food.
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
+- Remove enslavement of all non-state-religion pops from Muslim countries on startup
 
 ##### Diplomacy
 
