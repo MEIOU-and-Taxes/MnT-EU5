@@ -1,0 +1,247 @@
+﻿#generic privileges
+REPLACE:peasants_free_peasantry = {
+	estate = peasants_estate
+
+	potential = {
+	}
+	allow = {
+		trigger_if = {
+			limit = { has_estate_privilege = estate_privilege:statutes_of_piotrkow }
+			NOT = { has_estate_privilege = estate_privilege:statutes_of_piotrkow }
+		}
+		NOT = {	has_estate_privilege = estate_privilege:ordinance_of_laborers }
+	}
+	
+	can_revoke = {
+		NOT = { has_estate_privilege = estate_privilege:land_owning_farmers }
+	}
+
+	country_modifier = {
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		nobles_estate_target_satisfaction = medium_privilege_target_satisfaction_penalty
+		global_peasants_migration_allowed = yes
+		global_laborers_migration_allowed = yes
+		global_peasants_estate_power = 0.1 #MnT changed from 0.2
+		monthly_towards_free_subjects = societal_value_monthly_move
+	}
+}
+
+REPLACE:peasants_represented_in_parliament = {
+	estate = peasants_estate
+
+	potential = {
+		modifier:has_a_parliamentary_system = yes
+	}
+	allow = {
+		OR = {
+			parliament_type = parliament_type:estate_parliament
+			parliament_type = parliament_type:autocratic_parliament
+			parliament_type = parliament_type:constitutional_parliament
+		}
+	}
+	
+	can_revoke = {
+		NOT = { has_estate_privilege = estate_privilege:land_owning_farmers }
+	}
+	
+	country_modifier = {
+		peasants_estate_can_participate_in_parliament = yes
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.25 #MnT changed from 0.5
+		monthly_towards_free_subjects = societal_value_monthly_move
+	}
+}
+
+REPLACE:peasant_owns_their_food = {
+	estate = peasants_estate
+
+	potential = {
+	}
+	allow = {
+	}
+	can_revoke = {
+	}
+
+	country_modifier = {
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_production_efficiency = medium_production_efficiency_penalty
+		global_peasants_estate_power = 0.1 #MnT changed from 0.2
+		monthly_towards_traditional_economy = societal_value_monthly_move
+	}
+}
+
+REPLACE:peasants_fewer_levies = {
+	estate = peasants_estate
+
+	potential = {
+	}
+	allow = {
+	}
+	can_revoke = {
+	}
+	
+	country_modifier = {
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		peasants_estate_levy_size = -0.2
+		global_peasants_estate_power = 0.15 #MnT changed from 0.33
+		monthly_towards_free_subjects = societal_value_monthly_move
+	}
+	
+}
+
+REPLACE:allow_hunting = { 
+	estate = peasants_estate 
+
+	country_modifier = {
+		nobles_estate_target_satisfaction = small_privilege_target_satisfaction_penalty
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.15 #MnT changed from 0.25
+		global_wild_game_output_modifier = 0.2
+		monthly_towards_free_subjects = societal_value_minor_monthly_move
+	}
+}
+
+REPLACE:no_labor_sunday = {
+	estate = peasants_estate 
+
+	potential = {
+		religion ?= { group = religion_group:christian }
+	}
+
+	country_modifier = {
+		global_raw_material_output = -0.05
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.15 #MnT changed from 0.33
+	}
+}
+
+REPLACE:communal_lands = {
+	estate = peasants_estate
+
+	country_modifier = {
+		monthly_towards_decentralization = societal_value_large_monthly_move
+		global_nobles_estate_power = -0.05
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.1 #MnT changed from 0.2
+	}
+}
+
+REPLACE:partial_yield = {
+	estate = peasants_estate
+
+	country_modifier = {
+		global_peasants_food_consumption = -0.1
+		global_laborers_food_consumption = -0.1
+		monthly_towards_free_subjects = societal_value_monthly_move
+		global_max_rgo_size_modifier_in_rural = -0.1
+		global_peasants_estate_power = 0.15 #MnT changed from 0.33
+	}
+
+}
+
+REPLACE:access_to_royal_and_ecclesiastical_courts = {
+	estate = peasants_estate
+
+	country_modifier = {
+		clergy_estate_target_satisfaction = medium_privilege_target_satisfaction_penalty
+		monthly_towards_communalism = societal_value_monthly_move
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.15 #MnT changed from 0.33
+	}
+}
+
+REPLACE:peasants_in_administration = {
+	estate = peasants_estate
+	
+	country_modifier = {
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.25 #MnT changed from 0.5
+		peasants_estate_allowed_in_cabinet = yes
+		monthly_towards_decentralization = societal_value_monthly_move
+	}
+}
+
+REPLACE:peasants_autonomous_villages = {
+	estate = peasants_estate
+
+	country_modifier = {
+		monthly_towards_decentralization = societal_value_large_monthly_move
+		monthly_towards_free_subjects = societal_value_monthly_move
+		global_peasants_estate_power = 0.25 #MnT changed from 0.5
+		rural_migration_attraction = 0.1
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+	}
+}
+
+#Unique privileges
+
+REPLACE:invite_german_settlers = { #Encourage German Migration
+	estate = peasants_estate
+
+	potential = { #The culture of the country is German, but the main culture is not
+		
+		religion = religion:catholic 
+		capital ?= {
+			OR = {
+				region = region:baltic_region
+				region = region:carpathia_region
+				area = area:baltic_area
+				area = area:bohemia_area
+				area = area:moravia_area
+			}
+		}
+	}
+	allow = {
+		NOT = {has_policy = closed_borders_law} #Incompatible
+	}
+
+	can_revoke = {
+	}
+
+	
+	country_modifier = {
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.05 #MnT changed from 0.2
+		peasants_estate_max_tax = -0.1
+		enables_german_migration = yes
+	}
+	on_activate = {
+		custom_tooltip = invite_german_settlers.tt
+	}
+}
+
+REPLACE:ayuntamientos = { 
+	estate = peasants_estate
+
+	potential = {
+		OR = {
+			has_or_had_tag = SPA
+			has_or_had_tag = CAS
+		}
+	}
+
+	country_modifier = {
+		pop_join_rebel_threshold = 0.05
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.25 #MnT changed from 0.5
+	}
+}
+
+REPLACE:cas_caballeros_villanos = {
+	estate = peasants_estate
+	
+	potential = {
+		has_or_had_tag = CAS
+	}
+	allow = {
+	}
+	can_revoke = {
+	}
+	
+	country_modifier = {
+		peasants_estate_target_satisfaction = medium_privilege_target_satisfaction
+		global_peasants_estate_power = 0.1 #MnT changed from 0.2
+		global_pop_promotion_speed_modifier = 0.1
+		monthly_towards_free_subjects = societal_value_monthly_move
+	}
+}
