@@ -226,10 +226,11 @@ Date: 2026-01-20
     - ayuntamientos: +50% → +25%
     - cas_caballeros_villanos: +20% → +10%
 - Noble estate privileges - added impact on Commoners and Dhimmi estate power
-  - noble_serfdom_rights: added -30% Commoners and Dhimmi estate power
+  - noble_serfdom_rights: added -10% Commoners and Dhimmi estate power
   - nobles_land_rights: added -15% Commoners and Dhimmi estate power
   - manorial_courts: added -25% Commoners and Dhimmi estate power
   - banal_lordship: added -25% Commoners and Dhimmi estate power
+- Added negative impact of Noble estate privileges targetting peasants (noble_serfdom_rights, nobles_land_rights, manorial_courts and banal_lordship) on Peasant and Dhimmi satisfaction
 - Modify requirements for country rank change
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
