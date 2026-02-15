@@ -263,6 +263,8 @@ Date: 2026-01-20
   
 ##### GUI
 - Added Goods Domestic Product UI in the Economy panel
+- Added fIlter button for rgo buildings in building view
+- Changed the behaviour of brgo buttons to show rgo buildings 
 
 ##### Modding
 - Added automated check for correct encodings via GitHub Actions
