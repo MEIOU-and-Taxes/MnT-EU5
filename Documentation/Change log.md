@@ -56,6 +56,7 @@ Date: 2026-01-20
 - Local population growth removed from having positive food.
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
+- Remove enslavement of all non-state-religion pops from Muslim countries on startup
 
 ##### Diplomacy
 
@@ -184,17 +185,62 @@ Date: 2026-01-20
   - Shia: enemy → negative
 
 ##### Politics
-
+- Base Estate Power split
+  - Commoners (Peasants) estate power per pop: 0.025 → 0.2
+  - Dhimmi estate power per pop: 0.02 → 0.1
+  - Tribes estate power per pop: 0.01 → 0.2
+  - Cossacks estate power per pop: 0.02 → 0.2
+  - Burghers estate power per pop: 2 → 3
 - Dhimmi estate privileges:  
-  - ‘Abrahamic communities’, ‘Promote tolerance’ & ‘Preserve Local Traditions’:  
+  - ‘Abrahamic communities’
+    - No longer reduce local Unrest by 0.1  
     - Tolerance of Heathen Beliefs: 1 → 2  
     - Tolerance of the True Faith: \-0.5 (New)  
-  - ‘Abrahamic communities’:  
-    - No longer reduce local Unrest by 0.1  
+    - Impact on Dhimmi estate power: +100% → +50%
+  - ‘Promote tolerance’ 
+    - Tolerance of Heathen Beliefs: 1 → 2  
+    - Tolerance of the True Faith: \-0.5 (New)  
+    - Impact on Dhimmi estate power: +50% → +25%
+  - ‘Preserve Local Traditions’ 
+    - Tolerance of Heathen Beliefs: 1 → 2  
+    - Tolerance of the True Faith: \-0.5 (New)  
+    - Impact on Dhimmi estate power: +33% → +20%
+  - ‘Pact of Umar’ 
+    - Impact on Dhimmi estate power: +100% → +50%
+- Commoners estate privileges - reduction of impact on estate power to match increased power per pop:  
+  - generic:
+    - peasants_free_peasantry: +50% → +25%
+    - peasants_represented_in_parliament: +20% → +10%
+    - peasant_owns_their_food: +20% → +10%
+    - peasants_fewer_levies: +33% → +15%
+    - peasants_allowed_weapons_privilege: +50% → +25%
+    - allow_hunting: +25% → +15%
+    - no_labor_sunday: +33% → +15%
+    - communal_lands: +20% → +10%
+    - partial_yield: +33% → +15%
+    - access_to_royal_and_ecclesiastical_courts: +33% → +15%
+    - peasants_in_administration: +50% → +25%
+    - peasants_autonomous_villages: +50% → +25%
+  - unique:
+    - invite_german_settlers: +20% → +5%
+    - ayuntamientos: +50% → +25%
+    - cas_caballeros_villanos: +20% → +10%
+- Noble estate privileges - added impact on Commoners and Dhimmi estate power
+  - noble_serfdom_rights: added -10% Commoners and Dhimmi estate power
+  - nobles_land_rights: added -15% Commoners and Dhimmi estate power
+  - manorial_courts: added -25% Commoners and Dhimmi estate power
+  - banal_lordship: added -25% Commoners and Dhimmi estate power
+- Added negative impact of Noble estate privileges targetting peasants (noble_serfdom_rights, nobles_land_rights, manorial_courts and banal_lordship) on Peasant and Dhimmi satisfaction
 - Modify requirements for country rank change
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
   - added requirement about govt. power above 60
+- Scaling of lower class estate power moved to free subjects/serfdom slider, with -100% power at full serfdom slider and +50% at full free subjects
+- Added impact of sefdom slider on noble estate power with +100% at full sefdom slider
+- Scaling of Tribes Estate added to centralization slider, with -50% power at full centralization and +50% at full 
+- Changed impact of government reforms on estate power:
+  - land_inheritance_act: added +10% impact on commoner estate power
+  - universal_serfdom: reduced impact on commoners estate power from -50% to -10% (as effects are moved to actual serfdom value)
 
 ##### Disasters
 
@@ -217,6 +263,8 @@ Date: 2026-01-20
   
 ##### GUI
 - Added Goods Domestic Product UI in the Economy panel
+- Added fIlter button for rgo buildings in building view
+- Changed the behaviour of brgo buttons to show rgo buildings 
 
 ##### Modding
 - Added automated check for correct encodings via GitHub Actions
