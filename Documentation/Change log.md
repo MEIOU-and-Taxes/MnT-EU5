@@ -265,6 +265,7 @@ Date: 2026-01-20
 - Added Goods Domestic Product UI in the Economy panel
 - Added fIlter button for rgo buildings in building view
 - Changed the behaviour of brgo buttons to show rgo buildings 
+- Unified goods-panel RGO buttons with the Production view RGO visibility toggle and removed sticky per-good RGO force-show state.
 
 ##### Modding
 - Added automated check for correct encodings via GitHub Actions
