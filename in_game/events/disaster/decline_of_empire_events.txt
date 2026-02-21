@@ -363,7 +363,7 @@ decline_of_empire.6 = {	#Non-accepted culture demands representation
 					root = {
 						NOT = { has_primary_or_accepted_culture = prev }
 					}
-					NOT = { is_in_list = decline_of_empire_6_list }
+					NOT = { is_in_list = decline_of_empires_6_list }
 				}
 			}
 			order_by = {
@@ -376,11 +376,11 @@ decline_of_empire.6 = {	#Non-accepted culture demands representation
 			}
 			check_range_bounds = no
 			max = 5
-			culture = { add_to_list = decline_of_empire_6_list }
+			culture = { add_to_list = decline_of_empires_6_list }
 		}
 
 		random_in_list = {
-			list = decline_of_empire_6_list
+			list = decline_of_empires_6_list
 			save_scope_as = target_culture
 		}
 
@@ -454,11 +454,297 @@ decline_of_empire.6 = {	#Non-accepted culture demands representation
 	}
 }
 
-decline_of_empire.7 = {	#vassal attempts to break free, added by M&T
+decline_of_empire.7 = {	#Area Inspection
 	type = country_event
 	category = disaster_event
 	title = decline_of_empire.7.title
 	desc = decline_of_empire.7.desc
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		if = {
+			limit = {
+				any_rebel = {
+					any_pops_supporting_rebel = {
+						location.area = scope:target_area
+					}
+				}
+			}
+	
+			every_rebel = {
+				limit = {
+					any_pops_supporting_rebel = {
+						location.area = scope:target_area
+					}
+				}
+	
+				every_pops_supporting_rebel = { add_to_list = decline_pop_list_7 }
+			}
+		}
+
+		set_variable = {
+			name = inspection_efficiency_variable
+			value = {
+				add = scope:target_area.population
+				divide = total_population
+				if = {
+					limit = { modifier:legislative_efficiency != 0 }
+					add = {
+						value = 1
+						multiply = modifier:legislative_efficiency
+					}
+				}
+			}
+		}
+
+		scope:target_area = {
+			ordered_province_in_area = {
+				limit = { owner = root }
+				order_by = {
+					value = population
+					if = {
+						limit = { province_satisfaction < 0.05 }
+						multiply = -0.05
+					}
+					else = {
+						multiply = {
+							value = province_satisfaction
+							multiply = -1
+						}
+					}
+				}
+
+				max = {
+					value = root.modifier:legislative_efficiency
+					multiply = 20
+					ceiling = yes
+				}
+
+				check_range_bounds = no
+
+				add_to_list = decline_event_provinces_7
+			}
+		}
+	}
+
+	option = {
+		name = decline_of_empire.7.a
+
+		add_complacency = {
+			value = {
+				add = 1
+				add = root.var:inspection_efficiency_variable
+				multiply = -1
+			}
+			multiply = { 1 1.25 }
+		}
+
+		if = {
+			limit = { 
+				list_size = { name = decline_pop_list_7 value > 0 } 
+			}
+			
+			ordered_in_list = {
+				list = decline_pop_list_7
+				order_by = pop_size
+				max = 3
+				check_range_bounds = no
+
+				add_pop_satisfaction = {
+					value = -0.01
+
+					if = {
+						limit = { location.local_control <= 0 }
+						divide = 0.1
+					}
+					else = { divide = location.local_control }
+				}
+			}
+		}
+
+		every_in_list = {
+			list = decline_event_provinces_7
+
+			add_province_modifier = {
+				modifier = recent_inspection_modifier
+				years = modifier_duration_years_short
+				mode = replace
+				size = {
+				value = 1
+					add = {
+						desc = "[control|e]"
+						value = "this.province_average_control"
+					}
+
+					add = {
+						desc = area_size_and_legislative_efficiency_tt
+						value = root.var:inspection_efficiency_variable
+					}
+				}
+			}
+		}
+	}
+
+	after = {
+		custom_tooltip = amount_of_provinces_receive_bonus_depends_legislative_efficiency_tt
+		remove_variable = inspection_efficiency_variable
+	}
+}
+
+decline_of_empire.8 = {	#Cabinet Member on Trial for Corruption and Complacency
+	type = country_event
+	category = disaster_event
+	title = decline_of_empire.8.title
+	desc = decline_of_empire.8.desc
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	immediate = {
+		scope:target_character = { save_scope_as = target_character }
+		ruler_or_regent = { save_scope_as = target_character2 }
+
+		if = {
+			limit = { 
+				scope:target_character = { has_character_modifier = entrenched_cabinet_member }
+			}
+
+			set_variable = purging_entrenched_cabinet_member_variable
+		}
+	}
+
+	option = {
+		name = decline_of_empire.8.a
+
+		add_complacency = {
+			value = {
+				subtract = 1
+				subtract = {
+					value = 300 
+					subtract = scope:target_character.total_abilities
+					multiply = 0.001
+				}
+
+				subtract = {
+					value = scope:target_character.days_of_service_in_cabinet
+					multiply = 0.001
+				}
+
+				if = {
+					limit = { has_variable = purging_entrenched_cabinet_member_variable }
+					multiply = 1.5
+				}
+
+				if = {
+					limit = { 
+						scope:target_character = { has_character_modifier = head_of_the_cabinet_modifier }
+					}
+					multiply = 1.25
+				}
+			}
+		}
+
+		if = {
+			limit = { has_variable = purging_entrenched_cabinet_member_variable }
+			custom_tooltip = purging_entrenched_cabinet_member_tt
+		}
+
+		if = {
+			limit = {
+				scope:target_character = { has_character_modifier = head_of_the_cabinet_modifier }
+			}
+
+			custom_tooltip = removal_of_head_of_cabinet_takes_stab_tt
+		}
+
+		random_list = {
+			1 = {
+				desc = target_character_banned_tt      
+				show_chance = no
+				remove_from_cabinet = scope:target_character
+				scope:target_character = {
+					add_character_modifier = {
+						modifier = permanently_banned_from_cabinet
+						years = -1
+						mode = add_and_extend
+					}
+				}
+			}
+			1 = {
+				desc = target_character_violently_purged_tt      
+				show_chance = no
+				kill_character = {
+					target = scope:target_character
+					killer = root.ruler_or_regent
+				}
+			}
+		}
+
+
+		if = {
+			limit = { current_age_or_later = { age = age_5_absolutism } }
+			change_societal_value = { type = absolutism_vs_liberalism value = societal_value_minor_move_to_left }
+		}
+	}
+
+	after = { remove_variable = purging_entrenched_cabinet_member_variable }
+}
+
+decline_of_empire.9 = {	#Cabinet Member becomes Entrenched
+	type = country_event
+	category = disaster_event
+	title = decline_of_empire.9.title
+	desc = decline_of_empire.9.desc
+
+	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
+
+	trigger = {
+		any_cabinet_character = {
+			NOT = { has_character_modifier = entrenched_cabinet_member }
+			years_of_service_in_cabinet >= 1
+			is_ruler = no
+			is_heir = no
+			is_regent = no
+			is_consort = no
+		}
+	}
+
+	immediate = {
+		random_cabinet_character = {
+			limit = {
+				NOT = { has_character_modifier = entrenched_cabinet_member }
+				#years_of_service_in_cabinet >= 1
+				is_ruler = no
+				is_heir = no
+				is_regent = no
+				is_consort = no
+			}
+			save_scope_as = target_character
+		}
+	}
+
+	option = {
+		name = decline_of_empire.9.a
+
+		add_complacency = complacency_weak_penalty
+
+		scope:target_character = {
+			add_character_modifier = {
+				modifier = entrenched_cabinet_member
+				years = -1
+				mode = replace
+			}
+		}
+	}
+
+	after = { custom_tooltip = character_can_only_be_removed_via_purge_action_tt }
+}
+
+decline_of_empire.10 = {	#vassal attempts to break free, added by M&T
+	type = country_event
+	category = disaster_event
+	title = decline_of_empire.10.title
+	desc = decline_of_empire.10.desc
 
 	trigger = {
 		num_subjects > 0
@@ -473,7 +759,7 @@ decline_of_empire.7 = {	#vassal attempts to break free, added by M&T
 	}
 
 	option = {
-		name = decline_of_empire.7.a
+		name = decline_of_empire.10.a
 
 		scope:target_country = {
 			declare_war_with_cb = {
@@ -484,7 +770,7 @@ decline_of_empire.7 = {	#vassal attempts to break free, added by M&T
 	}
 
 	option = { 
-		name = decline_of_empire.7.b
+		name = decline_of_empire.10.b
 
 		cancel_subject = scope:target_country
 		add_stability = stability_mild_bonus

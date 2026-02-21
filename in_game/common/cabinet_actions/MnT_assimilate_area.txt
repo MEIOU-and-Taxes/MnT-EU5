@@ -4,13 +4,65 @@
 	
 	potential = {
 		modifier:allow_cabinet_assimilate_area = yes
+		num_locations > 0
 	}
 	
 	allow = {
 		cultural_unity < 1.0
 	}
 
-	
+	select_trigger = {
+		looking_for_a = culture
+		target_flag = target_culture
+		#for the AI we have an optimisation to only look through religions that are present. Human can look at all...but will have some disabled
+		source_ai_override = actor
+		source_flags_ai_override = include_any_present
+		name = "promote_culture_select_culture"
+		none_available_msg_key = "promote_culture_no_culture"
+		column = {
+			data = name
+		}
+		column = {
+			data = culture_percentage_in_country
+		}
+		default_sort = culture_percentage_in_country
+		visible = {
+			OR = {
+				AND = { # for humans
+					scope:actor = {
+						is_ai = no
+					}
+					OR = {
+						scope:actor = {
+							culture_percentage_in_country = {
+								culture = root
+								value >= 0.01
+							}
+						}
+						
+						cultural_view = {
+							target = scope:actor.culture
+							value > neutral 
+						}
+						reverse_cultural_view = {
+							target = scope:actor.culture
+							value > neutral 
+						}
+						
+						is_primary_or_accepted_in = scope:actor
+					}
+				}
+
+				AND = { # for AI
+					scope:actor = {
+						is_ai = yes
+					}
+					is_primary_in = scope:actor 
+				}
+			}
+		}
+	}
+
 	select_trigger = {
 		looking_for_a = area
 		source = actor
@@ -39,7 +91,26 @@
 			lerp = {
 				min_color = define:NMapColors|MAP_COLOR_LOW
 				max_color = define:NMapColors|MAP_COLOR_HIGH
-				factor = "province.culture_percentage(scope:actor.dominant_culture)"
+				factor = "area.culture_percentage(scope:target_culture)"
+			}
+		}
+	}
+
+	on_activate = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				every_province_in_area = {
+					limit = {
+						owner = scope:actor
+					}
+					set_variable = {
+						name = promoting_culture
+						value = scope:target_culture
+					}
+				}
 			}
 		}
 	}
@@ -56,7 +127,7 @@
 
 	progress = {
 		scope:target = {
-			value = "culture_percentage_in_area(scope:actor|scope:actor.dominant_culture)"
+			value = "culture_percentage_in_area(scope:actor|scope:target_culture)"
 		}
 	}
 }
