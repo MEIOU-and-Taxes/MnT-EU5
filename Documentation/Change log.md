@@ -7,7 +7,7 @@ Date: 2026-01-20
 #### Features
 
 - RGOs are replaced by buildings
-  - More in a seperate section below
+  - More in a separate section below
 - Naval levies  
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
@@ -34,7 +34,7 @@ Date: 2026-01-20
   - Buildings that have similar functionality as RGOs are now merged
     - E.g. clay/sand pits, Lumbermills, fruit orchards etc. got merged into the RGO-building
   - Balance changes done with calculation in excel spreadsheet, balance is still a bit rough but should mostly work fine
-  - Addapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
+  - Adapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
 
 #### Bugfixes
 
@@ -98,11 +98,6 @@ Date: 2026-01-20
       - Railroads: 50X
     - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
 - Market  
-  - Market access cost reduction doubled for roads:  
-    - Gravel: \-10% → \-20%  
-    - Paved road: \-15% → \-30%  
-    - Modern road: \-20% → \-40%  
-    - Railroad: \-25% → \-50%  
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
@@ -123,21 +118,7 @@ Date: 2026-01-20
   - Cities give:  
     - Local food capacity: 500 → 400  
     - Local food production: \-33% → \-25%  
-  - RGOs give less food:  
-    - Wool: 5 → 2  
-    - Wild game: 3.5 → 2  
-    - Fur: 2 → 1  
-    - Fish: 5 → 3  
-    - Wheat: 8 → 5  
-    - Maize: 8 → 5  
-    - Rice: 10 → 6  
-    - Millet: 5 → 3  
-    - Legumes: 5 → 3  
-    - Potato: 8 → 5  
-    - Livestock: 8 → 4  
-    - Olives: 4 → 2  
-    - Fruit: 4 → 2.5  
-    - Beeswax: 2.5 → 1  
+  - RGOs provide less food
 - Estate buildings:  
   - Toll castle:  
     - No longer give fort defense value of 25%  
@@ -149,9 +130,9 @@ Date: 2026-01-20
   - Burgher mansion:  
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
--Sand added to several production methods, including masonry, weapons, and tools.
--Estate built buildings do not consume goods directly, now add pop to consume goods for them.
--Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
+- Sand added to several production methods, including masonry, weapons, and tools.
+- Estate built buildings do not consume goods directly, now add pop to consume goods for them.
+- Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
 
 ##### Population
 
