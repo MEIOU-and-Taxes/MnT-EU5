@@ -2,6 +2,7 @@
 	on_actions = {
 		on_game_start_MnT
 		hide_buildings_on_start
+		epbm_initialize_all
 	}
 }
 
@@ -9,6 +10,8 @@ yearly_country_pulse = {
 	on_actions = {
 		pulse_yearly_MnT
 		pulse_yearly_per_country_MnT
+		mnt_epbm_ai_yearly_recalc
+		mnt_epbm_decade_rebuild
 	}
 }
 
@@ -21,6 +24,21 @@ biyearly_country_pulse = {
 monthly_country_pulse = {
 	on_actions = {
 		monthly_country_pulse_MnT
+		mnt_epbm_version_check
+		mnt_epbm_player_monthly
+		mnt_epbm_ai_monthly_charge
+	}
+}
+
+on_location_changed_owner = {
+	on_actions = {
+		mnt_epbm_on_location_owner_changed
+	}
+}
+
+weather_monthly_pulse = {
+	on_actions = {
+		mnt_epbm_monthly_cache_clear
 	}
 }
 
@@ -172,6 +190,204 @@ hide_buildings_on_start = {
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wild_game }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wine }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wool }
+		}
+	}
+}
+
+# Estates Pay Building Maintenance - On Actions
+# ═══════════════════════════════════════════════
+# Initialization: stamp global PM maps, build location + country indexes
+# Monthly: player recalc+charge, AI charge only
+# Yearly: AI recalc
+# Ownership change: move location between country lists
+
+# ═══════════════════════════════════════════════
+# Rebuild version: major * 100 + minor (patch changes don't trigger rebuild)
+# Updated by deploy.py from .metadata/metadata.json
+@mnt_epbm_rebuild_version = 120 # 1.2.x — sync with .metadata/metadata.json
+
+# Bouvet Island (27954): impassable location used as mod state anchor.
+# mnt_epbm_active modifier applied here — stripped by engine when mod is removed.
+
+epbm_initialize_all = {
+	effect = {
+		epbm_full_rebuild = yes
+		# Stamp version on Bouvet Island
+		location:bouvet_island = {
+			remove_location_modifier = mnt_epbm_active
+			add_location_modifier = { modifier = mnt_epbm_active days = -1 }
+			set_variable = { name = mnt_epbm_version value = @mnt_epbm_rebuild_version }
+		}
+	}
+}
+
+mnt_epbm_version_check = {
+	trigger = {
+		OR = {
+			# Modifier missing = mod was removed and re-added (or first init on existing save)
+			location:bouvet_island = {
+				NOT = {
+					has_location_modifier = mnt_epbm_active
+				}
+			}
+
+			# Modifier present but version outdated = mod was updated
+			location:bouvet_island = {
+				has_location_modifier = mnt_epbm_active
+				has_variable = mnt_epbm_version
+				var:mnt_epbm_version < @mnt_epbm_rebuild_version
+			}
+		}
+
+		# Guard: don't let multiple countries trigger rebuild in the same tick
+		NOT = {
+			has_global_variable = mnt_epbm_rebuilding
+		}
+	}
+
+	effect = {
+		set_global_variable = { name = mnt_epbm_rebuilding value = yes }
+		epbm_full_rebuild = yes
+		# Stamp version on Bouvet Island
+		location:bouvet_island = {
+			remove_location_modifier = mnt_epbm_active
+			add_location_modifier = { modifier = mnt_epbm_active days = -1 }
+			set_variable = { name = mnt_epbm_version value = @mnt_epbm_rebuild_version }
+		}
+
+		remove_global_variable = mnt_epbm_rebuilding
+	}
+}
+
+# Player: full recalculation + charge every month
+
+epbm_player_monthly = {
+	trigger = {
+		location:bouvet_island = { has_location_modifier = mnt_epbm_active }
+		is_ai = no
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		mnt_epbm_collect_maintenance = yes
+	}
+}
+
+# AI: charge estates monthly using saved rates from last yearly calculation
+
+epbm_ai_monthly_charge = {
+	trigger = {
+		location:bouvet_island = { has_location_modifier = mnt_epbm_active }
+		is_ai = yes
+		is_real_country = yes
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		mnt_epbm_charge_estates = yes
+	}
+}
+
+# AI: recalculate maintenance rates yearly (expensive iteration)
+
+mnt_epbm_ai_yearly_recalc = {
+	trigger = {
+		# Bouvet Island carries mod version state (impassable, never owned).
+		# Skip if stale — IOs may be invalid during version transitions.
+		location:bouvet_island = {
+			has_location_modifier = mnt_epbm_active
+			has_variable = mnt_epbm_version
+			var:mnt_epbm_version >= @mnt_epbm_rebuild_version
+		}
+
+		is_ai = yes
+		is_real_country = yes
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		mnt_epbm_calculate_maintenance = yes
+	}
+}
+
+# Safety net: full structural rebuild every 10 years to correct any drift.
+# Clears and repopulates per-location building lists + country location lists.
+
+mnt_epbm_decade_rebuild = {
+	trigger = {
+		location:bouvet_island = { has_location_modifier = mnt_epbm_active }
+		is_real_country = yes
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		if = {
+			limit = { has_variable = mnt_epbm_rebuild_counter var:mnt_epbm_rebuild_counter >= 9 }
+			mnt_epbm_structural_rebuild = yes
+			set_variable = { name = mnt_epbm_rebuild_counter value = 0 }
+		}
+		else_if = {
+			limit = { has_variable = mnt_epbm_rebuild_counter }
+			change_variable = { name = mnt_epbm_rebuild_counter add = 1 }
+		}
+	}
+}
+
+mnt_epbm_on_location_owner_changed = {
+	trigger = {
+		location:bouvet_island = { has_location_modifier = mnt_epbm_active }
+	}
+
+	effect = {
+		save_temporary_scope_as = mnt_epbm_loc
+		# Remove from loser's list (if they have one)
+		scope:loser ?= {
+			if = {
+				limit = {
+					has_variable_list = mnt_epbm_locations
+					is_target_in_variable_list = { name = mnt_epbm_locations target = scope:mnt_epbm_loc }
+				}
+
+				remove_list_variable = { name = mnt_epbm_locations target = scope:mnt_epbm_loc }
+			}
+		}
+
+		# Add to winner's list if location has tracked buildings
+		scope:winner ?= {
+			if = {
+				limit = {
+					has_variable_list = mnt_epbm_locations
+
+					scope:mnt_epbm_loc = {
+						OR = {
+							has_variable_list = mnt_building_types
+							has_variable_list = mnt_trade_types
+						}
+					}
+					NOT = {
+						is_target_in_variable_list = { name = mnt_epbm_locations target = scope:mnt_epbm_loc }
+					}
+				}
+
+				add_to_variable_list = { name = mnt_epbm_locations target = scope:mnt_epbm_loc }
+			}
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Global monthly pulse: clear cached PM costs so prices refresh
+# ═══════════════════════════════════════════════
+
+epbm_monthly_cache_clear = {
+	trigger = {
+		location:bouvet_island = { has_location_modifier = mnt_epbm_active }
+	}
+
+	effect = {
+		every_in_global_list = {
+			variable = mnt_all_ios
+			clear_variable_map = mnt_costs
 		}
 	}
 }
