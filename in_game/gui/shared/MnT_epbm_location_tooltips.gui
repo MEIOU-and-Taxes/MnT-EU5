@@ -1,0 +1,600 @@
+﻿
+template location_tax_base_details {
+	hbox = {
+		layoutpolicy_horizontal = expanding
+		spacing = 10
+
+		widget = { ### POWER PIECHART
+			size = { 100 100 }
+			using = marker_bg_circle
+
+			icon_pie_left = {
+				parentanchor = center
+				blockoverride "PieSize" { size = { 90% 90% } }
+				blockoverride "pie_datamodel" {
+					# datacontext = "[Location.GetPopulationChart]"
+					# datacontext = "[LocationPopulationChart.GetPopsPiechartWidget]"
+					# datamodel = "[PopsPiechartWidget.GetTax]"
+					datamodel = "[DataModelSkipFirst(Location.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+				}
+
+				###Slices and Icon
+				blockoverride "SliceTooltip" {
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/location_icons/tax_base.dds"
+								}
+							}
+							blockoverride "title_text" { text = "TAX_BASE_TT_ESTATES_LIST_SHARE_TITLE" }
+
+							blockoverride "concept_link" { text = "[wealth_share|e]" }
+
+							textcontext = "TAX_BASE_TT_ESTATES_LIST_SHARE"
+						}
+					}
+				}
+				blockoverride "SliceValue" { value = "[Location.GetEstateTaxBasePercent(Estate.Self)]" }
+				blockoverride "SliceColor" { color = "[Estate.GetType.GetMapColor]" }
+				blockoverride "Icon" { texture = "[GetConceptTexture('wealth')]" }
+				blockoverride "Icon_Size" { size = { 55% 55% } }
+				blockoverride "datamodel" { visible = no }
+
+				# using = bg_circle_piechart
+			}
+
+			tooltip = "[wealth_share]"
+			tagtooltip_enabled = yes
+		}
+
+		vbox = {
+			spacing = 10
+
+			TooltipListBase = { ### SIDE TABLE
+				# blockoverride "block_title" {
+				#     text = "TAX_BASE_TT_LIST_TITLE"
+				# }
+				TooltipListRowContent = {
+					TooltipManualTableField = {
+						blockoverride "field_content" {
+							text_single = { text = "[wealth|e]" }
+							expand = {  }
+
+							text_single = {
+								raw_text = "[Location.GetTotalPossibleTaxBase|W2] [wealth_icon]"
+								tagtooltip_enabled = yes
+								tooltip = "[wealth|e]"
+							}
+						}
+					}
+
+					TooltipManualTableField = {
+						blockoverride "field_content" {
+							text_single = {
+								text = "TAX_BASE_TT_LIST"
+								tooltipwidget = { using = location_control_tooltip }
+							}
+
+							expand = {  }
+
+							text_single = {
+								raw_text = "[Location.GetTotalTaxBase|W2] [tax_base_icon]"
+
+								tagtooltip_enabled = yes
+								tooltip = "[tax_base|e]"
+							}
+						}
+					}
+
+					# TooltipManualTableField = {
+					#     blockoverride "field_content" {
+					#         text_single = {
+					#             text = "TAX_BASE_TT_INCOME_TEXT"
+					#         }
+					#         expand = {}
+					#         text_single = {
+					#             raw_text = "[Location.GetTotalIncome|+=2]@income!"
+					#             tagtooltip_enabled = yes
+					#             tooltip = "[taxes|e]"
+					#         }
+					#     }
+					# }
+				}
+			}
+
+			TooltipStringPairList = {
+				visible = "[Location.HasOwner]"
+				textcontext = "TAX_BASE_PEASANT_ENFRANCH"
+
+				tooltipwidget = {
+					SimpleContextualStringPairTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "[GetConceptTexture('peasant_enfranchisement')]"
+							}
+						}
+
+						blockoverride "concept_link" { text = "[peasant_enfranchisement|e]" }
+						lowpriotextcontext = "[Location.GetPeasantEnfranchismentInfo]"
+					}
+				}
+			}
+		}
+	}
+
+	TooltipListBase = { ### ESTATES TAXES
+		visible = "[GreaterThan_CFixedPoint(Location.GetTotalPossibleTaxBase, '(CFixedPoint)0')]"
+		blockoverride "block_title" { text = "TAX_BASE_TT_ESTATES_LIST_TITLE" }
+
+		TooltipListColumnContent = {
+			TooltipTableColumn = {
+				blockoverride "column_title" {  }
+				blockoverride "column_title_text" { text = "[estates|e]" }
+				blockoverride "column_title_right" { expand = {  } }
+
+				blockoverride "field_left" {
+					visible = "[Estate.ExistsForCountry]"
+					tooltipwidget = { using = Estate_tooltip }
+
+					icon = {
+						size = { 10 20 }
+						texture = "gfx/interface/component_tiles/bookmark_white.dds"
+						tintcolor = "[Estate.GetType.GetMapColor]"
+					}
+				}
+
+				blockoverride "field_text" {
+					default_format = "#subtle_name"
+					align = left|nobaseline
+					raw_text = "[Estate.GetName]"
+				}
+
+				blockoverride "field_right" { expand = {  } }
+			}
+
+			TooltipTableColumn = {
+				blockoverride "column_title" {  }
+				blockoverride "column_title_left" { expand = {  } }
+				blockoverride "column_title_text" { text = "[wealth_share|e]" }
+
+				blockoverride "field_left" {
+					expand = {  }
+					visible = "[Estate.ExistsForCountry]"
+
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "[GetConceptTexture('wealth')]"
+								}
+							}
+							blockoverride "title_text" { text = "TAX_BASE_TT_ESTATES_LIST_SHARE_TITLE" }
+
+							blockoverride "concept_link" { text = "[wealth_share|e]" }
+
+							textcontext = "TAX_BASE_TT_ESTATES_LIST_SHARE"
+						}
+					}
+				}
+				blockoverride "field_text" {
+					visible = "[Estate.ExistsForCountry]"
+					raw_text = "[Multiply_CFixedPoint(Location.GetTotalPossibleTaxBase, Location.GetEstateTaxBasePercent(Estate.Self))|2]@gold! ([Location.GetEstateTaxBasePercent(Estate.Self)|0%])"
+				}
+			}
+
+			TooltipTableColumn = {
+				blockoverride "column_title" {  }
+				blockoverride "column_title_left" { expand = {  } }
+				blockoverride "column_title_text" { text = "[tax_base|e]" }
+
+				blockoverride "field_left" {
+					expand = {  }
+					visible = "[Estate.ExistsForCountry]"
+
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/location_icons/tax_base.dds"
+								}
+							}
+							blockoverride "title_text" { text = "TAX_BASE_TT_ESTATES_LIST_SHARE_TITLE" }
+
+							blockoverride "concept_link" { text = "[wealth_share|e]" }
+
+							textcontext = "TAX_BASE_TT_ESTATES_LIST_SHARE"
+						}
+					}
+				}
+				blockoverride "field_text" {
+					visible = "[Estate.ExistsForCountry]"
+					raw_text = "[Location.GetEstateTaxBase(Estate.Self)|2L]@tax_base!"
+				}
+			}
+
+			TooltipTableColumn = {
+				blockoverride "column_title" {  }
+				blockoverride "column_title_left" { expand = {  } }
+				blockoverride "column_title_text" { text = "[tax_rate|e]" }
+
+				blockoverride "field_left" {
+					expand = {  }
+					visible = "[Estate.ExistsForCountry]"
+
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/resources/gold.dds"
+								}
+							}
+							blockoverride "title_text" { text = "TAX_BASE_TT_ESTATES_LIST_TAXED_TITLE" }
+
+							blockoverride "concept_link" { text = "[taxes|e]" }
+
+							textcontext = "TAX_BASE_TT_ESTATES_LIST_TAXED"
+						}
+					}
+				}
+
+				blockoverride "field_text" {
+					visible = "[Estate.ExistsForCountry]"
+					text = "[Location.GetOwner.GetEconomy.GetTaxRate(Estate.GetType)|2%]"
+				}
+			}
+
+			TooltipTableColumn = {
+				blockoverride "column_title" {  }
+				blockoverride "column_title_left" { expand = {  } }
+				blockoverride "column_title_text" {
+					text = "TAX_BASE_TT_ESTATES_LIST_INCOME_TITLE"
+					default_format = "#explanation_link"
+					tooltip = "[tax|e]"
+					tagtooltip_enabled = yes
+				}
+
+				blockoverride "field_left" {
+					expand = {  }
+					visible = "[Estate.ExistsForCountry]"
+
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/resources/gold.dds"
+								}
+							}
+							blockoverride "title_text" { text = "TAX_BASE_TT_ESTATES_LIST_TAXED_TITLE" }
+
+							blockoverride "concept_link" { text = "[taxes|e]" }
+
+							textcontext = "TAX_BASE_TT_ESTATES_LIST_TAXED"
+						}
+					}
+				}
+
+				blockoverride "field_text" {
+					visible = "[Estate.ExistsForCountry]"
+					raw_text = "[Multiply_CFixedPoint(Location.GetOwner.GetEconomy.GetTaxRate(Estate.GetType), Location.GetEstateTaxBase(Estate.Self))|+=2]@income!"
+				}
+			}
+
+			blockoverride "column_datamodel" {
+				datamodel = "[DataModelSkipFirst(Location.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+			}
+		}
+	}
+
+	### EPBM: Estate Building Maintenance Reimbursement
+	TooltipListBase = {
+		visible = "[GreaterThan_CFixedPoint(Add_CFixedPoint(Location.MakeScope.GetVariable('mnt_maint_regular').GetValue, Location.MakeScope.GetVariable('mnt_maint_trade').GetValue), '(CFixedPoint)0')]"
+
+		blockoverride "block_title" {
+			raw_text = "#bold Estate Building Maintenance Reimbursement#!"
+		}
+
+		TooltipListRowContent = {
+			TooltipManualTableField = {
+				visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_maint_regular').GetValue, '(CFixedPoint)0')]"
+
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "[GetConceptTexture('building_maintenance')]"
+							}
+						}
+						blockoverride "title_text" { text = "[mnt_estate_building_maintenance|E]" }
+						blockoverride "tooltip_content" {
+							TooltipListBase = {
+								TooltipListRowContent = {
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_nobles').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('nobles_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_nobles').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_clergy').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('clergy_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_clergy').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_burghers').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('burghers_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_burghers').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_peasants').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('peasants_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_peasants').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_tribes').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('tribes_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_tribes').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_dhimmi').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('dhimmi_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_dhimmi').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_r_cossacks').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('cossacks_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_r_cossacks').GetValue|2]@gold!#!"
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				blockoverride "field_content" {
+					text_single = { raw_text = "[mnt_estate_building_maintenance|E]" }
+					expand = {  }
+
+					text_single = {
+						raw_text = "#G +[Location.MakeScope.GetVariable('mnt_maint_regular').GetValue|2]@income!#!"
+					}
+				}
+			}
+			TooltipManualTableField = {
+				visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_maint_trade').GetValue, '(CFixedPoint)0')]"
+
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "[GetConceptTexture('building_maintenance')]"
+							}
+						}
+						blockoverride "title_text" { text = "[mnt_estate_trade_maintenance|E]" }
+						blockoverride "tooltip_content" {
+							TooltipListBase = {
+								TooltipListRowContent = {
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_nobles').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('nobles_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_nobles').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_clergy').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('clergy_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_clergy').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_burghers').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('burghers_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_burghers').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_peasants').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('peasants_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_peasants').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_tribes').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('tribes_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_tribes').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_dhimmi').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('dhimmi_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_dhimmi').GetValue|2]@gold!#!"
+											}
+										}
+									}
+									TooltipManualTableField = {
+										visible = "[GreaterThan_CFixedPoint(Location.MakeScope.GetVariable('mnt_loc_t_cossacks').GetValue, '(CFixedPoint)0')]"
+
+										blockoverride "field_content" {
+											text_single = {
+												raw_text = "[Location.GetOwner.GetGovernment.GetEstateFromKey('cossacks_estate').GetName]"
+											}
+
+											expand = {  }
+
+											text_single = {
+												raw_text = "#G +[Location.MakeScope.GetVariable('mnt_loc_t_cossacks').GetValue|2]@gold!#!"
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				blockoverride "field_content" {
+					text_single = { raw_text = "[mnt_estate_trade_maintenance|E]" }
+					expand = {  }
+
+					text_single = {
+						raw_text = "#G +[Location.MakeScope.GetVariable('mnt_maint_trade').GetValue|2]@income!#!"
+					}
+				}
+			}
+		}
+	}
+
+	TooltipStringPairList = {
+		visible = "[Location.HasOwner]"
+		textcontext = "TAX_BASE_TT_TEXT"
+	}
+
+	### EPBM: After Reimbursement summary
+
+	TooltipListBase = {
+		visible = "[GreaterThan_CFixedPoint(Add_CFixedPoint(Location.MakeScope.GetVariable('mnt_maint_regular').GetValue, Location.MakeScope.GetVariable('mnt_maint_trade').GetValue), '(CFixedPoint)0')]"
+
+		TooltipListRowContent = {
+			TooltipManualTableField = {
+				blockoverride "field_content" {
+					text_single = { raw_text = "Location Balance After Reimbursement" }
+					expand = {  }
+
+					text_single = {
+						raw_text = "[Add_CFixedPoint(Location.GetNetBalance, Add_CFixedPoint(Location.MakeScope.GetVariable('mnt_maint_regular').GetValue, Location.MakeScope.GetVariable('mnt_maint_trade').GetValue))|+=2]@gold_balance!"
+					}
+				}
+			}
+		}
+	}
+}
