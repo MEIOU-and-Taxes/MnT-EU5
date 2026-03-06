@@ -3,6 +3,7 @@ dominion = { # like a personal union except the subject has much less power
 	subject_pays = subject_pays_vassal
 	color = subject_dominion
 	level = 3
+	annullment_favours_required = 30
 
 	join_offensive_wars_always = {
 		NOT = { scope:actor ?= { is_subject_of = scope:recipient } }
@@ -14,6 +15,7 @@ dominion = { # like a personal union except the subject has much less power
 		always = yes
 	}
 	has_overlords_ruler = yes
+	has_overlords_religion = yes
 	annexation_speed = 1
 	annexation_min_years_before = 50
 	annexation_min_opinion = 150
@@ -21,6 +23,7 @@ dominion = { # like a personal union except the subject has much less power
 	subject_can_cancel = no
 	overlord_can_cancel = yes
 	has_limited_diplomacy = yes
+	overlord_protects_other_subjects = yes
 
 	allow_declaring_wars = { 
 		lordship_of_ireland_can_declare_wars_trigger = yes
@@ -141,19 +144,7 @@ dominion = { # like a personal union except the subject has much less power
 		}
 	}
 
-	on_enable = {
-		#if already in a union, then we need to get them out of it
-		union ?= {
-			remove_country_from_international_organization = root
-		}
-		if = {
-			limit = {
-				exists = scope:future_overlord.ruler
-				NOT = { ruler ?= scope:future_overlord.ruler }
-			}
-			set_new_foreign_ruler = scope:future_overlord.ruler
-		}
-		
+	on_enable = {		
 		if = {
 			limit = {
 				culture = {
@@ -181,7 +172,7 @@ dominion = { # like a personal union except the subject has much less power
 	}
 	
 	diplo_chance_accept_subject = {
-		base = -70
+		base = -72
 		
 		
 		current_strength = 0.2
@@ -192,6 +183,7 @@ dominion = { # like a personal union except the subject has much less power
 		giving_defensive_support = 2
 		receiving_defensive_support = 5
 		royal_ties = 1
+		trust_in_actor = 0.2
 
 		num_of_limited_subjects = -5
 		culture_war = 3
@@ -210,7 +202,7 @@ dominion = { # like a personal union except the subject has much less power
 	}
 
 	diplo_chance_accept_overlord = {
-		base = 12
+		base = 10
 		border_distance = -0.3
 		negative_opinion = -5
 		positive_opinion = 0.25
@@ -220,6 +212,7 @@ dominion = { # like a personal union except the subject has much less power
 		different_government_type = -25
 		actor_at_war = -20
 		competing_power = -200
+		trust_in_actor = 0.2
 	}
 
 	ai_wants_to_be_overlord = {
