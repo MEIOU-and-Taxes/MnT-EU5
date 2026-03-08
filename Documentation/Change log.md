@@ -133,6 +133,8 @@ Date: 2026-01-20
 - Sand added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 - Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
+- Spawn 1 more Marketplace per town/city to facilitate early-game trade
+  - increase Marketplace cap by one per town/city to make sure these extra building levels are supported
 
 ##### Population
 
