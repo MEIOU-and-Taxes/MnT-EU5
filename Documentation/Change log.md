@@ -135,6 +135,7 @@ Date: 2026-01-20
 - Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
 - Spawn 1 more Marketplace per town/city to facilitate early-game trade
   - increase Marketplace cap by one per town/city to make sure these extra building levels are supported
+- Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 
 ##### Population
 
