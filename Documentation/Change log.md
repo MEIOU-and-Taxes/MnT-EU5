@@ -72,6 +72,7 @@ Date: 2026-01-20
 
 ##### Economy
 
+- Replaced all trade efficiency modifiers with capacity, advantage, range and maintanance modifiers. Credit and thansk to Rikkert for his mod for the inspiration and all the work.
 - Income lost due to control shortfall is given to the estates (for >0 control locations it is exact, for =0 locations it uses an approximation for potential tax base)
 - Diplomatic spending gives to the noble estate 50% of it   
 - 0.5 building cap levels are now given per 1K pops rather than per 100K  
