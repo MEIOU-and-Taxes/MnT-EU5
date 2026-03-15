@@ -35,6 +35,7 @@ Date: 2026-01-20
     - E.g. clay/sand pits, Lumbermills, fruit orchards etc. got merged into the RGO-building
   - Balance changes done with calculation in excel spreadsheet, balance is still a bit rough but should mostly work fine
   - Addapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
+  - Avoided promoting tribal pops to fill RGO vacancies at the start
 
 #### Bugfixes
 
