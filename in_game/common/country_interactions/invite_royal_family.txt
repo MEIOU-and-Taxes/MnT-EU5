@@ -1,0 +1,70 @@
+﻿invite_royal_family = {
+	type = union
+	category = CATEGORY_UNION_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+	
+	potential = {
+		scope:actor = {
+            is_member_of_international_organization_of_type = { type = union }
+            union ?= {
+                international_organization_has_policy = policy:union_establish_seniority_policy
+            }
+		}
+	}
+	allow = {
+		scope:actor = {
+            has_ruler = yes
+            union = {
+                country_has_special_status = {
+                    type = special_status:senior_partner
+                    country = scope:actor
+                }
+            }
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = { data = name }
+		visible = {
+            in_union_with = scope:actor
+		}
+        enabled = {}
+	}
+	select_trigger = {
+		looking_for_a = character
+		source = recipient
+		target_flag = target
+		name = "invite_royal_family_SELECT_TITLE"
+		none_available_msg_key = "invite_royal_family_no_characters"
+		column = { data = character_info }
+		visible = {
+			is_alive = yes
+			is_ruler = no
+			is_heir = no
+			is_consort = no
+			dynasty ?= scope:actor.ruler.dynasty
+            is_close_relative = scope:actor.ruler
+			modifier:blocked_from_character_interactions = no
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+            scope:target = { move_country = scope:actor }
+		}
+	}
+	
+	block_when_at_war = yes
+	diplo_chance = {
+		base = -10
+		rank = -2
+		opinion = 0.2
+		relative_strength = 200
+		border_distance = -0.1
+	}
+}

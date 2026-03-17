@@ -1,0 +1,88 @@
+﻿break_others_alliance =  { 
+	type = diplomacy
+	category = CATEGORY_HOSTILE_ACTIONS
+
+	diplomatic_cost = break_others_alliance_cost
+	diplomatic_cost_modifier = {
+		if = {
+			limit = {
+				exists = scope:target
+				exists = scope:recipient
+			}
+			#so, how many favours are we going to owe them? Depends on the relations we're asking them to break
+			value = "scope:recipient.favors_needed_to_annul_relations_with(scope:target)"
+		}
+		else = {
+			value = 20 #default
+		}
+	}
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	allow = {
+	}
+	
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:actor ?= {
+				has_mutual_scripted_relation = {
+					type = relation_type:alliance
+					target = root
+				}
+			}
+		}
+        enabled = {
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		interaction_source_list = {
+			scope:recipient = {
+				every_country_with_relation_that_can_be_annulled = {
+					add_to_list = source
+				}
+			}
+		}
+		name = "break_others_alliance_SELECT_TITLE"
+		none_available_msg_key = "break_others_alliance_no_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:recipient
+				exists = scope:target
+			}
+			scope:recipient = {	
+				annul_all_treaties_with = scope:target
+			}
+			scope:recipient = {
+				add_antagonism = {
+					target = scope:actor
+					modifier = antagonism_ordered_me_to_annul_treaties
+				}
+			}
+			scope:target = {
+				add_antagonism = {
+					target = scope:actor
+					modifier = antagonism_ordered_someone_to_annul_treaties_with_us
+				}
+			}
+		}
+	}
+}	

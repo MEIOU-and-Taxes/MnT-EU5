@@ -1,0 +1,247 @@
+﻿namespace = conquistador
+
+#conquistador arrives to start kicking ass
+conquistador.1 = {
+	hide_portraits = yes
+	type = country_event
+	#called from code when a conquistador construction is completed
+	orphan = yes
+
+	title = conquistador.1.title
+	desc = conquistador.1.desc
+	
+	image = "gfx/interface/illustrations/institutions/new_world.dds"
+
+	immediate = {
+		#create the conquistador
+		if = {
+			limit = {
+				scope:target_location = {
+					is_owned_or_owned_by_subjects_of = scope:actor
+				}
+			}
+
+			#already got this location, so just join them
+			scope:target_location = {
+				owner = {
+					save_scope_as = new_conquistador
+				}
+			}
+		}
+		else = {
+			random_subject = {
+				limit = {
+					subject_type = subject_type:conquistador
+					capital.area = scope:target_location.area
+				}
+				save_scope_as = new_conquistador
+			}
+		}
+
+		if = {
+			limit = {
+				not = { exists = scope:new_conquistador }
+			}
+			scope:target_location = {
+				create_army_country_in_location = {
+					reforms = {
+						conquistador_country
+					}
+					overlord = scope:actor
+					culture = scope:actor.culture
+					religion = scope:actor.religion
+					subject_type = subject_type:conquistador
+					ruler = scope:target
+					save_scope_as = new_conquistador
+				}
+			}
+		}
+
+		scope:new_conquistador = {
+			#army them up
+			scope:target_location = {
+				if = {
+					limit = {
+						current_age_or_later = { age = age_3_discovery }
+					}
+					while =  {
+						count = 10 #10 * 400 = 4K troops
+						create_sub_unit_with_owner = {
+							type = a_discovery_conquistadors
+							owner = scope:new_conquistador
+							origin = scope:location
+							experience = 100
+						}
+					}
+				}
+				else = {
+					while =  {
+						count = 20 #these units are smaller, 20 * 200 = 4K troops
+						create_sub_unit_with_owner = {
+							type = a_renaissance_conquistadors
+							owner = scope:new_conquistador
+							origin = scope:location
+							experience = 100
+						}
+					}
+				}
+			}
+
+			#after giving them the army we need to recalc the country active status
+			force_recalc_country_active_status = scope:new_conquistador
+			#Give them enough money to sustain their army for some years
+			add_gold = { value = 3000 }
+			#Max Morale
+			every_army = {
+				every_sub_unit = {
+					add_subunit_morale = {
+						value = subunit_morale
+						divide = subunit_morale_percentage
+						subtract = subunit_morale
+					}
+				}
+			}
+
+			#move the character into the new country
+			scope:target = {
+				move_country = scope:new_conquistador
+			}
+
+			random_army = {
+				limit = {
+					has_commander = no
+				}
+				set_as_commander = scope:target
+			}
+			#Copy the possible laws form overlord
+			scope:actor = {
+				every_current_policy = {
+					scope:new_conquistador = {
+						add_policy = prev
+					}
+				}
+			}
+
+
+			if = {
+				limit = {
+					scope:target_location = {
+						not = { is_owned_or_owned_by_subjects_of = scope:actor }
+					}
+				}
+				#time to kick some ass
+				add_casus_belli = {	
+					target = scope:target_location.owner
+					type = casus_belli:cb_conquer_province
+					province = scope:target_location.province
+				}
+				declare_war_with_cb = {
+					target = scope:target_location.owner
+					type = casus_belli:cb_conquer_province
+				}
+			}
+		}
+	}
+
+	# bueno!
+	option = {
+		name = conquistador.1.a
+	}
+}
+
+conquistador.10 = {
+	hide_portraits = yes
+	type = location_event	
+
+	title = conquistador.10.title
+	desc = conquistador.10.desc
+	
+	
+	image = "gfx/interface/illustrations/institutions/new_world.dds"
+	
+	
+	trigger = {
+		owner ?= {
+			has_reform = government_reform:conquistador_country
+		}
+	}
+	
+	immediate = {
+		owner = {
+			overlord = {
+				save_scope_as = former_overlord
+			}
+			save_scope_as = conquistador_country
+		}
+	}
+
+
+    # keep conquering
+    option = {
+        name = conquistador.10.a
+        
+        ai_chance = {
+            factor = 2
+            modifier = {
+                factor = 0.5
+                owner.num_locations >= 5
+            }
+            modifier = {
+                factor = 0
+                owner.num_locations >= 9
+            }
+        }
+    }
+    
+    option = {
+        name = conquistador.10.b
+        
+        scope:former_overlord = {
+            trigger_event_silently = conquistador.11
+        }
+        show_as_tooltip = {
+            owner = {
+                remove_reform = government_reform:conquistador_country
+                make_subject_of = { target = scope:former_overlord type = subject_type:colonial_nation }
+            }
+        }
+        
+        
+        ai_chance = {
+            factor = 1
+            modifier = {
+                factor = 0
+                owner.num_locations <= 4
+            }
+        }
+    }
+}
+
+
+
+conquistador.11 = {
+	type = country_event	
+
+	title = conquistador.11.title
+	desc = conquistador.11.desc
+	
+	image = "gfx/interface/illustrations/institutions/new_world.dds"
+	
+	
+	option = {
+		name = conquistador.11.a
+		scope:conquistador_country = {
+			remove_reform = government_reform:conquistador_country
+			make_subject_of = { target = root type = subject_type:colonial_nation }
+			change_country_type = location
+		}
+		
+		historical_option = yes
+	}
+	
+	option = {
+		name = conquistador.11.b
+		#add_prestige = prestige_weak_penalty
+	}
+
+}

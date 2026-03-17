@@ -1,0 +1,501 @@
+﻿change_autocephalous_patriarchate = {
+	type = internationalorganization
+
+	sound = UI_action_religion_generic
+	
+	ai_tick = monthly
+	ai_tick_frequency = 3
+	automation_tick = monthly
+	automation_tick_frequency = 1
+
+	automation_tick = monthly
+	automation_tick_frequency = 3
+	player_automated_category = religiousdoctrines
+
+	allow = {
+		scope:actor = { 
+			at_war = no
+			custom_tooltip = {
+				text = we_are_not_already_ap_leader_tt
+				any_international_organizations_member_of = {
+					international_organization_type = international_organization_type:autocephalous_patriarchate
+					leader_country != scope:actor
+				}
+			}
+		}
+	}
+	
+	price = price:join_autocephalous_patriarchate
+
+	select_trigger = {
+		looking_for_a = international_organization
+		source = actor
+		target_flag = recipient
+		name = "choose_international_organization"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_type = international_organization_type:autocephalous_patriarchate
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = international_organization
+		target_flag = target
+		name = "join_autocephalous_patriarchate_choose_ap"
+		none_available_msg_key = "join_autocephalous_patriarchate_no_ios"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_type = international_organization_type:autocephalous_patriarchate
+			scope:actor = {
+				NOT = { is_member_of_international_organization = root }
+			}
+			var:religion ?= scope:actor.religion
+		}
+		enabled = {
+			scope:actor = { can_join_international_organization = root }
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				add_country_to_international_organization = scope:actor
+			}
+		}
+		else = { custom_tooltip = join_selected_ap_tt }
+	}
+	ai_will_do = {
+		add = {
+			desc = "VOTE_BASE_VALUE"
+			value = -30
+		}
+		if = {
+			limit = { exists = scope:target }
+			add = {
+				value = scope:target.total_members
+				divide = 10	#We do not want AP's to scale purely on size, it's not fun
+			}
+			#Our opinion of the leader of the potential Patriarchate we may join
+			if = {
+				limit = {
+					exists = scope:target.leader_country
+					scope:actor = { has_positive_opinion = scope:target.leader_country }
+				}
+				add = {
+					desc = "OPINION_OF_TARGET_LEADER"
+					value = "scope:actor.opinion(scope:target.leader_country)"
+					multiply = 0.5
+				}
+			}
+			#Our opinion of the leader of our CURRENT Patriarchate
+			add = {
+				desc = "OPINION_OF_CURRENT_AP_LEADER"
+				value = "scope:actor.opinion(scope:recipient.leader_country)"
+				multiply = -0.5
+			}
+			if = {
+				limit = {
+					scope:target ?= {
+						any_international_organization_member = {
+							OR = {
+								is_rival_of = scope:actor
+								is_enemy_of = scope:actor
+							}
+						}
+					}
+				}
+				subtract = {
+					desc = "IO_HOSTS_ENEMIES_OR_RIVALS"
+					value = -100
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:target.leader_country
+				}
+				add = scope:target.leader_country.modifier:diplomatic_reputation
+			}
+			if = {
+				limit = {
+					exists = scope:recipient.leader_country
+				}
+				subtract = scope:recipient.leader_country.modifier:diplomatic_reputation
+			}
+		}
+	}
+}
+
+join_autocephalous_patriarchate = {
+	type = religious
+	
+	sound = UI_action_religion_generic
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+	automation_tick = monthly
+	automation_tick_frequency = 1
+
+	automation_tick = daily
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+
+	potential = {
+		scope:actor.religion = {
+			has_autocephalous_patriarchates = yes
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			not = {
+				is_member_of_international_organization_of_type = {
+					type = autocephalous_patriarchate
+				}
+			}
+		}
+	}
+	
+	price = price:join_autocephalous_patriarchate
+
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = international_organization
+		target_flag = target
+		name = "join_autocephalous_patriarchate_choose_ap"
+		none_available_msg_key = "join_autocephalous_patriarchate_no_ios"
+		column = {
+			data = international_organization_select_column
+		}
+		visible = {
+			international_organization_type = international_organization_type:autocephalous_patriarchate
+			var:religion = scope:recipient
+		}
+		enabled = {
+			scope:actor = {
+				can_join_international_organization = root
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				add_country_to_international_organization = scope:actor
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 10
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						#is the seat also a holy site? If so we can gain bonuses as an "honorary" AP!
+						var:seat ?= {
+							is_location_holy_site_for = scope:target.var:religion
+						}
+					}
+				}
+				value = 1000
+			}
+		}
+		add = {
+			value = scope:target.total_members
+		}
+	}
+}
+
+create_autocephalous_patriarchate = {
+	type = religious
+
+	sound = UI_action_religion_generic
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+	automation_tick = monthly
+	automation_tick_frequency = 1
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+
+	
+	potential = {
+		scope:actor.religion = {
+			has_autocephalous_patriarchates = yes
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			OR = {
+				country_rank = country_rank:rank_kingdom
+				country_rank = country_rank:rank_empire
+			}
+			prestige >= 80
+			OR = {
+				NOT = {
+					exists = autocephalous_patriarchate
+				}
+				autocephalous_patriarchate ?= {
+					not = {
+						leader_country = scope:actor
+					}
+				}
+			}
+		}
+	}
+	
+	price = price:create_autocephalous_patriarchate
+	
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			custom_tooltip = {
+				text = create_autocephalous_patriarchate_tt
+				create_international_organization = {
+					type = international_organization_type:autocephalous_patriarchate
+					add_country_to_international_organization = prev
+					set_leader_country = prev
+					#so we can use it in text
+					save_scope_as = target
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = {
+			if = {
+				limit = {
+					#if we have a holy site for this religion, big incentive as we can get bonuses
+					scope:actor = {
+						any_holy_site_in_country = {
+							is_holy_site_for = scope:actor.religion
+						}
+					}
+				}
+				value = 1000
+			}
+		}
+		add = {
+			#bias by size of country vs size of leader
+			scope:actor = {
+				autocephalous_patriarchate = {
+					value = scope:actor.total_population
+					divide = 0.75
+					if = {
+						limit = { leader_country.total_population > 0 }
+						divide = {
+							value = leader_country.total_population
+							add = 1
+						}
+					}
+					add = 1
+					multiply = 100
+				}
+			}
+		}
+	}
+}
+
+third_rome = {
+	type = religious
+
+	sound = UI_action_religion_generic
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+	automation_tick = monthly
+	automation_tick_frequency = 1
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+	potential = {
+		scope:actor.religion = {
+			has_autocephalous_patriarchates = yes
+			not = {
+				any_religion_international_organization = {
+					var:seat ?= {
+						is_location_holy_site_for = root
+					}
+				}
+			}
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			country_rank = country_rank:rank_empire
+			prestige >= 60
+			is_member_of_international_organization_of_type = {
+				type = autocephalous_patriarchate
+			}
+			autocephalous_patriarchate ?= {
+				var:seat ?= {
+					owner = scope:actor
+				}
+			}
+		}
+	}
+	
+	price = price:third_rome
+	
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+		visible = {
+			has_autocephalous_patriarchates = yes
+		}
+		enabled = {
+			not = {
+				any_religion_international_organization = {
+					var:seat ?= {
+						is_location_holy_site_for = root
+					}
+				}
+			}
+		}
+	}
+
+	effect = {
+		create_holy_site = {
+			name = ecumenical_patriarchate
+			type = episcopal_see
+			importance = 3
+			location = scope:actor.capital
+			religions = { scope:actor.autocephalous_patriarchate.var:religion }
+			save_scope_as = new_holy_site
+		}
+		scope:actor = {
+			autocephalous_patriarchate ?= {
+				set_variable = {
+					name = seat
+					value = scope:new_holy_site.location
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		#they absolutely will do this if they can
+		add = {
+			value = 1000
+		}
+	}
+}
+
+relocate_ecumenical_patriarchate = {
+	type = internationalorganization
+
+	sound = UI_action_religion_generic
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 12
+
+	automation_tick = monthly
+	automation_tick_frequency = 3
+	player_automated_category = religiousdoctrines
+	potential = {
+	}
+	allow = {
+		scope:recipient.var:seat ?= {
+			NOT = { is_location_holy_site_for = "scope:recipient.var:religion" }
+		}
+		scope:actor ?= {
+			any_holy_site_in_country = {
+				is_holy_site_for = "scope:recipient.var:religion"
+			}
+		}
+	}
+	price = price:relocate_ecumenical_patriarchate
+
+	select_trigger = {
+		looking_for_a = international_organization
+		target_flag = recipient
+		name = "choose_international_organization"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_type = international_organization_type:autocephalous_patriarchate
+		}
+		enabled = {
+			var:seat ?= {
+				NOT = { is_location_holy_site_for = "scope:recipient.var:religion" }
+			}
+			scope:actor ?= {
+				any_holy_site_in_country = {
+					is_holy_site_for = "scope:recipient.var:religion"
+				}
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = holy_site
+		source = actor
+		target_flag = target
+		name = "relocate_ecumenical_patriarchate_select_holy_site"
+		none_available_msg_key = "relocate_ecumenical_patriarchate_no_holy_sites"
+		column = {
+			data = name
+		}
+		visible = {
+			is_holy_site_for = "scope:recipient.var:religion"
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			set_variable = {
+				name = seat
+				value = scope:target.location
+			}
+		}
+	}
+
+	# ai_desire is how much an AI would like this action to pass.
+	# It is evaluated in the scope of the AI. Proposing country is scope:actor
+	ai_will_do = {
+		#base
+		value = -10
+	}
+}

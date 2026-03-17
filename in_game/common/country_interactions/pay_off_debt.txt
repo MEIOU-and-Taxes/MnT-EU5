@@ -1,0 +1,53 @@
+﻿pay_off_debt = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+		}
+        enabled = {
+			num_loans > 0
+			total_debt < scope:actor.gold
+		}
+	}
+
+	effect = {
+
+		scope:recipient = {
+
+			add_liberty_desire = {
+				value = num_loans
+				multiply = -1
+			}
+		}
+	
+		scope:recipient = {
+			pay_off_loans = { 
+				fraction = 1.0
+				payer = scope:actor
+			}
+		}
+	}
+	
+}	

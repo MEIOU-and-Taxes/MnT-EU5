@@ -1,0 +1,63 @@
+﻿sabotage_reputation =  { 
+	type = diplomacy
+	category = CATEGORY_COVERT_ACTIONS
+
+	diplomatic_cost = sabotage_reputation_cost
+	
+	block_when_at_war = no
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+		}
+        enabled = {
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		name = "sabotage_reputation_SELECT_TITLE"
+		none_available_msg_key = "sabotage_reputation_no_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			country_exists = this
+			not = { this = scope:recipient }
+			scope:recipient = { has_discovered = prev.capital }
+			scope:actor = { has_discovered = prev.capital }
+			NOT = {	
+				has_opinion = { 
+					modifier = opinion_sabotage_reputation 
+					target = scope:recipient
+				}
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = { add_opinion = { target = scope:recipient modifier = opinion_sabotage_reputation } }
+		}
+		else = {
+			custom_tooltip = sabotage_reputation_tt
+		}
+	}
+}	

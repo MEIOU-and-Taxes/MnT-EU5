@@ -1,0 +1,121 @@
+﻿abdicate = { 
+	message = yes
+	is_consort_action = no
+	on_own_nation = yes
+
+	price = price:abdicate_price
+	
+	
+	price_modifier = {
+		add = 1
+		if = {
+			limit = { 
+				scope:recipient ?= {	
+					age_in_years > 40
+				}
+			}
+
+			subtract = {
+				desc = "CHAR_AGE_LABEL"
+				scope:recipient = {
+					value = age_in_years
+					subtract = 40
+					multiply = 0.02
+				}
+			}
+		}
+	}
+
+
+	potential = {
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 150
+	
+	allow = {
+		scope:actor = {
+			has_heir = yes
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:actor = {
+				ruler ?= root
+			}
+		}
+		enabled = {
+			or = {
+				#female ruler with adult male heir
+				and = {
+					is_female = yes
+					scope:actor = {
+						heir ?= {
+							is_adult = yes
+							is_female = no
+						}
+					}
+				}
+				#old and shit, better heir
+				and = {
+					total_abilities < 100
+					character_age > 60
+					scope:actor = {
+						heir ?= {
+							is_adult = yes
+							total_abilities > 170
+						}
+					}
+				}
+				#sick, better heir
+				and = {
+					has_character_modifier = sickly_character
+					scope:actor = {
+						heir ?= {
+							is_adult = yes
+							total_abilities > 170
+						}
+					}
+				}
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				scope:actor = {
+					has_heir = yes
+				}
+			}
+			scope:actor = {
+				set_new_ruler = heir
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = {
+			desc = "RULER_ABILITY"
+			scope:recipient = {
+				subtract = total_abilities
+				multiply = 0.02
+			}
+		}
+		add = {
+			desc = "HEIR_ABILITY"
+			scope:recipient = {
+				add = total_abilities
+				multiply = 0.02
+			}
+		}
+	}
+}	

@@ -1,0 +1,353 @@
+﻿namespace = espionage_events
+espionage_events.1 = {
+	type = country_event
+	title = espionage_events.1.title
+	desc = espionage_events.1.desc
+	trigger = {
+		
+		any_known_country = {
+			root = { spy_network = { target = prev value >= 25 } }
+			spy_network = { target = root value >= 25 }
+			"estate_power(estate_type:crown_estate)" < 0.2
+		}
+	}
+
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	immediate = {
+		hidden_effect = {
+			capital = {
+				save_scope_as = espionage_event_country_2_capital
+			}
+			random_known_country = {
+				limit = {
+					root = { spy_network = { target = prev value >= 25 } }
+					spy_network = { target = root value >= 25 }
+					"estate_power(estate_type:crown_estate)" < 0.2
+				}
+				save_scope_as = espionage_event_country
+				capital = {
+					save_scope_as = espionage_event_country_capital
+				}
+			}
+		}
+		save_scope_as = origin_country
+	}
+
+	option = {
+		name = espionage_events.1.a
+		add_gold = -15.00
+		scope:espionage_event_country = {
+			root = { add_spy_network = { target = prev value = 30 } }
+			
+			hidden_effect = {
+				random = {
+					chance = 50
+					trigger_event_silently = { id = espionage_events.2 }
+				}
+			}
+		}
+	}
+	option = {
+		name = espionage_events.1.b
+		scope:espionage_event_country = {
+			add_spy_network = { target = root value = -25 }
+		}
+	}
+}
+
+espionage_events.2 = {
+	type = country_event
+	title = espionage_events.2.title
+	desc = espionage_events.2.desc
+	
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	option = {
+		name = espionage_events.2.a
+		random_list = {
+			50 = {
+				add_spy_network = { target = scope:origin_country value = 25 }
+				scope:origin_country = { set_variable = { name = re_doubled_agent value = 1 } }
+			}
+			50 = {
+				scope:origin_country = { add_spy_network = { target = prev value = 15 } }
+			}
+		}
+		scope:origin_country = {
+			trigger_event_silently = { id = espionage_events.3 }
+		}
+	}
+	option = {
+		name = espionage_events.2.b
+		scope:origin_country = { add_spy_network = { target = prev value = -20 } }
+	}
+}
+
+espionage_events.3 = {
+	type = country_event
+	title = espionage_events.3.title
+	desc = espionage_events.3.desc
+	
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+	
+	option = {
+		name = espionage_events.3.a
+
+		show_as_tooltip = {
+			custom_tooltip = espionage_events.3.tt_1
+			scope:espionage_event_country = { add_spy_network = { target = prev value = -25 } }
+		}
+		show_as_tooltip = {
+			custom_tooltip = espionage_events.3.tt_2
+			add_spy_network = { target = scope:espionage_event_country value = -25 }
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					has_variable = re_doubled_agent
+				}
+				scope:espionage_event_country = { add_spy_network = { target = prev value = -25 } }
+			}
+			if = {
+				limit = {
+					NOT = {
+						has_variable = re_doubled_agent
+					}
+				}
+				add_spy_network = { target = scope:espionage_event_country value = -25 }
+			}
+			remove_variable = re_doubled_agent
+		}
+	}
+	option = {
+		name = espionage_events.3.b
+		show_as_tooltip = {
+			custom_tooltip = espionage_events.3.tt_1
+			scope:espionage_event_country = { add_spy_network = { target = prev value = 15 } }
+		}
+		show_as_tooltip = {
+			custom_tooltip = espionage_events.3.tt_2
+			add_spy_network = { target = scope:espionage_event_country value = 15 }
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					has_variable = re_doubled_agent
+				}
+				scope:espionage_event_country = { add_spy_network = { target = prev value = 15 } }
+			}
+			if = {
+				limit = {
+					NOT = {
+						has_variable = re_doubled_agent
+					}
+				}
+				add_spy_network = { target = scope:espionage_event_country value = 15 }
+			}
+			remove_variable = re_doubled_agent
+		}
+	}
+}
+
+espionage_events.4 = {
+	type = country_event
+	title = espionage_events.4.title
+	desc = espionage_events.4.desc
+	trigger = {
+		
+		religion = religion:catholic
+		any_known_country = {
+			root = { spy_network = { target = prev value >= 10 } }
+			religion = religion:catholic
+		}
+	}
+
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	immediate = {
+		hidden_effect = {
+			random_known_country = {
+				limit = {
+					root = { spy_network = { target = prev value >= 10 } }
+					religion = religion:catholic
+				}
+				save_scope_as = victim_country
+				capital = {
+					save_scope_as = victim_country_capital
+				}
+			}
+		}
+	}
+
+	option = {
+		name = espionage_events.4.a
+		add_spy_network = { target = scope:victim_country value = 25 }
+		if = {
+			limit = {
+				NOT = {
+					tag = PAP
+				}
+			}
+			hidden_effect = {
+				random = {
+					chance = 30
+					trigger_event_silently = { id = espionage_events.5 }
+				}
+			}
+		}
+	}
+	option = {
+		name = espionage_events.4.b
+		add_prestige = prestige_weak_bonus
+	}
+}
+
+espionage_events.5 = {
+	type = country_event
+	title = espionage_events.5.title
+	desc = espionage_events.5.desc
+	
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	option = {
+		name = espionage_events.5.a
+		add_religious_influence_if_valid = { VALUE = -15.00 }
+	}
+}
+
+
+espionage_events.8 = {
+	hide_portraits = yes
+	type = country_event
+	title = espionage_events.8.title
+	desc = espionage_events.8.desc
+	trigger = {
+		any_neighbor_country = {
+			spy_network = { target = root value >= 25 }
+		}
+		any_known_country = {
+			spy_network = { target = root value >= 25 }
+			NOT = { is_neighbor_of = root }
+		}
+	}
+
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	immediate = {
+		hidden_effect = {
+			random_known_country = {
+				limit = {
+					is_neighbor_of = root
+					spy_network = { target = root value >= 25 }
+				}
+				
+				save_scope_as = neighbor_1
+			}
+			random_known_country = {
+				limit = {
+					NOT = { is_neighbor_of = root }
+					spy_network = { target = root value >= 25 }
+				}
+				save_scope_as = neighbor_2
+			}
+		}
+	}
+
+	option = {
+		name = espionage_events.8.a
+		scope:neighbor_1 = {
+			add_opinion = { target = root modifier = counterintelligence_operation }
+			add_spy_network = { target = root value = -25 }
+		}
+	}
+	option = {
+		name = espionage_events.8.b
+		scope:neighbor_2 = {
+			add_opinion = { target = root modifier = counterintelligence_operation }
+			add_spy_network = { target = root value = -25 }
+		}
+	}
+}
+
+espionage_events.9 = {
+	type = country_event
+	title = espionage_events.9.title
+	desc = espionage_events.9.desc
+	trigger = {
+		any_related_country = {
+			type = alliance
+			count > 0
+		}
+		any_related_country = {
+			type = alliance
+			spy_network = { target = root value >= 30 }
+		}
+	}
+
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	immediate = {
+		hidden_effect = {
+			random_related_country = {
+				type = alliance
+				limit = {
+					spy_network = { target = root value >= 30 }
+				}
+				save_scope_as = spying_ambassador
+				capital = {
+					save_scope_as = spying_ambassador_capital
+				}
+			}
+		}
+	}
+
+	option = {
+		name = espionage_events.9.a
+		scope:spying_ambassador = {
+			add_opinion = { target = root modifier = counterintelligence_operation }
+			add_spy_network = { target = root value = -10 }
+			hidden_effect = {
+				if = {
+					limit = {
+						spy_network = { target = root value >= 50 }
+					}
+					root = {
+						trigger_event_silently = { id = espionage_events.10 }
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = espionage_events.9.b
+		add_prestige = prestige_weak_penalty
+	}
+	option = {
+		name = espionage_events.9.c
+		scope:spying_ambassador = {	add_spy_network = { target = root value = 5 } }
+	}
+}
+
+espionage_events.10 = {
+	type = country_event
+	title = espionage_events.10.title
+	desc = espionage_events.10.desc
+	
+	image = "gfx/interface/illustrations/event/backgrounds/special/espionage.dds"
+
+	option = {
+		name = espionage_events.10.a
+		scope:spying_ambassador = {
+			add_opinion = { target = root modifier = imprisoned_ambassador }
+			add_spy_network = { target = root value = -30 }
+		}
+	}
+	option = {
+		name = espionage_events.10.b
+		scope:spying_ambassador = {
+			remove_opinion = { target = root modifier = counterintelligence_operation }
+		}
+	}
+}
+

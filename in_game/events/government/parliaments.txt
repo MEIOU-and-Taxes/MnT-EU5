@@ -1,0 +1,1656 @@
+﻿namespace = parliaments
+
+scripted_trigger is_revolutionary_issue = {
+	parliament_issue ?= {
+		OR = {
+			this = parliament_issue:curb_central_authority
+			this = parliament_issue:establish_a_constitution
+			this = parliament_issue:reduce_peasant_taxation
+			this = parliament_issue:revoke_privilege_of_the_nobles
+		}
+	}
+}
+
+#These will only fire during an active parliament session
+parliaments.1 = {
+	type = country_event
+	title = parliaments.1.title
+	desc = parliaments.1.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+	
+	trigger = {
+		any_owned_non_rural_location = {
+			NOT = {
+				has_building = building_type:urban_parliament_seat
+			}
+			is_core_of = owner
+			integration_level = core
+			NOT = {
+				has_location_modifier = parliament_location
+			}
+		}
+		NOT = {
+			has_variable = asked_for_parliament_seat_already
+		}
+	}
+	
+	immediate = {
+		random_owned_non_rural_location = {
+			limit = {
+				NOT = {
+					has_building = building_type:urban_parliament_seat
+				}
+				is_core_of = owner
+				integration_level = core
+				NOT = {
+					has_location_modifier = parliament_location
+				}
+			}
+			save_scope_as = target_city
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+		set_variable = {
+			name = asked_for_parliament_seat_already
+			years = 1
+		}
+	}
+
+	option = {
+		name = parliaments.1.a
+
+		scope:target_city = {
+			change_building_level_in_location = {
+				building = building_type:urban_parliament_seat
+				value = 1
+			}
+		}
+		add_estate_satisfaction = {
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_mild_bonus
+		}
+		change_parliament_issue_support = parliament_issue_support_extreme_bonus
+	}
+	option = {
+		name = parliaments.1.b
+
+		add_estate_satisfaction = {
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_extreme_penalty
+		}
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_parliament_issue_support = parliament_issue_support_mild_penalty
+		}
+	}
+}
+
+parliaments.2 = {
+	type = country_event
+	title = parliaments.2.title
+	desc = parliaments.2.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		total_effective_building_levels:rotten_borough > 0
+		num_locations > num_of_non_rural
+		num_of_non_rural > total_effective_building_levels:urban_parliament_seat
+		any_owned_non_rural_location = {
+			NOT = {
+				has_building = building_type:urban_parliament_seat
+				has_building_with_at_least_one_level = rotten_borough
+			}
+		}
+	}
+	
+	immediate = {
+		random_owned_location = {
+			limit = {
+				has_building_with_at_least_one_level = rotten_borough
+			}
+			save_scope_as = target_location
+		}
+		
+		random_owned_non_rural_location = {
+			limit = {
+				NOT = {
+					has_building = building_type:urban_parliament_seat
+					has_building_with_at_least_one_level = rotten_borough
+				}
+			}
+			save_scope_as = envious
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+		
+	}
+
+	option = {
+		name = parliaments.2.a
+
+		add_estate_satisfaction = {
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_mild_penalty
+		}
+		add_estate_satisfaction = {
+			type = estate_type:nobles_estate
+			value = estate_satisfaction_mild_bonus
+		}
+		change_parliament_issue_support = parliament_issue_support_mild_penalty
+	}
+
+	option = {
+		name = parliaments.2.b
+
+		add_estate_satisfaction = {
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_mild_bonus
+		}
+		add_estate_satisfaction = {
+			type = estate_type:nobles_estate
+			value = estate_satisfaction_mild_penalty
+		}
+		
+		scope:target_location = {
+			change_building_level_in_location = {
+				building = building_type:rotten_borough
+				value = -1
+			}
+		}
+
+		scope:envious = {
+			change_building_level_in_location = {
+				building = building_type:urban_parliament_seat
+				value = 1
+			}
+		}
+
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_parliament_issue_support = parliament_issue_support_mild_penalty
+			add_stability = stability_mild_penalty
+		}
+	}
+}
+
+parliaments.3 = {
+	type = country_event
+	title = parliaments.3.title
+	desc = parliaments.3.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			NOT = {
+				estate_type ?= {
+					this = estate_type:burghers_estate
+				}
+			}
+		}
+		num_of_non_rural > 0
+		num_of_ports > 0
+		any_port_in_country = {
+			location_rank = location_rank:city
+		}
+	}
+
+	immediate = {
+		random_port_in_country = {
+			limit = {
+				is_city = yes
+			}
+			save_scope_as = target_location
+
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.3.a
+		
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+	}
+
+	option = {
+		name = parliaments.3.b
+		
+		add_gold = {
+			add = estate_tax_base:burghers_estate
+			multiply = -0.2
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:burghers_estate
+			value = {
+				add = estate_tax_base:burghers_estate
+				multiply = 0.2
+			}
+		}
+	}
+}
+
+parliaments.4 = {
+	type = country_event
+	title = parliaments.4.title
+	desc = parliaments.4.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		total_effective_building_levels:rotten_borough > 0
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				has_building_with_at_least_one_level = rotten_borough
+			}
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:nobles_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.4.a
+		
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+	}
+
+	option = {
+		name = parliaments.4.b
+
+		add_gold = {
+			add = estate_tax_base:nobles_estate
+			multiply = -0.2
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:nobles_estate
+			value = {
+				add = estate_tax_base:nobles_estate
+				multiply = 0.2
+			}
+		}
+	}
+}
+
+parliaments.5 = {
+	type = country_event
+	title = parliaments.5.title
+	desc = parliaments.5.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	trigger = {
+		total_effective_building_levels:university > 0
+		any_owned_location = {
+			has_building_with_at_least_one_level = university
+		}
+		parliament_issue ?= {
+			OR = {
+				this = parliament_issue:compulsory_education_nobles
+				this = parliament_issue:sponsor_a_university
+			}
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				has_building_with_at_least_one_level = university
+			}
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.5.a
+
+		if = {
+			limit = {
+				OR = {
+					current_age = age_5_absolutism
+					current_age = age_6_revolutions
+				}
+			}
+			change_societal_value = {
+				type = absolutism_vs_liberalism
+				value = societal_value_minor_move_to_right
+			}
+			change_parliament_issue_support = parliament_issue_support_weak_bonus
+		}
+		else = { change_parliament_issue_support = parliament_issue_support_weak_bonus }
+	}
+
+	option = {
+		name = parliaments.5.b
+
+		add_research_progress = research_progress_mild_bonus
+	}
+}
+
+parliaments.6 = {
+	type = country_event
+	title = parliaments.3.title
+	desc = parliaments.6.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = exterior
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:burghers_estate
+			}
+		}
+		num_of_non_rural > 0
+		num_of_ports > 0
+		any_port_in_country = {
+			location_rank = location_rank:city
+		}
+	}
+
+	immediate = {
+		random_port_in_country = {
+			limit = {
+				is_city = yes
+			}
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.6.a
+		
+		change_parliament_issue_support = parliament_issue_support_weak_bonus
+	}
+}
+
+parliaments.7 = {
+	type = country_event
+	title = parliaments.7.title
+	desc = parliaments.7.desc
+
+	illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+
+	trigger = {
+		OR = {
+			country_type = location
+			country_type = building
+		}
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:nobles_estate
+			}
+		}
+		monthly_manpower > 0
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:soldiers background = pop_type:soldiers }
+		if = {
+			limit = {
+				country_type = location
+			}
+			random_owned_location = {
+				limit = {
+					modifier:local_manpower > 0
+				}
+				save_scope_as = target_location
+			}
+		}
+		if = {
+			limit = {
+				country_type = building
+			}
+			random_owned_foreign_building_location = {
+				limit = {
+					modifier:local_manpower > 0
+				}
+				save_scope_as = target_location
+			}
+		}
+		if = {
+			limit = {
+				NOT = { exists = scope:target_location }
+			}
+			random_owned_foreign_building_location = {
+				save_scope_as = target_location
+			}
+		}
+	}
+
+	option = {
+		name = parliaments.7.a
+
+		change_parliament_issue_support = parliament_issue_support_weak_bonus
+	}
+
+	option = {
+		name = parliaments.7.b
+
+		add_army_tradition = army_tradition_weak_bonus
+	}
+}
+
+parliaments.8 = {
+	type = country_event
+	title = parliaments.8.title
+	desc = parliaments.8.desc
+
+	illustration_tags = {
+		10 = regular
+		10 = exterior
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:burghers_estate
+			}
+		}
+		any_owned_non_rural_location = {	
+			num_buildings > 10
+		}
+	}
+	
+	immediate = {
+		random_owned_location = {
+			limit = {
+				num_buildings > 10
+			}
+			save_scope_as = target_location
+				
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.8.a
+		
+		change_parliament_issue_support = parliament_issue_support_weak_bonus
+	}
+
+	option = {
+		name = parliaments.8.b
+
+		scope:target_location = {
+			change_development = development_weak_bonus
+		}
+	}
+}
+
+parliaments.9 = {
+	type = country_event
+	title = parliaments.9.title
+	desc = parliaments.9.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = exterior
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:crown_estate
+			}
+		}
+		exists = capital
+	}
+	
+	
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+				
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+	}
+
+
+	option = {
+		name = parliaments.9.a
+
+		add_government_power = government_power_weak_bonus
+		if = {
+			limit = {
+				OR = {
+					current_age = age_5_absolutism
+					current_age = age_6_revolutions
+				}
+			}
+			change_societal_value = {
+				type = absolutism_vs_liberalism
+				value = societal_value_minor_move_to_left
+			}
+			change_parliament_issue_support = parliament_issue_support_weak_bonus
+		}
+		else = {
+			change_parliament_issue_support = parliament_issue_support_weak_bonus
+		}
+	}
+}
+
+parliaments.10 = {
+	type = country_event
+	title = parliaments.10.title
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {	
+					is_revolutionary_issue = yes
+				}
+				desc = parliaments.10.desc_b
+			}
+			triggered_desc = { 
+				desc = parliaments.10.desc
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = exterior
+	}
+
+	trigger = {
+		OR = {
+			country_type = location
+			country_type = building
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { country_type = location }
+			random_owned_location = {
+				save_scope_as = target_location
+			}
+		}
+		if = {
+			limit = { country_type = building }
+			random_owned_foreign_building_location = {
+				save_scope_as = target_location
+			}
+		}
+		
+		scope:target_location ?= {
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:peasants_estate }
+		}
+				
+	}
+
+	option = {
+		name = parliaments.10.a
+
+		add_prestige = prestige_weak_bonus
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_parliament_issue_support = parliament_issue_support_weak_penalty
+		}
+		else = { change_parliament_issue_support = parliament_issue_support_weak_bonus }
+	}
+}
+
+
+parliaments.11 = {
+	type = country_event
+	title = parliaments.10.title
+	desc = parliaments.11.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+	
+
+	trigger = {
+		OR = {
+			country_type = location
+			country_type = building
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { country_type = location }
+			random_owned_location = {
+				save_scope_as = target_location
+				event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+			}
+		}
+		if = {
+			limit = { country_type = building }
+			random_owned_foreign_building_location = {
+				save_scope_as = target_location
+				event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+			}
+		}
+	}
+	
+	option = {
+		name = parliaments.11.a
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_parliament_issue_support = parliament_issue_support_severe_bonus
+			change_societal_value = {
+				type = absolutism_vs_liberalism
+				value = societal_value_minor_move_to_right
+			}
+		}
+		else = { change_parliament_issue_support = parliament_issue_support_weak_penalty }
+	}
+}
+
+parliaments.12 = {
+	type = country_event
+	title = parliaments.12.title
+	desc = parliaments.12.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:peasants_estate
+			}
+		}
+		"estate_power(estate_type:peasants_estate)" < 0.3
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+	}
+
+	option = {
+		name = parliaments.12.a
+		
+		if = {
+			limit = {
+				has_estate_privilege = estate_privilege:peasants_represented_in_parliament
+			}
+			change_parliament_issue_support = parliament_issue_support_weak_penalty
+			change_societal_value = {
+				type = serfdom_vs_free_subjects
+				value = societal_value_minor_move_to_left
+			}
+		}
+		else = {
+			change_parliament_issue_support = parliament_issue_support_mild_penalty
+		}
+	}
+
+	option = {
+		name = parliaments.12.b
+		
+		trigger = {
+			is_revolutionary_issue = yes
+		}
+		change_parliament_issue_support = parliament_issue_support_severe_bonus
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_minor_move_to_right
+		}
+	}
+}
+
+parliaments.13 = {
+	type = country_event
+	title = parliaments.13.title
+	desc = parliaments.13.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:peasants_estate
+			}
+		}
+		OR = {
+			"estate_power(estate_type:peasants_estate)" > 0.3
+			has_estate_privilege = estate_privilege:peasants_represented_in_parliament
+		}
+	}
+	
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+	}
+
+	option = {
+		name = parliaments.13.a
+		
+		if = {
+			limit = {
+				has_estate_privilege = estate_privilege:peasants_represented_in_parliament
+			}
+			change_parliament_issue_support = parliament_issue_support_mild_bonus
+			change_societal_value = {
+				type = serfdom_vs_free_subjects
+				value = societal_value_minor_move_to_right
+			}
+		}
+		else = { change_parliament_issue_support = parliament_issue_support_weak_bonus }
+	}
+
+	option = {
+		name = parliaments.13.b
+		
+		trigger = {
+			is_revolutionary_issue = yes
+		}
+		change_parliament_issue_support = parliament_issue_support_severe_bonus
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_minor_move_to_right
+		}
+	}
+}
+
+parliaments.14 = {
+	type = country_event
+	title = parliaments.14.title
+	desc = parliaments.14.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	trigger = {
+		any_owned_non_rural_location = {
+			num_buildings > 10
+		}
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:burghers_estate
+			}
+		}
+	}
+	
+	immediate = {
+		random_owned_location = {
+			limit = {
+				num_buildings > 10
+			}
+			save_scope_as = target_location
+			event_illustration_estate_effect = { foreground = estate_type:burghers_estate background = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.14.a
+		
+		change_parliament_issue_support = parliament_issue_support_weak_bonus
+		if = {
+			limit = {
+				"estate_power(estate_type:burghers_estate)" > 0.4
+			}
+			change_societal_value = {
+				type = capital_economy_vs_traditional_economy
+				value = societal_value_minor_move_to_left
+			}
+		}
+	}
+}
+
+parliaments.15 = {
+	type = country_event
+	title = parliaments.15.title
+	desc = parliaments.15.desc
+
+	illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+
+	trigger = {
+		has_ongoing_parliament_debate = yes
+		OR = {
+			parliament_issue = parliament_issue:expand_docks
+			parliament_issue = parliament_issue:expand_dry_docks
+			parliament_issue = parliament_issue:expand_shipyards
+			parliament_issue = parliament_issue:expand_grand_shipyards
+			parliament_issue = parliament_issue:expand_naval_bases
+			parliament_issue = parliament_issue:increase_naval_spending
+		}
+		num_of_ports < num_locations
+	}
+	
+	
+	immediate = {
+		ordered_owned_location = {
+			order_by = local_political_power_fraction
+			limit = {
+				is_port = no
+			}
+			max = 1
+			save_scope_as = target_location
+
+			event_illustration_estate_effect = { foreground = estate_type:burghers_estate background = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.15.a
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+		if = {
+			limit = {
+				societal_value:land_vs_naval < 0
+			}
+			custom_tooltip = {
+				text = parliaments.15.a.tt
+
+				scope:target_location = {
+					every_pop = {
+						limit = {
+							owner = root
+						}
+						add_pop_satisfaction = pop_satisfaction_weak_penalty
+					}
+				}
+			}
+		}
+	}
+}
+
+parliaments.16 = {
+	type = country_event
+	title = parliaments.16.title
+	desc = parliaments.16.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		has_ongoing_parliament_debate = yes
+		OR = {
+			parliament_issue = parliament_issue:promote_castle_building
+			parliament_issue = parliament_issue:promote_bastion_building
+			parliament_issue = parliament_issue:promote_star_fort_building
+			parliament_issue = parliament_issue:promote_fortress_building
+			parliament_issue = parliament_issue:finance_the_armory
+			parliament_issue = parliament_issue:expand_barracks
+			parliament_issue = parliament_issue:host_army_excercises
+		}
+		num_of_ports > 0
+	}
+
+	immediate = {
+		ordered_owned_location = {
+			order_by = local_political_power_fraction
+			limit = {
+				is_port = yes
+			}
+			max = 1
+			save_scope_as = target_location
+
+		}
+		event_illustration_government_estate_effect = yes
+	}
+
+	option = {
+		name = parliaments.16.a
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+		if = {
+			limit = {
+				societal_value:land_vs_naval > 0
+			}
+			scope:target_location = {
+				every_pop = {
+					limit = {
+						owner = root
+					}
+					add_pop_satisfaction = pop_satisfaction_weak_penalty
+				}
+			}
+		}
+	}
+}
+
+parliaments.17 = {
+	type = country_event
+	title = parliaments.17.title
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {	
+					societal_value:spiritualist_vs_humanist > 0
+				}
+				desc = parliaments.17.desc_tolerance
+			}
+			triggered_desc = { 
+				desc = parliaments.17.desc_intolerance
+			}
+		}
+	}
+
+	trigger = {
+		parliament_issue ?= {
+			estate_type ?= {
+				this = estate_type:clergy_estate
+			}
+		}
+		any_owned_location = {
+			dominant_religion != root.religion
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				dominant_religion != root.religion
+			}
+			save_scope_as = target_location
+
+			ordered_pop = {
+				limit = { NOT = { religion = root.religion } }
+				max = 1
+				order_by = pop_size
+				order_by = {
+					value = 0
+					add = {
+						if = { 
+							limit = {
+								estate_type = estate_type:clergy_estate
+							}
+							value = 100
+						}
+					}
+				}
+				save_scope_as = target_pop
+				save_scope_as = target_pop_bckg
+			}
+		}
+	}
+
+	option = {
+		name = parliaments.17.a
+		
+		if = {
+			limit = {
+				societal_value:spiritualist_vs_humanist > 0
+			}
+			change_parliament_issue_support = parliament_issue_support_weak_bonus
+		}
+		else = {
+			change_parliament_issue_support = parliament_issue_support_weak_penalty
+		}
+	}
+}
+
+parliaments.18 = {
+	type = country_event
+	title = parliaments.18.title
+	desc = parliaments.18.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	trigger = {
+		any_owned_location = {
+			has_building_with_at_least_one_level = university
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				has_building_with_at_least_one_level = university
+			}
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:clergy_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.18.a
+
+		change_parliament_issue_support = parliament_issue_support_weak_bonus
+	}
+}
+
+parliaments.19 = {
+	type = country_event
+	title = parliaments.19.title
+	desc = parliaments.19.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		has_ongoing_parliament_debate = yes
+		OR = {
+			parliament_issue= parliament_issue:support_noble_cabinet
+			parliament_issue= parliament_issue:support_clergy_cabinet
+			parliament_issue= parliament_issue:support_burgher_cabinet
+			parliament_issue= parliament_issue:support_peasant_cabinet
+		}
+		any_character = {
+			in_cabinet = yes
+		}
+	}
+
+	immediate = {
+		event_illustration_estate_effect = {
+			foreground = estate_type:burghers_estate
+			background = estate_type:nobles_estate
+		}
+		random_character = {
+			limit = {
+				in_cabinet = yes
+			}
+			save_scope_as = target_character
+		}
+	}
+
+	option = {
+		name = parliaments.19.a
+
+		if = {
+			limit = {
+				societal_value:aristocracy_vs_plutocracy > 0
+			}
+			add_prestige = prestige_weak_penalty
+		}
+		scope:target_character = {
+			add_adm = -3
+			add_dip = -3
+			add_mil = -3
+		}
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+	}
+}
+
+parliaments.20 = {
+	type = country_event
+	title = parliaments.20.title
+	desc = parliaments.20.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		num_locations > 1
+		capital = {
+			has_location_modifier = parliament_location
+		}
+	}
+
+	immediate = {
+		ordered_owned_location = {
+			max = 1
+			limit = {
+				is_capital = no
+			}
+			order_by = {
+				value = local_control
+				multiply = -1
+			}
+			
+			order_by = {
+				value = 0
+
+				add = {
+					if = { 
+						limit = {
+							owner = root
+							integration_level = core
+						}
+						value = 100
+					}
+				}
+				add = {
+					if = { 
+						limit = {
+							owner = root
+							integration_level = integrated
+						}
+						value = 50
+					}
+				}
+			}
+
+			save_scope_as = target_location
+
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:nobles_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.20.a
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			add_gold = {
+				value = monthly_income_trade_and_tax
+				multiply = -4
+			}
+		}
+		else = {
+			add_gold = {
+				value = monthly_income_trade_and_tax
+				multiply = -1.2
+			}
+		}
+	}
+	option = {
+		name = parliaments.20.b
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_parliament_issue_support = parliament_issue_support_severe_bonus
+			change_societal_value = {
+				type = absolutism_vs_liberalism
+				value = societal_value_minor_move_to_right
+			}
+		}
+		else = {
+			change_parliament_issue_support = parliament_issue_support_weak_penalty
+		}
+	}
+}
+
+parliaments.21 = {
+	type = country_event
+	title = parliaments.21.title
+	desc = parliaments.21.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		num_locations > 1
+		capital = {
+			has_location_modifier = parliament_location
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				is_capital = no
+			}
+			save_scope_as = target_location
+		}
+		capital = {			
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:peasants_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.21.a
+
+		add_government_power = government_power_weak_penalty
+		add_prestige = prestige_weak_penalty
+	}
+
+	option = {
+		name = parliaments.21.b
+
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_societal_value = {
+				type = absolutism_vs_liberalism
+				value = societal_value_minor_move_to_left
+			}
+			change_parliament_issue_support = parliament_issue_support_weak_penalty
+			add_stability = stability_mild_penalty
+		}
+		else = { change_parliament_issue_support = parliament_issue_support_weak_penalty }
+	}
+}
+
+parliaments.22 = {
+	type = country_event
+	title = parliaments.22.title
+	desc = parliaments.22.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+		random_owned_location = { #This is done to ensure the chosen location is at least remotely relevant
+			limit = {
+				location_tax_base > 10
+				is_capital = no
+			}
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:nobles_estate }
+		}
+	}
+
+	trigger = {
+		num_locations > 1
+		any_owned_location = {
+			location_tax_base > 10
+			is_capital = no
+		}
+	}
+
+	option = {
+		name = parliaments.22.a
+
+		ai_will_select = { 
+			if = {
+				limit = {
+					societal_value:aristocracy_vs_plutocracy < 0
+				}
+				value = 0 
+			}
+		}
+
+		if = {
+			limit = {
+				societal_value:aristocracy_vs_plutocracy < 0
+			}
+			add_stability = stability_mild_penalty
+		}
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+		add_gold = {
+			value = {
+				value = scope:target_location.location_tax_base
+				multiply = 10
+				max = 300
+				min = 50
+			}
+		}
+	}
+
+	option = {
+		name = parliaments.22.b
+
+		add_prestige = prestige_mild_penalty
+		if = {
+			limit = {
+				societal_value:aristocracy_vs_plutocracy > 0
+			}
+			change_societal_value = {
+				type = aristocracy_vs_plutocracy
+				value = societal_value_minor_move_to_left
+			}
+		}
+	}
+}
+
+parliaments.23 = {
+	type = country_event
+	title = parliaments.23.title
+	desc = parliaments.23.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		parliament_type = parliament_type:autocratic_parliament
+		OR = {
+			current_age = age_5_absolutism
+			current_age = age_6_revolutions
+		}
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+	}
+
+	option = {
+		name = parliaments.23.a
+
+		add_government_power = government_power_extreme_penalty
+		change_societal_value = {
+			type = absolutism_vs_liberalism
+			value = societal_value_minor_move_to_left
+		}
+	}
+
+	option = {
+		name = parliaments.23.b
+
+		add_prestige = prestige_mild_penalty
+		change_societal_value = {
+			type = absolutism_vs_liberalism
+			value = societal_value_minor_move_to_right
+		}
+		if = {
+			limit = {
+				is_revolutionary_issue = yes
+			}
+			change_parliament_issue_support = parliament_issue_support_severe_bonus
+		}
+	}
+}
+
+parliaments.24 = {
+	type = country_event
+	title = parliaments.24.title
+	desc = parliaments.24.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		num_loans > 5
+		any_owned_non_rural_location = {
+			NOT = {
+				has_building = building_type:urban_parliament_seat
+			}
+			is_core_of = owner
+			integration_level = core
+		}
+	}
+
+	immediate = {
+		ordered_owned_non_rural_location = { #This is done to ensure the chosen location is at least remotely relevant
+			limit = {
+				NOT = {
+					has_building = building_type:urban_parliament_seat
+				}
+				is_core_of = owner
+				integration_level = core
+			}
+			order_by = location_tax_base
+			max = 10
+			add_to_list = list_of_high_tax_base_locations
+			check_range_bounds = no
+		}
+		random_in_list = {
+			list = list_of_high_tax_base_locations
+			save_scope_as = target_location
+			event_illustration_estate_effect = { foreground = estate_type:burghers_estate background = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.24.a
+
+		add_prestige = prestige_weak_penalty
+		scope:target_location = {
+			change_building_level_in_location = {
+				building = building_type:urban_parliament_seat
+				value = 1
+			}
+		}
+		change_gold_effect = { scale = 2 }
+	}
+	option = {
+		name = parliaments.24.b
+
+		add_estate_satisfaction = {
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_severe_penalty
+		}
+	}
+	option = {
+		name = parliaments.24.c
+
+		add_prestige = prestige_weak_penalty
+		change_gold_effect = { scale = 1 }
+		add_estate_satisfaction = {
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_weak_penalty
+		}
+	}
+}
+
+parliaments.25 = {
+	type = country_event
+	title = parliaments.14.title
+	desc = parliaments.25.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		any_owned_non_rural_location = {
+			num_buildings > 10
+		}
+		NOT = {
+			parliament_issue ?= {
+				estate_type ?= {
+					this = estate_type:burghers_estate
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		random_owned_non_rural_location = {
+			limit = {
+				num_buildings > 10
+			}
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:burghers_estate }
+		}
+	}
+
+	option = {
+		name = parliaments.25.a
+		
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+		if = {
+			limit = {
+				"estate_power(estate_type:burghers_estate)" > 0.4
+			}
+			change_societal_value = {
+				type = capital_economy_vs_traditional_economy
+				value = societal_value_minor_move_to_left
+			}
+		}
+	}
+}
+
+parliaments.26 = {
+	type = country_event
+	title = parliaments.26.title
+	desc = parliaments.26.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	trigger = {
+		parliament_type = parliament_type:council
+		stability >= 30
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:burghers_estate background = estate_type:burghers_estate }
+	}
+
+	option = {
+		name = parliaments.26.a
+
+		change_parliament_issue_support = parliament_issue_support_mild_bonus
+	}
+
+	option = {
+		name = parliaments.26.b
+
+		change_parliament_issue_support = parliament_issue_support_weak_penalty
+		change_gold_effect = { scale = 2 }
+	}
+}
+
+parliaments.27 = {
+	type = country_event
+	title = parliaments.27.title
+	desc = parliaments.27.desc
+
+	illustration_tags = {
+		10 = happy
+		10 = exterior
+	}
+	
+	trigger = {
+		capital ?= {
+			has_location_modifier = parliament_location
+		}
+		OR = {
+			country_type = location
+			country_type = building
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { country_type = location }
+			random_owned_location = {
+				save_scope_as = target_location
+				
+				event_illustration_estate_in_location_effect = { estate_type = estate_type:peasants_estate }
+			}
+		}
+		if = {
+			limit = { country_type = building }
+			random_owned_foreign_building_location = {
+				save_scope_as = target_location
+				event_illustration_estate_in_location_effect = { estate_type = estate_type:peasants_estate }
+			}
+		}
+	}
+
+	option = {
+		name = parliaments.27.a
+		
+		if = {
+			limit = {
+				"estate_power(estate_type:crown_estate)" > 0.5
+			}
+			add_stability = stability_mild_bonus
+		}
+		change_parliament_issue_support = parliament_issue_support_mild_bonus
+	}
+}
+
+parliaments.28 = {
+	type = country_event
+	title = parliaments.28.title
+	desc = parliaments.28.desc
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	trigger = {
+		OR = {
+			government_type = government_type:monarchy
+			government_type = government_type:republic
+		}
+		any_active_disaster = { disaster_type = disaster_type:revolution_disaster }
+		has_parliament = yes
+	}
+	
+	immediate = {
+		ruler_or_regent ?= { save_scope_as = target_character }
+		random_list = {
+			30 = {
+				parliament_issue:curb_central_authority = { save_scope_as = target_debate }
+			}
+			10 = {
+				trigger = {
+					OR = {
+						government_power < 0
+						"estate_power(estate_type:crown_estate)" < 0.1
+					}
+				}
+				parliament_issue:establish_a_constitution = { save_scope_as = target_debate }
+			}
+			30 = {
+				parliament_issue:reduce_peasant_taxation = { save_scope_as = target_debate }
+			}
+			30 = {
+				parliament_issue:revoke_privilege_of_the_nobles = { save_scope_as = target_debate }
+			}
+		}
+
+		random_owned_location = {
+			save_scope_as = target_location
+			event_illustration_estate_in_location_effect = { estate_type = estate_type:peasants_estate }
+		}
+
+		set_parliament_location = scope:target_location
+		set_parliament_active = yes
+		set_parliament_issue = scope:target_debate	#This is done in the immediate to avoid workarounds
+		change_parliament_issue_support = parliament_issue_support_extreme_bonus
+	}
+
+	option = {
+		name = parliaments.28.a
+		
+		show_as_tooltip = {
+			set_parliament_location = capital
+			set_parliament_active = yes
+			set_parliament_issue = scope:target_debate
+		}
+		change_societal_value = {
+			type = absolutism_vs_liberalism
+			value = societal_value_move_to_right
+		}
+	}
+}

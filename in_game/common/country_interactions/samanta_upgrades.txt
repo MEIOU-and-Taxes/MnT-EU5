@@ -1,0 +1,143 @@
+﻿upgrade_to_maha_samanta = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+
+	potential = {
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_subject_type = samanta
+		}
+        enabled = {
+			custom_tooltip = {
+				text = maha_samanta_tt
+				NOT = { has_variable = samanta_cooldown }
+			}
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			lock_current_subject_type = yes
+			hidden_effect = {
+				set_variable = { name = samanta_cooldown value = yes years = 15 }
+			}
+			add_liberty_desire = liberty_desire_mild_plus
+			make_subject_of = {
+				target = scope:actor
+				type = subject_type:maha_samanta
+			}
+		}
+	}
+	ai_will_do = {
+		add = 100	#AI should always want to annex its vassals at some point
+	}
+	diplo_chance = {
+		base = -90
+		current_strength = 0.5
+		border_distance = -0.3
+		negative_opinion = -1
+		positive_opinion = 0.5
+		rank_difference = -5
+		royal_ties = 1
+		relative_strength = -0.5
+		culture_war = 2
+		diplomatic_reputation = 3
+		different_religion = -20
+		same_common_language = 5
+		same_court_language = 10
+		different_culture = -10
+		different_government_type = -10
+		tax_base = -0.25
+	}
+}	
+upgrade_to_pradhana_maha_samanta = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: negative ai_will_do, don't check at all then
+
+	potential = {
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_subject_type = maha_samanta
+		}
+        enabled = {
+			custom_tooltip = {
+				text = pradhana_maha_samanta_tt
+				NOT = { has_variable = samanta_cooldown }
+			}
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			lock_current_subject_type = yes
+			add_liberty_desire = liberty_desire_mild_minus
+			make_subject_of = {
+				target = scope:actor
+				type = subject_type:pradhana_maha_samanta
+			}
+		}
+	}
+	ai_will_do = {
+		add = -100	#AI should always want to annex its vassals at some point
+	}
+	diplo_chance = {
+		base = -10
+		current_strength = 0.5
+		border_distance = -0.3
+		negative_opinion = -1
+		positive_opinion = 0.5
+		rank_difference = -5
+		royal_ties = 1
+		relative_strength = -0.5
+		culture_war = 2
+		diplomatic_reputation = 3
+		different_religion = -20
+		same_common_language = 5
+		same_court_language = 10
+		different_culture = -10
+		different_government_type = -10
+		tax_base = -0.25
+	}
+}

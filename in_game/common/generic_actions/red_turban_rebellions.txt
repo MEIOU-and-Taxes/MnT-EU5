@@ -1,0 +1,992 @@
+﻿#Yuán Actions
+rtr_grant_titles = {
+	type = situation
+	
+	potential = {
+		scope:actor = {
+			tag = CHI
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+	automation_tick = never
+	automation_tick_frequency = 12
+	price = price:rtr_grant_titles_price
+
+	allow = {
+		scope:actor = {
+			government_power >= government_power_mild_penalty
+			num_of_diplomats >= 1
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		name = "rtr_grant_titles_select_country"
+		none_available_msg_key = "rtr_grant_titles_no_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = rtr_yuan_allegiance
+		}
+		visible = {
+			has_variable = rtr_yuan_allegiance
+			NOT = { is_at_war_with = scope:actor }
+			capital = { is_discovered_by = scope:actor }
+			within_diplomatic_range = scope:actor
+			var:rtr_yuan_allegiance <= 85
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:actor = {
+				add_diplomats = -1
+				if = {
+					limit = { modifier:allow_righteousness = yes }
+					add_righteousness = righteousness_weak_bonus
+				}
+				transfer_yearly_gold = {
+					value = 0.5
+					target = scope:target
+				}
+			}
+			scope:target = {
+				rtr_change_allegiance_points = {
+					value = 15
+				}
+				add_opinion = {
+					modifier = opinion_rtr_granted_titles
+					target = scope:actor
+				}
+			}
+		}
+	}
+
+	ai_will_do = {	#AI will do this more likely if the number of opposers is too high
+		add = -150
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						var:rtr_yuan_allegiance < 50
+						var:rtr_yuan_allegiance >= 40
+					}
+				}
+				value = 100	#the AI should keep loyalists loyal
+			}
+		}
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						gold >= {
+							value = monthly_income_trade_and_tax
+							multiply = 8
+						}
+					}
+				}
+				value = 100
+			}
+		}
+	}
+}
+
+rtr_negotiate_with_rebels = {
+	type = situation
+	
+	potential = {
+		scope:actor = {
+			tag = CHI
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+	automation_tick = never
+	automation_tick_frequency = 12
+	price = price:rtr_negotiate_with_rebels_price
+	
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = rebels
+		source = actor
+		target_flag = target
+		name = "rtr_negotiate_with_rebels_select_rebels"
+		none_available_msg_key = "rtr_negotiate_with_rebels_no_rebels"
+		column = {
+			data = name
+		}
+		column = {
+			data = rebel_progress
+		}
+		column = {
+			data = monthly_progress
+		}
+		visible = {
+			rebel_progress > 0.3
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:target = { add_rebel_progress = rebel_progress_severe_bonus }
+		}
+		else = {
+			custom_tooltip = rtr_negotiate_with_rebels_tt
+		}
+		scope:actor = {
+			if = {
+				limit = { modifier:allow_righteousness = yes }
+				add_righteousness = righteousness_weak_penalty
+			}
+		}
+	}
+
+	ai_will_do = {	#AI will do this more likely if it has powerful revolts brewing
+		add = -50
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						any_rebel = { 
+							rebel_progress >= 0.1 
+							count >= 4
+						}
+					}
+				}
+				value = 200
+			}
+		}
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						gold >= {
+							value = monthly_income_trade_and_tax
+							multiply = {
+								value = 1.5
+								multiply = num_rebels
+							}
+						}
+					}
+				}
+				value = 100
+			}
+		}
+	}
+}
+
+rtr_call_loyalists_to_arms = {
+	type = situation
+	
+	potential = {
+		scope:actor = {
+			tag = CHI
+		}
+	}
+
+	allow = {
+		current_celestial_authority = { value = 0.05 }
+		scope:actor = {
+			num_of_diplomats >= 1
+			custom_tooltip = {
+				text = rtr_call_loyalists_to_arms_tt
+				at_war = yes
+				any_current_war = {
+					OR = {
+						AND = {
+							any_attacker = { is_member_of_international_organization = international_organization:red_turban_rebels }
+							any_defender = { this = scope:actor }
+						}
+						AND = {
+							any_defender = { is_member_of_international_organization = international_organization:red_turban_rebels }
+							any_attacker = { this = scope:actor }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+	automation_tick = never
+	automation_tick_frequency = 12
+	
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		name = "rtr_call_loyalists_to_arms_select_country"
+		none_available_msg_key = "rtr_call_loyalists_to_arms_no_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = rtr_yuan_allegiance
+		}
+		visible = {
+			has_variable = rtr_yuan_allegiance
+			var:rtr_yuan_allegiance >= 50
+			OR = {
+				is_subject = no
+				subject_loyalty < 50
+			}
+			NOT = { is_at_war_with = scope:actor }
+			capital = { is_discovered_by = scope:actor }
+			within_diplomatic_range = scope:actor
+			scope:actor = {
+				any_current_war = {
+					OR = {
+						casus_belli ?= casus_belli:cb_red_turban_rebellions
+						casus_belli ?= casus_belli:cb_red_turban_rebellions_rein_in_rebels
+					}
+					NOT = { any_war_participant = { this = root } }
+					trigger_if = {
+						limit = { NOT = { attacker_leader = scope:actor } }
+						attacker_leader = { save_temporary_scope_as = scope_enemy }
+					}
+					trigger_else = {
+						defender_leader = { save_temporary_scope_as = scope_enemy }
+					}
+				}
+			}
+			trigger_if = {
+				limit = { exists = scope:scope_enemy }
+				NOT = { has_truce_with = scope:scope_enemy }
+			}
+		}
+	}
+
+	effect = {
+		change_celestial_authority = { value = celestial_authority_weak_penalty }
+		scope:actor = {
+			add_diplomats = -1
+			custom_tooltip = {
+				text = rtr_call_loyalists_to_arms_ct
+				if = {
+					limit = { exists = scope:target }
+					every_current_war = {
+						limit = {
+							OR = {
+								casus_belli ?= casus_belli:cb_red_turban_rebellions
+								casus_belli ?= casus_belli:cb_red_turban_rebellions_rein_in_rebels
+							}
+							OR = {
+								is_an_attacker = scope:actor
+								is_a_defender = scope:actor
+							}
+						}
+						if = {
+							limit = {
+								is_an_attacker = scope:actor
+								defender_leader = {
+									scope:target = {
+										NOT = { has_truce_with = PREV }
+									}
+								}
+							}
+							scope:target = { join_war_as_attacker = { war = prev } }
+						}
+						else_if = {
+							limit = {
+								is_a_defender = scope:actor
+								attacker_leader = {
+									scope:target = {
+										NOT = { has_truce_with = PREV }
+									}
+								}
+							}
+							scope:target = { join_war_as_defender = { war = prev } }
+						}
+					}
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:target }
+			scope:target = {
+				rtr_change_allegiance_points = {
+					value = -5
+				}
+			}
+		}
+		else = {
+			custom_tooltip = rtr_call_loyalists_to_arms_at
+		}
+	}
+
+	ai_will_do = {
+		add = -150
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						var:rtr_yuan_allegiance >= 65
+					}
+				}
+				value = 100
+			}
+		}
+		add = {
+			if = {
+				limit = {
+					current_celestial_authority = { value = 0.55 }
+				}
+				value = 100
+			}
+		}
+	}
+}
+
+rtr_appease_the_court = {
+	type = situation
+	
+	potential = {
+		scope:actor = {
+			tag = CHI
+		}
+	}
+	price = price:rtr_appease_the_court_price
+
+	allow = {
+		scope:actor = { NOT = { has_country_modifier = rtr_appeased_the_court } }
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_stability = stability_mild_bonus
+			add_all_estate_satisfaction = { value = estate_satisfaction_weak_bonus }
+			hidden_effect = {
+				add_gold_to_estate = { estate_type = estate_type:nobles_estate value = monthly_income_trade_and_tax }
+				add_gold_to_estate = { estate_type = estate_type:clergy_estate value = monthly_income_trade_and_tax }
+				add_gold_to_estate = { estate_type = estate_type:burghers_estate value = monthly_income_trade_and_tax }
+				add_gold_to_estate = { estate_type = estate_type:peasants_estate value = monthly_income_trade_and_tax }
+			}
+			add_country_modifier = {
+				modifier = rtr_appeased_the_court
+				years = 3
+				mode = add_and_extend
+			}
+			if = {
+				limit = { modifier:allow_righteousness = yes }
+				add_righteousness = righteousness_weak_bonus
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = { if = { limit = { scope:actor = { estate_satisfaction:nobles_estate < 0.5 } } value = 15 } }
+		add = { if = { limit = { scope:actor = { estate_satisfaction:clergy_estate < 0.5 } } value = 15 } }
+		add = { if = { limit = { scope:actor = { estate_satisfaction:burghers_estate < 0.5 } } value = 15 } }
+		add = { if = { limit = { scope:actor = { estate_satisfaction:peasants_estate < 0.5 } } value = 15 } }
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						government_power >= 80
+					}
+				}
+				value = 100
+			}
+		}
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						gold >= {
+							value = monthly_income_trade_and_tax
+							multiply = 12
+						}
+					}
+				}
+				value = 50
+			}
+		}
+	}
+}
+
+#Chinese Warlord Actions
+rtr_rekindle_revolt = {
+	type = situation
+	
+	potential = {
+		scope:actor = {
+			is_member_of_international_organization = international_organization:red_turban_rebels
+			NOT = { tag = CHI }
+		}
+		country_exists = c:CHI
+	}
+
+	allow = {
+		scope:actor = {
+			NOT = { is_at_war_with = c:CHI }
+			NOT = { is_fighting_war_together_with = c:CHI }
+			NOT = { has_truce_with = c:CHI }
+			NOT = { is_subject_of = c:CHI }
+			var:rtr_yuan_allegiance < 0
+			is_rebel_country = no
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		c:CHI = {
+			declare_war_with_cb = {
+				target = scope:actor
+				type = casus_belli:cb_red_turban_rebellions_rein_in_rebels
+			}
+		}
+	}
+
+	ai_will_do = {	#AI should always declare war on China
+		add = 100
+	}
+}
+
+rtr_rein_in_area = {
+	type = situation
+	potential = {
+		scope:actor = {
+			is_member_of_international_organization = international_organization:red_turban_rebels
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+	automation_tick = never
+	automation_tick_frequency = 12
+	price = price:rtr_rein_in_area_price
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = area
+		source = actor
+		target_flag = target
+		name = "rtr_rein_in_area_select_area_title"
+		none_available_msg_key = "rtr_rein_in_area_no_areas"
+		column = { data = name }
+		visible = {
+			any_location_in_area = {
+				owner ?= scope:actor
+				percent >= 0.5
+			}
+			any_location_in_area = {
+				integration_level = conquered
+				NOT = { has_location_modifier = rtr_rein_in_area_modifier }
+			}
+		}
+	}
+	effect = {
+		scope:actor = {
+			if = {
+				limit = { modifier:allow_righteousness = yes }
+				add_righteousness = righteousness_weak_bonus
+			}
+		}
+		if = {
+			limit = { exists = scope:target }
+			scope:target ?= {
+				custom_tooltip = {
+					text = rtr_rein_in_area_tt
+					every_location_in_area = {
+						limit = {
+							has_owner = yes
+							owner = scope:actor
+							NOT = { has_location_modifier = rtr_rein_in_area_modifier }
+						}
+						change_integration_level = integrated
+						add_location_modifier = {
+							modifier = rtr_rein_in_area_modifier
+							mode = add_and_extend
+							years = 10
+						}
+					}
+				}
+			}
+		}
+		else = {
+			custom_tooltip = rtr_rein_in_area_at
+		}
+	}
+	ai_will_do = {
+		add = -50
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						gold >= {
+							value = monthly_income_trade_and_tax
+							multiply = 8
+						}
+					}
+				}
+				value = 100
+			}
+		}
+	}
+}
+
+#Added this action because the cb does not generate for the countries + AI should constantly be at war with each other too
+rtr_declare_war_for_regional_supremacy = {
+	type = situation
+	
+	potential = {
+		scope:actor = {
+			OR = {
+				is_member_of_international_organization = international_organization:red_turban_rebels
+				modifier:can_create_red_turban_rebellions_cb = yes
+			}
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			modifier:can_create_red_turban_rebellions_cb = yes
+			is_subject = no
+			is_rebel_country = no
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		name = "rtr_declare_war_for_regional_supremacy_select_title"
+		none_available_msg_key = "rtr_declare_war_for_regional_supremacy_no_countries"
+		allow_self = no
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			capital ?= {
+				is_discovered_by = scope:actor
+				OR = {
+					region = region:east_china_region
+					region = region:north_china_region
+					region = region:south_china_region
+					region = region:west_china_region
+				}
+			}
+			NOT = { country_type = pop }
+			within_diplomatic_range = scope:actor
+			NOT = { is_at_war_with = scope:actor }
+			NOT = { is_fighting_war_together_with = scope:actor }
+			NOT = { is_subject_of = scope:actor }
+			NOT = { ruler ?= scope:actor.ruler }
+			is_rebel_country = no
+		}
+		enabled = {
+			NOT = { has_truce_with = scope:actor }
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			if = {
+				limit = {
+					exists = scope:target
+					NOT = { scope:target = scope:actor }
+				}
+				declare_war_with_cb = {
+					target = scope:target
+					type = casus_belli:cb_red_turban_rebellions_against_other_rebels
+				}
+			}
+			if = {
+				limit = { modifier:allow_righteousness = yes }
+				add_righteousness = righteousness_weak_penalty
+			}
+		}
+	}
+
+	ai_will_do = {	#AI will do this more likely if the number of opposers is too high
+		add = 200
+		if = {	#Neutral, will not declare wars really
+			limit = {
+				scope:actor ?= {
+					has_variable = rtr_yuan_allegiance
+				}
+				scope:actor.var:rtr_yuan_allegiance > 0
+				scope:actor.var:rtr_yuan_allegiance < 50
+			}
+			subtract = 150
+		}
+		if = {
+			limit = { exists = scope:target }
+			if = {	#Loyalists should usually not attack each other
+				limit = {
+					scope:actor ?= {
+						has_variable = rtr_yuan_allegiance
+						var:rtr_yuan_allegiance >= 50
+					}
+					scope:target = {
+						has_variable = rtr_yuan_allegiance
+						var:rtr_yuan_allegiance >= 50
+					}
+				}
+				subtract = 200
+			}
+			add = {	# opinion of the target country
+				value = "scope:actor.opinion(scope:target)"
+				divide = -5
+			}
+			add = {	# gp score difference
+				value = "scope:actor.great_power_score"
+				subtract = "scope:target.great_power_score"
+				multiply = 3
+			}
+			if = {	#Alliance
+				limit = { scope:target = { is_allied_with = { target = scope:actor } } }
+				subtract = 100
+			}
+			if = {	#Truce
+				limit = { scope:target = { has_truce_with = scope:actor } }
+				subtract = 100
+			}
+			if = {	#Out of reach
+				limit = { scope:target = { NOT = { is_neighbor_of = scope:actor } } }
+				subtract = 1000
+			}
+		}
+	}
+}
+
+#Yuán tributary actions
+rtr_support_faction = {
+	type = situation
+	potential = {
+		has_global_variable_list = rtr_faction_list
+		scope:actor = {
+			can_see_situation = situation:red_turban_rebellions
+			NOT = { is_member_of_international_organization = international_organization:red_turban_rebels }
+			NOT = { tag = CHI }
+		}
+	}
+	allow = {
+		scope:actor = {
+			gold >= yearly_gold
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+	automation_tick = never
+	automation_tick_frequency = 12
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		name = "choose_country"
+		column = { data = name }
+		
+		source_global_list = rtr_faction_list
+		
+		visible = {
+			num_locations > 0
+		}
+	}
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:actor = {
+				transfer_yearly_gold = {
+					value = 1
+					target = scope:target
+				}
+				add_opinion_mutual_effect = { target = scope:target modifier = opinion_rtr_supported_side }
+			}
+		}
+	}
+	ai_will_do = {
+		add = -25
+		scope:actor = {
+			add = {	# opinion of the target country
+				value = "opinion(scope:target)"
+				divide = -5
+			}
+			if = {
+				limit = {	
+					is_during_bankruptcy = yes
+				}
+				add = {
+					desc = "IS_BANKRUPT_TOOLTIP"
+					value = -1000
+				}
+			}
+			if = {
+				limit = {	
+					at_war = yes
+				}
+				add = {
+					desc = "IS_AT_WAR"
+					value = -25
+				}
+			}
+			if = {
+				limit = {
+					gold <= {
+						value = scope:actor.monthly_income_trade_and_tax
+						multiply = 6
+					}
+				}
+				add = {
+					desc = "CAN_NOT_AFFORD"
+					value = -60
+				}
+			}
+		}
+	}
+}
+
+rtr_join_chinese_defense = {
+	type = situation
+	potential = {
+		scope:actor = {
+			can_see_situation = situation:red_turban_rebellions
+			NOT = { is_member_of_international_organization = international_organization:red_turban_rebels }
+			NOT = { tag = CHI }
+		}
+	}
+	allow = {
+		country_exists = c:CHI
+		scope:actor = {
+			NOT = { is_at_war_with = c:CHI }
+			OR = {
+				can_join_offensive_war_with = c:CHI
+				can_join_defensive_war_with = c:CHI
+			}
+		}	
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+	automation_tick = never
+	automation_tick_frequency = 12
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+	select_trigger = {
+		looking_for_a = war
+		target_flag = target
+		name = "choose_war_to_join_for_us"
+		column = { data = name }
+		visible = {
+			has_casus_belli = yes
+			OR = {
+				casus_belli ?= casus_belli:cb_red_turban_rebellions
+				casus_belli ?= casus_belli:cb_red_turban_rebellions_rein_in_rebels
+			}
+			any_war_participant = { tag = CHI }
+			c:CHI = { is_war_leader_of = root }
+			trigger_if = {
+				limit = { attacker_leader ?= c:CHI }
+				can_join_as_attacker = scope:actor
+			}
+			trigger_else = {
+				can_join_as_defender = scope:actor
+			}
+		}
+	}
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			if = {
+				limit = { scope:target = { attacker_leader ?= c:CHI } }
+				scope:actor = { join_war_as_attacker = { war = scope:target call_in_subjects = yes } }
+			}
+			else = {
+				scope:actor = { join_war_as_defender = { war = scope:target call_in_subjects = yes } }
+			}
+		}
+	}
+	ai_will_do = {
+		add = {
+			value = -90
+			if = {
+				limit = { scope:actor = { is_allied_with = { target = c:CHI } } }
+				add = 125
+			}
+			if = {
+				limit = { scope:actor = { is_subject_of = c:CHI } }
+				add = scope:actor.subject_loyalty
+			}
+		}
+	}
+}
+
+rtr_declare_independence = {
+	type = situation
+	potential = {
+		scope:actor = {
+			can_see_situation = situation:red_turban_rebellions
+			NOT = { is_member_of_international_organization = international_organization:red_turban_rebels }
+			NOT = { tag = CHI }
+		}
+	}
+	allow = {
+		country_exists = c:CHI
+		scope:actor = {
+			is_subject_of = c:CHI
+			NOT = { is_at_war_with = c:CHI }
+		}
+	}
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 12
+	automation_tick = never
+	automation_tick_frequency = 12
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+	effect = {
+		scope:actor = {
+			leave_all_wars_with = c:CHI
+			add_stability = stability_mild_bonus
+			declare_war_with_cb = {
+				target = c:CHI
+				type = casus_belli:cb_independence_war
+			}
+		}
+	}
+	ai_will_do = {
+		add = 0	#intentionally 0, AI will fabricate their own independence wars and declare when they feel ready for it
+	}
+}

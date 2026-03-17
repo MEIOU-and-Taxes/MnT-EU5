@@ -1,0 +1,89 @@
+﻿grant_cabinet_right = { 
+	
+	sound = UI_action_character_grant_cabinet_rights
+	
+	message = yes
+	on_own_nation = yes
+
+	potential = {
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 90
+
+	allow = {
+	}
+
+	price = price:grant_cabinet_right_price
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			modifier:blocked_from_cabinet = no
+			modifier:ignore_gender_block_cabinet = no
+			NOT = { has_character_modifier = granted_cabinet_right }
+			is_ruler = no
+			is_loyal = yes
+			is_consort = no
+			is_artist = no
+			is_regent = no
+			is_religious_figure = no
+			OR = {
+				AND = {
+					is_female = no
+					scope:actor.modifier:gender_equality = no
+					OR = {
+						scope:actor.modifier:allow_male_cabinet = no
+						scope:actor.modifier:block_male_cabinet = yes
+					}
+				}
+				AND = {
+					is_female = yes
+					scope:actor.modifier:gender_equality = no
+					OR = {
+						scope:actor.modifier:allow_female_cabinet = no
+						scope:actor.modifier:block_female_cabinet = yes
+					}
+				}
+			}
+		}
+		enabled = {
+			is_adult = yes
+			has_unit = no
+			has_exploration = no
+			has_exploration_construction = no
+			modifier:ignore_gender_block_cabinet = no
+			NOT = { has_character_modifier = granted_cabinet_right }
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			add_character_modifier = {
+				modifier = granted_cabinet_right
+				years = -1
+				mode = add_and_extend
+			}
+		}
+	}
+	ai_will_do = {
+		add = {
+			value = scope:recipient.total_abilities
+			subtract = 250
+		}
+		
+		# Rosth: make the AI more likely to promote a crown estate character
+		if = {
+			limit = { 
+				scope:recipient = { has_estate = estate_type:crown_estate }
+			}
+			add = 50
+		}
+	}
+}	

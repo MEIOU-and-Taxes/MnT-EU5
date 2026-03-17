@@ -1,0 +1,101 @@
+﻿take_colony_for_debt =  { 
+	category = CATEGORY_ECONOMY_ACTIONS
+	type = diplomacy
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+	
+	potential = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			num_subjects > 0
+		}
+        enabled = {
+		}
+	}
+
+	# scope:target will be the colonial charter
+	select_trigger = {
+		looking_for_a = colonial_charter
+		source = recipient
+		target_flag = target
+		name = "take_colony_for_debt_SELECT_CHARTER_TITLE"
+		none_available_msg_key = "take_colony_for_debt_colonial_charters"
+		column = {
+			data = name
+		}
+		visible = {
+			always = yes
+		}
+	}
+	
+	# scope:target_1 will be the loan
+	select_trigger = {
+		looking_for_a = loan
+		source = recipient
+		target_flag = target_1
+		cache_targets = yes #this list of targets doesn't rely on the previous target so we only need to do it once
+		name = "take_colony_for_debt_SELECT_LOAN_TITLE"
+		none_available_msg_key = "take_colony_for_debt_no_loans"
+		column = {
+			data = name
+		}
+		visible = {
+			owner = scope:actor
+		}
+	}
+
+	allow = {
+		scope:recipient = {
+			has_colonial_charters = yes
+			num_loans > 0
+			any_loan = {
+				owner ?= scope:actor
+			}
+		}
+	}
+
+	effect = {
+		scope:target = {
+			change_colonial_charter_owner = scope:actor
+		}
+		cancel_loan = scope:target_1
+	}
+
+	#
+	# Extra calculation offers
+	#
+	accept = {
+		if = {
+			limit = {
+				exists = scope:target_1
+			}
+			add = {
+				desc = "game_concept_loan"
+				value = scope:target_1.remaining_debt
+				multiply = 0.01
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			add = {
+				desc = "game_concept_colonial_charter"
+				value = scope:target.colonial_charter_value
+				multiply = -2
+			}
+		}
+	}
+	
+	diplo_chance = {
+		base = -10
+	}
+}	

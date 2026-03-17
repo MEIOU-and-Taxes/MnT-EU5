@@ -1,0 +1,137 @@
+﻿tribal_arrange_marriage = { 
+
+	sound = UI_action_character_marry_noble
+
+	is_consort_action = yes
+	on_own_nation = yes
+	context_menu_click_mode = click # Disable confirm
+	
+	message = yes
+	
+	
+	potential = {
+		scope:actor = {
+			OR = {
+				government_type = government_type:tribe
+				government_type = government_type:steppe_horde
+			}
+		}
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 90 # Rosth: default 45
+	
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+		}
+		enabled = {
+			character_can_marry_trigger = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		name = "tribal_arrange_marriage_select_title"
+		none_available_msg_key = "tribal_arrange_marriage_no_characters"
+		column = {
+			data = character_info
+		}
+		visible = {
+			is_alive = yes
+			is_adult = yes
+			has_available_marriage_slot = yes
+			NOT = { is_same_gender = scope:recipient }
+			NOT = { is_close_relative = scope:recipient }
+			modifier:blocked_from_character_interactions = no
+		}
+		enabled = {
+			character_can_marry_trigger = yes
+		}
+	}
+	effect = {
+		if = {	
+			limit = {
+				exists = scope:recipient
+				exists = scope:target
+			}
+			scope:recipient = {
+				marry_character = scope:target
+			}
+		}
+	}
+
+	ai_will_do = {
+		# We treat scope:recipient as the important character. This will be evaluated both ways though
+
+		# Old rulers must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						is_ruler = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = 22 # This gives a few years to try to find diplomatic marriages first
+				multiply = 5
+			}
+		}
+		# Old heirs must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						OR = {
+							is_heir = yes
+							AND = {
+								exists = father
+								father = {
+									is_ruler = yes
+								}
+							}
+							AND = {
+								exists = mother
+								mother = {
+									is_ruler = yes
+								}
+							}
+						}
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = 22 # This gives a few years to try to find diplomatic marriages first
+				multiply = 5
+			}
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						is_female = yes
+						age_in_years = 35 # Pregnancy threshold
+					}
+				}
+				value = 35
+				subtract = scope:target.age_in_years
+				multiply = 10
+			}
+		}
+
+		
+	}
+	
+}	

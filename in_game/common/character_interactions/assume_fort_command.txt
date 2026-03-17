@@ -1,0 +1,172 @@
+﻿assume_fort_command = {
+	message = yes
+	on_own_nation = yes	
+
+	potential = {
+		scope:actor = {
+			at_war = yes
+			has_reform = government_reform:nayankara_system
+		}
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 30
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+			is_ruler = no
+			is_heir = no
+			is_regent = no
+			OR = {
+				scope:actor = {
+					modifier:can_assume_fort_command = yes
+				}
+				modifier:can_assume_fort_command_character = yes
+			}
+		}
+		enabled = {
+			is_adult = yes
+			OR = {
+				AND = {
+					mil >= 50
+					in_cabinet = no
+				}
+				is_general = yes
+			}
+			NOT = { has_character_modifier = block_leading_armies_or_navies }
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = area
+		source = actor
+		target_flag = target
+		name = "assume_fort_command_select_area_title"
+		none_available_msg_key = "assume_fort_command_no_areas"
+		column = { data = name }
+		visible = {
+			any_location_in_area = {
+				owner ?= scope:actor
+			}
+		}
+		enabled = {
+			NOT = {
+				any_location_in_area = {
+					has_location_modifier = assume_fort_command_modifier
+				}
+			}
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:target = {
+				every_location_in_area = {
+					limit = {
+						owner = scope:actor
+						NOT = { has_location_modifier = assume_fort_command_modifier }
+					}
+					add_location_modifier = {
+						modifier = assume_fort_command_modifier
+						mode = add_and_extend
+						years = 10
+						size = {
+							if = {
+								limit = {
+									scope:recipient.adm <= 20
+								}
+								value = {
+									desc = script_value_base
+									value = 1
+								}
+							}
+							else = {
+								value = {
+									desc = script_value_scaling_with_character_admin
+									value = scope:recipient.adm #scales with the character's adm skills
+									divide = 20
+								}
+							}
+							if = {
+								limit = {
+									scope:recipient.modifier:fort_assumed_efficiency_character != 0
+								}
+								value = {
+									desc = script_value_scaling_with_fort_assumed_efficiency_character
+									multiply = {
+										value = scope:recipient.modifier:fort_assumed_efficiency_character
+										add = 1
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else = {
+			custom_tooltip = assume_fort_command_tt
+		}
+		scope:actor = {
+			change_societal_value = { type = offensive_vs_defensive value = societal_value_minor_move_to_right }
+		}
+		remove_commander = scope:recipient
+		scope:recipient = {
+			add_character_modifier = {
+				modifier = recruited_in_the_military
+				years = 5
+				mode = add_and_extend
+			}
+			add_character_modifier = {
+				modifier = block_leading_armies_or_navies
+				years = 5
+				mode = add_and_extend
+			}
+		}
+	}
+
+   ai_will_do = { # Values > 0 will make AI click the command, unless there's another interaction with higher ai_will_do
+		#scope:actor = country 
+		#scope:recipient = character
+		#AI should only do this action during a defensive war and if the general is not that great with 
+		add = scope:recipient.adm
+		subtract = scope:recipient.dip
+		subtract = scope:recipient.mil
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						any_current_war = {
+							is_an_attacker = scope:actor
+						}
+					}
+				}
+				value = -50
+			}
+		}
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						any_current_war = {
+							NOT = { is_an_attacker = scope:actor }
+						}
+					}
+				}
+				value = 25
+			}
+		}
+   }
+}

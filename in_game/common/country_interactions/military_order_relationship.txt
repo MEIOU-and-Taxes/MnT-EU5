@@ -1,0 +1,401 @@
+﻿call_order_to_crusade = {
+	type = diplomacy
+	category = CATEGORY_FRIENDLY_ACTIONS
+
+	potential = {
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+
+	allow = {
+		scope:actor = {
+			at_war = yes
+			any_current_war = {
+				OR = {
+					attacker_leader = scope:actor
+					defender_leader = scope:actor
+				}
+			}
+		}
+	}	
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		interaction_source_list = {
+			scope:actor = {
+				every_related_country = {
+					type = military_sponsorship
+					add_to_list = source
+				}
+			}
+		}
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			receiving_scripted_relation = {
+				type = relation_type:military_sponsorship
+				target = scope:actor
+			}
+		}
+        enabled = {
+			not = { is_at_war_with = scope:actor }
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_country_at_war_with = {
+					add_to_list = source
+				}
+			}
+		}
+		cache_interaction_source_list = yes
+		target_flag = target
+		name = "call_order_to_crusade_select_title"
+		none_available_msg_key = "call_order_to_crusade_no_countries"
+		column = { data = name }
+		column = { data = population }
+		visible = {
+			not = { is_allied_with = { target = scope:recipient } }
+			not = { is_at_war_with = scope:recipient }
+			not = { religion.group ?= scope:actor.religion.group }
+			not = { has_truce_with = scope:recipient }
+			any_current_war = {
+				OR = {
+					attacker_leader = scope:actor
+					defender_leader = scope:actor
+				}
+			}
+		}
+	}
+	effect = {
+		scope:target = {
+			random_current_war = {
+				limit = {
+					OR = {
+						attacker_leader = scope:actor
+						defender_leader = scope:actor
+					}
+				}
+				save_scope_as = crusade_war
+			}
+		}
+		scope:recipient = {
+			if = {
+				limit = {
+					scope:crusade_war = { attacker_leader = scope:actor }
+				}
+				join_war_as_attacker = { war = scope:crusade_war }
+			}
+			else = {
+				join_war_as_defender = { war = scope:crusade_war }
+			}
+		}
+	}
+	ai_will_do = {
+		add = {
+			value = 50
+		}
+
+		add = {
+			if = {
+				limit = {	
+					scope:actor = { 
+						num_of_diplomats <= 2
+					}
+				}
+				value = -100
+			}
+		}
+	}
+
+	diplo_chance = {
+		base = 50
+        diplomatic_reputation = 3
+		opinion = 0.2
+		in_debt = -5
+	}
+	accept = {
+		add = {
+			desc = "game_concept_rival"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_rival_of = scope:actor 
+					}
+				}
+				value = -100
+			}
+		}
+		add = {
+			desc = "IS_BANKRUPT_TOOLTIP"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_during_bankruptcy = yes
+					}
+				}
+				value = -1000
+			}
+		}
+		add = {
+			scope:recipient = {
+				value = "trust(scope:actor)"
+				divide = 5
+			}
+		}
+		add = {
+			scope:recipient = {
+				value = "war_exhaustion"
+				divide = -2
+			}
+		}
+		add = {
+			desc = "IS_AT_WAR"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						at_war = yes
+					}
+				}
+				value = -25
+			}
+		}
+	}
+}
+
+mil_order_request_funds = {
+	type = diplomacy
+	category = CATEGORY_ECONOMY_ACTIONS
+
+	ai_tick = daily
+	ai_tick_frequency = 120
+	
+	ai_prerequisite = {
+		scope:actor = {	at_war = yes }	# Rosth: filter out countries not at war
+	}
+
+	potential = {
+	}
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		interaction_source_list = {
+			scope:actor = {
+				every_related_country = {
+					type = military_sponsorship
+					add_to_list = source
+				}
+			}
+		}
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			giving_scripted_relation = {
+				type = relation_type:military_sponsorship
+				target = scope:actor
+			}
+		}
+        enabled = {
+			gold >= {
+				value = scope:actor.country_tax_base
+				min = scope:recipient.country_tax_base
+				multiply = 2
+			}
+		}
+	}
+
+	ai_will_do = {
+		if = {
+			limit = {
+				scope:actor = {	
+					#Losing money and losing a war
+					at_war = yes
+					lowest_war_score < 0
+					gold < {
+						value = yearly_gold
+						multiply = -1
+					}
+				}
+			}
+
+			add = {
+				value = 10
+			}
+		}
+	}
+
+	cooldown = {
+		type = mil_order_request_funds
+		years = 1
+	}
+	
+	effect = {
+        scope:recipient = {
+			add_gold = {
+				value = scope:actor.country_tax_base
+				min = scope:recipient.country_tax_base
+				multiply = -2
+				min = -500
+			}
+		}
+		scope:actor = {
+			add_gold = {
+				value = scope:actor.country_tax_base
+				min = scope:recipient.country_tax_base
+				multiply = 2
+				max = 500
+			}
+		}
+	}
+
+	diplo_chance = {
+		base = -25
+		in_debt = -1
+		opinion = 0.1
+        diplomatic_reputation = 3
+	}
+	accept = {
+		add = {
+			desc = "game_concept_rival"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_rival_of = scope:actor 
+					}
+				}
+				value = -100
+			}
+		}
+		add = {
+			desc = "IS_BANKRUPT_TOOLTIP"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_during_bankruptcy = yes
+					}
+				}
+				value = -1000
+			}
+		}
+		add = {
+			scope:recipient = {
+				value = "trust(scope:actor)"
+				divide = 5
+			}
+		}
+		add = {
+			scope:recipient = {
+				value = "war_exhaustion"
+				divide = -2
+			}
+		}
+		add = {
+			desc = "IS_AT_WAR"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						at_war = yes
+					}
+				}
+				value = -25
+			}
+		}
+	}
+}
+
+mil_order_request_men = {
+	type = diplomacy
+	category = CATEGORY_ECONOMY_ACTIONS
+
+	potential = {
+	}
+	allow = {
+	}
+	
+	ai_will_do = {
+		if = {
+			limit = {
+				scope:actor = {	
+					max_manpower > 0
+					manpower_percentage < 0.1
+				}
+			}
+			add = {
+				value = 10
+			}
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		interaction_source_list = {
+			scope:actor = {
+				every_related_country = {
+					type = military_sponsorship
+					add_to_list = source
+				}
+			}
+		}
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			giving_scripted_relation = {
+				type = relation_type:military_sponsorship
+				target = scope:actor
+			}
+		}
+        enabled = {
+			manpower_percentage >= 0.1
+			monthly_manpower > 0
+		}
+	}
+
+	effect = {
+        scope:recipient = {
+			add_manpower = {
+				value = scope:recipient.monthly_manpower
+				multiply = -12
+			}
+		}
+		scope:actor = {
+			add_manpower = {
+				value = scope:recipient.monthly_manpower
+				multiply = 12
+			}
+		}
+	}
+
+	diplo_chance = {
+		base = -5
+		opinion = 0.1
+        diplomatic_reputation = 3
+	}
+	accept = {
+		add = {
+			desc = "IS_AT_WAR"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						at_war = yes
+					}
+				}
+				value = -25
+			}
+		}
+	}
+}

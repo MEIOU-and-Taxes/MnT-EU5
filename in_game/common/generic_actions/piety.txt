@@ -1,0 +1,338 @@
+﻿# scope:actor = country, scope:recipient = religion
+
+call_upon_the_faithful = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor = {
+			modifier:allow_mysticism_vs_jurisprudence = yes
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			societal_value:mysticism_vs_jurisprudence < -50
+			NOT = { has_country_modifier = fervor_of_the_faithful_modifier }
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+	
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_country_modifier = {
+				modifier = fervor_of_the_faithful_modifier
+				years = modifier_duration_years_short
+				mode = replace
+			}
+			
+			change_societal_value = { type = mysticism_vs_jurisprudence value = societal_value_large_move_to_right }
+		}
+	}
+	
+	ai_will_do = {
+		add = "scope:actor.currency_utility(manpower|scope:actor.yearly_manpower)"
+		multiply = 2
+	}
+}
+
+study_islamic_texts = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor = {
+			modifier:allow_mysticism_vs_jurisprudence = yes
+		}
+	}
+	
+	allow = {
+		scope:actor = {
+			societal_value:mysticism_vs_jurisprudence > 50
+			NOT = { has_country_modifier = studying_jurisprudence_modifier }
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+	
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_country_modifier = {
+				modifier = studying_jurisprudence_modifier
+				years = modifier_duration_years_short
+				mode = replace
+			}
+			
+			change_societal_value = { type = mysticism_vs_jurisprudence value = societal_value_large_move_to_left }
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.currency_utility(stability|10)"
+	}
+}
+
+pilgrimage_piety = {
+	type = religious
+	
+	sound = UI_action_religion_generic
+
+	potential = {
+		scope:actor = {
+			modifier:allow_mysticism_vs_jurisprudence = yes
+		}
+	}
+
+	allow = {
+		scope:actor = { 
+			has_ruler = yes
+			ruler = {
+				NOT = { has_character_modifier = character_on_pilgrimage }
+			}
+		}
+	}
+	
+	cooldown = {
+		type = pilgrimage_piety
+		years = 5
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+
+	price = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			value = price:pilgrimage_piety
+		}
+	}
+	
+	#scope:actor is the country doing the action, scope:target is the holy site
+	price_modifier = {
+		add = 1
+		add = {
+			if = {
+				limit = {
+					exists = scope:target
+				}
+				scope:target.location.owner = {
+					value = scope:actor.prev_opinion_of_this
+					divide = -400
+				}
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = holy_site
+		source = recipient
+		target_flag = target
+		name = "pilgrimage_select_holy_site_title"
+		none_available_msg_key = "pilgrimage_no_holy_sites"
+		column = {
+			data = name
+		}
+		enabled = {
+			location = {
+				has_owner = yes
+				OR = {
+					owner = scope:actor
+					owner = {
+						OR = {
+							is_allied_with = { target = scope:actor }
+							opinion = {
+								target = scope:actor
+								value > 50
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:actor ?= {
+				ruler ?= {
+					add_character_modifier = { 
+						modifier = character_on_pilgrimage
+						years = 1
+						mode = add_and_extend
+					}
+					hidden_effect = {
+						set_variable = {
+							name = pilgrimage_holy_site
+							value = scope:target
+							years = 1
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+	}
+}
+
+change_main_school = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor.religion = {
+			has_religious_schools = yes
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			any_invited_religious_figure = {
+				count > 0
+			}
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = religiousdoctrines
+	
+	price = price:change_main_school
+
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = religious_school
+		source = recipient
+		target_flag = target
+		name = "choose_religious_school"
+		none_available_msg_key = "no_valid_religious_school"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:actor = {
+				any_invited_religious_figure ?= {
+					religious_school ?= root
+				}
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:actor = {
+				set_religious_school = scope:target
+				if = {
+					limit = {
+						has_law = sharia_law
+					}
+					if = {
+						limit = { scope:target = religious_school:hanafi_school }
+						add_policy = policy:hanafi_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:hanbali_school }
+						add_policy = policy:hanbali_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:maliki_school }
+						add_policy = policy:maliki_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:shafii_school }
+						add_policy = policy:shafii_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:zahiri_school }
+						add_policy = policy:zahiri_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:ismaili_school }
+						add_policy = policy:ismaili_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:jafari_school }
+						add_policy = policy:jafari_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:zaidi_school }
+						add_policy = policy:zaidi_policy
+					}
+					if = {
+						limit = { scope:target = religious_school:hanbali_school }
+						add_policy = policy:hanbali_policy
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:target.modifier_utility(scope:actor)"
+	}
+}

@@ -1,0 +1,242 @@
+﻿send_to_prussian_crusade =  { 
+	type = diplomacy	
+	category = CATEGORY_FRIENDLY_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:monarchy
+			religion = religion:catholic
+		}
+		OR = {
+			current_age = age_1_traditions
+			current_age = age_2_renaissance
+		}
+	}
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			capital.region = region:baltic_region
+			has_reform = government_reform:military_order_reform
+			religion = religion:catholic
+		}
+        enabled = {
+			not = { is_at_war_with = scope:actor }
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		name = "send_to_prussian_crusade_SELECT_TITLE"
+		none_available_msg_key = "send_to_prussian_crusade_no_characters"
+		column = { data = character_info }
+		visible = {
+			is_alive = yes
+			is_adult = yes
+			is_ruler = no
+			is_regent = no
+			is_legally_male = yes
+			in_cabinet = no
+			is_general = no
+			is_admiral = no
+			is_explorer = no
+			has_estate = estate_type:nobles_estate
+			not = { has_character_modifier = on_prussian_crusade }
+			not = { has_character_modifier = completed_prussian_crusade }
+			modifier:blocked_from_character_interactions = no
+			modifier:blocked_from_being_leader = no
+		}
+	}	
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:target = {
+				if = {
+					limit = { is_ruler = yes }
+					scope:actor = { ignore_succesion_effect = yes }
+					set_variable = { name = pr_cr_is_original_monarch value = yes }
+					remove_ruler = scope:actor
+				}
+				move_country = scope:recipient
+				add_character_modifier = {
+					modifier = on_prussian_crusade
+					years = 5
+					mode = add_and_extend
+				}
+				set_variable = { name = pr_cr_home_country value = scope:actor }
+			}
+			scope:actor = {
+				add_to_variable_list = {
+					name = pr_cr_characters
+					target = scope:target
+				}
+				trigger_event_silently = {
+					id = flavor_teu.100
+					years = 5
+				}
+			}
+		}
+	}
+
+	diplo_chance = {
+		base = -10
+		opinion = 0.2
+        diplomatic_reputation = 5
+	}
+	accept = {
+		add = {
+			desc = "game_concept_rival"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_rival_of = scope:actor 
+					}
+				}
+				value = -100
+			}
+		}
+		add = {
+			desc = "THEIR_OPINION_TOOLTIP"
+			value = "scope:recipient.opinion(scope:actor)"
+			divide = 5
+		}
+		add = {
+			scope:recipient = {
+				value = "trust(scope:actor)"
+				divide = 5
+			}
+		}
+	}
+}	
+
+invite_to_prussian_crusade =  { 
+	type = diplomacy
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+	
+	potential = {
+		scope:actor = {
+			capital.region = region:baltic_region
+			has_reform = government_reform:military_order_reform
+			religion = religion:catholic
+		}
+		OR = {
+			current_age = age_1_traditions
+			current_age = age_2_renaissance
+		}
+	}
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			religion = religion:catholic
+			government_type = government_type:monarchy
+		}
+        enabled = {
+			not = { is_at_war_with = scope:actor }
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = recipient
+		target_flag = target
+		name = "invite_to_prussian_crusade_SELECT_TITLE"
+		none_available_msg_key = "invite_to_prussian_crusade_no_characters"
+		column = { data = character_info }
+		visible = {
+			is_alive = yes
+			is_adult = yes
+			is_ruler = no
+			is_regent = no
+			is_legally_male = yes
+			NOT = { has_estate = estate_type:burghers_estate }
+			NOT = { has_estate = estate_type:peasants_estate }
+			NOT = { has_estate = estate_type:clergy_estate }
+			not = { has_character_modifier = on_prussian_crusade }
+			not = { has_character_modifier = completed_prussian_crusade }
+			modifier:blocked_from_character_interactions = no
+			modifier:blocked_from_being_leader = no
+		}
+	}	
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:target = {
+				move_country = scope:actor
+				if = {
+					limit = { is_ruler = yes }
+					scope:actor = { ignore_succesion_effect = yes }
+					set_variable = { name = pr_cr_is_original_monarch value = yes }
+					remove_ruler = scope:recipient
+				}
+				add_character_modifier = {
+					modifier = on_prussian_crusade
+					years = 5
+					mode = add_and_extend
+				}
+				set_variable = { name = pr_cr_home_country value = scope:actor }
+			}
+			scope:recipient = {
+				add_to_variable_list = {
+					name = pr_cr_characters
+					target = scope:target
+				}
+				trigger_event_silently = {
+					id = flavor_teu.100
+					years = 5
+				}
+			}
+		}
+	}
+
+	diplo_chance = {
+		opinion = 0.2
+		relative_strength = 200
+        diplomatic_reputation = 5
+	}
+	accept = {
+		add = {
+			desc = "game_concept_rival"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_rival_of = scope:actor 
+					}
+				}
+				value = -100
+			}
+		}
+		add = {
+			desc = "THEIR_OPINION_TOOLTIP"
+			value = "scope:recipient.opinion(scope:actor)"
+			divide = 5
+		}
+		add = {
+			scope:recipient = {
+				value = "trust(scope:actor)"
+				divide = 5
+			}
+		}
+	}
+}	

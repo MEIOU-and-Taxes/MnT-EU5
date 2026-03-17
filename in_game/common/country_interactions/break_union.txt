@@ -1,0 +1,123 @@
+﻿break_subject_union = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+	}
+	allow = {
+	}
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		cache_targets = yes
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			exists = union
+			NOT = { in_union_with = scope:actor }
+			union = {
+				NOT = {
+					country_has_special_status = {
+						type = special_status:senior_partner
+						country = root
+					}
+				}
+			}
+		}
+        enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		cache_targets = yes
+		name = "break_subject_union_SELECT_TITLE"
+		none_available_msg_key = "break_subject_union_no_characters"
+		column = {
+			data = character_ruler
+		}
+		visible = {
+			is_alive = yes
+			is_ruler = no
+			is_adult = yes
+			modifier:blocked_from_character_interactions = no
+		}
+	}
+	
+	effect = {
+		custom_tooltip = {
+			text = break_subject_union_tt
+			scope:recipient = {
+				every_union_partner = {
+					add_opinion = {
+						modifier = opinion_removed_member_from_union
+						target = scope:actor
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:recipient.union = { international_organization_has_policy = policy:union_establish_seniority_policy }
+			}
+			custom_tooltip = {
+				text = break_subject_union_at
+				scope:recipient.union = {
+					every_country_with_special_status_of_type = {
+						type = senior_partner
+						add_casus_belli = {
+							type = casus_belli:cb_claim_throne
+							target = scope:recipient
+						}
+					}
+				}
+			}
+		}
+		else = {
+			custom_tooltip = {
+				text = break_subject_union_bt
+				scope:recipient.union = {
+					every_international_organization_member = {
+						limit = {
+							NOT = { this = scope:recipient }
+						}
+						add_casus_belli = {
+							type = casus_belli:cb_claim_throne
+							target = scope:recipient
+						}
+					}
+				}
+			}
+		}
+		scope:actor = {
+			drop_antagonism_bomb = {
+				value = {
+					value = scope:recipient.great_power_score
+					divide = 200
+				}
+				modifier = antagonism_broke_subject_union
+				target = scope:recipient.capital
+			}
+		}
+		if = {
+			limit = { exists = scope:target }
+			scope:target = { move_country = scope:recipient }
+			scope:recipient = { set_new_ruler = scope:target }
+		}
+	}
+}

@@ -1,0 +1,84 @@
+﻿siphon_income = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			NOT = { is_subject_type = appanage }
+			OR = {
+				country_type = location
+				country_type = army
+				country_type = building
+			}
+		}
+        enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+			
+			
+			gold >= {
+				value = monthly_income_trade_and_tax
+				multiply = 4
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				scope:recipient = { is_subject_type = state_bank }
+			}
+			scope:actor = {
+				add_gold = {
+					value = scope:recipient.gold
+					multiply = 0.1
+				}
+			}
+			scope:recipient = {
+				add_gold = {
+					value = scope:recipient.gold
+					multiply = -0.1
+				}
+				add_liberty_desire = liberty_desire_severe_plus
+			}
+
+		}
+		else = {
+			scope:recipient = {
+				add_gold = {
+					value = scope:recipient.monthly_income_trade_and_tax
+					multiply = -3
+				}
+				add_liberty_desire = liberty_desire_severe_plus
+			}
+			scope:actor = {
+				add_gold = {
+					value = scope:recipient.monthly_income_trade_and_tax
+					multiply = 3
+				}
+			}
+		}
+	}
+	
+}	

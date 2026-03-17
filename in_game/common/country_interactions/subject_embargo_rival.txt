@@ -1,0 +1,87 @@
+﻿subject_embargo_rival =  { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+		always = yes
+	}
+	
+	allow = {
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 180
+	
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+		}
+        enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target
+		name = "subject_embargo_rival_select_title"
+		none_available_msg_key = "subject_embargo_rival_no_countries"
+		interaction_source_list = {
+			scope:actor = {
+				every_rival = {
+					add_to_list = source
+				}
+			}
+		}
+		cache_interaction_source_list = yes
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		enabled = {
+			scope:recipient = {
+				NOT = { 
+					giving_scripted_relation = {
+						type = relation_type:embargo_nation
+						target = root
+					}
+				}
+			}
+		}
+	}
+	
+	
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			create_relation = { 
+				first = scope:recipient
+				second = scope:target 
+				type = relation_type:embargo_nation
+			}
+
+		}
+		else = {
+			custom_tooltip = select_a_rival_to_embargo
+		}
+	}
+}	

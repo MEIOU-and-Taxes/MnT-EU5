@@ -1,0 +1,42 @@
+﻿scorch_earth = {
+	toggle = no
+	army_only = yes
+	
+	map = yes
+
+
+	allow = {
+	
+		#is_army = yes
+		in_combat = no
+		is_moving = no
+		is_exiled = no
+		in_siege = no
+		unit_location.owner ?= owner
+		unit_location.controller ?= owner
+		unit_location.province.capital ?= unit_location
+		
+		unit_location.province.province_food_percentage > 0.2
+	}
+	
+	start_effect = {
+		unit_location.province = { 
+			change_province_food = {
+				value = root.unit_location.province.province_food
+				multiply = -1
+			}
+			custom_tooltip = {
+				text = scorched_earth_pops_unhappy
+				every_location_in_province = {
+					every_pop = { #scorch earth does not care who lives there
+						add_pop_satisfaction = pop_satisfaction_severe_penalty
+					}
+				}
+
+			}
+		}
+	}
+	ai_will_do = {
+		add = -10
+	}
+}

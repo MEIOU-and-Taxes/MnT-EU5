@@ -1,0 +1,182 @@
+﻿hire_privateer = {
+	type = owncountry
+	
+	potential = {
+		trigger_if = {
+			limit = {
+				scope:actor = {
+					is_ai = yes
+				}
+			}
+			scope:actor = {
+				sailors > 1000
+			}
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			modifier:can_hire_privateers = yes
+		}
+		scope:target ?= {
+			not = {
+				has_privateers_from = scope:actor
+			}
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 2
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = privateers
+	
+	price = price:hire_privateer
+	
+	#area in scope:target
+	select_trigger = {
+		looking_for_a = area
+		target_flag = target
+		name = "hire_privateer_select_area"
+		none_available_msg_key = "hire_privateer_no_areas"
+		column = {
+			data = name
+		}
+		visible = {
+			within_naval_range_of = scope:actor
+			is_area_coastal_sea = yes
+			any_adjacent_ports_to_area = {
+				or = {
+					has_owner = no
+					and = {
+						owner = {
+							save_temporary_scope_as = location_owner
+						}
+						not = {
+							scope:actor = {
+								giving_scripted_relation = {
+									type = relation_type:anti_piracy_agreement
+									target = scope:location_owner
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				hire_privateer = scope:actor
+			}
+		}
+	}
+	
+	ai_will_do = {
+		add = {
+			if = {
+				limit = {
+					exists = scope:target
+				}
+				value = "scope:target.privateer_utility(scope:actor)"
+			}
+		}
+	}
+}
+
+dismiss_privateer = {
+	type = owncountry
+	
+	potential = {
+		trigger_if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				is_area_coastal_sea = yes
+			}
+		}
+		trigger_else = {
+			always = yes
+		}
+	}
+
+	allow = {
+		trigger_if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				has_privateers_from = scope:actor
+			}
+		}
+		scope:actor = {
+			modifier:can_hire_privateers = yes
+		}
+	}
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 2
+
+	automation_tick = monthly
+	automation_tick_frequency = 1
+	player_automated_category = privateers
+	
+	price = price:dismiss_privateer
+	
+	#area in scope:target
+	select_trigger = {
+		looking_for_a = area
+		interaction_source_list = {
+			scope:actor = {
+				every_privateer_from_country = {
+					area = {
+						add_to_list = source
+					}
+				}
+			}
+		}
+		target_flag = target
+		name = "dismiss_privateer_select_area"
+		none_available_msg_key = "dismiss_privateer_no_areas"
+		column = {
+			data = name
+		}
+		visible = {
+			is_area_coastal_sea = yes
+			has_privateers_from = scope:actor
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				dismiss_privateer = scope:actor
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = -100	#not really useful to do
+		#
+		#	if = {
+		#		limit = {
+		#			exists = scope:target
+		#		}
+		#		value = "scope:target.privateer_utility(scope:actor)"
+		#		multiply = -1
+		#	}
+		#
+	}
+}

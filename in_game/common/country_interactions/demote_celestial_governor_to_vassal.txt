@@ -1,0 +1,68 @@
+﻿demote_celestial_governor_to_vassal = { 
+	type = diplomacy
+	category = CATEGORY_CHINA_ACTIONS
+	
+	ai_tick = never # Rosth: no value in ai_will_do, don't check at all then
+	
+	potential = {
+		scope:actor = {
+			is_leader_of_international_organization = international_organization:middle_kingdom
+		}
+		international_organization:middle_kingdom = { 
+			leader_country ?= {
+				modifier:may_convert_vassals_to_celestial_governors = yes
+			}
+		}
+	}
+	
+	allow = {
+		international_organization:middle_kingdom = {
+			var:celestial_authority > 5
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_member_of_international_organization = international_organization:middle_kingdom 
+			international_organization:middle_kingdom = {
+				country_has_special_status = {
+					type = special_status:celestial_governor
+					country = root
+				}
+			}
+		}
+        enabled = {
+		}
+	}
+
+	effect = {
+		scope:recipient = {	#Subject that receives this interaction
+			add_opinion = { 
+				target = scope:actor 
+				modifier = opinion_demoted_to_member 
+			}
+		}		
+		scope:actor = {	#Emperor	
+			add_prestige = prestige_mild_penalty
+		}
+		change_celestial_authority = { value = celestial_authority_weak_penalty }
+		international_organization:middle_kingdom = {
+			international_organization_remove_special_status = {
+				type = special_status:celestial_governor
+				country = scope:recipient
+			}
+			change_variable = {
+				name = num_of_celestial_governors
+				subtract = 1
+			}
+		}
+	}
+	ai_will_do = {
+	}	
+}	

@@ -1,0 +1,148 @@
+﻿appanage_seize_court_resources = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: if the ai_will_do is always set to -10, I suppose there's no reason to have this checked
+
+	potential = {
+	}
+
+	allow = {
+		scope:actor = {
+			custom_tooltip = {
+				text = is_not_benefitting_from_seize_court_resources
+				AND = {
+					NOT = { has_country_modifier = court_resources_seized_weak }
+					NOT = { has_country_modifier = court_resources_seized_mild }
+					NOT = { has_country_modifier = court_resources_seized_severe }
+					NOT = { has_country_modifier = court_resources_seized_extreme }
+				}
+			}
+		}	
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_subject_type = appanage
+			is_subject_of = scope:actor
+		}
+        enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+			NOT = { has_country_modifier = our_court_resources_seized }
+			any_owned_location = {
+				OR = {
+					integration_level = integrated
+					integration_level = core
+				}
+				count > 5				
+			}			
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			add_country_modifier = { modifier = our_court_resources_seized years = 10 mode = add_and_extend }  
+		}		
+		scope:actor = {		
+			reverse_add_opinion = {
+				target = scope:recipient
+				modifier = opinion_seized_our_courts_resources
+			}	
+		}		
+		if = {
+			limit = {
+				scope:recipient = { 
+					any_owned_location = {
+						OR = {
+							integration_level = integrated
+							integration_level = core
+						}
+						count > 5			
+					}	
+				}
+			}	
+			hidden_effect = {
+				scope:actor = {
+					add_country_modifier = { modifier = court_resources_seized_weak years = 10 mode = add_and_extend }  
+				}	
+			}	
+		}	
+		if = {
+			limit = {
+				scope:recipient = { 
+					any_owned_location = {
+						OR = {
+							integration_level = integrated
+							integration_level = core
+						}
+						count > 10	
+					}	
+				}
+			}	
+			hidden_effect = {
+				scope:actor = {
+					add_country_modifier = { modifier = court_resources_seized_mild years = 10 mode = add_and_extend } 
+					remove_country_modifier = court_resources_seized_weak				
+				}	
+			}	
+		}	
+		if = {
+			limit = {
+				scope:recipient = { 
+					any_owned_location = {
+						OR = {
+							integration_level = integrated
+							integration_level = core
+						}
+						count > 16							
+					}	
+				}
+			}	
+			hidden_effect = {
+				scope:actor = {
+					add_country_modifier = { modifier = court_resources_seized_severe years = 10 mode = add_and_extend }
+					remove_country_modifier = court_resources_seized_mild		
+				}
+			}	
+		}	
+		if = {
+			limit = {
+				scope:recipient = { 
+					any_owned_location = {
+						OR = {
+							integration_level = integrated
+							integration_level = core
+						}
+						count > 24							
+					}	
+				}
+			}
+			hidden_effect = {
+				scope:actor = {
+					add_country_modifier = { modifier = court_resources_seized_extreme years = 10 mode = add_and_extend } 
+					remove_country_modifier = court_resources_seized_severe					
+				}	
+			}	
+		}
+		scope:actor = {
+			custom_tooltip = seize_court_benefit_based_on_subject_integrated_provinces
+		}	
+	}
+	ai_will_do = {
+		add = -10
+	}	
+}	
