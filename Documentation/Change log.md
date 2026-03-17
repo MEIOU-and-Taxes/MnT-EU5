@@ -41,6 +41,9 @@ Date: 2026-01-20
 
 - Stability map mode works
 - Backend error fixes
+- Fixed the conquistador countries not triggering the annexation event when they conquer more than 8 locations
+- Incorporated the "Fix Infinite Trade Bug" mod, but trade loops caused by modifier stacking are still present
+- Fixed an error in AI weights for the "Demand Autonomy" country interaction for French appanages
 
 #### Balancing
 
@@ -58,6 +61,17 @@ Date: 2026-01-20
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
+- "Only Western Countries" AI Colonization rule will now only apply to countries with a capital in western europe (excluding Italy and South Germany)
+- Armies and navies now require a lot more goods for maintenance
+- Doubled the duration of CBs
+- Increased diplomatic capacity upkeep for all subjects
+- Un-nerfed the siege assault morale loss for attackers
+- Lowered the time needed for getting 100% warscore from full occupation of the war leader
+- Removed the penalty to warscore from battles from later ages
+- Increased war exhaustion from losses
+- Reduced the expected army size for later ages
+- Drastically reduced levy efficiency maluses from later ages
+- Made estates be able to build bridges and pound lock canals until paradox fixes them
 
 ##### Diplomacy
 
@@ -272,3 +286,49 @@ Date: 2026-01-20
 
 ##### Modding
 - Added automated check for correct encodings via GitHub Actions
+	
+##### Performance
+- Reduced the frequency of updates of on-map markers
+- Incorporated a couple of tiny tweaks from the "Profiling-based Optimization" mod
+- Reduced AI tick frequency for some of the character interactions
+- Excluded AI nations from checking triggers of various country interactions if they were never able to actually initiate them to begin with
+- Added minor AI tick optimisations to some country interactions
+	
+##### AI
+- Made the Mamluk AI much more passive
+- Slightly reduced the AI carefulness when declaring wars
+- Increased the AI desire to use regulars and mercs in wars
+- Reduced the chance of AI forgetting about previously seen units in the fog of war
+- Increased the impact of regulars when calculating war balance impact on war enthusiasm
+- Increased the threshold for minimum stability that the AI wants after revoking a privilege
+- Increased estate satisfaction thresholds for granting and revoking privileges
+- Increased AI utility for getting global and local proximity speed modifiers
+- Increased importance of integrating provinces and pop satisfaction
+- Increased AI maintenance budget for armies and navies
+- Increased AI utility for literacy and research speed
+- Reduced the AI willingness to abandon sieges
+- Increased the importance of assigned military objectives and reduced the importance of targets that are further away from the army in question
+- Lowered the bordering control needed to integrate a subject
+- Increased safe antagonism thresholds
+- Implemented various tweaks to reduce potential bordergore
+- Reduced the AI willingness to start wars with no casus belli
+- Increased default AI aggressiveness
+- Increased importance of current war exhaustion on new war declarations
+- Increased the AI willingness to achieve and maintain high legitimacy or it's equivalent
+- Reduced the importance of local population size when establishing colonial charters
+- Increased the AI desire to build up and import missing goods
+- Made the AI more likely to grant cabinet rights to the members of crown estate and promote them to be heads of cabinet
+- Slightly increased AI desire to unlock new units through advances
+- Lowered the score needed for the AI to pick and keep expansion targets
+- Slightly increased the AI desire to build up their RGOs
+- Doubled the border distance at which the AI will not be interested in waging wars
+- Slightly increased the importance of maximum estate tax modifiers
+- Increased AI carefulness when initiating battles
+- Made an attempt to make the AI less sluggish when building up their economy, hopefully without a performance impact for now
+- Added extra preference for control, trade and gold to all AI nations
+- Rebalanced minimum and maximum numbers of privileges the AI want to keep through the ages and stopped them from picking the absolute worst privileges at all
+- Stopped the AI from asking for additional taxes and levies via parliament
+- Increased the desired manpower targets for AI
+- Increased AI desire to change it's societal values
+- Added AI importance tags to a number of buildings
+- Increased AI utility for building cost reduction modifiers
