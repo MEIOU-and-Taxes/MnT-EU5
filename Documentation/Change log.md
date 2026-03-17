@@ -35,6 +35,7 @@ Date: 2026-01-20
     - E.g. clay/sand pits, Lumbermills, fruit orchards etc. got merged into the RGO-building
   - Balance changes done with calculation in excel spreadsheet, balance is still a bit rough but should mostly work fine
   - Addapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
+  - Avoided promoting tribal pops to fill RGO vacancies at the start
 
 #### Bugfixes
 
@@ -56,7 +57,7 @@ Date: 2026-01-20
 - Local population growth removed from having positive food.
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
-- Remove enslavement of all non-state-religion pops from Muslim countries on startup
+- Remove enslavement of all non-state-religion pops from Muslim countries on game startup
 
 ##### Diplomacy
 
