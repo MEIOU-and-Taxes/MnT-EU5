@@ -1,0 +1,203 @@
+﻿assign_governor = { 
+	on_own_nation = yes
+	message = yes
+	
+	ai_tick = never
+
+	potential = {
+		scope:actor = {
+			modifier:can_assign_governors = yes
+		}
+
+        scope:recipient ?= {
+            is_female = no
+        }
+	}
+
+	allow = {
+		scope:actor = {
+			stability >= 0
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+		}
+		enabled = {
+			custom_tooltip = {
+				text = tim_is_related_to_ruler_tt
+				any_ancestor = {
+					this = scope:actor.ruler
+				}
+			}
+            is_loyal = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = government_reform
+		source = actor
+		target_flag = target_reform
+		name = "select_governor_type"
+		none_available_msg_key = "select_governor_type_no_type"
+		column = {
+			
+		}
+		visible = {
+			OR = {
+				this = government_reform:soyurghal_governor_reform
+				this = government_reform:soyurghal_governor_banished_reform
+				this = government_reform:soyurghal_governor_effective_governor_reform
+			}
+		}
+
+		enabled = {
+			trigger_if = {
+				limit = {
+					this = government_reform:soyurghal_governor_reform
+				}
+				scope:recipient = {
+					is_adult = no
+					age_in_years >= 12
+				}
+			}
+		}
+	}
+
+    select_trigger = {
+		looking_for_a = area
+		source = actor
+		target_flag = target_area
+		name = "select_area_for_governship"
+		none_available_msg_key = "select_area_for_governship_no_area"
+		column = {
+			data = name
+		}
+		visible = {
+			region != scope:actor.capital.region
+			trigger_if = {
+				limit = {
+					scope:target_reform = government_reform:soyurghal_governor_banished_reform
+				}
+				any_location_in_area = {
+					percent >= 0.75
+					OR = {
+						owner ?= scope:actor
+						has_owner = no
+						is_ownable = no
+					}
+				}
+				OR = {
+					any_present_country = { 
+						count > 2
+					}
+					any_neighbor_area = {
+						any_present_country = {
+							count > 2
+						}
+					}
+				}
+			}
+			trigger_else = {
+				any_location_in_area = {
+					percent >= 0.75
+					OR = {
+						owner ?= scope:actor
+						has_owner = no
+						is_ownable = no
+					}
+				}
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target_reform
+				scope:target_reform = government_reform:soyurghal_governor_effective_governor_reform
+			}
+			custom_tooltip = tim_normal_governor_effects_tt
+		}
+		else_if = {
+			limit = {
+				exists = scope:target_reform
+				scope:target_reform = government_reform:soyurghal_governor_banished_reform
+			}
+			custom_tooltip = tim_banished_governor_effects_tt
+		}
+		else_if = {
+			limit = {
+				exists = scope:target_reform
+				scope:target_reform = government_reform:soyurghal_governor_reform
+			}
+			custom_tooltip = tim_educational_governor_effects_tt
+		}
+		
+		hidden_effect = {
+			if = {
+				limit = {
+					exists = scope:target_area
+				}
+				scope:target_area = {
+					ordered_location_in_area = {
+						limit = {
+							owner ?= scope:actor
+						}
+						order_by = development
+						check_range_bounds = no
+						max = 1
+						save_scope_as = target_location
+					}
+				}
+			
+				scope:target_location = {
+					create_country_from_location = {
+						set_capital = prev
+						make_subject_of = {  target = scope:actor type = subject_type:vassal }
+						set_new_ruler = scope:recipient
+						change_government_type = government_type:monarchy
+						save_scope_as = target_country
+						add_reform = scope:target_reform
+						if = {
+							limit = {
+								has_reform = government_reform:soyurghal_governor_banished_reform
+							}
+							ruler ?= {
+								add_character_modifier = {
+									modifier = disinherited #Effectively Disinherited
+									years = -1
+									mode = add_and_extend
+								}
+							}
+						}
+					}
+				}
+			
+				scope:target_area = {
+					every_location_in_area = {
+						limit = {
+							owner ?= scope:actor
+						}
+						change_location_owner = scope:target_country
+						add_core = scope:target_country
+						change_integration_level = core
+					}
+				}
+			}
+		}
+    }
+
+	ai_will_do = {
+		value = 0
+	}
+	
+}	

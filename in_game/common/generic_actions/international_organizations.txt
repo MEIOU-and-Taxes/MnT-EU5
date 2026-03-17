@@ -1,0 +1,354 @@
+﻿add_location_to_international_organization = {
+	type = owncountry
+	
+	ai_prerequisite = {
+		is_member_of_international_organization = international_organization:hre
+		num_of_locations_owned_by_io = {
+			international_organization = international_organization:hre
+			value < "num_locations"
+		}
+	}
+
+	potential = {
+	}
+
+	allow = {
+	}
+	
+	price = price:add_location_to_international_organization
+	
+	select_trigger = {
+		looking_for_a = location
+		target_flag = target
+		source = actor
+		source_flags = only_actual_locations
+		name = "add_location_to_international_organization_select_location"
+		none_available_msg_key = "add_location_to_international_organization_no_locations"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		visible = {
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = international_organization
+		target_flag = target_1
+		name = "add_location_to_international_organization_select_international_organization"
+		none_available_msg_key = "add_location_to_international_organization_no_ios"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_can_own_land = yes
+			international_organization_can_add_land = root
+		}
+		enabled = {
+			location_can_be_added_to_international_organization = scope:target
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				AND = {
+					exists = scope:target
+					exists = scope:target_1
+				}
+			}
+			scope:target_1 = {
+				add_location_to_international_organization = scope:target
+				custom_tooltip = add_location_to_international_organization_tt
+			}
+		}
+	}
+
+	ai_will_do = {
+		#inertia
+		add = -10
+
+		#how useful is it for this location to be added?
+		add = {
+			value = "scope:target_1.modifier_utility(scope:target)"
+			multiply = 20
+		}
+
+		add = {
+			#We want locations in if it's the HRE
+			if = {
+				limit = {
+					scope:target_1 = international_organization:hre
+				}
+				value = 20
+			}
+			
+		}
+	}
+
+	#ai_tick = never
+	ai_tick = monthly
+	ai_tick_frequency = 60
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	maximum_targets_in_one_tick = 10
+}
+
+remove_location_from_international_organization = {
+	type = owncountry
+	
+	potential = {
+	}
+
+	allow = {
+	}
+	
+	price = price:remove_location_from_international_organization
+	
+	select_trigger = {
+		looking_for_a = location
+		target_flag = target
+		source = actor
+		name = "remove_location_from_international_organization_select_location"
+		none_available_msg_key = "remove_location_from_international_organization_no_locations"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		pre_evaluation_sort_value = {
+			value = population
+		}
+		pre_evaluation_number_to_evaluate_fully = 5
+		enabled = {
+			is_owned_by_any_international_organization = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = international_organization
+		target_flag = target_1
+		name = "remove_location_from_international_organization_select_international_organization"
+		none_available_msg_key = "remove_location_from_international_organization_no_ios"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_can_own_land = yes
+			international_organization_can_remove_land = root
+		}
+		enabled = {
+			location_can_be_removed_from_international_organization = scope:target
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = {
+				AND = {
+					exists = scope:target
+					exists = scope:target_1
+				}
+			}
+			scope:target_1 = {
+				remove_location_from_international_organization = scope:target
+				custom_tooltip = remove_location_from_international_organization_tt
+			}
+		}
+	}
+
+	ai_will_do = {
+		#inertia
+		add = -10
+		
+		#how useful is it for this location to be in the org?
+		add = {
+			if = {
+				limit = {
+					exists = scope:target
+				}
+				value = "scope:target_1.modifier_utility(scope:target)"
+				multiply = -20
+			}
+		}
+		
+		# are we not in the org?
+		add = {
+			if = {
+				limit = {
+					exists = scope:target
+					scope:actor = {
+						not = {
+							is_member_of_international_organization = scope:target_1
+						}
+					}
+				}
+				value = 100
+			}
+		}
+	}
+	
+	ai_tick = never
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+}
+
+contribute_to_organization_treasury = {
+	#needed in code, don't remove it
+	type = internationalorganization	
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+	potential = {
+	}
+	allow = {
+		scope:actor = {
+			gold > 0
+		}
+	}
+	cooldown = {
+		type = contribute_to_organization_treasury
+		years = 1
+	}
+	select_trigger = {
+		looking_for_a = international_organization
+		source = actor
+		target_flag = recipient
+		name = "choose_international_organization"
+		column = {
+			data = name
+		}
+		visible = {
+			has_enabled_currency = gold
+			modifier:unlock_contribute_to_organization_treasury = yes
+		}
+	}
+	select_trigger = {
+		looking_for_a = value
+		target_flag = target_value
+		name = "contribute_to_organization_treasury_select_gold_amount"
+		min = {
+			value = scope:actor.gold
+			divide = 100
+		}
+		max = scope:actor.gold
+		step = {
+			value = scope:actor.gold
+			divide = 20
+		}
+		default = {
+			value = scope:actor.gold
+			divide = 10
+		}
+	}
+	effect = {
+		if = {
+			limit = { exists = scope:target_value }
+			scope:actor = {
+				if = {
+					limit = { scope:recipient = { modifier:unlock_withdraw_from_organization_treasury = no } }
+					#Only apply the opinion bonuses IF the actor has no opportunity to ever withdraw his money back
+					#We don't want anyone to commit treasury fraud to improve their public image, do we?
+					donate_gold_to_international_organization = {
+						international_organization = scope:recipient
+						value = scope:target_value
+					}
+				}
+				else = {
+					add_gold = {
+						value = scope:target_value
+						multiply = -1
+					}
+				}
+			}
+			scope:recipient = {
+				add_gold = scope:target_value
+			}
+		}
+	}
+	ai_will_do = {
+		add = -100	#There is not much gain for the AI to donate their money away
+	}
+}
+
+withdraw_from_organization_treasury = {
+	#needed in code, don't remove it
+	type = internationalorganization	
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+	potential = {
+	}
+	allow = {
+	}
+	cooldown = {
+		type = withdraw_from_organization_treasury
+		years = 1
+	}
+	select_trigger = {
+		looking_for_a = international_organization
+		source = actor
+		target_flag = recipient
+		name = "choose_international_organization"
+		column = {
+			data = name
+		}
+		visible = {
+			has_enabled_currency = gold
+			modifier:unlock_withdraw_from_organization_treasury = yes
+			leader_country ?= scope:actor
+			gold > 0
+		}
+		enabled = {
+			scope:actor = {
+				is_subject = no
+			}
+		}
+	}
+	select_trigger = {
+		looking_for_a = value
+		target_flag = target_value
+		name = "withdraw_from_organization_treasury_select_gold_amount"
+		min = {
+			value = scope:recipient.gold
+			divide = 100
+		}
+		max = scope:recipient.gold
+		step = {
+			value = scope:recipient.gold
+			divide = 20
+		}
+		default = scope:recipient.gold	#just have ALL the IOs gold as default
+	}
+	effect = {
+		if = {
+			limit = { exists = scope:target_value }
+			scope:actor = {
+				add_gold = scope:target_value
+			}
+			scope:recipient = {
+				add_gold = {
+					value = scope:target_value
+					multiply = -1
+				}
+			}
+		}
+	}
+	ai_will_do = {
+		add = 10	#Right now, there are no instances of IOs which have this action unlocked and where the AI wants to keep gold in the IO
+	}
+}

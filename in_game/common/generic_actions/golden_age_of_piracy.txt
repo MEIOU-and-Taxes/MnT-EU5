@@ -1,0 +1,534 @@
+﻿#Nomal Countries
+
+create_allied_pirate_nation = {
+	type = situation
+	show_message = no #CAESAR-18619 Turn into Major Events eventually
+	potential = {
+		scope:actor = {
+			NOT = { country_type = navy }		
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			num_of_ports >= 10
+			
+			#Has a relatively substantial Navy
+			navy_size_percentage >= 0.25
+
+			#Produces at least some sailors
+			monthly_sailors > 0
+			
+		}
+		
+	}
+	
+	ai_tick = monthly
+	ai_tick_frequency = {
+		if = {
+			limit = {
+				num_of_ports = 0
+			}
+			add = 200
+		}
+		else = {
+			add = 12
+		}
+	}
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:rto_press_claims_price
+
+	cooldown = {
+		type = create_allied_pirate_nation
+		years = 10
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:golden_age_of_piracy = this
+			situation_is_active = yes
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = location
+		source = actor
+		source_flags = only_actual_locations
+		target_flag = target_location
+		name = "choose_location"
+		none_available_msg_key = "no_locations_available"
+		column = { data = name }
+		column = { data = control }
+		column = { data = population }
+		visible = {
+			is_coastal = yes
+			is_capital = no
+		}
+	}
+	
+	#Create the pirate nation in that location
+	effect = {
+		custom_tooltip = {
+			text = create_allied_pirate_nation_tt
+			scope:actor = {
+				trigger_event_silently = golden_age_of_piracy.110
+			}
+		}
+	}
+
+	ai_will_do = {
+		#The AI will be heavily discouraged from doing this
+		subtract = {
+			value = 25
+			desc = BASE_VALUE
+		}
+		if = {
+			limit = {
+				scope:actor = { is_disloyal_subject = yes }
+			}
+			add = {
+				desc = "[subject_loyalty|e]"
+				value = 100
+				subtract = scope:actor.subject_loyalty
+			}
+		}
+		add = {
+			desc = "[ports|e]"
+			value = {
+				add = scope:actor.num_of_ports
+				divide = scope:actor.num_locations
+				multiply = 100
+			}
+		}
+		if = {
+			limit = {	
+				scope:actor ?= { 
+					is_during_bankruptcy = yes
+				}
+			}
+			subtract = {
+				value = 1000
+				desc = "IS_BANKRUPT_TOOLTIP"
+			}
+		}
+		if = {
+			limit = {
+				scope:actor ?= { num_loans > 0 }
+			}
+			subtract = {
+				desc = "PENDING_LOANS_TOOLTIP"
+				value = scope:actor.num_loans
+				multiply = -50
+			}
+		}
+		if = {
+			limit = { exists = scope:target_location }
+			subtract = {
+				value = scope:target_location.proximity
+				desc = "[proximity|e]"
+			}
+			subtract = {
+				value = scope:target_location.rank_index
+				multiply = 10
+			}
+		}
+	}
+}
+
+request_antipiracy_policy = {
+	type = situation
+	show_message = no #CAESAR-18619 Turn into Major Events eventually
+	potential = {
+		scope:actor = {
+			NOT = {country_type = navy}		
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			has_policy = anti_piracy_policy	
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 4
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:send_diplomat
+
+	cooldown = {}
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:golden_age_of_piracy = this
+			situation_is_active = yes
+		}
+	}
+	#Select a country that does not have the anti piracy policy active
+	select_trigger = {
+		looking_for_a = country
+		target_flag = target_country
+		name = "choose_a_country"
+		none_available_msg_key = "no_suitable_countries"
+		column = { data = name }
+		visible = {
+			within_diplomatic_range = scope:actor
+			has_law = piracy_law
+			NOT = { has_policy = anti_piracy_policy }
+			this != scope:actor
+		}
+		enabled = {
+			NOR = {
+				has_opinion = { modifier = opinion_accepted_prosecute_pirates target = scope:actor }
+				has_opinion = { modifier = opinion_refused_prosecute_pirates target = scope:actor }
+			}
+		}
+	}
+	#Send a request for that country to change their policy
+	effect = { 
+		if = {
+			limit = {
+				exists = scope:target_country
+			}
+			scope:target_country = {
+				trigger_event_non_silently = golden_age_of_piracy.100
+			}
+		}
+		else = {
+			custom_tooltip = request_antipiracy_policy_tt
+		}
+	}
+
+	ai_will_do = {
+		add = -10
+		add = {
+			desc = "RELATIVE_STRENGTH"
+			value = 100
+			multiply = "scope:actor.relative_strength(scope:target_country)"
+			divide = 10
+		}
+		add = {
+			desc = "NUM_LOANS_TOOLTIP"
+			value = scope:actor.num_loans
+			multiply = -10
+		}
+		add = {
+			desc = "DIPLOREASON_BORDER_DISTANCE"
+			value = "scope:actor.border_distance_to(scope:target_country)"
+			multiply = 0.1
+			min = -1000
+		}
+	}
+}
+
+#Pirates
+
+abandon_piracy_action = {
+	type = situation
+	show_message = no #CAESAR-18619 Turn into Major Events eventually
+	potential = {
+		scope:actor = {
+			has_reform = government_reform:pirate_brethren_reform
+		}
+	}
+
+	allow = {
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 4
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+
+	price = price:abandon_piracy
+
+	cooldown = {
+	}
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:golden_age_of_piracy = this
+			situation_is_active = yes
+		}
+	}
+	
+	#Transform into a normal country and delete all pirate related buildings
+	effect = { 
+		scope:actor = {
+			if = {
+				limit = { 
+					country_type = navy
+				}
+				change_country_type = location
+			}
+			
+
+			if = {
+				limit = { has_reform = government_reform:pirate_brethren_reform }
+				remove_reform = government_reform:pirate_brethren_reform
+			}
+			capital = {
+				destroy_building = "building(building_type:pirate_stronghold|prev)"
+			}
+			every_owned_foreign_building_location = {
+				destroy_building = "building(building_type:black_market|prev)"
+				destroy_building = "building(building_type:smuggler_cove|prev)"
+				destroy_building = "building(building_type:brothel|prev)"
+				destroy_building = "building(building_type:pirate_tavern|prev)"
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = -50
+		add = {
+			desc = "IS_BANKRUPT_TOOLTIP"
+			if = {
+				limit = {	
+					scope:actor ?= { 
+						is_during_bankruptcy = yes
+					}
+				}
+				value = 25
+			}
+		}
+		if = {
+			limit = {
+				scope:actor ?= { num_loans > 0 }
+			}
+			add = {
+				desc = "PENDING_LOANS_TOOLTIP"
+				value = scope:actor.num_loans
+				multiply = 5
+			}
+		}
+	}
+}
+
+attract_sailors = {
+	type = situation
+	show_message = no #CAESAR-18619 Turn into Major Events eventually
+	potential = {
+		scope:actor = {
+			has_reform = government_reform:pirate_brethren_reform
+			country_type = navy
+		}
+	}
+
+	allow = {
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 4
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:rto_press_claims_price
+
+	
+	cooldown = {
+		type = attract_sailors
+		years = 1
+	}
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:golden_age_of_piracy = this
+			situation_is_active = yes
+		}
+	}
+	
+	#Get Sailors
+	effect = {
+		scope:actor = {
+			add_navy_tradition = navy_tradition_weak_bonus		
+			add_sailors = { 
+				value = scope:actor.monthly_sailors 
+				multiply = 2 
+				min = 0.5
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 5
+		add = {
+			desc = "[sailors|e]"
+			value = scope:actor.sailors_percentage
+			if = {
+				limit = { scope:actor.sailors_percentage > 0.5 }
+				multiply = -1
+			}
+			else = { multiply = 1 }
+		}
+		add = {
+			desc = "[navy_maintenance|e]"
+			value = {
+				add = scope:actor.navy_maintenance
+				multiply = 5
+			}
+		}
+		add = {
+			desc = "[income|e]"
+			value = {
+				add = scope:actor.monthly_balance
+				if = {
+					limit = { scope:actor.monthly_balance < 0 }
+					multiply = 2
+				}
+				else = { multiply = 0.25 }
+			}
+		}
+	}
+}
+
+migrate_to_new_waters = {
+	type = situation
+	show_message = no #CAESAR-18619 Turn into Major Events eventually
+	potential = {
+		scope:actor = {
+			has_reform = government_reform:pirate_brethren_reform
+			country_type = navy
+		}
+	}
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 4
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:migrate_to_new_waters
+
+	
+	cooldown = {
+		type = migrate_to_new_waters
+		years = 10
+	}
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:golden_age_of_piracy = this
+			situation_is_active = yes
+		}
+	}
+	
+	#Select New Capital Region
+	select_trigger = {
+		looking_for_a = region
+		target_flag = target_region
+		name = "choose_a_region"
+		none_available_msg_key = "no_regions_available"
+		column = { data = name }
+		visible = {
+			any_location_in_region = {
+				is_ownable = yes
+				has_owner = no
+				is_discovered_by = scope:actor
+				is_coastal_within_range = yes
+				is_land = yes
+			}
+		}
+	}
+
+	#Select New Capital Location
+	select_trigger = {
+		looking_for_a = location
+		source = target_region
+		target_flag = target_location
+		name = "choose_an_uncolonized_location"
+		none_available_msg_key = "no_locations_available"
+		column = { data = name }
+		column = { data = population }
+		visible = {
+			region = scope:target_region
+			has_owner = no
+			is_coastal_within_range = yes
+			is_ownable = yes
+			is_land = yes
+			
+		}
+	}
+
+	#Move pirate stronghold
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target_location 
+			}
+			scope:actor = {
+				capital = {
+					destroy_building = "building(building_type:pirate_stronghold|prev)"
+					save_temporary_scope_as = former_capital
+				}
+				add_migration = {
+					owner = this
+					from = scope:former_capital.province_definition
+					to = scope:target_location.province_definition
+					amount = 0.5
+					months = 24
+				}
+				scope:target_location = {
+					change_location_owner = prev
+					add_core = prev
+					construct_building = {
+						building_type = building_type:pirate_stronghold
+						cost_multiplier = 0
+						cost_multiplier_reason = "[navy_based|e] [building|e]"
+					}
+				}
+				set_capital = scope:target_location
+				abandon_location = scope:former_capital
+			}	
+		}
+		else = { custom_tooltip = migrate_to_new_waters_tt }		
+	}
+
+	ai_will_do = {
+		add = -100
+	}
+}

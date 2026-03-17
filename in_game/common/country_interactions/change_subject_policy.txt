@@ -1,0 +1,85 @@
+﻿change_subject_policy = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+	}
+
+	allow = {
+	}	
+	
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		none_available_msg_key = "no_countries_available"
+		column = {
+			data = name
+		}
+		visible = {
+			any_possible_policy = {
+				is_fully_implemented_in = scope:actor
+			}
+		}
+		enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = policy
+		interaction_source_list = {
+			scope:actor = {
+				every_current_policy = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = target
+		name = "enact_policy_select_policy"
+		none_available_msg_key = "no_valid_policies"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:recipient = {
+				any_possible_policy = {
+					this = root
+				}
+			}
+		}
+		enabled = {
+		}
+	}
+
+	effect = {
+		scope:recipient = {	
+			if = {
+				limit = { exists = scope:target }
+				add_policy = scope:target
+			}
+			else = {
+				custom_tooltip = {
+					text = change_subject_policy_of_our_choice_tt
+				}
+			}
+			add_country_modifier = {
+				modifier = forced_us_to_use_their_policy
+				years = 50
+				mode = add_and_extend
+			}
+		}
+		
+	}
+	
+}	

@@ -1,0 +1,79 @@
+﻿appanage_request_levies = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_prerequisite = {
+		scope:actor = {	at_war = yes }	# Rosth: filter out countries not at war
+	}
+
+	potential = {
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_subject_type = appanage
+			is_subject_of = scope:actor
+		}
+        enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+			manpower_percentage >= 0.1
+			monthly_manpower > 0	
+			at_war = no			
+		}
+	}
+
+	effect = {
+		scope:actor = {		
+			reverse_add_opinion = {
+				target = scope:recipient
+				modifier = opinion_levies_requested_by_overlord
+			}	
+		}		
+        scope:recipient = {
+			add_manpower = {
+				value = scope:recipient.monthly_manpower
+				multiply = -12
+			}
+		}
+		scope:actor = {
+			add_manpower = {
+				value = scope:recipient.monthly_manpower
+				multiply = 12
+			}
+		}	
+	}
+	
+	ai_will_do = {
+		if = {
+			limit = {
+				scope:actor = {	
+					at_war = yes
+					lowest_war_score < 0
+					max_manpower > 0
+					manpower_percentage < 0.1
+				}
+			}
+
+			add = {
+				value = 10
+			}
+		}
+	}		
+}	

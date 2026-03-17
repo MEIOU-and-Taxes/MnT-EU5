@@ -1,0 +1,116 @@
+﻿scout_enemy_holdings =  { 
+	type = diplomacy
+	category = CATEGORY_COVERT_ACTIONS
+
+	diplomatic_cost = scout_enemy_holdings_cost
+	
+	block_when_at_war = no
+
+	cooldown = { 
+		type = scout_enemy_holdings
+		months = 12
+	}
+
+
+	potential = {
+		scope:actor = {
+			culture ?= { has_culture_group = culture_group:japanese_group }
+			trigger_if = {
+				limit = {
+					situation:sengoku = { days_since_situation_start < 0 }
+				}
+				this != c:JAP
+			}
+		}
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "scout_enemy_holdings_SELECT_TITLE"
+		none_available_msg_key = "no_valid_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			culture ?= { has_culture_group = culture_group:japanese_group }
+			trigger_if = {
+				limit = {
+					situation:sengoku = { days_since_situation_start < 0 }
+				}
+				this != c:JAP
+			}
+		}
+	}
+
+	ai_will_do = {
+		if = {
+			limit = {
+				scope:actor = {
+					not = { is_at_war_with = scope:recipient }
+				}
+			}
+			add = -1000
+		}
+		else = {
+			add = 1
+		}
+	}
+
+	effect = {
+		scope:actor = { lift_fog_of_war = scope:recipient }
+	}
+}	
+
+sabotage_clans_buildings = {
+	type = diplomacy
+	category = CATEGORY_COVERT_ACTIONS
+
+	diplomatic_cost = sabotage_clans_buildings_cost
+
+	block_when_at_war = no
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+		scope:actor = {
+			culture ?= { has_culture_group = culture_group:japanese_group }
+			NOT = { is_leader_of_international_organization = international_organization:japanese_shogunate }
+		}
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "sabotage_clans_buildings_SELECT_TITLE"
+		none_available_msg_key = "no_valid_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			culture ?= { has_culture_group = culture_group:japanese_group }
+			country_type = building
+		}
+		enabled = {
+			NOT = { has_country_modifier = buildings_sabotaged }
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			add_country_modifier = { modifier = buildings_sabotaged years = 2 }
+		}
+	}
+}

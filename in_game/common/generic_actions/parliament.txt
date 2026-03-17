@@ -1,0 +1,822 @@
+﻿call_parliament = {
+	type = owncountry
+	
+	ai_tick = never
+	automation_tick = never
+	player_automated_category = parliament
+
+	allow = {
+		scope:actor = {
+			is_active_parliament = no
+			months_since_last_parliament_called > "define:NCountry|PARLIAMENT_COOLDOWN_MONTHS"
+			NOT = {
+				modifier:parliament_abolished = yes
+			}
+		}
+	}
+
+	select_trigger = {
+		show_if = {
+			scope:actor = {
+				country_type = location
+				modifier:permanent_parliament_location = no
+			}
+		}
+	
+		looking_for_a = location
+		source = actor
+		ai_interaction_source_list = {
+			scope:actor = {
+				capital = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = parliament_location
+		name = "select_parliament_location"
+		none_available_msg_key = "call_parliament_no_locations"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		column = {
+			data = control
+		}
+		column = {
+			data = rank
+		}
+		visible = {
+			has_owner = yes
+			owner ?= scope:actor
+			controller ?= scope:actor
+			proximity > 0
+			OR = {
+				is_capital = yes
+				AND = {
+					OR = {
+						is_core_of = scope:actor
+						modifier:has_parliament_seat = yes
+					}
+					OR = {
+						is_province_capital = yes
+						modifier:fort_level > 0
+					}
+					OR = {
+						is_city = yes
+						scope:actor = { modifier:can_call_rural_parliaments = yes }
+					}
+				}
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = parliament_issue
+		interaction_source_list = {
+			scope:actor = {
+				every_possible_parliament_issue = {
+					add_to_list = source
+				}
+			}
+		}
+		ai_interaction_source_list = {
+			scope:actor = {
+				every_possible_parliament_issue = {
+					if = {
+						limit = {
+							"ai_parliament_issue_resolution_vote_bias(scope:actor)" >= 0
+						}
+						add_to_list = source
+					}
+				}
+			}
+		}
+		cache_targets = yes
+		target_flag = parliament_issue
+		name = "select_parliament_debate"
+		none_available_msg_key = "select_parliament_debate_none_available"
+		column = {
+			data = parliament_issue_widget
+		}
+		visible = {
+			is_available_for = scope:actor
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			if = {
+				limit = {
+					exists = scope:parliament_location
+				}
+				
+				set_parliament_location = scope:parliament_location
+				custom_tooltip = {
+					text = select_parliament_location_modifier_tooltip
+				}
+
+				if = {
+					limit = { scope:parliament_location = scope:actor.capital }
+					custom_tooltip = {
+						text = select_parliament_location_capital_modifier_tooltip
+					}
+				}
+				else = {
+					custom_tooltip = {
+						text = select_parliament_location_not_capital_modifier_tooltip
+					}
+				}
+				scope:parliament_location = {
+					add_location_modifier = {
+						modifier = parliament_location
+						mode = replace
+						days = 180
+					}
+				}
+			}
+			else = {
+				custom_tooltip = select_parliament_location_inform_choice_tt
+				set_parliament_location = scope:actor.capital
+			}
+			
+
+			set_parliament_active = yes			
+
+			if = {
+				limit = { exists = scope:parliament_issue }
+				set_parliament_issue = scope:parliament_issue
+				set_parliament_issue_support = {
+					add = {
+						desc = parliament_base_support
+						value = modifier:parliament_base_support
+					}
+					if = {
+						limit = {
+							scope:parliament_issue.estate_type = {
+								always_loyal = no
+							}
+						}
+						add = {
+							desc = estate_power
+							value = "estate_power(scope:parliament_issue.estate_type)"
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	ai_will_do = {
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						months_since_last_parliament_called < 72
+						stability < 0
+					}
+				}
+				value = -10000
+			}
+			
+			if = {
+				limit = {
+					scope:actor = {	
+						months_since_last_parliament_called > 120
+					}
+				}
+				value = 500
+			}
+
+			#Wants to get a CB out of parliament
+			if = {
+				limit = {
+					scope:actor = {
+						OR = {
+							any_neighbor_country = {
+								scope:actor = {
+									wants_casus_belli_with = prev
+								}
+							}
+							any_rival = {
+								scope:actor = {
+									wants_casus_belli_with = prev
+								}
+							}
+						}
+					}
+				}
+				value = 100
+			}
+		}
+
+		scope:actor = {
+			if = {
+				limit = {
+					exists = scope:parliament_issue
+				}
+				add = "parliament_issue_chance(scope:parliament_issue)"
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:parliament_location
+			}
+			scope:parliament_location = {
+				save_temporary_scope_as = this_parliament_location
+			}
+		}
+		else = {
+			scope:actor = {
+				capital = {
+					save_temporary_scope_as = this_parliament_location
+				}
+			}
+		}
+
+		multiply = {
+			scope:this_parliament_location = {
+				if = { 
+					limit = {
+						scope:actor = {
+							capital = scope:this_parliament_location
+							modifier:can_call_rural_parliaments = no
+						}
+					}
+					value = 30
+				}
+				else = {
+					value = proximity # proximity goes from 0 to 100
+					add = {
+						value = local_control # control goes from 0 to 1
+						multiply = 10
+					}
+					add = {
+						value = scope:actor.societal_value:centralization_vs_decentralization
+						multiply = 0.1
+					}
+
+					add = {
+						value = random_integer
+						modulo = 10
+					}
+				}
+
+				if = {
+					limit = { location_rank = location_rank:town }
+					add = 2
+				}
+				else_if = {
+					limit = { location_rank = location_rank:city }
+					add = 10
+				}
+
+				add = {
+					value = modifier:fort_level
+					multiply = 2
+				}
+			}
+		}
+	}
+}
+
+
+request_more_taxes = {
+	type = parliament
+	
+	sound = PARLIAMENT_REQUEST_MORE_TAXES
+	
+	# Rosth: I've never seen the point in using this, so unless something convinces me to, it gets in the bin
+	ai_tick = never
+	#ai_tick_frequency = 100
+	
+	
+	automation_tick = daily
+	automation_tick_frequency = 1
+	player_automated_category = parliament
+
+
+	allow = {
+		scope:actor = {	
+			is_active_parliament = yes
+			NOT = { has_country_modifier = parliament_approved_extra_taxes }
+			parliament_issue_support > modifier:parliament_request_issue_support_needed
+		}
+	}
+	
+	effect = {
+		scope:actor = {
+			add_country_modifier = { modifier = parliament_approved_extra_taxes years = 1 mode = add_and_extend }  
+			change_parliament_issue_support = {
+				value = modifier:parliament_request_issue_support_needed
+				multiply = -1
+			}
+		}
+	}
+	
+	ai_will_do = {
+		add = -10
+		#add = {
+		#	if = {
+		#		limit = {
+		#			scope:actor = {
+		#				OR = {
+		#					parliament_issue_support > 0.9
+		#					stability >= 20
+		#				}
+		#				higher_temporary_taxes_needed >= 0.05
+		#				NOT = {
+		#					any_country_in_diplomatic_range = {
+		#						scope:actor = {
+		#							wants_casus_belli_with = prev
+		#						}
+		#						NOT = {
+		#							has_target_casus_belli_on_us = scope:actor
+		#						}
+		#					}
+		#				}
+		#			}
+		#		}
+		#		value = 10
+		#	}
+		#}
+	}
+}
+
+
+prepare_for_war = {
+	type = parliament
+	show_message_to_target = no
+
+	sound = PARLIAMENT_PREPARE_FOR_WAR
+	
+	ai_tick = daily
+	ai_tick_frequency = 30
+	automation_tick = daily
+	automation_tick_frequency = 7
+	player_automated_category = parliament
+
+
+	allow = {
+		scope:actor = {	
+			is_active_parliament = yes
+			parliament_issue_support > {
+                value = parliament_request_support
+            }
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_country_in_diplomatic_range = {
+					limit = {
+						capital = {
+							is_discovered_by = scope:actor
+						}
+						NOT = { has_target_casus_belli_on_us = root }
+						NOT = { has_truce_with = scope:actor }
+						NOT = { is_subject_of = scope:actor }
+						is_rebel_country = no
+					}
+					add_to_list = source
+				}
+			}
+		}
+		ai_interaction_source_list = {
+			scope:actor = {
+				every_country_in_diplomatic_range = {
+					limit = {
+						scope:actor = {
+							wants_casus_belli_with = prev
+						}
+					}
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = target
+		pre_evaluation_sort_value = {
+			if = {
+				limit = {
+					scope:target ?= {
+						is_rival_of = scope:actor
+					}
+				}
+				add = {
+					desc = "game_concept_rival"
+					value = 100
+				}
+			}
+			if = {
+				limit = {
+					exists = scope:actor
+					exists = scope:target
+				}
+				subtract = {
+					desc = "OUR_OPINION_TOOLTIP"
+					value = "scope:actor.opinion(scope:target)"
+					divide = 10
+				}
+			}
+			if = {
+				limit = {
+					scope:actor = {
+						wants_casus_belli_with = scope:target
+					}
+				}
+				add = 100
+			}
+		}
+		pre_evaluation_number_to_evaluate_fully = 1
+		name = "prepare_for_war_select_title"
+		none_available_msg_key = "prepare_for_war_no_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = province
+		source = target
+		target_flag = target_province
+		pre_evaluation_sort_value = {
+			add = {
+				value = {
+					add = {
+						value = "border_distance_to(scope:actor)" #choose the closest province
+						multiply = -1
+					}
+				}
+			}
+
+			add = province_tax_base
+		}
+		pre_evaluation_number_to_evaluate_fully = 1
+		name = "prepare_for_war_select_province_title"
+		none_available_msg_key = "no_valid_provinces"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		column = {
+			data = province_our_primary_culture_percentage
+		}
+		column = {
+			data = province_tax_base
+		}		
+	}
+
+	effect = {
+		scope:actor = {
+			if = {
+				limit = { exists = scope:target }
+				add_casus_belli = {
+					target = scope:target
+					type = casus_belli:cb_parliament_conquer_province
+					province = scope:target_province
+				}
+			}
+			else = { custom_tooltip = select_a_country_to_get_casus_belli_on }			
+			change_parliament_issue_support = {
+				value = modifier:parliament_request_issue_support_needed
+				multiply = -1
+			}
+		}
+	}
+	
+	ai_will_do = {
+		if = {
+			limit = {
+				NOT = {
+					scope:actor = {
+						wants_casus_belli_with = scope:target
+					}
+				}
+			}
+			add = -1000
+		}
+
+		add = {
+			value = 50 #we don't like these people
+		}
+		if = {
+			limit = {
+				scope:target ?= {
+					is_rival_of = scope:actor
+				}
+			}
+			add = {
+				desc = "game_concept_rival"
+				value = 100
+			}
+		}
+		subtract = {
+			desc = "OUR_OPINION_TOOLTIP"
+			value = "scope:actor.opinion(scope:target)"
+			divide = 10
+		}
+	}
+}
+
+ask_for_larger_levies = {
+	type = parliament
+
+	sound = PARLIAMENT_ASK_FOR_LARGER_LEVIES
+	
+	# Rosth: I've never seen the point in using this, so unless something convinces me to, it gets in the bin
+	ai_tick = never
+	#ai_tick_frequency = 100
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	automation_tick = daily
+	automation_tick_frequency = 1
+	player_automated_category = parliament
+
+	allow = {
+		scope:actor = {	
+			is_active_parliament = yes
+			NOT = { has_country_modifier = parliament_approved_extra_levies }
+			parliament_issue_support > modifier:parliament_request_issue_support_needed
+		}
+	}
+	
+	effect = {
+		scope:actor = {
+			add_country_modifier = { modifier = parliament_approved_extra_levies years = 3 mode = add_and_extend }  
+			change_parliament_issue_support = {
+				value = modifier:parliament_request_issue_support_needed
+				multiply = -1
+			}
+		}
+	}
+	
+	ai_will_do = {
+		add = -10
+		#Base
+		#subtract = {
+		#	value = 1
+		#}
+		#add = {
+		#	if = {
+		#		limit = {
+		#			scope:actor = {
+		#				OR = {
+		#					is_in_losing_war = yes
+		#					AND = {
+		#						at_war = yes
+		#						stability >= 10
+		#					}
+		#				}
+		#			}
+		#		}
+		#		value = 2
+		#	}
+		#}
+		
+	}
+}
+
+ask_for_law_changes = {
+	type = parliament
+
+	sound = PARLIAMENT_ASK_FOR_LAW_CHANGES
+	
+	ai_tick = daily
+	ai_tick_frequency = 100
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	automation_tick = daily
+	automation_tick_frequency = 1
+	player_automated_category = parliament
+
+	allow = {
+		scope:actor = {	
+			is_active_parliament = yes
+			parliament_issue_support > modifier:parliament_request_issue_support_needed
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = law
+		interaction_source_list = {
+			scope:actor = {
+				every_current_law = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = target_law
+		name = "ask_for_law_changes_select_law_title"
+		none_available_msg_key = "no_valid_laws"
+		column = {
+			data = law_attribute_column
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = policy
+		interaction_source_list = {
+			scope:actor = {
+				every_possible_policy = {
+					limit = {
+						law = scope:target_law
+					}
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = target_policy
+		name = "ask_for_law_changes_select_policies_title"
+		none_available_msg_key = "no_valid_policies"
+		top_widget = law_card_header_at_parlaiment_policy_select
+		column = {
+			data = policy_name_desc
+		}
+	}
+	
+	effect = {
+		scope:actor = {
+			if = {
+				limit = {
+					exists = scope:target_law
+					exists = scope:target_policy
+				}
+				add_policy = scope:target_policy
+			}
+			else = {
+				custom_tooltip = ask_for_law_changes_select_law_title
+			}			
+			change_parliament_issue_support = {
+				value = modifier:parliament_request_issue_support_needed
+				multiply = -1
+			}
+		}
+	}
+	
+	ai_will_do = {
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						discount_needed_for_law_change > 0
+						discount_needed_for_law_change <= 0.5
+					}
+				}
+				value = scope:actor.discount_needed_for_law_change
+				multiply = 100
+			}
+		}
+	}
+}
+
+
+
+change_parliament_type = {
+	type = owncountry
+	
+	ai_prerequisite = {
+		at_war = no
+		stability >= 40
+		legitimacy >= 90
+	}
+
+
+	allow = {
+		scope:actor = {
+			is_active_parliament = no
+			modifier:parliament_abolished = no
+		}
+	}
+	
+	price = price:change_parliament_type
+
+
+	select_trigger = {
+		looking_for_a = parliament_type
+		source = actor
+		target_flag = parliament_type
+		name = "select_parliament_type"
+		none_available_msg_key = "change_parliament_type_no_types"
+		top_widget = parliament_Type_context_widget
+		column = {
+			data = parliament_type_widget
+		}		
+		visible = {
+			is_visible_for = scope:actor
+		}
+		enabled = {
+			is_allowed_for = scope:actor
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			if = {
+				limit = {
+					exists = scope:parliament_type
+				}
+				set_parliament_type = scope:parliament_type
+			}
+		}
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 365
+
+	automation_tick = daily
+	automation_tick_frequency = 1
+	player_automated_category = parliament
+	ai_will_do = {
+		# base reluctance
+		subtract = {
+			value = 10
+		}
+
+		scope:actor = {
+			add = "parliament_type_utility(scope:parliament_type|yes)"
+		}
+	}
+}
+
+force_parliament_issue = {
+	type = parliament
+	allow = {
+		scope:actor = {
+			is_active_parliament = yes
+			trigger_if = {
+				limit = { tag = HUN }
+				OR = {
+					AND = {
+						has_ruler = yes
+						ruler = {
+							has_character_modifier = hun_absolute_rule
+						}
+					}
+					parliament_type = parliament_type:autocratic_parliament
+				}
+			}
+			trigger_else = { parliament_type = parliament_type:autocratic_parliament }
+			NOT = { has_cooldown = has_forced_parliament_issue }
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			set_parliament_issue_support = {
+				value = 1
+			}
+			add_cooldown = { #only once per parliament session
+				type = has_forced_parliament_issue
+				years = 5
+			}
+			if = {
+				limit = {
+					current_age_or_later = { age = age_5_absolutism }
+				}
+				change_societal_value = {
+					type = absolutism_vs_liberalism
+					value = societal_value_move_to_left
+				}
+			}
+		}
+	}
+	ai_tick = daily
+	ai_tick_frequency = 90
+
+	automation_tick = daily
+	automation_tick_frequency = 1
+	player_automated_category = parliament
+	
+	ai_will_do = {
+		#Base
+		subtract = {
+			value = 1
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						calc_true_if = {
+							estate_satisfaction:nobles_estate > 0.5
+							estate_satisfaction:clergy_estate > 0.5
+							estate_satisfaction:burghers_estate > 0.5
+							amount >= 2
+						}
+					}
+				}
+				value = 2
+			}
+		}
+	}
+}

@@ -1,0 +1,560 @@
+﻿# scope:actor = country, scope:recipient = same country
+
+#Steppe Horde
+
+steppe_horde_to_monarchy = {
+	type = owncountry
+	show_message = no
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+
+	potential = {
+		scope:actor = {
+			government_type = government_type:steppe_horde
+			NOT = { has_variable = is_about_to_reform_government }
+		}
+	}
+	allow = {
+		scope:actor = {		
+			capital = {
+				dominant_culture = scope:actor.culture
+				is_city = yes
+			}
+			at_war = no
+			average_control_in_home_region > 0.25
+			
+			any_subject = {
+				subject_loyalty > 50
+				count = all
+			}
+			NOT = { has_country_modifier = reformation_of_the_horde }
+
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			custom_tooltip = {
+				text = steppe_horde_to_monarchy_tt
+				trigger_event_silently = {
+					id = government_conversion_events.10
+					years = 15
+				}
+			}
+			add_country_modifier = {
+				modifier = reformation_of_the_horde
+				years = 15
+				mode = add
+			}
+			add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_extreme_bonus }
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+	ai_will_do = { value = 100 }	#They always want to do this
+}
+
+#Monarchy
+
+monarchy_to_republic = {
+	type = owncountry
+	show_message = no
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:monarchy
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					OR = {
+						country_has_special_status = {
+							type = special_status:elector
+							country = scope:actor
+						}
+						country_has_special_status = {
+							type = special_status:archbishop_elector
+							country = scope:actor
+						}
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            country_has_estate = estate_type:burghers_estate
+            "estate_power(estate_type:burghers_estate)" > "estate_power(estate_type:nobles_estate)"
+            societal_value:aristocracy_vs_plutocracy >= 95
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:republic
+			add_estate_satisfaction = { type = estate_type:burghers_estate value = estate_satisfaction_extreme_bonus }
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}
+
+monarchy_to_theocracy = {
+	type = owncountry
+	show_message = no
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:monarchy
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					OR = {
+						country_has_special_status = {
+							type = special_status:elector
+							country = prev
+						}
+						country_has_special_status = {
+							type = special_status:archbishop_elector
+							country = scope:actor
+						}
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            country_has_estate = estate_type:clergy_estate
+            "estate_power(estate_type:clergy_estate)" > 0.35
+            societal_value:spiritualist_vs_humanist <= -95
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:theocracy
+			add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_extreme_bonus }
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}
+
+#Theocracy
+
+theocracy_to_monarchy = {
+	type = owncountry
+	show_message = no
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:theocracy
+			religion.group = religion_group:christian
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					country_has_special_status = {
+						type = special_status:archbishop_elector
+						country = scope:actor
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            country_has_estate = estate_type:nobles_estate
+            "estate_power(estate_type:nobles_estate)" > "estate_power(estate_type:clergy_estate)"
+            societal_value:spiritualist_vs_humanist > 0
+			societal_value:aristocracy_vs_plutocracy <= -95
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:monarchy
+			add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_extreme_bonus }
+		
+
+			custom_tooltip = {
+				text = ruler_regent_relatives_crown_estate_tt
+				ruler_or_regent = {
+					change_character_estate = estate_type:crown_estate
+	
+					every_close_relative = {
+						limit = {
+							owner = scope:actor
+							is_alive = yes
+							NOT = { has_estate = estate_type:crown_estate }
+						}
+						change_character_estate = estate_type:crown_estate
+					}
+				}
+			}
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}
+
+theocracy_to_republic = {
+	type = owncountry
+	show_message = no
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:theocracy
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					OR = {
+						country_has_special_status = {
+							type = special_status:elector
+							country = scope:actor
+						}
+						country_has_special_status = {
+							type = special_status:archbishop_elector
+							country = scope:actor
+						}
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            country_has_estate = estate_type:burghers_estate
+            "estate_power(estate_type:burghers_estate)" > "estate_power(estate_type:clergy_estate)"
+            OR = {
+				societal_value:aristocracy_vs_plutocracy >= 95
+				societal_value:spiritualist_vs_humanist >= 50
+			}
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:republic
+			add_estate_satisfaction = { type = estate_type:burghers_estate value = estate_satisfaction_extreme_bonus }
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}
+
+#Republic
+
+republic_to_monarchy = {
+	type = owncountry
+	show_message = no
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:republic
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					OR = {
+						country_has_special_status = {
+							type = special_status:elector
+							country = scope:actor
+						}
+						country_has_special_status = {
+							type = special_status:archbishop_elector
+							country = scope:actor
+						}
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            country_has_estate = estate_type:nobles_estate
+            "estate_power(estate_type:nobles_estate)" > "estate_power(estate_type:burghers_estate)"
+            societal_value:aristocracy_vs_plutocracy <= -95
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:monarchy
+			add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_extreme_bonus }
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}
+
+gov_action_republic_to_theocracy = {
+	type = owncountry
+	show_message = no
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:republic
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					OR = {
+						country_has_special_status = {
+							type = special_status:elector
+							country = prev
+						}
+						country_has_special_status = {
+							type = special_status:archbishop_elector
+							country = scope:actor
+						}
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            country_has_estate = estate_type:clergy_estate
+            "estate_power(estate_type:clergy_estate)" > 0.35
+            societal_value:spiritualist_vs_humanist <= -95
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:theocracy
+
+			add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_extreme_bonus }
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}
+
+#Tribal
+
+tribal_to_monarchy = {
+	type = owncountry
+	show_message = no
+
+    price = price:change_government_type_price
+
+	cooldown = {
+		type = transition_government
+		years = 20
+	}
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+		scope:actor = {
+			government_type = government_type:tribe
+			NOR = {
+				tag = CHI
+				tag = PAP
+				international_organization:hre ?= {
+					leader_country ?= prev
+				}
+				international_organization:hre ?= {
+					OR = {
+						country_has_special_status = {
+							type = special_status:elector
+							country = scope:actor
+						}
+						country_has_special_status = {
+							type = special_status:archbishop_elector
+							country = scope:actor
+						}
+					}
+				}
+			}
+		}
+	}
+	allow = {
+		scope:actor = {		
+			at_war = no
+			has_any_active_disaster = no
+			is_during_bankruptcy = no
+            societal_value:aristocracy_vs_plutocracy < -25
+			societal_value:centralization_vs_decentralization < 0
+            legitimacy > 80
+			stability > 0
+			custom_tooltip = {
+				text = not_in_union_tt
+				NOT = { exists = union }
+			}
+		}
+	}
+	effect = {
+		scope:actor = { 
+			change_government_type = government_type:monarchy
+
+			add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_extreme_bonus }
+
+			if = {
+				limit = {
+					any_international_organizations_member_of = {
+						international_organization_type = international_organization_type:jurchen_confederation
+						leader_country != scope:actor
+					}
+				}
+				custom_tooltip = kicks_us_from_jurchen_confederation_tt
+			}
+		}
+
+		custom_tooltip = warn_about_loss_of_content_tt
+	}
+
+    ai_will_do = { value = -1000 }  #Let's avoid this
+}

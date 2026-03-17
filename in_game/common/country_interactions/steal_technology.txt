@@ -1,0 +1,43 @@
+﻿steal_technology =  { 
+	type = diplomacy
+	category = CATEGORY_COVERT_ACTIONS
+
+	diplomatic_cost = steal_technology_cost
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	allow = {
+	}
+
+	block_when_at_war = no
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			num_of_advances_researched > scope:actor.num_of_advances_researched
+		}
+        enabled = {
+			research_progress > 20
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_research_progress = {
+				value = scope:recipient.research_progress
+				multiply = 0.20
+			}
+		}
+		scope:recipient = {	
+			add_research_progress = {
+				value = research_progress
+				multiply = -0.10
+			}
+		}
+	}
+}	

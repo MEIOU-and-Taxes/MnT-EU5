@@ -1,0 +1,98 @@
+﻿promote_to_head_of_cabinet = {
+
+	sound = PROMOTE_TO_HEAD_OF_CABINET
+
+	message = yes
+	on_own_nation = yes
+
+	price = price:head_of_cabinet_promotion
+
+	potential = {
+		scope:actor = {
+			#country
+		}
+	} 
+
+	ai_tick = daily
+	ai_tick_frequency = 120
+
+	allow = {
+		scope:actor = {
+			country_can_promote_head_of_cabinet = yes
+			NOT = {
+				any_cabinet_character = {
+					modifier:is_head_of_cabinet = yes
+				}
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+			is_adult = yes
+			in_cabinet = yes
+			NOT = { has_character_modifier = head_of_the_cabinet_modifier }
+		}
+		enabled = {
+			custom_tooltip = {
+				text = promote_to_head_of_cabinet_timer
+				in_cabinet = yes
+			}
+			NOT = { has_character_modifier = head_of_the_cabinet_modifier }
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_government_power = government_power_mild_penalty
+			promote_to_head_of_cabinet_effect = {
+				target = scope:recipient
+			}
+		}
+	}
+
+   ai_will_do = {
+		add = {
+			value = scope:recipient.total_abilities
+			subtract = 250
+		}
+		add = {
+			value = scope:actor.estate_satisfaction:nobles_estate
+			# remap to -1 to 0
+			subtract = 1
+			# intensity
+			multiply = 50
+		}
+
+		add = {
+			value = scope:actor.estate_satisfaction:nobles_estate
+			# remap to -1 to 0
+			subtract = 1
+			# intensity
+			multiply = 50
+		}
+
+		if = {
+			limit = { 
+				scope:actor = { has_reform = government_reform:powerful_vizierships_reform }
+			}
+			add = 1000
+		}
+		
+		# Rosth: make the AI more likely to promote a crown estate character
+		if = {
+			limit = { 
+				scope:recipient = { has_estate = estate_type:crown_estate }
+			}
+			add = 75
+		}
+    }
+}

@@ -1,0 +1,50 @@
+﻿demand_additional_tribute = {
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+
+	diplomatic_cost = demand_additional_tribute_cost
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+	
+	potential = {
+		scope:actor = { 
+			country_type = location
+		}
+	}
+
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			country_type = location
+			is_subject_type = tributary
+		}
+        enabled = {
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+			NOT = { has_country_modifier = additional_tribute }
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			add_country_modifier = { modifier = additional_tribute years = 10 mode = add_and_extend }
+			add_liberty_desire = liberty_desire_severe_plus
+			add_opinion = { target = scope:actor modifier = opinion_demanded_additional_tribute }
+		}
+	}
+}

@@ -1,0 +1,192 @@
+﻿ennoble = {
+	
+	sound = UI_action_character_ennoble
+
+	message = yes
+	on_own_nation = yes
+	
+	
+	potential = {
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 60
+
+	allow = {
+		scope:actor = {
+			#country
+			country_can_ennoble_trigger = yes
+		}
+	}
+
+	price = price:ennoble_price
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+			NOT = { has_estate = estate_type:nobles_estate }
+			NOT = { has_estate = estate_type:crown_estate }
+		}
+		enabled = {
+			NOT = { has_estate = estate_type:clergy_estate }
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = location
+		source = actor
+		target_flag = target
+		name = "ennoble_select_location_title"
+		tooltip_msg_key = "ennoble_map_tt"
+		none_available_msg_key = "ennoble_no_locations"
+		column = { data = name }
+		column = { data = control }
+		visible = {
+		}
+		map_color = {
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+				factor = local_control
+			}
+		}
+	}
+	
+	effect = {
+		scope:actor = {
+			add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_weak_penalty }
+			change_societal_value = { type = aristocracy_vs_plutocracy value = societal_value_minor_move_to_left }
+		}
+		if = {
+			limit = { exists = scope:target }
+			scope:target = {
+				add_location_modifier = {
+					modifier = new_dynasty_seat
+					years = 25
+					mode = replace
+				}
+			}
+			scope:recipient = {
+				change_character_estate = estate_type:nobles_estate
+				if = {
+					limit  = { has_dynasty = no }
+					custom_tooltip = {
+						text = enoble_founds_dynasty_tt
+					}
+					hidden_effect = {
+						scope:target = { 
+							create_dynasty_from_location = random
+							last_dynasty_in_location = { save_scope_as = target_dynasty }
+						}
+						if = {
+							limit = { exists = scope:target_dynasty }
+							change_dynasty = scope:target_dynasty
+						}
+					}
+				}
+				every_descendant = {
+					limit = { 
+						NOR = { 
+							has_estate = estate_type:nobles_estate 
+							has_estate = estate_type:crown_estate
+							has_estate = estate_type:clergy_estate 
+						}
+					}
+					change_character_estate = estate_type:nobles_estate
+					hidden_effect = {
+						if = {
+							limit = { has_dynasty = no }
+							change_dynasty = scope:recipient.dynasty
+						}
+					}
+				}
+			}
+		}
+		else = {
+			show_as_tooltip = {
+				scope:recipient = {
+					change_character_estate = estate_type:nobles_estate
+					if = {
+						limit  = { has_dynasty = no }
+						custom_tooltip = {
+							text = enoble_founds_dynasty_no_location_tt
+						}
+					}
+					every_descendant = {
+						limit = { 
+							NOR = { 
+								has_estate = estate_type:nobles_estate 
+								has_estate = estate_type:crown_estate
+								has_estate = estate_type:clergy_estate 
+							}
+						}
+						change_character_estate = estate_type:nobles_estate
+					}
+				}
+			}
+		}
+	}
+
+   ai_will_do = { # Values > 0 will make AI click the command, unless there's another interaction with higher ai_will_do
+		#scope:actor = country 
+		#scope:recipient = character
+
+		add = {
+			value = scope:recipient.total_abilities
+			subtract = 250
+		}
+
+		add = {
+			value = scope:actor.estate_satisfaction:nobles_estate
+			# remap to -1 to 0
+			subtract = 1
+
+			# intensity
+			multiply = 50
+		}
+
+		add = {
+			value = scope:actor.estate_satisfaction:nobles_estate
+			# remap to -1 to 0
+			subtract = 1
+
+			# intensity
+			multiply = 50
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						OR = {
+							is_general = yes
+							is_admiral = yes
+						}
+					}
+				}
+				value = 30
+			}
+		}
+
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						OR = {
+							has_trait_category = general
+							has_trait_category = admiral
+						}
+					}
+				}
+				value = 30
+			}
+		}
+   }
+}

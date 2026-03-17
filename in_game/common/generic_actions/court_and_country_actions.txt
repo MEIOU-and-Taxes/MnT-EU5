@@ -1,0 +1,381 @@
+﻿legitimize_parliament_abolition = {
+	type = disaster
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+
+	allow = {
+		scope:actor = {
+			OR = {
+				parliament_type = parliament_type:autocratic_parliament
+				parliament_type = parliament_type:no_parliament
+				has_policy = absolute_rule_policy
+			}
+			NOT = { has_country_modifier = supreme_authority_modifier }
+		}
+	}
+	price = price:rtr_negotiate_with_rebels_price
+
+	cooldown = {
+		type = legitimize_parliament_abolition_key
+		years = 5
+	}
+	
+	select_trigger = {
+		looking_for_a = disaster
+		name = "choose_disaster"
+		target_flag = recipient
+		column = {
+			data = name
+		}
+		visible = {
+			disaster_type = disaster_type:court_and_country
+			disaster_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_country_modifier = {
+				modifier = supreme_authority_modifier
+				years = 20
+				mode = replace
+			}
+			add_all_estate_satisfaction = { value = estate_satisfaction_extreme_penalty } 
+
+			if = {
+				limit = { 
+					NOT = { parliament_type = parliament_type:autocratic_parliament }
+					modifier:parliament_abolished = no
+					modifier:allow_autocratic_parliament = yes	
+				}
+				set_parliament_type = parliament_type:autocratic_parliament
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 100
+	}
+}
+
+reinstate_the_legislative_assembly = {
+	type = disaster
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+
+	allow = {
+		scope:actor = {
+			OR = {
+				parliament_type = parliament_type:autocratic_parliament
+				has_policy = absolute_rule_policy
+				has_country_modifier = supreme_authority_modifier
+			}
+		}
+	}
+	price = price:rtr_negotiate_with_rebels_price
+
+	cooldown = {
+		type = reinstate_the_legislative_assembly_key
+		years = 5
+	}
+	
+	select_trigger = {
+		looking_for_a = disaster
+		name = "choose_disaster"
+		target_flag = recipient
+		column = {
+			data = name
+		}
+		visible = {
+			OR = {
+				disaster_type = disaster_type:court_and_country
+				disaster_type = disaster_type:aspiration_for_liberty
+			}
+			disaster_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			if = {
+				limit = { has_policy = absolute_rule_policy }
+				remove_policy = policy:absolute_rule_policy
+				add_policy = policy:figurehead_position_policy
+			}
+			if = {
+				limit = { has_country_modifier = supreme_authority_modifier }
+				remove_country_modifier = supreme_authority_modifier
+			}
+			if = {
+				limit = { has_policy = colonial_representation_law_no }
+				remove_policy = policy:colonial_representation_law_no
+				add_policy = policy:colonial_representation_law_yes
+			}
+			add_all_estate_satisfaction = { value = estate_satisfaction_extreme_bonus } 
+			set_parliament_type = parliament_type:estate_parliament
+			if = {
+				limit = {
+					any_active_disaster = { disaster_type = disaster_type:aspiration_for_liberty }
+				}
+				add_country_modifier = {
+					modifier = reinstated_the_parliament_modifier
+					years = 20
+					mode = add_and_extend
+				}
+				custom_tooltip = this_will_end_the_disaster_tt
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = -100
+	}
+}
+
+rein_in_nobles = {
+	type = disaster
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+
+	potential = {
+		scope:actor = { country_has_estate = estate_type:nobles_estate }
+	}
+
+	allow = {
+		scope:actor = {
+			"estate_power(estate_type:crown_estate)" > {
+				value = { 
+					add = "estate_power(estate_type:nobles_estate)"
+					divide = 2
+					min = 0.2
+				}
+			}
+		}
+	}
+	price = price:rtr_negotiate_with_rebels_price
+
+	cooldown = {
+		type = rein_in_nobles_key
+		years = 1
+	}
+	
+	select_trigger = {
+		looking_for_a = disaster
+		name = "choose_disaster"
+		target_flag = recipient
+		column = {
+			data = name
+		}
+		visible = {
+			disaster_type = disaster_type:court_and_country
+			disaster_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			custom_tooltip = {
+				text = impose_restrictions_on_nobles_through_event_tt
+				trigger_event_silently = court_and_country.3
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 100
+	}
+}
+
+rein_in_burghers = {
+	type = disaster
+	
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+
+	potential = {
+		scope:actor = { country_has_estate = estate_type:burghers_estate }
+	}
+
+	allow = {
+		scope:actor = {
+			"estate_power(estate_type:crown_estate)" > {
+				value = { 
+					add = "estate_power(estate_type:burghers_estate)"
+					divide = 2
+					min = 0.2
+				}
+			}
+		}
+	}
+	price = price:rtr_negotiate_with_rebels_price
+
+	cooldown = {
+		type = rein_in_burghers_key
+		years = 1
+	}
+	
+	select_trigger = {
+		looking_for_a = disaster
+		name = "choose_disaster"
+		target_flag = recipient
+		column = {
+			data = name
+		}
+		visible = {
+			disaster_type = disaster_type:court_and_country
+			disaster_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			custom_tooltip = {
+				text = impose_restrictions_on_burghers_through_event_tt
+				trigger_event_silently = court_and_country.4
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 100
+	}
+}
+
+rein_in_clergy = {
+	type = disaster
+	
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+
+	potential = {
+		scope:actor = { country_has_estate = estate_type:clergy_estate }
+	}
+
+	allow = {
+		scope:actor = {
+			"estate_power(estate_type:crown_estate)" > {
+				value = { 
+					add = "estate_power(estate_type:clergy_estate)"
+					divide = 2
+					min = 0.2
+				}
+			}
+		}
+	}
+	price = price:rtr_negotiate_with_rebels_price
+
+	cooldown = {
+		type = rein_in_clergy_key
+		years = 1
+	}
+	
+	select_trigger = {
+		looking_for_a = disaster
+		name = "choose_disaster"
+		target_flag = recipient
+		column = {
+			data = name
+		}
+		visible = {
+			disaster_type = disaster_type:court_and_country
+			disaster_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			custom_tooltip = {
+				text = impose_restrictions_on_clergy_through_event_tt
+				trigger_event_silently = court_and_country.5
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 100
+	}
+}
+
+rein_in_peasants = {
+	type = disaster
+
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+		scope:actor = { country_has_estate = estate_type:peasants_estate }
+	}
+
+	allow = {
+		scope:actor = {
+			"estate_power(estate_type:crown_estate)" > {
+				value = { 
+					add = "estate_power(estate_type:peasants_estate)"
+					divide = 2
+					min = 0.2
+				}
+			}
+		}
+	}
+	price = price:rtr_negotiate_with_rebels_price
+
+	cooldown = {
+		type = rein_in_peasants_key
+		years = 1
+	}
+	
+	select_trigger = {
+		looking_for_a = disaster
+		name = "choose_disaster"
+		target_flag = recipient
+		column = {
+			data = name
+		}
+		visible = {
+			disaster_type = disaster_type:court_and_country
+			disaster_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			custom_tooltip = {
+				text = impose_restrictions_on_peasants_through_event_tt
+				trigger_event_silently = court_and_country.6
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = 100
+	}
+}

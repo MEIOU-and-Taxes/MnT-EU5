@@ -1,0 +1,104 @@
+﻿demand_silver_tribute = { 
+	type = subject
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: ai_will_do set to a negative value
+
+	potential = {
+		exists = international_organization:middle_kingdom
+		scope:actor = { is_leader_of_international_organization = international_organization:middle_kingdom }
+		international_organization:middle_kingdom = { 
+			leader_country ?= {
+				modifier:allow_tribute_in_silver = yes
+			}
+		}
+	}
+
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_member_of_international_organization = international_organization:middle_kingdom 
+		}
+        enabled = {
+			NOT = {
+				capital.market = {
+					this = scope:actor.capital.market
+				}
+			}
+			gold >= {
+				value = monthly_income_trade_and_tax
+			}
+			opinion = {
+				target = scope:actor
+				value > 0
+			}
+			produced_in_country:silver > 0	
+			subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+			liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+		}
+	}
+
+	effect = {
+		scope:recipient = {	#Subject that receives this interaction
+			capital.market = {
+				add_goods_supply = {
+					goods = goods:silver
+					amount = {
+						subtract = {
+							value = scope:recipient.produced_in_country:silver
+						}
+						divide = {
+							value = 10
+						}
+						#max = -1
+					}
+				}
+			}
+		}		
+		scope:actor = {	#Emperor	
+			capital.market = {
+				add_goods_supply = {
+					goods = goods:silver
+					amount = {
+						add = {
+							value = scope:recipient.produced_in_country:silver
+						}
+						divide = {
+							value = 10
+						}
+						#min = 1
+					}
+				}
+			}
+			add_gold = {
+				value = scope:recipient.monthly_income_trade_and_tax
+			}
+			add_inflation = {
+				value = inflation_ultimate_penalty
+				multiply = {
+					desc = "SCOPE_RECEPIENT_SILVER_PRODUCTION"
+					value = scope:recipient.produced_in_country:silver
+					divide = 1000
+				}
+			}
+		}
+	}
+	ai_will_do = {
+		add = -10
+	}	
+}	

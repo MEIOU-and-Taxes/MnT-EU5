@@ -1,0 +1,1064 @@
+﻿#Generic Situation triggers
+has_enabled_situation_trigger = {
+	custom_description = {
+		text = has_enabled_situation_trigger_text
+		value = situation:$type$
+		has_global_variable = enabled_situation_$type$
+	}
+}
+
+can_fire_situation_event = {
+	$situation$ = {
+		situation_is_active = yes
+		NOT = { has_variable = situation_event_$event$_fired }
+	}
+}
+
+has_fired_situation_event = {
+	$situation$ = {
+		situation_is_active = yes
+		has_variable = situation_event_$event$_fired
+	}
+}
+
+has_had_situation = {
+	$situation$ = {
+		OR = {
+			situation_is_active = yes
+			situation_has_ended = yes
+		}
+	}
+}
+
+had_situation_trigger = {
+	custom_description = {
+		text = had_situation_trigger_text	#Triggers only after the situation ends and called set_situation_end_flag_effect
+		value = situation:$situation$
+		has_global_variable = situation_ended_$situation$
+	}
+}
+
+country_has_recently_joined_situation_faction = {
+	custom_description = {
+		text = country_has_recently_joined_situation_faction_text
+		object = situation:$situation$
+		value = $years$
+		has_variable = $variable$
+	}
+}
+
+country_has_recently_left_situation_faction = {
+	custom_description = {
+		text = country_has_recently_left_situation_faction_text
+		object = situation:$situation$
+		value = $years$
+		has_variable = $variable$
+	}
+}
+
+#Triggers specific for situations
+owner_from_old_world = {
+	owner ?= {
+		OR = {
+			top_overlord_or_this ?= { capital.continent = continent:europe }
+			top_overlord_or_this ?= { capital.continent = continent:asia }
+			top_overlord_or_this ?= { capital.continent = continent:africa }
+		}
+	}
+}
+
+hundred_years_war_unified_requirements = {
+	OR = {
+		current_age_or_later = { age = age_4_reformation }
+		NOT = { country_exists = c:ENG }
+		NOT = { country_exists = c:FRA }
+
+		AND = {
+			region:france_region = {
+				any_ownable_location_in_region = {
+					owner = {
+						top_overlord_or_this ?= c:ENG
+					}
+					count < 4
+				}
+			}
+			region:france_region = {
+				any_ownable_location_in_region = {
+					custom_tooltip = {
+						text = owned_by_fra_tt
+						owner = { this = c:FRA }
+					}
+					count > 230
+				}
+			}
+		}
+		OR = {
+			custom_tooltip = {
+				text = england_has_enforced_union_through_claim_french_throne_treaty_tt
+				c:ENG = {
+					in_union_with = c:FRA
+					union ?= {
+						international_organization_has_policy = policy:union_establish_seniority_policy
+						country_has_special_status = {
+							type = special_status:senior_partner
+							country = c:ENG
+						}
+					}
+				}
+			}
+			region:france_region = {
+				any_ownable_location_in_region = {
+					owner = {
+						top_overlord_or_this ?= c:ENG
+					}
+					count > 175
+				}
+			}
+		}
+
+		c:ENG = { is_subject_or_below_of = c:FRA }
+		c:FRA = { is_subject_or_below_of = c:ENG }
+	}
+}
+
+hussite_wars_unified_requirements = {
+	OR = {
+		NOT = { country_exists = c:PAP }
+		c:BOH ?= { religion = c:PAP.religion }
+		AND = {
+			situation:hussite_wars = {
+				years_since_situation_start > 30
+			}
+			c:BOH ?= { 
+				at_war = no 
+				NOT = { religion = religion:catholic }
+			}
+		}
+	}
+}
+
+is_japanese_emperor_or_shogun = {
+	trigger_if = {
+		limit = { unique_international_organization_type_exists = international_organization_type:japanese_shogunate }
+		OR = {
+			has_special_status_in_international_organization = {
+				type = special_status:japanese_emperor
+				international_organization = international_organization:japanese_shogunate
+			}
+			is_leader_of_international_organization = international_organization:japanese_shogunate
+		}
+	}
+	trigger_else = { always = no }
+}
+
+is_valid_nanbokuchou_cb_target = {
+	save_temporary_scope_as = root_country
+	OR = {
+		AND = {
+			has_variable = supports_northern_court
+			international_organization:japanese_shogunate = {
+				any_international_organization_member = {
+					NOT = { has_variable = supports_northern_court }
+					NOT = { is_at_war_with = scope:root_country }
+					NOT = { has_truce_with = scope:root_country }
+					NOT = { 
+						scope:root_country = { has_casus_belli_on = prev }
+					}
+				}
+			}
+		}
+		AND = {
+			has_variable = supports_southern_court
+			international_organization:japanese_shogunate = {
+				any_international_organization_member = {
+					NOT = { has_variable = supports_southern_court }
+					NOT = { is_at_war_with = scope:root_country }
+					NOT = { has_truce_with = scope:root_country }
+					NOT = { 
+						scope:root_country = { has_casus_belli_on = prev }
+					}
+				}
+			}
+		}
+		AND = {
+			has_variable = supports_new_imperial_line
+			international_organization:japanese_shogunate = {
+				any_international_organization_member = {
+					NOT = { has_variable = supports_new_imperial_line }
+					NOT = { is_at_war_with = scope:root_country }
+					NOT = { has_truce_with = scope:root_country }
+					NOT = { 
+						scope:root_country = { has_casus_belli_on = prev }
+					}
+				}
+			}
+		}
+	}
+}
+nanbokuchou_end_trigger = {
+	OR = {
+		custom_tooltip = {
+			text = there_is_no_japanese_emperor_tt
+			international_organization:japanese_shogunate = {
+				"num_countries_with_special_status(special_status:japanese_emperor)" <= 1
+			}
+		}
+		AND = {
+			c:NTC = { has_ruler = yes }
+			c:STC = { has_ruler = yes }
+			c:NTC.ruler = c:STC.ruler
+		}
+	}
+}
+
+is_valid_nanbokuchou_war_target = {
+	is_subject = no
+	at_war = no
+	save_temporary_scope_as = root_country
+	OR = {
+		AND = {
+			has_variable = supports_northern_court
+			international_organization:japanese_shogunate = {
+				any_international_organization_member = {
+					is_subject = no
+					NOT = { has_variable = supports_northern_court }
+					NOT = { is_at_war_with = scope:root_country }
+					NOT = { has_truce_with = scope:root_country }
+					scope:root_country = { has_casus_belli_on = prev }
+				}
+			}
+		}
+		AND = {
+			has_variable = supports_southern_court
+			international_organization:japanese_shogunate = {
+				any_international_organization_member = {
+					is_subject = no
+					NOT = { has_variable = supports_southern_court }
+					NOT = { is_at_war_with = scope:root_country }
+					NOT = { has_truce_with = scope:root_country }
+					scope:root_country = { has_casus_belli_on = prev }
+				}
+			}
+		}
+		AND = {
+			has_variable = supports_new_imperial_line
+			international_organization:japanese_shogunate = {
+				any_international_organization_member = {
+					is_subject = no
+					NOT = { has_variable = supports_new_imperial_line }
+					NOT = { is_at_war_with = scope:root_country }
+					NOT = { has_truce_with = scope:root_country }
+					scope:root_country = { has_casus_belli_on = prev }
+				}
+			}
+		}
+	}
+}
+
+sengoku_end_trigger = {
+	trigger_if = {
+		limit = {
+			exists = international_organization:japanese_shogunate
+		}
+		international_organization:japanese_shogunate = {
+			OR = {
+				total_members < 2 #Only one country remaining (or completely gone)
+				AND = { #Only the shogun and the emperor remaining
+					total_members = 2
+					any_international_organization_member = {
+						OR = {
+							is_leader_of_international_organization = international_organization:japanese_shogunate
+							AND = {
+								custom_tooltip = { #To avoid error log spam
+									text = has_emperor_status_tt
+									has_special_status_in_international_organization = {
+										type = special_status:japanese_emperor
+										international_organization = international_organization:japanese_shogunate
+									}
+								}
+								country_type = building
+							}
+							AND = {
+								exists = international_organization:japanese_shogunate.leader_country
+								overlord ?= international_organization:japanese_shogunate.leader_country
+							}
+						}
+						count = all
+					}
+				}
+				any_international_organization_member = { #Reined in all clans back to a single location foreign building
+					OR = {
+						is_leader_of_international_organization = international_organization:japanese_shogunate
+						AND = {
+							country_type = building
+							custom_tooltip = {
+								text = clan_only_present_in_one_location_tt
+								any_owned_foreign_building_location = {
+									count < 3
+								}
+							}
+						}
+						AND = {
+							exists = international_organization:japanese_shogunate.leader_country
+							overlord ?= international_organization:japanese_shogunate.leader_country
+						}
+					}
+					count = all
+				}
+			}
+		}
+	}
+	trigger_else = {
+		NOT = { exists = international_organization:japanese_shogunate }
+	}
+}
+
+clan_has_valid_landable_location = {
+	custom_tooltip = {
+		text = clan_has_valid_landable_location.tt
+		save_temporary_scope_as = target_clan
+		any_owned_foreign_building_location = {
+			can_clan_get_this_location_when_turning_into_normal_tag = yes
+		}
+	}
+}
+
+daimyo_is_big_enough_to_be_landed = {
+	any_owned_foreign_building_location = {
+		count >= 3
+	}
+}
+
+is_valid_landable_daimyo = {
+	country_type = building
+	is_subject = no
+	is_japanese_emperor_or_shogun = no
+	OR = {
+		AND = {
+			exists = international_organization:japanese_shogunate.leader_country
+			opinion = { target = international_organization:japanese_shogunate.leader_country value < -50 }
+		}
+		daimyo_is_big_enough_to_be_landed = yes
+	}
+	clan_has_valid_landable_location = yes
+}
+
+rtr_situation_end_requirements = {
+	situation:red_turban_rebellions = { years_since_situation_start > 20 }
+	OR = {
+		NOT = { exists = international_organization:middle_kingdom }
+		current_age_or_later = { age = age_3_discovery }
+		trigger_if = {
+			limit = {
+				exists = international_organization:red_turban_rebels.leader_country
+				exists = international_organization:middle_kingdom
+			}
+			international_organization:middle_kingdom = {
+				any_international_organization_owned_location = {
+					is_owned_or_owned_by_subjects_or_below_of = international_organization:red_turban_rebels.leader_country
+					percent >= 0.65
+				}
+			}
+		}
+		trigger_else = {
+			exists = international_organization:red_turban_rebels
+
+			custom_tooltip = {
+				text = red_turban_rebellions_strongest_red_turban_rebel_tt
+				exists = international_organization:red_turban_rebels
+				international_organization:red_turban_rebels = {
+					international_organization_has_leader = yes
+				}
+			}
+		}
+		c:CHI ?= {
+			legitimacy >= 90
+			stability >= 30
+			current_celestial_authority = { value = 50 }
+			trigger_if = {
+				limit = {
+					exists = international_organization:red_turban_rebels
+				}
+				international_organization:red_turban_rebels = { total_members < 1 }
+			}
+		}
+	}
+}
+
+is_member_of_any_league = {
+	custom_tooltip = {
+		text = is_member_of_any_league_tt
+		OR = {
+			is_member_of_international_organization = international_organization:foreign_league_france
+			is_member_of_international_organization = international_organization:foreign_league_hre
+			is_member_of_international_organization = international_organization:foreign_league_iberia
+			is_member_of_international_organization = international_organization:italian_league_1
+			is_member_of_international_organization = international_organization:italian_league_2
+			is_member_of_international_organization = international_organization:italian_league_3
+		}
+	}
+}
+
+italian_wars_end_requirements = {
+	OR = {
+		international_organization:foreign_league_hre ?= {
+			total_locations_owned >= 200
+		}
+		international_organization:foreign_league_france ?= {
+			total_locations_owned >= 200
+		}
+		international_organization:foreign_league_iberia ?= {
+			total_locations_owned >= 200
+		}
+		international_organization:italian_league_1 ?= {
+			total_locations_owned >= 200
+		}
+		international_organization:italian_league_2 ?= {
+			total_locations_owned >= 200
+		}
+		international_organization:italian_league_3 ?= {
+			total_locations_owned >= 200
+		}
+		situation:italian_wars = { years_since_situation_start > 65 }
+	}
+}
+
+little_ice_age_end_trigger = {
+	current_year > 1715
+}
+
+has_foreign_league_won_the_italian_wars = {
+	trigger_if = {
+		limit = {
+			OR = {
+				exists = international_organization:foreign_league_hre
+				exists = international_organization:foreign_league_france
+				exists = international_organization:foreign_league_iberia
+			}
+		}
+		OR = {
+			custom_tooltip = {
+				text = foreign_league_hre_200_tt
+				international_organization:foreign_league_hre ?= {
+					total_locations_owned >= 200
+				}
+			}
+			custom_tooltip = {
+				text = foreign_league_france_200_tt
+				international_organization:foreign_league_france ?= {
+					total_locations_owned >= 200
+				}
+			}
+			custom_tooltip = {
+				text = foreign_league_iberia_200_tt
+				international_organization:foreign_league_iberia ?= {
+					total_locations_owned >= 200
+				}
+			}
+		}
+	}
+	trigger_else = {
+		custom_tooltip = any_foreign_league_has_at_least_200_locations_in_italy
+	}
+}
+
+has_italian_league_won_the_italian_wars = {
+	trigger_if = {
+		limit = {
+			OR = {
+				exists = international_organization:italian_league_1
+				exists = international_organization:italian_league_2
+				exists = international_organization:italian_league_3
+			}
+		}
+		OR = {
+			custom_tooltip = {
+				text = italian_league_1_200_tt
+				international_organization:italian_league_1 ?= {
+					total_locations_owned >= 200
+				}
+			}
+			custom_tooltip = {
+				text = italian_league_2_200_tt
+				international_organization:italian_league_2 ?= {
+					total_locations_owned >= 200
+				}
+			}
+			custom_tooltip = {
+				text = italian_league_3_200_tt
+				international_organization:italian_league_3 ?= {
+					total_locations_owned >= 200
+				}
+			}
+		}
+	}
+	trigger_else = {
+		custom_tooltip = any_foreign_league_has_at_least_200_locations_in_italy
+	}
+}
+
+has_timurids_stagnate = {
+	custom_tooltip = {
+		text = has_timurids_stagnate_tt
+		c:TIM ?= {
+			OR = {
+				AND = {
+					has_ruler = yes
+					ruler ?= {
+						this != global_var:timur_character
+						total_abilities < 150
+					}
+				}
+				AND = {
+					has_heir = no
+					has_ruler = no
+				}
+			}
+		}
+	}
+}
+
+has_subjugated_timurids = {
+	custom_tooltip = {
+		text = has_annexed_timurids_tt
+		NOT = { has_enabled_situation_trigger = { type = rise_of_timur } }	#Triggered by rise_of_timur.3 in on_annex or by by rise_of_timur.5 in 
+	}
+}
+
+has_restored_the_mongol_empire = {
+	custom_tooltip = {
+		text = has_restored_the_mongol_empire_tt
+		tag_exists = MGE
+		exists = var:rise_of_timur_situation_country
+		any_country ?= {
+			has_variable = rise_of_timur_situation_country
+			tag = MGE
+		}
+	}
+}
+
+rise_of_timur_end_conditions = {
+	OR = {
+		has_timurids_stagnate = yes
+		has_subjugated_timurids = yes
+		has_restored_the_mongol_empire = yes
+	}
+}
+
+rise_of_the_ottomans_end_trigger = {
+	OR = {
+		current_year > 1565
+		custom_tooltip = {
+			text = no_beyliks_left_tt
+			global_variable_list_size = {
+				name = eligible_beylik_list
+				value < 1
+			}
+		}
+		trigger_if = {
+			limit = { 
+				country_exists = c:TUR
+				var:strongest_beylik_variable = c:TUR
+			}
+			AND = {
+				custom_tooltip = {
+					text = strongest_beylik_has_over_75_locations
+					var:strongest_beylik_variable = { 
+						num_locations > 500 
+						num_of_non_rural >= 50
+					}	
+				}
+				var:strongest_beylik_variable = { is_subject = no }
+			}
+		}
+		trigger_else = {
+			AND = {
+				custom_tooltip = {
+					text = strongest_beylik_has_over_75_locations
+					var:strongest_beylik_variable = { 
+						num_locations > 500
+						num_of_non_rural >= 50
+					}
+				}
+				NOT = { country_exists = c:TUR }
+				var:strongest_beylik_variable = { is_subject = no }
+			}
+		}
+		AND = {
+			current_year >= 1400
+			country_exists = var:strongest_beylik_variable
+			var:strongest_beylik_variable = {
+				num_locations < 100 
+				in_civil_war = no
+			}
+		}
+	}
+}
+
+war_of_religions_end_trigger = {
+	#The entire trigger is always = no because we end the situation with the end_situation = situation:war_of_religions effect in the peace treaty / the Westphalia event
+	OR = {
+		custom_tooltip = {
+			text = war_of_religions_peace_treaty_enforced_tt
+			always = no
+		}
+		custom_tooltip = {
+			text = war_of_religions_peace_of_westphalia_tt
+			always = no
+		}
+		#These below SHOULD not happen...
+		NOT = { exists = international_organization:protestant_union }
+		NOT = { exists = international_organization:catholic_league }
+		NOT = { exists = international_organization:hre }
+		AND = {
+			current_age_or_later = { age = age_6_revolutions }
+			NOT = {
+					any_war = {
+						is_no_cb_war = no
+						casus_belli ?= casus_belli:cb_religious_superiority
+					}
+			}
+		}
+	}
+}
+
+reformation_end_trigger = {
+	OR = {
+		AND = {
+			situation:council_of_trent = {
+				situation_is_active = no
+				situation_has_ended = yes
+			}
+			situation:war_of_religions = {
+				situation_is_active = no
+				situation_has_ended = yes
+			}
+		}
+		current_year >= 1700
+	}
+}
+
+council_of_trent_end_trigger = {
+	OR = {
+		custom_tooltip = {
+			text = council_of_trent_end_trigger_passed_debates_tt
+			has_variable = council_of_trent_passed_debates
+			has_variable = council_of_trent_passed_debates_max
+			var:council_of_trent_passed_debates >= var:council_of_trent_passed_debates_max
+		}
+		custom_tooltip = {
+			text = council_of_trent_end_trigger_failed_debates_tt
+			has_variable = council_of_trent_failed_debates
+			has_variable = council_of_trent_failed_debates_max
+			var:council_of_trent_failed_debates >= var:council_of_trent_failed_debates_max
+		}
+		current_age_or_later = { age = age_5_absolutism }
+	}
+}
+
+guelphs_and_ghibellines_guelphs_end_trigger = {
+	custom_tooltip = {
+		text = guelphs_and_ghibellines_guelphs_end_trigger_tt
+		exists = international_organization:guelphs_io
+		OR = {
+			NOT = { exists = international_organization:ghibellines_io }
+			international_organization:guelphs_io = {
+				has_variable = guelphs_progress
+				var:guelphs_progress >= 1
+			}
+		}
+	}
+}
+guelphs_and_ghibellines_ghibellines_end_trigger = {
+	custom_tooltip = {
+		text = guelphs_and_ghibellines_ghibellines_end_trigger_tt
+		exists = international_organization:ghibellines_io
+		OR = {
+			NOT = { exists = international_organization:guelphs_io }
+			international_organization:ghibellines_io = {
+				has_variable = ghibellines_progress
+				var:ghibellines_progress >= 1
+			}
+		}
+	}
+}
+guelphs_and_ghibellines_guelphs_stalemate_trigger = {
+	custom_tooltip = {
+		text = guelphs_and_ghibellines_guelphs_stalemate_trigger_tt
+		OR = {
+			NAND = {
+				exists = international_organization:ghibellines_io
+				exists = international_organization:guelphs_io
+			}
+			current_age_or_later = { age = age_3_discovery }
+		}
+	}
+}
+guelphs_and_ghibellines_end_trigger = {
+	OR = {
+		guelphs_and_ghibellines_guelphs_end_trigger = yes
+		guelphs_and_ghibellines_ghibellines_end_trigger = yes
+		guelphs_and_ghibellines_guelphs_stalemate_trigger = yes
+	}
+}
+
+columbian_exchange_end_trigger = {
+	current_age_or_later = { age = age_6_revolutions }
+}
+
+the_revolution_end_trigger = {
+	NOR = {
+		any_great_power = {
+			is_revolutionary_trigger = yes
+		}
+		custom_tooltip = {
+			text = any_country_in_spread_of_revolution_disaster_tt
+			any_in_global_list = {
+				variable = revolutionary_countries
+				NOT = {
+					any_active_disaster = {
+						disaster_type = disaster_type:revolution_disaster
+					}
+				}
+			}
+		}
+	}
+}
+
+fall_of_delhi_end_trigger = {
+	OR = {
+		custom_tooltip = {
+			text = delhi_share_of_power_1_tt
+			has_variable = delhi_share_of_power
+		}
+		custom_tooltip = {
+			text = opposition_share_of_power_1_tt
+			has_variable = opposition_share_of_power
+		}
+		custom_tooltip = {
+			text = has_decided_to_cede_territories_tt
+			c:DLH = { has_variable = dlh_surrendered_territories_var }
+		}
+		custom_tooltip = {
+			text = dissolution_of_delhi_started_tt
+			c:DLH = {
+				any_active_disaster = { disaster_type = disaster_type:dissolution_of_delhi }
+			}
+		}
+		NOT = { country_exists = c:DLH }
+	}
+}
+
+has_pope_won_hw_trigger = {
+	country_exists = c:PAP
+	c:BOH ?= { religion = c:PAP.religion }
+}
+
+has_bohemia_won_hw_trigger = {
+	OR = {
+		trigger_if = {
+			limit = { c:BOH ?= { has_variable = recognized_hussites_variable } }
+			always = yes
+		}
+		AND = {
+			situation:hussite_wars = {
+				years_since_situation_start > 30
+			}
+			c:BOH ?= { at_war = no religion = religion:hussite }
+		}
+	}
+}
+
+golden_age_of_piracy_end_trigger = {
+	OR = {
+		AND = {
+			any_country_of_country_type = {
+				type = navy
+				has_reform = government_reform:pirate_brethren_reform
+				is_subject = no
+				count < 1
+			}
+			situation:golden_age_of_piracy = { years_since_situation_start > 30 }
+		}
+		situation:golden_age_of_piracy = { years_since_situation_start > 50 }
+	}
+}
+
+
+#####################################
+# Columbian Exchange				#
+#####################################
+
+is_candidate_for_NW_good = {
+	#There are enough peasants/laborers to at least fill the first level
+	OR = {
+		num_pop_type:peasants > 1
+		num_pop_type:laborers > 1
+	}
+	#Never replace certain goods
+	NOR = {
+		#Precious
+		raw_material = goods:goods_gold
+		raw_material = goods:silver
+		raw_material = goods:gems
+		raw_material = goods:pearls
+		raw_material = goods:amber
+		raw_material = goods:silk
+		raw_material = goods:incense
+		raw_material = goods:mercury
+		#Spices
+		raw_material = goods:saffron
+		raw_material = goods:pepper
+		raw_material = goods:cloves
+		raw_material = goods:chili
+		#Strategic
+		raw_material = goods:livestock
+		raw_material = goods:iron
+		raw_material = goods:tin
+		#New World						
+		raw_material = goods:tobacco
+		raw_material = goods:cocoa
+		raw_material = goods:maize
+		raw_material = goods:potato
+	}
+	#Is the RGO that we are about to replace rare?
+	#Only replace if there is more than one
+	raw_material = {
+		save_temporary_scope_as = good_to_be_replaced_scope
+	}
+	market = {
+		#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:good_to_be_replaced_scope = goods:copper
+					scope:good_to_be_replaced_scope = goods:tin
+					scope:good_to_be_replaced_scope = goods:marble
+					scope:good_to_be_replaced_scope = goods:alum
+					scope:good_to_be_replaced_scope = goods:beeswax
+					scope:good_to_be_replaced_scope = goods:lead
+				}
+			}
+			#check we still have plenty of locations producing these key raw materials
+			"raw_material_amount(scope:good_to_be_replaced_scope)" > 3
+		}
+		trigger_else = {								
+			#don't care so much about others
+			"raw_material_amount(scope:good_to_be_replaced_scope)" > 1
+		}
+	}
+}
+
+is_candidate_for_OW_good = {
+	#There are enough peasants/laborers to at least fill the first level
+	OR = {
+		num_pop_type:peasants > 1
+		num_pop_type:laborers > 1
+	}
+	#Never replace certain goods
+	NOR = {
+		#Precious
+		raw_material = goods:goods_gold
+		raw_material = goods:silver
+		raw_material = goods:gems
+		raw_material = goods:pearls
+		raw_material = goods:amber
+		raw_material = goods:silk
+		raw_material = goods:incense
+		raw_material = goods:mercury
+		#Spices
+		raw_material = goods:saffron
+		raw_material = goods:pepper
+		raw_material = goods:cloves
+		raw_material = goods:chili
+		#Strategic
+		raw_material = goods:livestock
+		raw_material = goods:iron
+		raw_material = goods:tin
+		#Old World						
+		raw_material = goods:cotton
+		raw_material = goods:wheat
+		raw_material = goods:millet
+		raw_material = goods:coffee
+		raw_material = goods:rice
+		raw_material = goods:sugar
+		raw_material = goods:wine
+		raw_material = goods:horses
+	}
+	#Is the RGO that we are about to replace rare?
+	#Only replace if there is more than one
+	raw_material = {
+		save_temporary_scope_as = good_to_be_replaced_scope
+	}
+	market = {
+		#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:good_to_be_replaced_scope = goods:copper
+					scope:good_to_be_replaced_scope = goods:tin
+					scope:good_to_be_replaced_scope = goods:marble
+					scope:good_to_be_replaced_scope = goods:alum
+					scope:good_to_be_replaced_scope = goods:beeswax
+					scope:good_to_be_replaced_scope = goods:lead
+				}
+			}
+			any_location_in_market = {
+				count > 3
+				raw_material = scope:good_to_be_replaced_scope
+			}
+		}
+		trigger_else = {								
+			any_location_in_market = {
+				count > 1
+				is_ownable = yes
+				raw_material = scope:good_to_be_replaced_scope
+			}
+		}
+	}
+}
+
+#####################################
+# Treaty of Tordesillas				#
+#####################################
+
+ai_country_should_colonize = {	#Root should be the country
+	OR = {
+		country_tax_base > 150
+		yearly_gold > 24
+		tag = SWE
+		tag = POR
+		tag = KUR
+		is_subject_type = colonial_nation
+	}
+	
+	
+	OR = {
+		has_game_rule = all_countries_colonize
+		trigger_if = {
+			limit = {
+				has_game_rule = western_colonisation_only
+			}
+			this != c:PAP
+			OR = {
+				#capital.continent = continent:europe
+				capital.sub_continent = sub_continent:western_europe
+				NOT = { capital.region = region:italy_region }
+				NOT = { capital.region = region:south_german_region }
+				and = {
+					is_subject = yes
+					overlord = {
+						#capital.continent = continent:europe
+						capital.sub_continent = sub_continent:western_europe
+						NOT = { capital.region = region:italy_region }
+						NOT = { capital.region = region:south_german_region }
+					}
+				}
+			}
+			
+		}
+	}
+
+
+	OR = {
+		is_subject = no
+		is_subject_type = colonial_nation
+	}
+}
+
+is_geographically_correct = {
+	continent != continent:europe
+	sub_continent != sub_continent:south_asia
+	sub_continent != sub_continent:east_asia
+	sub_continent != sub_continent:north_asia
+	sub_continent != sub_continent:central_asia
+	sub_continent != sub_continent:middle_east
+	region != region:indochina_region
+}
+
+is_location_colonial = {
+	is_ownable = yes
+	is_geographically_correct = yes
+	NAND = {
+		has_owner = yes
+		owner ?= {
+			is_country_religion_pagan = no
+		}
+	}
+}
+
+is_location_claimable = {
+	is_location_colonial = yes
+	NOR = {					
+		top_owner ?= situation:treaty_of_tordesillas.var:var_east_country
+		top_owner ?= situation:treaty_of_tordesillas.var:var_west_country
+		situation:treaty_of_tordesillas.var:var_west_country ?= {
+			has_colonial_claim = root.province_definition
+		}
+		situation:treaty_of_tordesillas.var:var_east_country ?= {
+			has_colonial_claim = root.province_definition
+		}
+	}
+}
+
+#Location has a claim or is directly controlled by a Main country
+is_location_claimed_or_owned_by_country = {
+	$owner_country$ = {
+		save_temporary_scope_as = owner_country_scope
+	}
+	OR = {
+		scope:owner_country_scope = {
+			has_colonial_claim = root.province_definition
+		}
+		AND = {
+			has_owner = yes
+			top_owner ?= scope:owner_country_scope
+		}
+	}
+}
+
+# Black Death Situation Triggers
+has_expensive_procure_remedies_goods = {
+	#If any of the selected goods are expensive
+	OR = {
+		goods:fiber_crops = { price_in_market = { market = scope:actor.capital.market value > 2.5 } }
+		goods:gems = { price_in_market = { market = scope:actor.capital.market value > 5.5 } }
+		goods:lumber = { price_in_market = { market = scope:actor.capital.market value > 1.5 } }
+		goods:mercury = { price_in_market = { market = scope:actor.capital.market value > 3.5 } }
+		goods:medicaments = { price_in_market = { market = scope:actor.capital.market value > 1.5 } }
+		goods:liquor = { price_in_market = { market = scope:actor.capital.market value > 3.5 } }
+		goods:incense = { price_in_market = { market = scope:actor.capital.market value > 4 } }
+	}
+}
+		
+western_schism_end_trigger = {
+	or = {
+		not = { exists = international_organization:catholic_church }
+		not = { country_exists = c:PAP }
+		not = { exists = var:schism_pope_cardinal }
+		not = { c:PAP = { exists = var:schism_cardinal } }
+		AND = {
+			custom_tooltip = {
+				text = western_schism_1_tt
+				has_variable = western_schism_pope_score
+				has_variable = western_schism_anti_pope_score
+			}
+			OR = {
+				custom_tooltip = {
+					text = western_schism_2_tt
+					var:western_schism_pope_score >= 2
+					situation:western_schism = {
+						has_variable = western_schism_ended_by_event
+					}
+				}
+				custom_tooltip = {
+					text = western_schism_3_tt
+					var:western_schism_anti_pope_score >= 2
+					situation:western_schism = {
+						has_variable = western_schism_ended_by_event
+					}
+				}
+			}
+		}
+	}
+}

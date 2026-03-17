@@ -1,0 +1,52 @@
+﻿join_international_organization = {
+	type = internationalorganization
+	show_in_gui_list = no
+
+	automation_tick = never
+	automation_tick_frequency = 12
+	
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	
+	potential = {
+	}
+
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = international_organization
+		target_flag = recipient
+		name = "choose_international_organization"
+		none_available_msg_key = "join_international_organization_none"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:actor = {
+				NOT = { is_member_of_international_organization = root }
+				is_leader_of_international_organization = root
+			}
+		}
+		enabled = {
+			scope:actor = {
+				can_join_international_organization = root
+			}
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:recipient
+			}
+			scope:recipient = {
+				add_country_to_international_organization = scope:actor
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = 0
+	}
+}

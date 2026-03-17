@@ -1,0 +1,115 @@
+﻿nusta_marriage =  { 
+	type = diplomacy	
+	category = CATEGORY_FRIENDLY_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+		scope:actor = {
+			modifier:can_use_nustas_marriages = yes
+			is_subject = no
+		}
+	}
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			is_subject = no
+			government_type = government_type:monarchy
+		}
+        enabled = {
+			has_ruler = yes
+			ruler ?= {
+				is_alive = yes
+				is_female = no
+				is_regent = no
+				has_available_marriage_slot = yes
+				is_married = no
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		name = "nusta_marriage_SELECT_TITLE"
+		none_available_msg_key = "nusta_marriage_no_characters"
+		column = {
+			data = character_info
+		}
+		visible = {
+			is_alive = yes
+			is_adult = yes
+			is_female = yes
+			has_available_marriage_slot = yes
+			is_married = no
+			is_consort = no
+			is_ruler = no
+			is_heir = no
+			modifier:blocked_from_marriage = no
+			NOT = { has_estate = estate_type:burghers_estate }
+			NOT = { has_estate = estate_type:peasants_estate }
+			modifier:blocked_from_character_interactions = no
+		}
+	}	
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:target = {
+				move_country = scope:recipient
+				if = {
+					limit = { NOT = { religion.group = scope:recipient.religion.group } }
+					change_character_religion = scope:recipient.religion
+				}
+			}
+			scope:recipient = {
+				ruler ?= {
+					marry_character = scope:target
+				}
+				add_opinion = {
+					modifier = opinion_nusta_marriage
+					target = scope:actor
+				}
+			}
+		}
+	}
+
+	diplo_chance = {
+		relative_strength = 200
+		border_distance = -0.02
+        diplomatic_reputation = 5
+	}
+	accept = {
+		add = {
+			desc = "game_concept_rival"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_rival_of = scope:actor 
+					}
+				}
+				value = -100
+			}
+		}
+		add = {
+			desc = "THEIR_OPINION_TOOLTIP"
+			value = "scope:recipient.opinion(scope:actor)"
+			divide = 5
+		}
+		add = {
+			scope:recipient = {
+				value = "trust(scope:actor)"
+				divide = 5
+			}
+		}
+	}
+}	

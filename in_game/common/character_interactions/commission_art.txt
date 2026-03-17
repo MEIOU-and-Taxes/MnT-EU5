@@ -1,0 +1,71 @@
+﻿commission_art = { 
+	message = yes
+	is_consort_action = no
+	on_own_nation = yes
+
+	price = price:commission_art_price
+	price_modifier = {
+		add = {
+			desc = "ARTIST_SKILL"
+			scope:recipient = {
+				value = artist_skill
+			}
+		}
+	}
+
+	potential = {
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 60
+
+	allow = {
+		scope:actor = {
+			prestige >= {
+				value = prestige_mild_penalty
+				multiply = -1
+			}
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+			is_artist = yes
+		}
+		enabled = {
+			has_art_in_progress = no
+			NOT = { has_character_modifier = busy_modifier }
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_prestige = prestige_mild_penalty
+		}
+		scope:recipient = {
+			start_work_of_art = {}
+		}
+	}
+
+	ai_will_do = {
+		add = {
+			desc = "ARTIST_SKILL"
+			scope:recipient = {
+				value = artist_skill
+				multiply = 2
+			}
+		}
+		subtract = {
+			desc = "game_concept_prestige"
+			value = "scope:actor.currency_utility(prestige|-10)"
+		}
+	}
+}	

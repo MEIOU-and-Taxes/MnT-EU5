@@ -1,0 +1,104 @@
+﻿call_jihad = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor = {
+			religion.group = religion_group:muslim
+			OR = {
+				country_rank = country_rank:rank_kingdom
+				country_rank = country_rank:rank_empire
+			}
+		}
+		
+	}
+
+	allow = {
+		game_is_initialized = yes
+		scope:actor ?= {
+			monthly_manpower > 0
+		}
+	}
+
+	cooldown = { 
+		type = call_jihad
+		years = 10
+	}
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 12
+
+	automation_tick = monthly
+	automation_tick_frequency = 6
+	player_automated_category = religiousdoctrines
+
+    price = price:call_jihad
+
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_country_in_diplomatic_range = {
+					add_to_list = source
+				}
+			}
+		}
+		target_flag = target
+		name = "call_jihad_select_country"
+		none_available_msg_key = "call_jihad_no_countries"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}	
+		visible = {
+            is_valid_target_for_jihad = yes
+            scope:actor = { has_discovered = prev.capital }
+			NOR = {
+				is_allied_with = { target = scope:actor }
+				is_at_war_with = scope:actor
+				has_truce_with = scope:actor
+				is_subject_of = scope:actor
+			}
+        }
+	}
+
+	effect = {
+		scope:actor = {
+			if = {
+				limit = { exists = scope:target }
+				create_international_organization = {
+					type = international_organization_type:jihad
+					target = scope:target
+					custom_tooltip = {
+						text = leader_of_jihad_tt
+						add_country_to_international_organization = scope:actor
+						set_leader_country = scope:actor
+					}
+				}
+			}
+			else = {
+				custom_tooltip = call_jihad.tt
+			}
+		}
+	}
+	
+	ai_will_do = {
+		#handled in code
+		add = -100
+	}
+}

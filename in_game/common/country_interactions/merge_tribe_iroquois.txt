@@ -1,0 +1,96 @@
+﻿merge_tribe_iroquois = {
+	type = diplomacy
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+		scope:actor = {
+			has_variable = enabled_iroquois_unique_interactions
+		}
+	}
+
+	allow = {
+		scope:actor = {
+			stability > 65
+			num_of_diplomats >= 3
+			NOT = { has_country_modifier = iro_merged_tribe }
+		}
+	}	
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			OR = {
+				has_or_had_tag = KKA
+				has_or_had_tag = ONY
+				has_or_had_tag = ONO
+				has_or_had_tag = GYO
+				has_or_had_tag = ONN
+			}	
+			is_subject = no
+			at_war = no
+		}
+        enabled = {
+			not = { is_at_war_with = scope:actor }	
+			trust = { 
+				target = scope:actor 
+				value > 50 
+			}
+			opinion = {
+				target = scope:actor
+				value > 150
+			}
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_stability = stability_ultimate_penalty
+			add_country_modifier = { modifier = iro_merged_tribe years = 10 mode = add }
+			add_diplomats = -3
+			annex_country = {
+				country = scope:recipient
+			}
+		}
+	}
+
+	ai_will_do = {
+	}
+
+	diplo_chance = {
+		base = -100
+        diplomatic_reputation = 3
+		opinion = 0.2
+		in_debt = -1000
+		trust_in_actor = 1
+	}
+	accept = {
+		add = {
+			desc = "IS_BANKRUPT_TOOLTIP"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_during_bankruptcy = yes
+					}
+				}
+				value = -1000
+			}
+		}
+		add = {
+			desc = "IS_AT_WAR"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						at_war = yes
+					}
+				}
+				value = -25
+			}
+		}
+	}
+}

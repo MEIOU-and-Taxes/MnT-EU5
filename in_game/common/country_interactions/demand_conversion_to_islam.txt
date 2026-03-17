@@ -1,0 +1,75 @@
+﻿demand_conversion_to_islam = {
+	category = CATEGORY_INFLUENCE_ACTIONS
+	type = diplomacy
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+		scope:actor = {
+       		has_variable = son_conversion_of_west_africa
+        	religion.group = religion_group:muslim
+		}
+	}
+
+	allow = {
+		
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			not = { religion.group = religion_group:muslim }
+		}
+        enabled = {
+			trigger_if = {
+				limit = { modifier:blocked_from_conversion = no }
+				modifier:blocked_from_conversion = no
+			}
+		}
+	}
+
+	effect = {
+		scope:recipient = {
+			change_religion = scope:actor.religion
+			change_religion_for_ruler_and_family = { country = scope:recipient religion = scope:actor.religion }
+			capital = {
+				every_pop = {
+					limit = {
+						NOT = {
+							religion = scope:actor.religion
+						}
+					}
+					split_pop = {
+						fraction = 0.25
+						religion = scope:actor.religion
+					}
+				}
+			}
+		}
+	}
+
+	diplo_chance = {
+		base = -20
+		opinion = 0.2
+		recipient_is_rival = -100
+	}
+
+	accept = {
+		add = {
+			desc = "game_concept_ally"
+			if = {
+				limit = {	
+					scope:recipient = { 
+						is_allied_with = { target = scope:actor }
+					}
+				}
+				value = -100
+			}
+		}
+	}
+}

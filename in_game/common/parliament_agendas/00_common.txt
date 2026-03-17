@@ -1,0 +1,526 @@
+﻿#Agenda to add a privilege to estate
+pa_add_privilege = {
+	type = country
+	estate = nobles_estate
+	estate = clergy_estate
+	estate = burghers_estate
+	estate = peasants_estate
+
+	importance = 1.5
+	
+	potential = {
+		"estate(scope:target)" = {
+			num_privileges < 6
+			num_possible_privileges > 0
+		}
+	}
+	
+	on_accept = {
+		"estate(scope:target)" = {
+			random_possible_privilege = {
+				root = {
+					grant_estate_privilege = prev
+				}
+			}
+		}
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+
+	ai_will_do = {
+		subtract = {
+			if = {
+				limit = {
+					# Rosth: since target estate satisfaction when taxing is set to 50%, set this a bit lower so we don't give out privileges when we don't need to
+					estate_satisfaction = { estate_type = scope:target value > 0.45 }
+				}
+				value = 10
+			}
+		}
+		
+		subtract = {
+			if = {
+				limit = {
+					modifier:revoke_privilege_cost_modifier < 0
+				}
+				value = 100
+			}
+		}
+	}
+	chance = 10
+}
+
+#Agenda to change a policy preferred by estate
+pa_change_policy = {
+	estate = nobles_estate
+	estate = clergy_estate
+	type = country
+	estate = burghers_estate
+	estate = peasants_estate
+
+	potential = {
+		any_possible_policy = {
+			any_estate_type_preferring = { this = scope:target }
+			law = {
+				NOT = { is_locked_for = root }
+			}
+		}
+	}
+
+	on_accept = {
+		random_possible_policy = {
+			limit = {
+				any_estate_type_preferring = { this = scope:target }
+				law = {
+					NOT = { is_locked_for = root }
+				}
+			}
+			root = {
+				add_policy = prev
+			}
+		}
+		add_stability = stability_severe_penalty
+	}
+
+	# Don't let the estates mess up our policies, its better to just fail and lose 7 stability
+	# this also costs 12 stability regardless
+	ai_will_do = {
+		subtract = {
+			value = 1000
+		}
+	}
+	chance = 10
+}
+
+#Less Taxes for Estates
+pa_lessen_tax_burden_for_nobles = {
+	type = country
+	estate = nobles_estate
+	
+	importance = 2
+	potential = {
+		NOT = {	has_country_modifier = nobles_estate_less_tax_burden }
+		estate_tax_percentage:clergy_estate > 0.25
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = nobles_estate_less_tax_burden years = 5 mode = add_and_extend }
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 10
+}
+
+pa_lessen_tax_burden_for_clergy = {
+	type = country
+	estate = clergy_estate
+	importance = 2
+	potential = {
+		NOT = {	has_country_modifier = clergy_estate_less_tax_burden }
+		estate_max_tax = { estate_type = scope:target value > 0.2 }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = clergy_estate_less_tax_burden years = 5 mode = add_and_extend }
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 10
+}
+
+pa_lessen_tax_burden_for_burghers = {
+	type = country
+	estate = burghers_estate
+	importance = 2
+	potential = {
+		NOT = {	has_country_modifier = burghers_estate_less_tax_burden }
+		estate_max_tax = { estate_type = scope:target value > 0.2 }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = burghers_estate_less_tax_burden years = 5 mode = add_and_extend }
+		
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 10
+}
+
+pa_lessen_tax_burden_for_peasants = {
+	type = country
+	estate = peasants_estate
+	importance = 2
+	potential = {
+		NOT = {	has_country_modifier = peasants_estate_less_tax_burden }
+		estate_max_tax = { estate_type = scope:target value > 0.2 }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = peasants_estate_less_tax_burden years = 5 mode = add_and_extend }
+	}
+	chance = 10
+}
+
+#Less Levies for Estate
+pa_lessen_levy_obligations_for_nobles = {
+	type = country
+	estate = nobles_estate
+	importance = 1.5
+	potential = {
+		NOT = {	has_country_modifier = nobles_estate_less_levy_obligations }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = nobles_estate_less_levy_obligations years = 5 mode = add_and_extend }
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}
+
+pa_lessen_levy_obligations_for_clergy = {
+	type = country
+	estate = clergy_estate
+	potential = {
+		NOT = {	has_country_modifier = clergy_estate_less_levy_obligations }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = clergy_estate_less_levy_obligations years = 5 mode = add_and_extend }
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}
+
+pa_lessen_levy_obligations_for_burghers = {
+	type = country
+	estate = burghers_estate
+	potential = {
+		NOT = {	has_country_modifier = burghers_estate_less_levy_obligations }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = burghers_estate_less_levy_obligations years = 5 mode = add_and_extend }
+		
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}
+
+pa_lessen_levy_obligations_for_peasants = {
+	type = country
+	estate = peasants_estate
+	importance = 1.5
+	potential = {
+		NOT = {	has_country_modifier = peasants_estate_less_levy_obligations }
+	}
+	
+	on_accept = {
+		add_country_modifier = { modifier = peasants_estate_less_levy_obligations years = 5 mode = add_and_extend }
+	}
+	chance = 5
+}
+
+#Diplomatic Agendas
+pa_break_alliance = {
+	
+	type = country
+	estate = nobles_estate
+	estate = clergy_estate
+	estate = burghers_estate
+	estate = peasants_estate
+	
+	importance = 2
+	
+	potential = {
+		any_related_country = {
+			type = alliance
+			root = {
+				estate_opinion = {
+					estate_type = scope:target
+					target = prev
+					value < 0
+				}
+			}
+		}
+	}
+
+	on_accept = { 
+		random_related_country = {
+			type = alliance
+			limit = {
+				root = {
+					estate_opinion = {
+						estate_type = scope:target
+						target = prev
+						value < 0
+					}
+				}
+			}
+			root = { 
+				block_treaties = prev
+				remove_relation = {
+					type = relation_type:alliance
+					first = this
+					second = prev
+				}
+			}
+			
+		}
+		
+	}
+	chance = 10
+
+	ai_will_do = {
+		subtract = {
+			value = 10
+		}
+	}
+}
+
+pa_reduce_opinion = {
+	
+	estate = nobles_estate
+	estate = burghers_estate
+	estate = peasants_estate
+
+	importance = 0.75
+	
+	potential = {
+		is_ai = no
+		root.religion = {
+			any_country_in_religion = {
+				this != root
+				root = {
+					estate_opinion = {
+						estate_type = scope:target
+						target = prev
+						value < 0
+					}
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		root.religion = {
+			random_country_in_religion = {
+				limit = {
+					this != root
+					root = {
+						estate_opinion = {
+							estate_type = scope:target
+							target = prev
+							value < 0
+						}
+					}
+				}
+				root = {
+					add_opinion_mutual_effect = {
+						target = prev
+						modifier = opinion_pa_reduce_opinion
+					}
+				}
+			}
+		}
+	}
+	chance = 10
+
+	ai_will_do = {
+		subtract = {
+			value = 5
+		}
+	}
+}
+
+pa_raise_opinion = {
+	
+	estate = nobles_estate
+	estate = clergy_estate
+	estate = burghers_estate
+	estate = peasants_estate
+
+	importance = 0.75
+	
+	potential = {
+		is_ai = no
+		root.religion = {
+			any_country_in_religion = {
+				this != root
+				root = {
+					estate_opinion = {
+						estate_type = scope:target
+						target = prev
+						value > 0
+					}
+				}
+			}
+		}
+	}
+
+	on_accept = {
+		root.religion = {
+			random_country_in_religion = {
+				limit = {
+					this != root
+					root = {
+						estate_opinion = {
+							estate_type = scope:target
+							target = prev
+							value > 0
+						}
+					}
+				}
+				root = {
+					add_opinion_mutual_effect = {
+						target = prev
+						modifier = opinion_pa_raise_opinion
+					}
+				}
+			}
+		}
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 10
+}
+
+#Military related agendas
+pa_rethink_army_academy = {
+	estate = nobles_estate
+	estate = burghers_estate
+	potential = {
+		OR = {
+			current_age = age_5_absolutism
+			current_age = age_6_revolutions
+		}
+		army_tradition > 5
+	}
+	
+	on_accept = {
+		add_army_tradition = army_tradition_mild_penalty
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}
+
+pa_rethink_navy_academy = {
+	estate = nobles_estate
+	estate = burghers_estate
+	potential = {
+		OR = {
+			current_age = age_5_absolutism
+			current_age = age_6_revolutions
+		}
+		navy_tradition > 5
+	}
+	
+	on_accept = {
+		add_navy_tradition = navy_tradition_mild_penalty
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}
+
+pa_reduce_land_recruitment = {
+	estate = peasants_estate
+	potential = {
+		OR = {
+			current_age = age_5_absolutism
+			current_age = age_6_revolutions
+		}
+		max_manpower > 5
+		monthly_manpower > 0
+	}
+	
+	on_accept = {
+		add_manpower = { value = root.monthly_manpower multiply = -3 }
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}
+
+pa_reduce_naval_recruitment = {
+	estate = peasants_estate
+	potential = {
+		OR = {
+			current_age = age_4_reformation
+			current_age = age_5_absolutism
+			current_age = age_6_revolutions
+		}
+		max_sailors > 5
+		monthly_sailors > 0
+	}
+	
+	on_accept = {
+		add_sailors = { value = root.monthly_sailors multiply = -2 }
+	}
+
+	can_bribe = {
+		can_bribe_default_trigger = yes
+	}
+	on_bribe = {
+		on_bribe_default_effect = yes
+	}
+	chance = 5
+}

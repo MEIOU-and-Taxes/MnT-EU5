@@ -1,0 +1,65 @@
+﻿formalize_relations = { 
+	type = diplomacy
+	category = CATEGORY_FRIENDLY_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+	
+	potential = {
+		scope:actor = {
+			has_or_had_tag = FRA
+			custom_tooltip = {
+				text = has_unlocks_formalize_relations_action
+				has_variable = enabled_formalized_relations
+			}
+		}	
+	}
+	
+	allow = {
+		scope:actor = {
+			num_of_diplomats >= 3
+		}	
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			NOT = { tag = PAP }
+			capital.region = region:italy_region
+			is_subject = no			
+		}
+        enabled = {
+			not = { is_at_war_with = scope:actor }
+			not = { is_rival_of = scope:actor }
+			NOT = { has_opinion = { modifier = opinion_formalized_relations_italian target = scope:actor } }			
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_diplomats = -3		
+			add_trust = {
+				modifier = trust_fra_italian_formalize_relations
+				target = scope:recipient
+			}
+			add_opinion = {
+				modifier = opinion_formalized_relations_italian			
+				target = scope:recipient
+			}			
+		}
+		scope:recipient = {
+			add_trust = {
+				modifier = trust_fra_italian_formalize_relations
+				target = scope:actor
+			}
+			add_opinion = {
+				modifier = opinion_formalized_relations_italian			
+				target = scope:actor
+			}				
+		}
+	}
+}	

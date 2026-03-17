@@ -1,0 +1,214 @@
+﻿subject_enforce_peace =  { 
+	type = diplomacy
+	category = CATEGORY_SUBJECT_ACTIONS
+	
+	ai_tick = never # Rosth: no ai_will_do, don't check at all then
+
+	potential = {
+	}
+	
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = country
+		interaction_source_list = {
+			scope:actor = {
+				every_subject = {
+					add_to_list = source
+				}
+				union ?= {
+					if = {
+						limit = {
+							modifier:union_allowed_enforce_peace = yes
+							international_organization_has_policy = policy:union_establish_seniority_policy
+							country_has_special_status = {
+								type = special_status:senior_partner
+								country = scope:actor
+							}
+						}
+						every_international_organization_member = {
+							limit = {
+								in_civil_war = yes
+								NOT = { this = scope:actor }
+							}
+							add_to_list = source
+						}
+					}
+				}
+			}
+		}
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			any_current_war = {
+				not = { is_in_war = scope:actor }
+			}
+			trigger_if = {
+				limit = { is_subject = yes }
+				is_subject_of = scope:actor
+				subject_type ?= { overlord_can_enforce_peace_on_subject = yes }
+			}
+			trigger_else = {
+				in_union_with = scope:actor
+				union ?= {
+					international_organization_has_policy = policy:union_establish_seniority_policy
+				}
+			}
+		}
+        enabled = {
+			trigger_if = {
+				limit = {
+					is_subject = yes
+					is_subject_of = scope:actor
+				}
+				subject_loyalty >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+				liberty_desire < MAX_SUBJECT_LIBERTY_DESIRE_FOR_ACTION
+			}
+			trigger_else = {
+				opinion = {
+					target = scope:actor
+					value >= MIN_SUBJECT_LOYALTY_FOR_ACTION
+				}
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = war
+		source = recipient
+		target_flag = target
+		name = "subject_enforce_peace_select_title"
+		none_available_msg_key = "subject_enforce_peace_no_wars"
+		column = {
+			data = name
+		}
+		visible = {
+			defender_leader != scope:recipient
+			NOT = {
+				any_war_participant = {
+					this = scope:actor
+				}
+			}
+		}
+	}
+	
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:recipient = {
+				leave_war = {
+					war = scope:target
+					actor = scope:actor
+				}
+			}
+		}
+		else = {
+			custom_tooltip = select_a_war_to_leave
+		}
+		scope:recipient = {
+			if = {
+				limit = { is_subject_of = scope:actor }
+				add_liberty_desire = liberty_desire_severe_plus
+			}
+			else = {
+				add_opinion = {
+					modifier = opinion_enforced_peace
+					target = scope:actor
+				}
+			}
+		}
+	}
+	reject_effect = {
+		scope:recipient = {
+			if = {
+				limit = { is_subject_of = scope:actor }
+				add_liberty_desire = liberty_desire_severe_plus
+			}
+			else = {
+				add_opinion = {
+					modifier = opinion_enforced_peace
+					target = scope:actor
+				}
+			}
+		}
+	}
+	accept = {
+		if = {
+			limit = {
+				scope:recipient = { is_subject_of = scope:actor }
+			}
+			#AI subjects shouold always accept
+			add = {
+				desc = "DIPLOREASON_OUR_SUBJECT"
+				value = 1000
+			}
+		}
+		else = {
+			subtract = {
+				desc = "DIPLOREASON_BASE"
+				value = 25
+			}
+			add = {
+				desc = "DIPLOREASON_DIPLOMATIC_REPUTATION"
+				value = "scope:actor.modifier:diplomatic_reputation"
+				multiply = 3
+			}
+			add = {
+				desc = "THEIR_OPINION_TOOLTIP"
+				value = "scope:recipient.opinion(scope:actor)"
+				divide = 4
+			}
+			if = {
+				limit = { exists = scope:target }
+				add = {
+					desc = "LENGTH_OF_WAR_TOOLTIP"
+					value = "scope:target.war_length_in_years"
+					multiply = 5
+				}
+				add = {
+					desc = "DIPLOREASON_WARSCORE"
+					value = "scope:recipient.war_score_in_war(scope:target)"
+					multiply = -1
+				}
+				if = {
+					limit = {
+						scope:target = {
+							any_defender = { this = scope:recipient }
+						}
+					}
+					subtract = {
+						desc = "DIPLOREASON_DEFENSIVE_WAR"
+						value = 75
+					}
+				}
+				else_if = {
+					limit = {
+						scope:target = {
+							attacker_leader ?= scope:recipient
+						}
+					}
+					subtract = {
+						desc = "DIPLOREASON_WAR_LEADER"
+						value = 50
+					}
+				}
+			}
+			add = {
+				desc = "DIPLOREASON_AVERAGE_ESTATE_SATISFACTION"
+				value = "scope:recipient.average_estate_satisfaction"
+				subtract = 0.3
+				multiply = 100
+			}
+		}
+	}
+	ai_will_do = {
+		value = -1000
+		#The AI is intended to never use this action as it is incredibly difficult to decide if the war your subject / junior partner is in is really unwinnable
+		#+ it would be very frustrating on the receiving end of this action
+	}
+}	

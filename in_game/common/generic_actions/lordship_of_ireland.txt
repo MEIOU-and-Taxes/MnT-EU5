@@ -1,0 +1,307 @@
+﻿lordship_of_ireland_casus_belli = {
+    type = internationalorganization
+
+    ai_tick = monthly
+    ai_tick_frequency = 60
+
+    automation_tick = never
+    show_message_to_target = yes
+
+    potential = {
+        exists = international_organization:lordship_of_ireland
+    }
+
+    allow = {
+		scope:actor = {
+			modifier:country_can_use_lordship_of_ireland_cb = yes
+			has_regent = no
+		}
+    }
+
+    price = price:lordship_of_ireland_casus_belli
+    cooldown = { type = lordship_of_ireland_casus_belli years = 10 }
+
+    select_trigger = {
+        looking_for_a = international_organization
+        source = actor
+        target_flag = recipient
+        name = "choose_international_organization"
+        column = { data = name }
+        visible = { international_organization_type = international_organization_type:lordship_of_ireland }
+    }
+
+    select_trigger = {
+        looking_for_a = country
+		interaction_source_list = {
+			region:ireland_region = {
+				every_location_in_region = {
+					owner ?= {						
+						add_to_list = source
+					}
+				}
+			}
+		}
+        target_flag = target
+        name = "choose_country"
+        column = { data = name }
+        visible = {
+			NOT = { this = scope:actor }
+			capital = { region = region:ireland_region }
+			NOT = { is_member_of_international_organization = international_organization:lordship_of_ireland }
+        }
+
+		enabled = {
+			is_neighbor_of = scope:actor
+		}
+    }
+
+    effect = {
+        if = {
+            limit = { exists = scope:target }
+            scope:actor = {
+                add_casus_belli = {
+                    type   = casus_belli:cb_subjugation
+                    target = scope:target
+                    years  = 5
+                }
+            }
+        }
+        else = { custom_tooltip = lordship_of_ireland_casus_belli }
+    }
+
+    # Keep AI from trying when there’s no bound target
+    ai_prerequisite = {
+        exists = scope:target
+    }
+
+    ai_will_do = {
+        add = {
+            desc = "game_concept_stability"
+            value = "scope:actor.currency_utility(stability|stability_mild_bonus)"
+        }
+    }
+}
+
+lordship_of_ireland_invite_planters = {
+	type = internationalorganization
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 60
+
+	automation_tick = never
+	automation_tick_frequency = 30
+	show_message_to_target = yes
+
+	potential = {
+		exists = international_organization:lordship_of_ireland
+	}
+
+	allow = {
+		scope:actor = {
+			OR = {
+				has_special_status_in_international_organization = {
+					type = special_status:lord_of_ireland
+					international_organization = scope:recipient
+				}
+				has_special_status_in_international_organization = {
+					type = special_status:lieutenant
+					international_organization = scope:recipient
+				}
+			}
+		}
+	}
+	
+	price = price:lordship_of_ireland_invite_planters
+
+	cooldown = {
+		type = lordship_of_ireland_invite_planters
+		years = 10
+	}
+
+	select_trigger = {
+		looking_for_a = international_organization
+		source = actor
+		target_flag = recipient
+		name = "choose_international_organization"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_type = international_organization_type:lordship_of_ireland
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = area
+		target_flag = origin_area
+		name = "migrate_pop_based_country_select_source_area"
+
+		interaction_source_list = {
+			region:great_britain_region = {
+				every_area_in_region = {
+					add_to_list = source
+				}
+			}
+		}
+		#name = "migrate_pop_based_country_select_source_province"
+		#none_available_msg_key = "migrate_pop_based_country_no_provinces"
+		column = {
+			data = name
+		}
+		visible = {
+			is_area_sea = no
+		}
+		enabled = {
+			any_location_in_area = {
+				dominant_language ?= scope:actor.language
+				dominant_religion ?= scope:actor.religion
+			}
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = province_definition
+		target_flag = target_province
+		interaction_source_list = {
+			region:ireland_region = {
+				every_area_in_region = {
+					every_province_definition_in_area = {
+						add_to_list = source
+					}
+				}
+			}
+		}
+		name = "migrate_pop_based_country_select_destination_province"
+		none_available_msg_key = "migrate_pop_based_country_no_neighbor_provinces"
+		column = {
+			data = name
+		}
+		visible = {
+			has_passable_land = yes
+		}
+		enabled = {
+			any_location_in_province_definition = {
+				owner ?= {
+					is_member_of_international_organization = international_organization:lordship_of_ireland
+				}
+			}
+		}
+	}
+	effect = {
+
+		if = {
+			limit = {
+				exists = scope:origin_area 
+				exists = scope:target_province 
+			}
+		
+			custom_tooltip = {
+				text = lordship_of_ireland_invite_planters_effect_tt
+				scope:origin_area = {
+					every_province_definition_in_area = {
+						add_migration = {
+							from = this
+							to = scope:target_province
+							religion = scope:actor.religion
+							amount = {
+								value = 0.020
+								divide = scope:origin_area.num_province_definitions_in_area
+							}
+							months = 120
+						}
+					}
+				}
+			}
+		}
+		else = { 
+			custom_tooltip = {
+				text = lordship_of_ireland_invite_planters_effect_none_tt
+			}
+		}
+	}
+
+	ai_will_do = {
+	}
+}
+
+
+lordship_of_ireland_form_kingdom = {
+	type = internationalorganization
+
+	# Rosth: ai_will_do is zero or less
+	ai_tick = never
+	#ai_tick = monthly
+	#ai_tick_frequency = 60
+
+	automation_tick = never
+	automation_tick_frequency = 30
+	show_message_to_target = yes
+
+	potential = {
+		exists = international_organization:lordship_of_ireland
+	}
+
+	allow = {
+		trigger_if = {
+			limit = { country_exists = c:IRE }
+			NOT = { country_exists = c:IRE }
+		}
+		trigger_if = {
+			limit = { country_exists = c:CEL }
+			NOT = { country_exists = c:CEL }
+		}
+		scope:actor = {
+			has_regent = no
+			has_special_status_in_international_organization = {
+				type = special_status:lord_of_ireland
+				international_organization = scope:recipient
+			}
+		}
+		custom_tooltip = {
+			text = lordship_of_ireland_form_kingdom_region_tt
+			region:ireland_region = {
+				NOT = {
+					any_location_in_region = {
+						owner ?= {
+							NOT = { is_member_of_international_organization = international_organization:lordship_of_ireland }
+						}
+					}
+				}
+			}		
+		}
+
+		scope:recipient = {
+			NOT = { international_organization_has_policy = policy:lordship_of_ireland_rule_laudabiliter_policy }
+		}		
+	}
+	
+	price = price:lordship_of_ireland_form_kingdom
+
+	select_trigger = {
+		looking_for_a = international_organization
+		source = actor
+		target_flag = recipient
+		name = "choose_international_organization"
+		column = {
+			data = name
+		}
+		visible = {
+			international_organization_type = international_organization_type:lordship_of_ireland
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			form_country = formable_country:IRE_f
+			if = {
+				limit = { country_rank_level < 3 }
+				set_country_rank_effect = { rank = country_rank:rank_kingdom }
+			}
+		}
+	}
+
+	ai_will_do = {
+	}
+}

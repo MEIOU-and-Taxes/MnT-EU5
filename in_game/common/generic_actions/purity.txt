@@ -1,0 +1,240 @@
+﻿# scope:actor = country, scope:recipient = religion
+
+cleansing_ritual_purity = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor.religion = {
+			has_purity = yes
+		}
+	}
+
+	allow = {
+		scope:actor = { has_ruler = yes }
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+
+	automation_tick = monthly
+	automation_tick_frequency = 6
+	player_automated_category = religiousdoctrines
+	
+	price = price:cleansing_ritual_purity
+	
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_purity = purity_weak_bonus
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.currency_utility(purity|10)"
+	}
+}
+
+pilgrimage_purity = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor.religion = {
+			has_purity = yes
+		}
+	}
+
+	allow = {
+		scope:actor = { 
+			has_ruler = yes
+			ruler = {
+				NOT = { has_character_modifier = character_on_pilgrimage }
+			}
+		}
+	}
+	
+	cooldown = {
+		type = pilgrimage_purity
+		years = 5
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+
+	automation_tick = monthly
+	automation_tick_frequency = 12
+	player_automated_category = religiousdoctrines
+
+	price = price:pilgrimage_purity
+	
+	#scope:actor is the country doing the action, scope:target is the holy site
+	price_modifier = {
+		add = 1
+		add = {
+			if = {
+				limit = {
+					exists = scope:target
+				}
+				scope:target.location.owner = {
+					scope:actor = {
+						value = prev_opinion_of_this
+						divide = -400
+					}
+				}
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = holy_site
+		target_flag = target
+		name = "pilgrimage_select_holy_site_title"
+		none_available_msg_key = "pilgrimage_no_holy_sites"
+		column = {
+			data = name
+		}
+		interaction_source_list = {
+			scope:recipient = {
+				every_holy_site_in_religion = { add_to_list = source }
+			}
+		}
+		cache_interaction_source_list = yes
+		pre_evaluation_sort_value = {
+			value = "scope:actor.capital.distance_to_squared(root.location)"
+			multiply = -1
+		}
+		pre_evaluation_number_to_evaluate_fully = 1
+		enabled = {
+			location.owner ?= {
+				OR = {
+					this = scope:actor
+					is_allied_with = { target = scope:actor }
+					"opinion(scope:actor)" > 50
+				}
+			}
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = { exists = scope:target }
+			scope:actor = {
+				add_purity = purity_mild_bonus
+				ruler ?= {
+					add_character_modifier = { 
+						modifier = character_on_pilgrimage
+						months = 12
+						mode = add_and_extend
+					}
+					hidden_effect = {
+						set_variable = {
+							name = pilgrimage_holy_site
+							value = scope:target
+							months = 12
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.currency_utility(purity|20)"
+	}
+}
+
+religious_offering = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	potential = {
+		scope:actor.religion = {
+			has_purity = yes
+		}
+	}
+
+	allow = {
+		
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+
+	automation_tick = monthly
+	automation_tick_frequency = 6
+	player_automated_category = religiousdoctrines
+	
+	price = price:religious_offering
+	
+	select_trigger = {
+		looking_for_a = religion
+		source = actor
+		target_flag = recipient
+		name = "choose_religion"
+		column = {
+			data = name
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = work_of_art
+		source = actor
+		target_flag = target
+		name = "religious_offering_select_work_of_art_title"
+		none_available_msg_key = "religious_offering_no_work_of_arts"
+		column = {
+			data = name
+		}
+		column = {
+			data = art_quality
+		}
+		column = {
+			data = art_location
+		}
+		visible = {
+			this != work_of_art:kusanagi_no_tsurugi
+			this != work_of_art:yata_no_kagami
+			this != work_of_art:yasakani_no_magatama
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_purity = purity_severe_bonus
+			if = {
+				limit = { exists = scope:target }
+				destroy_art = scope:target
+			}
+			else = {
+				custom_tooltip = religious_offering_tt
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.currency_utility(purity|30)"
+	}
+}
