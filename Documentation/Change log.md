@@ -253,6 +253,9 @@ Date: 2026-01-20
 - Land war exhaustion from losses: 100 → 300  
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
+- Tribal levies for non-tribal non-steppe government: 2% → 15%
+- Steppe hordes only make steppe cavalry out of tribesmen and nobles of Turkic and Mongolian cultures
+- Steppe cavalry levies for steppe hordes: 2% → 50%
 
 ##### Situations
 
