@@ -1,0 +1,1820 @@
+﻿namespace = buddhism_events
+buddhism_events.1 = {
+	type = country_event
+	title = buddhism_events.1.title
+	desc = buddhism_events.1.desc
+	trigger = {
+		
+		religion = { has_karma = yes }
+		has_ruler = yes
+		karma < -50
+
+		any_cabinet_character = {
+			count > 0
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_estate_background_effect = { background = estate_type:nobles_estate }
+		random_cabinet_character = {
+			save_scope_as = target_minister
+		}
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.1.a
+		add_karma = karma_severe_penalty
+		remove_from_cabinet = scope:target_minister
+		scope:target_minister = { add_character_modifier = { modifier = banned_from_cabinet years = 5 mode = add_and_extend }	}
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_penalty
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_weak_towards_equilibrium = yes
+		}
+	}
+
+	option = {
+		name = buddhism_events.1.b
+		add_stability = stability_mild_penalty
+		add_prestige = prestige_mild_penalty
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+}
+
+buddhism_events.2 = {
+	type = country_event
+	title = buddhism_events.2.title
+	desc = buddhism_events.2.desc
+	trigger = {
+		religion = { has_karma = yes }
+		num_of_non_rural >= 3
+		has_ruler = yes
+		government_type = government_type:monarchy
+		karma < -50.00
+	}
+
+	illustration_tags = {
+		angry = 10
+		exterior = 10
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		ruler = { save_scope_as = target_character }
+	}
+
+	option = {
+		name = buddhism_events.2.a
+		custom_tooltip = {
+			text = buddhism_events.2.a.tt
+			ordered_owned_location = {
+				limit = {
+					dominant_religion = root.religion
+					any_pop = { pop_type = pop_type:clergy }
+				}
+				order_by = population
+				max = {
+					value = 1
+					add = {
+						value = root.num_provinces
+						divide = 10
+					}
+				}
+				every_pop = {
+					limit = {
+						owner = root
+						pop_type = pop_type:peasants
+					}
+					add_pop_satisfaction = pop_satisfaction_severe_penalty
+				}
+			}
+		}
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_penalty
+		}
+	}
+
+	option = {
+		name = buddhism_events.2.b
+		add_prestige = prestige_mild_penalty
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_weak_bonus }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		change_gold_effect = { scale = -1 }
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_weak_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.2.c
+		trigger = {
+			any_cabinet_character = {
+				religion = root.religion
+				has_estate = estate_type:clergy_estate
+			}
+		}
+		random_cabinet_character = {
+			limit = {
+				religion = root.religion
+				has_estate = estate_type:clergy_estate
+			}
+			kill_character = this
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_weak_penalty
+		}
+	}
+}
+
+buddhism_events.3 = {
+	type = country_event
+	title = buddhism_events.3.title
+	desc = buddhism_events.3.desc
+
+	trigger = {
+		num_of_non_rural >= 3
+		religion = { has_karma = yes }
+		karma >= 50.00
+		has_ruler = yes
+		government_type = government_type:monarchy
+		ruler = {
+			OR = {
+				adm >= 60
+				dip >= 60
+				has_trait = just
+				has_trait = righteous
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = happy
+	}
+
+	immediate = {
+		ruler = { save_scope_as = target_ruler }
+		event_illustration_government_estate_effect = yes
+	}
+
+	option = {
+		name = buddhism_events.3.a
+		add_karma = karma_severe_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_bonus
+		}
+	}
+}
+
+buddhism_events.4 = {
+	type = country_event
+	title = buddhism_events.4.title
+	desc = buddhism_events.4.desc
+
+	trigger = {
+		war_exhaustion >= 2.00
+		num_of_non_rural >= 3
+		religion = { has_karma = yes }
+		at_war = yes
+		government_type = government_type:monarchy
+		total_effective_building_levels:monastery > 0
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = armed
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+	}
+
+	option = {
+		name = buddhism_events.4.a
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_bonus }
+		add_karma = karma_mild_bonus
+		add_war_exhaustion = war_exhaustion_weak_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_penalty
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+
+	option = {
+		name = buddhism_events.4.b
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_penalty }
+		add_karma = karma_mild_penalty
+		add_manpower = { value = root.monthly_manpower multiply = 1 }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_bonus
+		}
+	}
+}
+
+buddhism_events.5 = {
+	type = country_event
+	title = buddhism_events.5.title
+	desc = buddhism_events.5.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = happy
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+	}
+
+	option = {
+		name = buddhism_events.5.a
+		add_karma = karma_mild_penalty
+		change_gold_effect = { scale = 1.20 }
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_severe_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.5.b
+		add_karma = karma_mild_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.6 = {
+	type = country_event
+	title = buddhism_events.6.title
+	desc = buddhism_events.6.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+		at_war = no
+		stability >= 20
+		NOT = {	has_country_modifier = grain_for_the_poor }
+		NOT = {	has_country_modifier = food_reserves }
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = happy
+	}
+	
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+	}
+
+	option = {
+		name = buddhism_events.6.a
+		add_karma = karma_severe_bonus
+		add_country_modifier = { modifier = grain_for_the_poor years = 10 mode = add_and_extend }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+	option = {
+		name = buddhism_events.6.b
+		add_country_modifier = { modifier = food_reserves years = 10 mode = add_and_extend }
+		add_karma = karma_severe_penalty
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.7 = {
+	type = country_event
+	title = buddhism_events.7.title
+	desc = buddhism_events.7.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+		has_regent = no
+		has_ruler = yes
+		at_war = yes
+		any_current_war = {
+			NOT = { is_an_attacker = root }
+		}
+		any_army = { count > 0 }
+		ruler = {
+			NOT = { exists = unit }
+		}
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = armed
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.7.a
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_severe_bonus
+		}
+		random_army = {
+			set_as_commander = scope:target_ruler
+		}
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_weak_bonus }
+		add_prestige = prestige_weak_bonus
+	}
+
+	option = {
+		name = buddhism_events.7.b
+		add_karma = karma_weak_bonus
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_weak_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.8 = {
+	type = country_event
+	title = buddhism_events.8.title
+	desc = buddhism_events.8.desc
+
+	trigger = {
+		religion = religion:theravada
+		has_ruler = yes
+		NOT = {	ruler = { has_variable = had_tapa}	}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		ruler = { save_scope_as = target_ruler }
+		event_illustration_government_estate_effect = yes
+	}
+
+	option = {
+		name = buddhism_events.8.a
+		add_karma = karma_mild_bonus
+		add_prestige = prestige_mild_penalty
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_bonus }
+		change_societal_value = { type = spiritualist_vs_humanist value = societal_value_minor_move_to_left }
+		ruler = { set_variable = { name = had_tapa value = 1 } }
+	}
+	
+	option = {
+		name = buddhism_events.8.b
+		add_karma = karma_mild_penalty
+		add_government_power = government_power_extreme_penalty
+		ruler = { set_variable = { name = had_tapa value = 1 } }
+		change_societal_value = { type = spiritualist_vs_humanist value = societal_value_minor_move_to_right }
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_mild_bonus }
+	}
+}
+
+buddhism_events.9 = {
+	type = country_event
+	title = buddhism_events.9.title
+	desc = buddhism_events.9.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+		total_effective_building_levels:monastery > 0
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+	}
+
+	option = {
+		name = buddhism_events.9.a
+		add_karma = karma_mild_bonus
+		add_prestige = prestige_weak_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.9.b
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_bonus }
+		add_karma = karma_mild_penalty
+		add_government_power = government_power_mild_bonus
+	}
+
+	option = {
+		name = buddhism_events.9.c
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_severe_penalty }
+		add_karma = karma_severe_penalty
+		change_gold_effect = { scale = 3.00 }
+	}
+}
+
+
+buddhism_events.10 = {
+	type = country_event
+	title = buddhism_events.10.title
+	desc = buddhism_events.10.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+		has_ruler = yes
+		any_neighbor_country = {
+			NOT = {
+				is_at_war_with = root
+				is_allied_with = { target = root }
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		random_neighbor_country = {
+			limit = {
+				NOT = {
+					is_at_war_with = root
+					is_allied_with = { target = root }
+				}
+			}
+			save_scope_as = target_country
+		}
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.10.a
+		add_karma = karma_mild_penalty
+		add_casus_belli = {	target = scope:target_country	type = casus_belli:cb_insulted_us	}
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.10.b
+		add_karma = karma_mild_bonus
+		add_prestige = prestige_mild_bonus
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_weak_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.11 = {
+	type = country_event
+	title = buddhism_events.11.title
+	desc = buddhism_events.11.desc
+
+	trigger = {
+		has_ruler = yes
+		religion = { has_karma = yes }
+		NOT = {
+			ruler = { has_variable = buddhist_law_collection }
+		}
+		OR = {
+			karma >  25
+			karma < -25
+			righteousness < 50
+			righteousness > 50
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+		ruler = {
+			set_variable = { name = buddhist_law_collection value = 1 }
+			save_scope_as = target_ruler
+		}
+	}
+
+	option = {
+		name = buddhism_events.11.a
+		add_karma = karma_mild_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+
+		if = {
+			limit = {
+				OR = {
+					AND = {
+						karma < -25
+						modifier:allow_righteousness = no
+					}
+					AND = {
+						modifier:allow_righteousness = yes
+						righteousness < 50
+						karma >= -25
+					}
+				}
+			}
+			custom_tooltip = buddhism_events.11.a.tt1
+			add_prestige = prestige_weak_penalty
+		}
+		if = {
+			limit = {
+				OR = {
+					AND = {
+						karma > 25
+						modifier:allow_righteousness = no
+					}
+					AND = {
+						modifier:allow_righteousness = yes
+						righteousness >= 50
+						karma <= 25
+					}
+				}
+			}
+			custom_tooltip = buddhism_events.11.a.tt2
+			add_prestige = prestige_weak_bonus
+		}
+		if = {
+			limit = {
+				AND = {
+					karma > 25
+					righteousness >= 50
+					modifier:allow_righteousness = yes
+				}
+			}
+			custom_tooltip = buddhism_events.11.a.tt3
+			add_prestige = prestige_mild_bonus
+		}
+		if = {
+			limit = {
+				AND = {
+					modifier:allow_righteousness = yes
+					karma < -25
+					righteousness < 50
+				}
+			}
+			custom_tooltip = buddhism_events.11.a.tt4
+			add_prestige = prestige_mild_penalty
+		}
+	}
+
+	option = {
+		name = buddhism_events.11.b
+		add_karma = karma_mild_penalty
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_penalty
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_weak_penalty
+		}
+		add_stability = stability_weak_bonus
+	}
+}
+
+buddhism_events.12 = {
+	type = country_event
+	title = buddhism_events.12.title
+	desc = buddhism_events.12.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+		num_of_non_rural >= 5
+		total_effective_building_levels:monastery > 0
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+	}
+
+	option = {
+		name = buddhism_events.12.a
+		add_karma = karma_mild_bonus
+		add_stability = stability_mild_penalty
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+
+	option = {
+		name = buddhism_events.12.b
+		add_karma = karma_mild_penalty
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_bonus }
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_mild_penalty }
+	}
+
+	option = {
+		name = buddhism_events.12.c
+		add_karma = karma_mild_penalty
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_mild_bonus }
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_penalty }
+	}
+}
+
+buddhism_events.13 = {
+	type = country_event
+	title = buddhism_events.13.title
+	desc = buddhism_events.13.desc
+
+	trigger = {
+		religion = religion:tengri
+		has_ruler = yes
+		NOT = {	has_variable = met_lama	}
+		OR = {
+			any_owned_location = {
+				region = region:tibet_region
+			}
+			AND = {
+				current_year >= 1530
+				any_neighbor_country = {
+					religion = religion:tibetan_buddhism
+					any_international_organizations_member_of = {
+						international_organization_type = international_organization_type:sect
+					}
+				}
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = happy
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		ruler = { save_scope_as = target_ruler }
+		set_variable = { name = met_lama value = 1 }
+		random_neighbor_country = {
+			limit = {
+				religion = religion:tibetan_buddhism
+				any_international_organizations_member_of = {
+					international_organization_type = international_organization_type:sect
+				}
+			}
+			save_scope_as = target_neighbor_country
+		}
+	}
+
+	option = {
+		name = buddhism_events.13.a
+		add_government_power = government_power_mild_bonus
+		change_religion = scope:target_neighbor_country.religion
+		change_religion_for_ruler_and_family = { country = ROOT religion = scope:target_neighbor_country.religion }
+		scope:target_neighbor_country = {
+			random_international_organizations_member_of = {
+				limit = {
+					international_organization_type = international_organization_type:sect
+				}
+				add_country_to_international_organization = root
+			}
+		}
+	}
+
+	option = {
+		name = buddhism_events.13.b
+		add_prestige = prestige_mild_bonus
+	}
+}
+
+buddhism_events.14 = {
+	type = country_event
+	title = buddhism_events.14.title
+	desc = buddhism_events.14.desc
+
+	trigger = {
+		religion = religion:tibetan_buddhism
+		has_country_modifier = tibetan_lama
+		NOT = {	has_variable = burned_figures }
+		any_owned_location = {
+			is_location_dominant_religion_pagan = yes
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		set_variable = { name = burned_figures value = 1 years = 10 }
+	}
+
+	option = {
+		name = buddhism_events.14.a
+		add_country_modifier = { modifier = destruction_of_idols years = 10 mode = add_and_extend }
+	}
+
+	option = {
+		name = buddhism_events.14.b
+		add_stability = stability_extreme_penalty
+	}
+}
+
+buddhism_events.15 = {
+	type = country_event
+	title = buddhism_events.15.title
+	desc = buddhism_events.15.desc
+
+	trigger = {
+		NOT = { religion = religion:theravada }
+		area:sailan_area = {
+			any_location_in_area = {
+				owner = root
+				dominant_religion = religion:theravada
+			}
+		}
+		NOT = {
+			has_variable = conquered_sri_lanka
+		}
+		has_ruler = yes
+	}
+
+
+	immediate = {
+		set_variable = { name = conquered_sri_lanka value = 1 }
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.15.a
+		change_religion = religion:theravada
+		change_religion_for_ruler_and_family = { country = ROOT religion = religion:theravada }
+	}
+
+	option = {
+		name = buddhism_events.15.b
+		change_gold_effect = { scale = 3.00 }
+		custom_tooltip = {
+			text = buddhism_events.15.b.tt
+			area:sailan_area = {
+				every_location_in_area = {
+					limit = { owner = root }
+					every_pop = {
+						limit = {
+							owner = root
+							religion = religion:theravada
+						}
+						add_pop_satisfaction = pop_satisfaction_severe_penalty
+					}
+				}
+			}
+		}
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_penalty
+		}
+	}
+
+	option = {
+		name = buddhism_events.15.c
+		custom_tooltip = {
+			text = buddhism_events.15.c.tt
+			area:sailan_area = {
+				every_location_in_area = {
+					limit = { owner = root }
+					every_pop = {
+						limit = {
+							owner = root
+							religion = religion:theravada
+						}
+						add_pop_satisfaction = pop_satisfaction_mild_bonus
+					}
+				}
+			}
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.16 = {
+	type = country_event
+	title = buddhism_events.16.title
+	desc = buddhism_events.16.desc
+
+	trigger = {
+		is_country_buddhist = yes
+		has_ruler = yes
+		karma < -50
+		total_effective_building_levels:monastery > 0
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:nobles_estate }
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.16.a
+		change_gold_effect = { scale = -1.0 }
+		add_karma = karma_mild_bonus
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_bonus }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.16.b
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_penalty }
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_weak_bonus }
+		add_karma = karma_mild_penalty
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.17 = {
+	hide_portraits = yes
+	type = country_event
+	title = buddhism_events.17.title
+	desc = buddhism_events.17.desc
+
+	trigger = {
+		is_country_buddhist = yes
+		
+		has_ruler = yes
+		karma < -50
+
+		total_effective_building_levels:monastery > 0
+		NOT = {	has_country_modifier = lacking_monastic_discipline	}
+		NOT = {	has_country_modifier = strict_punishment_of_monks	}
+		NOT = {	has_country_modifier = cleansing_of_monasteries }
+		NOT = {	
+			any_owned_location = {
+				has_location_modifier = monasteries_blooming
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		ruler = { save_scope_as = target_ruler }
+	}
+	
+	option = {
+		name = buddhism_events.17.a
+		add_karma = karma_mild_bonus
+		add_country_modifier = { modifier = lacking_monastic_discipline years = 10 mode = add_and_extend }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_weak_towards_equilibrium = yes
+		}
+	}
+
+	option = {
+		name = buddhism_events.17.b
+		add_country_modifier = { modifier = strict_punishment_of_monks years = 10 mode = add_and_extend }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.17.c
+		add_karma = karma_mild_penalty
+		add_prestige = prestige_weak_bonus
+		add_country_modifier = { modifier = cleansing_of_monasteries years = 10 mode = add_and_extend }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_penalty
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_penalty
+		}
+	}
+}
+
+buddhism_events.18 = {
+	type = country_event
+	title = buddhism_events.18.title
+	desc = buddhism_events.18.desc
+
+	trigger = {
+		has_ruler = yes
+
+		is_country_buddhist = yes
+		karma > 50.00
+
+		total_effective_building_levels:monastery > 0
+		NOT = {	
+			any_owned_location = {
+				has_location_modifier = monasteries_blooming
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = happy
+	}
+	
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		ruler = { save_scope_as = target_ruler }
+		random_owned_location = {
+			limit = {
+				is_location_buddhist = yes
+				has_building = building_type:monastery
+			}
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = buddhism_events.18.a
+		add_karma = karma_severe_penalty
+		scope:target_location = {
+			add_location_modifier = { modifier = monasteries_blooming years = 5 mode = add_and_extend }
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_bonus
+		}
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+	option = {
+		name = buddhism_events.18.b
+		add_prestige = prestige_weak_bonus
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.19 = {
+	type = country_event
+	title = buddhism_events.19.title
+	desc = buddhism_events.19.desc
+
+	trigger = {
+		has_ruler = yes
+		is_country_buddhist = yes
+		any_owned_building = {
+			building_type = building_type:RGO_building_rice #rice_staple
+		}	
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.19.a
+		add_karma = karma_mild_bonus
+		add_country_modifier = { modifier = wedge_throw months = 60 mode = add_and_extend }
+		change_gold_effect = { scale = -2 }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_bonus
+		}
+	}
+	option = {
+		name = buddhism_events.19.b
+		add_karma = karma_mild_penalty
+		add_country_modifier = { modifier = poor_rice_harvests years = 10 mode = add_and_extend }
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			if = {
+				limit = { harmony < -10}
+				add_harmony = harmony_mild_bonus
+			}
+			if = {
+				limit = { harmony > 10}
+				add_harmony = harmony_mild_penalty
+			}
+		}
+	}
+}
+
+
+buddhism_events.20 = {
+	type = country_event
+	title = buddhism_events.20.title
+	desc = buddhism_events.20.desc
+
+	trigger = {
+		is_country_buddhist = yes
+		any_owned_location = {
+			has_building_with_at_least_one_level = monastery
+			is_location_buddhist = yes		
+		}
+		any_owned_building = {
+			building_type = building_type:RGO_building_rice #rice_staple
+		}	
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+		ordered_owned_location = {
+			order_by = population
+			max = 1
+
+			limit = {
+				has_building_with_at_least_one_level = monastery
+				is_location_buddhist = yes
+			}
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = buddhism_events.20.a
+		add_karma = karma_mild_bonus
+		scope:target_location = { add_location_modifier = { modifier = rice_compensation years = 10 mode = add_and_extend }  }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.20.b
+		add_prestige = prestige_mild_penalty
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_penalty
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_mild_towards_equilibrium = yes
+		}
+	}
+
+	option = {
+		name = buddhism_events.20.c
+		add_karma = karma_weak_penalty
+		scope:target_location = { add_location_modifier = { modifier = forced_labor years = 10 mode = add_and_extend }   }
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_penalty
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_penalty
+		}
+	}
+}
+
+
+buddhism_events.1000 = {
+	type = country_event
+	title = buddhism_events.1000.title
+	desc = buddhism_events.1000.desc
+
+	trigger = {
+		religion = religion:theravada
+		num_of_non_rural >= 3
+		karma >= 50.00
+		has_ruler = yes
+		government_type = government_type:monarchy
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = happy
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:peasants
+  background = pop_type:peasants }
+		ruler = { save_scope_as = target_ruler }
+	}
+
+	option = {
+		name = buddhism_events.1000.a
+		change_gold_effect = { scale = -1.20 }
+		add_prestige = prestige_mild_bonus
+		add_karma = karma_mild_bonus
+	}
+	option = {
+		name = buddhism_events.1000.b
+		change_gold_effect = { scale = 0.60 }
+		add_prestige = prestige_mild_penalty
+		add_karma = karma_mild_penalty
+	}
+	option = {
+		name = buddhism_events.1000.c
+		save_scope_as = target_origin_country
+		trigger = {
+			any_related_country = {
+				type = alliance
+				is_neighbor_of = root
+				religion = religion:theravada
+			}
+		}
+		random_related_country = {
+			type = alliance
+			limit = {
+				is_neighbor_of = root
+				religion = religion:theravada
+			}
+			trigger_event_silently = { id = buddhism_events.1001 }
+			add_opinion = { target = root modifier = gifted_white_elephant }
+		}
+	}
+}
+
+buddhism_events.1001 = {
+	type = country_event
+	title = buddhism_events.1001.title
+	desc = buddhism_events.1001.desc
+
+	illustration_tags = {
+		10 = interior
+		10 = happy
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+	}
+
+
+	option = {
+		name = buddhism_events.1001.a
+		change_gold_effect = { scale = -1.20 }
+		add_karma = karma_mild_bonus
+		add_prestige = prestige_mild_bonus
+	}
+	option = {
+		name = buddhism_events.1001.b
+		change_gold_effect = { scale = 0.60 }
+		add_prestige = prestige_mild_penalty
+		add_karma = karma_mild_penalty
+		scope:target_origin_country = {
+			add_opinion = { target = root modifier = sold_our_elephant }
+		}
+	}
+}
+
+buddhism_events.1100 = {
+	type = country_event
+	title = buddhism_events.1100.title
+	desc = buddhism_events.1100.desc
+
+	trigger = {
+		religion = { has_karma = yes }
+		has_ruler = yes
+		NOT = {	ruler = { has_variable = akkodha } }
+		any_cabinet_character = { count > 0 }
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		ruler = {
+			save_scope_as = target_ruler
+			set_variable = { name = akkodha value = 1 }
+		}
+		random_cabinet_character = { save_scope_as = target_character }
+	}
+
+	option = {
+		name = buddhism_events.1100.a
+		add_karma = karma_mild_penalty
+		add_country_modifier = { modifier = political_rival_crushed years = 10 mode = add_and_extend }
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_severe_penalty
+		}
+		remove_from_cabinet = scope:target_character
+		scope:target_character = {
+			add_character_modifier = { modifier = permanently_banned_from_cabinet years = -1 mode = add_and_extend }
+		}
+	}
+
+	option = {
+		name = buddhism_events.1100.b
+		add_karma = karma_mild_bonus
+		add_prestige = prestige_weak_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.1100.c
+		add_karma = karma_mild_bonus
+		add_prestige = prestige_severe_bonus
+		change_gold_effect = { scale = -1.80 }
+		hidden_effect = {
+			random_list =  {
+				10 = { trigger_event_silently = { id = buddhism_events.1101  days = 720 } }
+				10 = { trigger_event_silently = { id = buddhism_events.1102  days = 720 } }
+			}
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_severe_bonus
+		}
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_bonus
+		}
+	}
+}
+
+buddhism_events.1101 = {
+	type = country_event
+	title = buddhism_events.1101.title
+	desc = buddhism_events.1101.desc
+
+	trigger = {
+		scope:target_character ?= { is_alive = yes }
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = happy
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		if = {
+			limit = {
+				scope:target_ruler ?= { is_alive = no }
+			}
+			clear_saved_scope = target_ruler
+		}
+	}
+
+	option = {
+		name = buddhism_events.1101.a
+		add_government_power = government_power_extreme_bonus
+	}
+}
+
+buddhism_events.1102 = {
+	type = country_event
+	title = buddhism_events.1102.title
+	desc = buddhism_events.1102.desc
+
+	trigger = {
+		scope:target_character ?= { is_alive = yes }
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		if = {
+			limit = {
+				scope:target_ruler ?= { is_alive = no }
+			}
+			clear_saved_scope = target_ruler
+		}
+	}
+
+	option = {
+		name = buddhism_events.1102.a
+		add_government_power = government_power_weak_penalty
+		add_karma = karma_weak_bonus
+	}
+
+	option = {
+		name = buddhism_events.1102.b
+		kill_character_silently = scope:target_character
+		add_karma = karma_severe_penalty
+		add_government_power = government_power_weak_bonus
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_severe_penalty
+		}
+	}
+}
+
+buddhism_events.1200 = {
+	type = country_event
+	title = buddhism_events.1200.title
+	desc = buddhism_events.1200.desc
+
+	trigger = {
+		religion = religion:tibetan_buddhism
+		NOT = {	has_country_modifier = tibetan_lama }
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+	}
+
+	option = {
+		name = buddhism_events.1200.a
+		add_karma = karma_weak_bonus
+		hidden_effect = { trigger_event_silently = { id = buddhism_events.1201 days = 60 } }
+	}
+
+	option = {
+		name = buddhism_events.1200.b
+		add_karma = karma_weak_penalty
+	}
+}
+
+buddhism_events.1201 = {
+	hide_portraits = yes
+	type = country_event
+	title = buddhism_events.1201.title
+	desc = buddhism_events.1201.desc
+
+	trigger = {
+		has_ruler = yes
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		ruler = { save_scope_as = target_ruler }
+		area:u_area = {
+			random_location_in_area = {
+				save_scope_as = target_location
+			}
+		}
+		create_character = {
+			culture = culture:utsang_culture
+			religion = religion:tibetan_buddhism
+			estate = estate_type:clergy_estate
+			female = no
+			birth_location = scope:target_location
+			min_age = 45
+			save_scope_as = target_character
+			create_in_limbo = yes
+		}
+	}
+
+	option = {
+		name = buddhism_events.1201.a
+		change_gold_effect = { scale = -9.00 }
+		add_government_power = government_power_extreme_bonus
+		add_country_modifier = { modifier = tibetan_lama months = -1 mode = add_and_extend }
+		capital = {
+			change_building_level_in_location = { building = building_type:tibetan_great_monastery value = 1 }
+		}
+		scope:target_character = { move_country = root }
+		set_variable = { name = buddhism_events_lama value = scope:target_character }
+	}
+
+	option = {
+		name = buddhism_events.1201.b
+		add_prestige = prestige_weak_penalty
+		add_country_modifier = { modifier = influx_of_tibetan_monks months = 60 mode = add_and_extend }
+		hidden_effect = {
+			kill_character_silently = scope:target_character
+		}
+	}
+}
+
+buddhism_events.1202 = {
+	type = country_event
+	title = buddhism_events.1202.title
+	desc = buddhism_events.1202.desc
+
+	trigger = {
+		religion = religion:tibetan_buddhism
+		has_country_modifier = tibetan_lama
+		NOT = {	has_variable = search_for_lama	}
+		has_variable = buddhism_events_lama
+		var:buddhism_events_lama ?= { is_alive = no }
+		total_effective_building_levels:tibetan_great_monastery > 0
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		set_variable = { name = search_for_lama value = 1 }
+		var:buddhism_events_lama = { save_scope_as = target_character }
+	}
+
+	option = {
+		name = buddhism_events.1202.a
+		add_karma = karma_mild_bonus
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_weak_bonus
+		}
+	}
+
+	option = {
+		name = buddhism_events.1202.b
+		add_karma = karma_mild_penalty
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			harmony_weak_towards_equilibrium = yes
+		}
+	}
+}
+
+buddhism_events.1203 = {
+	type = country_event
+	title = buddhism_events.1203.title
+	desc = buddhism_events.1203.desc
+
+	trigger = {
+		religion = religion:tibetan_buddhism
+		has_variable = search_for_lama
+		has_regent = no
+		any_owned_location = { dominant_religion = religion:tibetan_buddhism }
+		has_variable = buddhism_events_lama
+		var:buddhism_events_lama = { is_alive = no }
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = happy
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		remove_variable = search_for_lama
+		var:buddhism_events_lama = {
+			save_scope_as = target_old_lama
+			if = {
+				limit = { has_variable = reincarnated }
+				remove_variable = reincarnated
+			}
+		}
+		random_owned_location = {
+			limit = { dominant_religion = religion:tibetan_buddhism }
+			save_scope_as = target_location
+		}
+		create_character = {
+			culture = scope:target_location.dominant_culture
+			religion = religion:tibetan_buddhism
+			estate = estate_type:clergy_estate
+			female = no
+			birth_location = scope:target_location
+			save_scope_as = target_character
+		}
+		remove_variable = buddhism_events_lama
+		set_variable = { name = buddhism_events_lama value = scope:target_character }
+		scope:target_character = {
+			set_variable = reincarnated
+		}
+	}
+
+	option = {
+		name = buddhism_events.1203.a
+		add_stability = stability_extreme_bonus
+	}
+}
+
+buddhism_events.1204 = {
+	type = country_event
+	title = buddhism_events.1204.title
+	desc = buddhism_events.1204.desc
+
+	trigger = {
+		religion = religion:tibetan_buddhism
+		any_character = {
+			is_alive = yes
+			has_variable = reincarnated
+		}
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		random_character = {
+			limit = {
+				has_variable = reincarnated
+			}
+			save_scope_as = target_character
+		}
+	}
+
+	option = {
+		name = buddhism_events.1204.a
+		add_karma = karma_weak_bonus
+		add_prestige = prestige_weak_penalty
+		if = {
+			limit = { modifier:allow_righteousness = yes }
+			add_righteousness = righteousness_mild_bonus
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_penalty
+		}
+	}
+
+	option = {
+		name = buddhism_events.1204.b
+		add_karma = karma_weak_penalty
+		ordered_owned_location = {
+			limit = { dominant_religion = religion:tibetan_buddhism }
+			order_by = population
+	
+			max = {
+				value = 1
+				add = {
+					value = root.num_provinces
+					divide = 10
+				}
+			}
+			every_pop = {
+				limit = {
+					owner = root
+				}
+				add_pop_satisfaction = pop_satisfaction_mild_penalty
+			}
+		}
+		if = {
+			limit = { modifier:allow_harmony = yes }
+			add_harmony = harmony_mild_bonus
+		}
+	}
+}
+
+buddhism_events.1300 = {
+	hide_portraits = yes
+	type = country_event
+	title = buddhism_events.1300.title
+	desc = buddhism_events.1300.desc
+	
+	trigger = {
+		religion = religion:theravada
+		has_ruler = yes
+		NOT = {	has_country_modifier = monks_from_ceylon }
+		NOT = { has_variable = sent_embassy_to_ceylon }
+		NOT = {	ruler = { has_character_modifier = supporting_local_monastic_traditions } }
+		NOT = {	culture = culture:sinhalese	}
+		area:sailan_area = {
+			NOT = {
+				any_location_in_area = { owner = root }
+			}
+			any_location_in_area = {
+				owner = {
+					religion = religion:theravada
+					at_war = no
+					prestige > 25
+					has_ruler = yes
+				}
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = exterior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		ruler = { save_scope_as = target_ruler }
+		set_variable = { name = sent_embassy_to_ceylon value = 1 }
+		area:sailan_area = {
+			random_location_in_area = {
+				limit = {
+					owner = {
+						religion = religion:theravada
+						at_war = no
+						prestige > 25
+						has_ruler = yes
+					}
+				}
+				owner = { save_scope_as = target_country }
+			}
+		}
+	}
+	
+	option = {
+		name = buddhism_events.1300.a
+	
+		add_prestige = prestige_weak_penalty
+		save_scope_as = target_origin_country
+
+		scope:target_country = {
+			trigger_event_silently = { id = buddhism_events.1301 }
+		}
+	}
+
+	option = {
+		name = buddhism_events.1300.b
+		ruler = { add_character_modifier = { modifier = supporting_local_monastic_traditions months = -1 mode = add_and_extend } }
+	}
+}
+
+buddhism_events.1301 = {
+	type = country_event
+	title = buddhism_events.1301.title
+	desc = buddhism_events.1301.desc
+
+	illustration_tags = {
+		10 = exterior
+		10 = happy
+	}
+	
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+	}
+
+	option = {
+		name = buddhism_events.1301.a
+		add_prestige = prestige_mild_bonus
+		add_opinion = { target = scope:target_origin_country modifier = lankan_monks_sent }
+		scope:target_origin_country = {
+			trigger_event_silently = { id = buddhism_events.1302 }
+		}
+	}
+	option = {
+		name = buddhism_events.1301.b
+		add_opinion = { target = scope:target_origin_country modifier = no_lankan_monks_sent }
+		scope:target_origin_country = {
+			trigger_event_silently = { id = buddhism_events.1303 }
+		}
+	}
+}
+
+buddhism_events.1302 = {
+	type = country_event
+	title = buddhism_events.1302.title
+	desc = buddhism_events.1302.desc
+
+	illustration_tags = {
+		10 = exterior
+		10 = happy
+	}
+	
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		scope:target_country = {
+			ruler = { save_scope_as = target_ruler }
+		}
+	}
+
+	option = {
+		name = buddhism_events.1302.a
+		add_country_modifier = { modifier = monks_from_ceylon years = 50 mode = add_and_extend }
+		add_opinion = { target = scope:target_country modifier = lankan_monks_sent }
+	}
+}
+
+buddhism_events.1303 = {
+	type = country_event
+	title = buddhism_events.1303.title
+	desc = buddhism_events.1303.desc
+
+	illustration_tags = {
+		10 = interior
+		10 = angry
+	}
+	
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		scope:target_country = {
+			ruler = { save_scope_as = target_ruler }
+		}
+	}
+
+	option = {
+		name = buddhism_events.1303.a
+		add_prestige = prestige_mild_penalty
+		add_opinion = { target = scope:target_country modifier = no_lankan_monks_sent }
+	}
+}

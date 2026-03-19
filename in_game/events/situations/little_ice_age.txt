@@ -1,0 +1,2431 @@
+﻿namespace = little_ice_age
+
+little_ice_age.1 = {
+	type = country_event
+	category = situation_event	
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"
+	title = little_ice_age.1.title
+	desc = little_ice_age.1.desc
+	historical_info = little_ice_age.1.historical_info
+		
+	option = {
+		name = little_ice_age.1.a
+		custom_tooltip = start_of_little_ice_age_tt
+	}
+
+}
+
+scripted_trigger is_location_affected_by_little_ice_age = {
+	area = {
+		has_extended_winter = yes
+	}
+}
+
+scripted_trigger is_province_affected_by_little_ice_age = {
+	area = {
+		has_extended_winter = yes
+	}
+}
+
+little_ice_age.4 = { #Cold and Wet Fields
+	hide_portraits = yes
+	type = country_event
+	category = situation_event
+	title = winter_events.4.title
+	desc = winter_events.4.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		capital ?= { area = { has_extended_winter = yes	} }
+		time_of_year = {  
+			min = 9.1 
+			max = 11.29
+		}
+		any_province = { 
+			NOT = { has_province_modifier = short_harvest_modifier }
+		}
+	}
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	immediate = {
+		ordered_province = {  
+			limit = {
+				NOT = { has_province_modifier = short_harvest_modifier }
+			} 
+			order_by = {
+				value = population
+				if = {
+					limit = { province_food_percentage > 0 }
+					divide = province_food_percentage
+				}
+				else = { divide = 0.01 }
+			}
+			max = 1
+			check_range_bounds = no 
+			save_scope_as = target_province_1 
+			ordered_location_in_province = {
+				order_by = population
+				max = 1
+				check_range_bounds = no
+				save_scope_as = target_location_1
+				ordered_pop = {
+					max = 1
+					order_by = pop_size
+					limit = {
+						pop_type = pop_type:peasants
+					}
+					save_scope_as = target_pop
+				}
+			}
+			province_definition = {
+				area = { save_scope_as = target_area }
+			}
+		}
+		if = {
+			limit = {
+				any_province = {
+					NOT = { this = scope:target_province_1 }
+					province_food_percentage > 0.5
+					area = scope:target_area
+				}
+			}
+			ordered_province = {  
+				limit = {
+					NOT = { this = scope:target_province_1 }
+					province_food_percentage > 0.5
+					area = scope:target_area
+				} 
+				order_by = province_food
+				max = 1
+				check_range_bounds = no 
+				save_scope_as = target_province_2
+				ordered_location_in_province = {
+					order_by = population
+					max = 1
+					check_range_bounds = no
+					save_scope_as = target_location_2
+				}
+			}
+			set_variable = {
+				name = provider_food_amount_variable
+				value = {
+					add = scope:target_province_2.province_food
+					divide = 5
+				}
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.4.a
+		
+		scope:target_province_1 = {
+			add_province_modifier = {
+				modifier = short_harvest_modifier
+				years = 1
+				mode = add_and_extend
+			}
+			every_location_in_province = {
+				change_prosperity = prosperity_weak_penalty
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.4.b
+
+		scope:target_province_1 = {
+			add_province_modifier = {
+				modifier = short_harvest_modifier
+				years = 1
+				mode = add_and_extend
+			}
+		}
+		add_gold = {
+			value = monthly_income_total
+			if = {
+				limit = { scope:target_province_1.province_food_percentage > 0.5 }
+				divide = scope:target_province_1.province_food_percentage
+			}
+			else = { divide = 0.25 }
+			multiply = -1
+		}
+		custom_tooltip = scales_with_target_province_1_province_food_percentage_tt
+	}
+
+	option = {
+		name = winter_events.4.c
+
+		trigger = {
+			exists = scope:target_province_2
+		}
+		scope:target_province_2 = {
+			change_province_food = {
+				value = root.var:provider_food_amount_variable
+				multiply = -1
+			}
+		}
+		if = {
+			limit = {
+				scope:target_location_1 = { 
+					NOT = { has_road_to = scope:target_location_2 }
+				}
+			}
+			custom_tooltip = due_to_no_road_network_and_distance_tt
+			scope:target_province_1 = {
+				change_province_food = {
+					value = root.var:provider_food_amount_variable
+					multiply = 0.75
+				}
+			}
+		}
+		else = {
+			scope:target_province_1 = {
+				change_province_food = root.var:provider_food_amount_variable
+			}
+		}
+		scope:target_province_1 = {
+			add_province_modifier = {
+				modifier = short_harvest_modifier
+				years = 1
+				mode = add_and_extend
+			}
+		}
+	}
+}
+
+little_ice_age.5 = { #Floating Ices
+	type = country_event
+	category = situation_event
+	title = winter_events.5.title
+	desc = winter_events.5.desc
+	historical_info = winter_events.5.historical_info
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	fire_only_once = yes
+	trigger = { 
+		has_presence_in = area:iceland_area 
+		location:reydarfjordur.area = { has_extended_winter = yes }
+
+	}
+	major = yes
+	major_trigger = {
+		has_discovered = location:reydarfjordur
+	}
+
+	immediate = {
+		province_definition:icelandic_coast_province = {
+			every_location_in_province_definition = {
+				add_location_modifier = {
+					modifier = floating_ices_modifier
+					years = 100
+					mode = replace
+				}
+			}
+			random_location_in_province_definition = { save_scope_as = target_location }
+		}
+	}
+
+	option = {
+		name = winter_events.5.a
+		
+		custom_tooltip = freeze_iceland_tt
+	}
+}
+
+little_ice_age.6 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.6.title
+	desc = winter_events.6.desc
+	historical_info = winter_events.6.historical_info
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	fire_only_once = yes
+	trigger = { 
+		has_presence_in = area:iceland_area 
+		location:reydarfjordur.area = { has_extended_winter = yes }
+	}
+	major = yes
+	major_trigger = {
+		has_discovered = location:reydarfjordur
+	}
+
+	immediate = {
+		area:eastern_greenland_sea_area = {
+			every_location_in_area = {
+				add_location_modifier = {
+					modifier = encroaching_cold_modifier
+					years = 100
+					mode = replace
+				}
+			}
+			random_location_in_area = { save_scope_as = target_location }
+		}
+	}
+
+	option = {
+		name = winter_events.6.a
+		
+		custom_tooltip = freeze_greenland_tt
+	}
+}
+
+little_ice_age.7 = { #Brrr it's getting cold!
+	hide_portraits = yes
+	type = country_event
+	category = situation_event
+	title = winter_events.7.title
+	desc = winter_events.7.desc
+	historical_info = winter_events.7.historical_info
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		location:ketilsfjord ?= { area = { has_extended_winter = yes	} }
+		OR = { 
+			AND = {
+				owns = location:ketilsfjord
+				location:ketilsfjord = { 
+					NOT = { has_location_modifier = reduced_wool_production_modifier }
+				}
+			}
+			AND = {
+				owns = location:brattahlid
+				location:brattahlid = { 
+					NOT = { has_location_modifier = reduced_wool_production_modifier }
+				}
+			}
+			area:greenland_area = {
+				any_location_in_area = {
+					owner ?= root
+					raw_material = goods:fish
+					NOT = { has_location_modifier = fewer_fisheries_modifier }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				owns = location:ketilsfjord
+				location:ketilsfjord = { 
+					NOT = { has_location_modifier = reduced_wool_production_modifier }
+				}
+			}
+			location:ketilsfjord = { save_scope_as = target_ketilsfjord }	#Wool reduction
+		}
+		if = {
+			limit = {
+				owns = location:brattahlid
+				location:brattahlid = { 
+					NOT = { has_location_modifier = reduced_wool_production_modifier }
+				}
+			}
+			location:brattahlid = { save_scope_as = target_brattahlid }	#Wool reduction
+		}
+	}
+
+	option = {
+		name = winter_events.7.a
+
+		if = {
+			limit = {
+				area:greenland_area = {
+					any_location_in_area = {
+						owner ?= root
+						raw_material = goods:fish
+						NOT = { has_location_modifier = fewer_fisheries_modifier }
+					}
+				}
+			}
+			area:greenland_area = {
+				every_location_in_area = {
+					limit = {
+						owner ?= root
+						raw_material = goods:fish
+						NOT = { has_location_modifier = fewer_fisheries_modifier }
+					}
+					add_location_modifier = {
+						modifier = fewer_fisheries_modifier
+						years = 50
+						mode = replace
+					}
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:target_ketilsfjord  }
+			scope:target_ketilsfjord  = {
+				add_location_modifier = {
+					modifier = reduced_wool_production_modifier
+					years = 100
+					mode = replace
+				}
+			}
+		}
+		if = {
+			limit = { exists = scope:target_brattahlid  }
+			scope:target_brattahlid  = {
+				add_location_modifier = {
+					modifier = reduced_wool_production_modifier
+					years = 100
+					mode = replace
+				}
+			}
+		}
+	}
+}
+
+little_ice_age.8 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.8.title
+	desc = winter_events.8.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		capital ?= { area = { has_extended_winter = yes	} }
+		OR = {
+			country_type = location
+			country_type = army
+			country_type = navy
+		}
+		any_province = {
+			NOT = { has_variable = recently_had_drought_event_variable }
+		}
+		capital ?= { is_location_affected_by_little_ice_age = yes }
+	}
+
+	immediate = {
+		ordered_province = {  
+			limit = {
+				NOT = { has_variable = recently_had_drought_event_variable }
+			} 
+			order_by = {
+				value = province_food_percentage
+				multiply = -1
+				if = {
+					limit = {
+						any_location_in_province = {
+							topography = mountains
+						}
+					}
+					divide = 10
+				}
+			}
+			max = 1
+			check_range_bounds = no 
+			save_scope_as = target_province_1
+			set_variable = {
+				name = recently_had_drought_event_variable
+				years = 2
+			}
+			ordered_location_in_province = {
+				order_by = population
+				max = 1
+				check_range_bounds = no
+				random_pop = {
+					limit = { pop_type = pop_type:peasants }
+					save_scope_as = target_pop
+				}
+			}
+		}
+		random_list = {
+			1 = { set_variable = very_mild_outcome_variable }
+			1 = { set_variable = mild_outcome_variable }
+			1 = { set_variable = strong_outcome_variable }
+			1 = { set_variable = very_strong_outcome_variable }
+			1 = { set_variable = extreme_outcome_variable }
+		}
+	}
+
+	option = {
+		name = winter_events.8.a
+		
+		switch = {
+			trigger = has_variable
+			very_mild_outcome_variable = {
+				scope:target_province_1 = { change_province_food_percentage = -0.25 }
+				custom_tooltip = {
+					text = very_mild_outcome_variable_tt_a
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_very_weak_penalty }
+					}
+				}
+			}
+			mild_outcome_variable = {
+				custom_tooltip = {
+					text = mild_outcome_variable_tt_a
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_weak_penalty }
+					}
+				}
+				scope:target_province_1 = { change_province_food_percentage = -0.3 }
+			}
+			strong_outcome_variable = {
+				custom_tooltip = {
+					text = strong_outcome_variable_tt_a
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = -0.15 }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.4
+					scope:target_pop ?= {
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.03
+						}
+					}
+				}
+			}
+			very_strong_outcome_variable = {
+				custom_tooltip = {
+					text = very_strong_outcome_variable_tt_a
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_severe_penalty }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.5
+					scope:target_pop ?= {
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.05
+						}
+					}
+				}
+			}
+			extreme_outcome_variable = {
+				custom_tooltip = {
+					text = extreme_outcome_variable_tt_a
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_severe_penalty }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.75
+					scope:target_pop ?= {
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.1
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.8.b
+		
+		add_gold = {
+			value = monthly_income_trade_and_tax
+			if = {
+				limit = { scope:target_province_1.province_food_percentage > 0.25 }
+				divide = scope:target_province_1.province_food_percentage
+			}
+			else = { divide = 0.25 }
+			multiply = -1
+			min = -50
+		}
+		custom_tooltip = scales_with_target_province_1_province_food_percentage_tt
+		
+		switch = {
+			trigger = has_variable
+			very_mild_outcome_variable = {
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.15
+				}
+			}
+			mild_outcome_variable = {
+				custom_tooltip = {
+					text = mild_outcome_variable_tt_b
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_very_weak_penalty }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.2
+				}
+			}
+			strong_outcome_variable = {
+				custom_tooltip = {
+					text = strong_outcome_variable_tt_b
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_weak_penalty }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.25
+					scope:target_pop ?= {
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.02
+						}
+					}
+				}
+			}
+			very_strong_outcome_variable = {
+				custom_tooltip = {
+					text = very_strong_outcome_variable_tt_b
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = -0.15 }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.33
+					scope:target_pop ?= {
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.04
+						}
+					}
+				}
+			}
+			extreme_outcome_variable = {
+				custom_tooltip = {
+					text = extreme_outcome_variable_tt_b
+					scope:target_province_1 = {
+						every_location_in_province = { change_prosperity = prosperity_severe_penalty }
+					}
+				}
+				scope:target_province_1 = {
+					change_province_food_percentage = -0.5
+					scope:target_pop ?= {
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.05
+						}
+					}
+				}
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { has_variable = very_mild_outcome_variable }
+			remove_variable = very_mild_outcome_variable
+		}
+		if = {
+			limit = { has_variable = mild_outcome_variable }
+			remove_variable = mild_outcome_variable
+		}
+		if = {
+			limit = { has_variable = strong_outcome_variable }
+			remove_variable = strong_outcome_variable
+		}
+		if = {
+			limit = { has_variable = very_strong_outcome_variable }
+			remove_variable = very_strong_outcome_variable
+		}
+		if = {
+			limit = { has_variable = extreme_outcome_variable }
+			remove_variable = extreme_outcome_variable
+		}
+	}
+}
+
+little_ice_age.9 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.9.title
+	desc = winter_events.9.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		NOT = { has_country_modifier = livestock_suffers_modifier }
+		produced_in_country:livestock > 25
+		capital ?= { is_location_affected_by_little_ice_age = yes }
+	}
+
+	immediate = {
+		add_country_modifier = {
+			modifier = livestock_suffers_modifier
+			years = modifier_duration_years_long
+			mode = replace
+		}
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:livestock
+			}
+			order_by = rgo_workers
+			check_range_bounds = no
+			max = 1
+			save_scope_as = target_location
+			province = { save_scope_as = target_province_1 }
+		}
+		set_variable = {
+			name = num_affected_provinces_variable
+			value = 0
+		}
+		every_province = {
+			limit = {
+				any_location_in_province = { raw_material = goods:livestock }
+			}
+			root = {
+				change_variable = {
+					name = num_affected_provinces_variable
+					add = 1
+				}
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.9.a
+		
+		add_estate_satisfaction = { 
+			type = estate_type:peasants_estate
+			value = estate_satisfaction_extreme_penalty
+		}
+		if = {
+			limit = {
+				any_province = {
+					NOT = { this = scope:target_province_1 }
+					any_location_in_province = { raw_material = goods:livestock }
+				}
+			}
+			random_province = {
+				limit = { 
+					NOT = { this = scope:target_province_1 }
+					any_location_in_province = { raw_material = goods:livestock }
+				}
+				change_province_food_percentage = {
+					value = {
+						add = -0.25
+						if = {
+							limit = { province_average_control > 0 }
+							divide = province_average_control
+						}
+						else = { subtract = 0.5 }
+					}
+				}
+				save_temporary_scope_as = target_province_2
+				custom_tooltip = livestock_provinces_suffer_tt
+			}
+			hidden_effect = {
+				every_province = {
+					limit = {
+						any_location_in_province = { raw_material = goods:livestock }
+					}
+					change_province_food_percentage = {
+						value = {
+							add = -0.25
+							if = {
+								limit = { province_average_control > 0 }
+								divide = province_average_control
+							}
+							else = { subtract = 0.5 }
+						}
+					}
+				}
+			}
+		}
+		else = {
+			random_province = {
+				limit = { 
+					any_location_in_province = { raw_material = goods:livestock }
+				}
+				change_province_food_percentage = {
+					value = {
+						add = -0.25
+						if = {
+							limit = { province_average_control > 0 }
+							divide = province_average_control
+						}
+						else = { subtract = 0.5 }
+					}
+				}
+				save_temporary_scope_as = target_province_1
+			}
+		}
+		show_as_tooltip = {
+			add_country_modifier = {
+				modifier = livestock_suffers_modifier
+				years = modifier_duration_years_long
+				mode = replace
+			}
+		}
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:livestock
+			}
+			order_by = rgo_workers
+			check_range_bounds = no
+			max = {
+				value = 1
+				add = {
+					value = num_provinces
+					divide = 10
+				}
+				max = 5
+			}
+			change_prosperity = prosperity_mild_penalty
+		}
+	}
+}
+
+little_ice_age.10 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.10.title
+	desc = winter_events.10.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		has_colonial_charters = yes
+		capital ?= { area = { has_extended_winter = yes	} }
+		any_colonial_charter = {
+			province_definition = {
+				any_province_in_province_definition = {
+					owner = root
+					any_location_in_province = {
+						NOR = {
+							has_location_modifier = dry_spell_modifier 
+							continent = root.capital.continent
+							is_connected_to = root.capital
+						}
+						OR = {
+							winter_level = severe
+							winter_level = mild
+							winter_level = normal
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_province = {
+			limit = {
+				any_location_in_province = {
+					OR = {
+						winter_level = severe
+						winter_level = mild
+						winter_level = normal
+					}
+					NOR = { 
+						has_location_modifier = dry_spell_modifier 
+						continent = root.capital.continent
+						is_connected_to = root.capital
+					}	
+				}
+			}
+			save_scope_as = target_charter
+		}
+		if = {
+			limit = {
+				scope:target_charter.province_definition = {
+					any_neighbor_province_definition = {
+						root = { own_entire_province = prev }
+						any_province_in_province_definition = { 
+							owner = root
+							province_food_percentage > 0.75 
+						}
+					}
+				}
+			}
+			random_province = {
+				limit = {
+					province_food_percentage > 0.75 
+					province_definition = {
+						any_neighbor_province_definition = {
+							this = scope:target_charter.province_definition
+						}
+					}
+				}
+				save_scope_as = target_province
+			}
+		}
+		else_if = {
+			limit = {
+				any_province = { 
+					province_food_percentage > 0.75 
+					area = scope:target_charter.area
+				}
+			}
+			ordered_province = {  
+				limit = { 
+					province_food_percentage > 0.75 
+					area = scope:target_charter.area
+				} 
+				order_by = {
+					value = population
+					if = {
+						limit = { province_food_percentage > 0 }
+						divide = province_food_percentage
+					}
+					else = { divide = 0.01 }
+				}
+				max = 1
+				check_range_bounds = no 
+				save_scope_as = target_province 
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.10.a
+		
+		scope:target_charter = {
+			custom_tooltip = {
+				text = every_location_in_province_gets_dry_spell_modifier_tt
+				every_location_in_province = {
+					add_location_modifier = {
+						modifier = dry_spell_modifier
+						years = 2
+						mode = add_and_extend
+					}
+				}
+			}
+			
+			
+			every_location_in_province = {
+				ordered_pop = {
+					max = 1
+					order_by = pop_size
+					check_range_bounds = no
+					add_pop_size = {
+						value = pop_size
+						if = {
+							limit = { 
+								location = { winter_level = severe }
+							}
+							multiply = -0.25
+						}
+						else_if = {
+							limit = { 
+								location = { winter_level = normal }
+							}
+							multiply = -0.15
+						}
+						else_if = {
+							limit = { 
+								location = { winter_level = mild }
+							}
+							multiply = -0.05
+						}
+						else = {
+							multiply = -0.02
+						}
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.10.b
+		
+		trigger = { exists = scope:target_province }
+
+		change_gold_effect = { scale = -4 }
+
+		scope:target_province = {
+			change_province_food_percentage = -0.33
+		}
+
+		scope:target_charter = {
+			every_location_in_province = {
+				ordered_pop = {
+					max = 1
+					order_by = pop_size
+					check_range_bounds = no
+					add_pop_size = {
+						value = pop_size
+						if = {
+							limit = { 
+								location = { winter_level = severe }
+							}
+							multiply = -0.1
+						}
+						else_if = {
+							limit = { 
+								location = { winter_level = normal }
+							}
+							multiply = -0.05
+						}
+						else_if = {
+							limit = { 
+								location = { winter_level = mild }
+							}
+							multiply = -0.01
+						}
+						else = {
+							multiply = -0.005
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+little_ice_age.11 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.11.title
+	desc = winter_events.11.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		religion = religion:catholic
+		OR = {
+			country_type = location
+			country_type = army
+			country_type = navy
+		}
+		capital ?= { 
+			any_pop = {
+				owner = root
+				pop_type = pop_type:peasants
+			}
+			is_location_affected_by_little_ice_age = yes 
+		}
+	}
+
+	immediate = {
+		random_owned_location = { 
+			limit = {
+				any_pop = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				is_location_affected_by_little_ice_age = yes
+			}
+			save_scope_as = target_location 
+			ordered_pop = {
+				max = 1
+				order_by = pop_size
+				check_range_bounds = no
+				limit = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				save_scope_as = target_peasants
+			}
+		}
+		set_variable = {
+			name = burned_witches_variable
+			value = {
+				add = scope:target_peasants.pop_size
+				multiply = -0.01
+			}
+		}
+		set_variable = {
+			name = display_burned_witches_variable
+			value = {
+				add = var:burned_witches_variable
+				multiply = 1000
+				ceiling = yes
+			}
+		}
+	}
+
+	option = {	#Burn them
+		name = winter_events.11.a
+		
+		scope:target_peasants = {
+			add_pop_satisfaction = pop_satisfaction_mild_bonus
+		}
+		custom_tooltip = {
+			text = burn_witches_tt
+			scope:target_peasants = {
+				add_pop_size = root.var:burned_witches_variable
+			}
+		}
+		if = {
+			limit = { 
+				OR = {
+					societal_value:traditionalist_vs_innovative > 25
+					societal_value:traditionalist_vs_innovative < 25
+				}
+			}
+			custom_tooltip = based_on_traditionalist_vs_innovative_tt
+			add_effect_scaling_with_societal_value = { 
+				societal_value = traditionalist_vs_innovative 
+				effect = stability 
+				operator = divide 
+				value = -5
+			}
+		}
+		else = {
+			add_stability = stability_weak_bonus
+		}
+		if = {
+			limit = { 
+				international_organization:catholic_church = {
+					international_organization_has_policy = policy:witchcraft_not_aknowledged
+				}
+			}
+			custom_tooltip = cc_stance_on_witchcraft_tt
+			add_estate_satisfaction = { 
+				type = estate_type:clergy_estate 
+				value = estate_satisfaction_mild_penalty 
+			}
+		}
+		else_if = {
+			limit = { 
+				international_organization:catholic_church = {
+					international_organization_has_policy = policy:witchcraft_aknowledged
+				}
+			}
+			custom_tooltip = cc_stance_on_witchcraft_tt
+			add_estate_satisfaction = { 
+				type = estate_type:clergy_estate 
+				value = estate_satisfaction_mild_bonus
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.11.b
+		
+		scope:target_peasants = {
+			add_pop_satisfaction = pop_satisfaction_mild_penalty
+		}
+		custom_tooltip = based_on_traditionalist_vs_innovative_tt
+		add_effect_scaling_with_societal_value = { 
+			societal_value = traditionalist_vs_innovative 
+			effect = stability 
+			operator = divide 
+			value = 5
+		}
+		if = {
+			limit = { 
+				international_organization:catholic_church = {
+					international_organization_has_policy = policy:witchcraft_not_aknowledged
+				}
+			}
+			custom_tooltip = cc_stance_on_witchcraft_tt
+			add_estate_satisfaction = { 
+				type = estate_type:clergy_estate 
+				value = estate_satisfaction_weak_bonus 
+			}
+		}
+		else_if = {
+			limit = { 
+				international_organization:catholic_church = {
+					international_organization_has_policy = policy:witchcraft_aknowledged
+				}
+			}
+			custom_tooltip = cc_stance_on_witchcraft_tt
+			add_estate_satisfaction = { 
+				type = estate_type:clergy_estate 
+				value = estate_satisfaction_weak_bonus
+			}
+		}
+	}
+
+	after = {
+		remove_variable = burned_witches_variable
+		remove_variable = display_burned_witches_variable
+	}
+}
+
+little_ice_age.12 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.12.title
+	desc = winter_events.12.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		capital ?= { area = { has_extended_winter = yes	} }
+		produced_in_country:wine > 0
+		NOT = { has_country_modifier = wineries_suffering_modifier }
+	}
+
+	immediate = {
+		add_country_modifier = {
+			modifier = wineries_suffering_modifier
+			years = modifier_duration_years_short
+			mode = replace
+		}
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:wine
+			}
+			order_by = rgo_workers
+			check_range_bounds = no
+			max = 1
+			save_scope_as = target_location
+		}
+		set_variable = {
+			name = num_affected_locations_variable
+			value = 0
+		}
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:wine
+			}
+			order_by = rgo_workers
+			check_range_bounds = no
+			max = {
+				value = 1
+				add = {
+					value = num_provinces
+					divide = 5
+				}
+				max = 10
+			}
+			root = {
+				change_variable = {
+					name = num_affected_locations_variable
+					add = 1
+				}
+			}
+			change_prosperity = prosperity_weak_penalty
+		}
+	}
+
+	option = {
+		name = winter_events.12.a
+		
+		add_estate_satisfaction = { 
+			type = estate_type:burghers_estate
+			value = estate_satisfaction_mild_penalty
+		}
+		
+		show_as_tooltip = {
+			add_country_modifier = {
+				modifier = wineries_suffering_modifier
+				years = modifier_duration_years_short
+				mode = replace
+			}
+		}
+		custom_tooltip = locations_affected_with_prosperity_loss_tt
+	}
+
+	option = {
+		name = winter_events.12.b
+		
+		add_gold = {
+			value = root.monthly_income_trade_and_tax
+			multiply = {
+				value = -1
+				multiply = var:num_affected_locations_variable
+			}
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:burghers_estate
+			value = {
+				add = monthly_income_trade_and_tax
+				multiply = var:num_affected_locations_variable
+			}
+		}
+		
+		show_as_tooltip = {
+			add_country_modifier = {
+				modifier = wineries_suffering_modifier
+				years = modifier_duration_years_short
+				mode = replace
+			}
+		}
+	}
+}
+
+little_ice_age.13 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.13.title
+	desc = winter_events.13.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		capital ?= { area = { has_extended_winter = yes	} }
+		produced_in_country:fruit > 0
+		NOT = { has_country_modifier = wineries_suffering_modifier }
+		
+	}
+
+	immediate = {
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:fruit
+			}
+			check_range_bounds = no
+			order_by = {
+				value = rgo_workers
+				multiply = -1
+			}
+			max = 1
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = winter_events.13.a
+		
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:fruit
+			}
+			check_range_bounds = no
+			order_by = rgo_workers
+			max = {
+				value = 1
+				add = {
+					value = num_provinces
+					divide = 5
+				}
+				max = 5
+			}
+			change_prosperity = prosperity_weak_penalty
+		}
+	}
+
+	option = {
+		name = winter_events.13.b
+		
+		scope:target_location = {
+#			if = {
+#				limit = { 
+#					root = { 
+#						NOT = { has_variable = recently_had_millet_event_option }
+#					}
+#				}
+#				root = {
+#					add_gold = {
+#						value = monthly_income_total
+#						multiply = -5
+#					}
+#				}
+#				change_raw_material = goods:millet
+#			}
+#			else = {
+				root = {
+					add_gold = {
+						value = monthly_income_total
+						multiply = -2.5
+					}
+				}
+#			}
+			province = {
+				change_province_food_percentage = {
+					value = 0.1
+					multiply = scope:target_location.rgo_workers
+					min = 0.1
+				}
+				every_location_in_province = { change_prosperity  = prosperity_very_weak_bonus }
+			}
+		}
+#		hidden_effect = {
+#			set_variable = {
+#				name = recently_had_millet_event_option
+#				years = 20
+#			}
+#		}
+	}
+}
+
+little_ice_age.14 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.14.title
+	desc = winter_events.14.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		current_year > 1650
+		current_year < 1715
+		time_of_year = {  
+			min = 9.1 
+			max = 11.29
+		}
+		capital ?= { is_location_affected_by_little_ice_age = yes }
+	}
+
+	immediate = {
+		ordered_owned_location = {
+			limit = {
+				is_location_affected_by_little_ice_age = yes
+			}
+			order_by = {
+				value = population
+				multiply = num_roads
+				multiply = num_buildings
+			}
+			max = 1
+			check_range_bounds = no
+			save_scope_as = target_location
+			province = { save_scope_as = target_province }
+		}
+	}
+
+	option = {
+		name = winter_events.14.a
+		
+		scope:target_province = {
+			every_location_in_province = {
+				ordered_pop = {
+					max = 1
+					order_by = pop_size
+					check_range_bounds = no
+					limit = {
+						owner = root
+						pop_type = pop_type:peasants
+					}
+					add_pop_satisfaction = pop_satisfaction_weak_penalty
+					add_pop_size = {
+						value = pop_size
+						if = {
+							limit = { 
+								location = { winter_level = severe }
+							}
+							multiply = {
+								value = -0.07
+								if = {
+									limit = { location.num_roads > 0 }
+									divide = location.num_roads
+								}
+							}
+						}
+						else_if = {
+							limit = { 
+								location = { winter_level = normal }
+							}
+							multiply = {
+								value = -0.05
+								if = {
+									limit = { location.num_roads > 0 }
+									divide = location.num_roads
+								}
+							}
+						}
+						else_if = {
+							limit = { 
+								location = { winter_level = mild }
+							}
+							multiply = {
+								value = -0.03
+								if = {
+									limit = { location.num_roads > 0 }
+									divide = location.num_roads
+								}
+							}
+						}
+						else = {
+							multiply = {
+								value = -0.01
+								if = {
+									limit = { location.num_roads > 0 }
+									divide = location.num_roads
+								}
+							}
+						}
+					}
+				}
+				change_prosperity = {
+					value = prosperity_mild_penalty
+					if = {
+						limit = { num_roads > 0 }
+						divide = num_roads
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				scope:target_province = {
+					any_location_in_province = { num_roads > 0 }
+				}
+			}
+			custom_tooltip = devastation_helped_by_roads_tt
+		}
+		else = { custom_tooltip = devastation_not_helped_by_roads_tt }
+	}
+}
+
+little_ice_age.15 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.15.title
+	desc = winter_events.15.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		current_year > 1650
+		current_year < 1715
+		time_of_year = {  
+			min = 9.1 
+			max = 11.29
+		}
+		capital ?= { is_location_affected_by_little_ice_age = yes }
+	}
+
+	immediate = {
+		ordered_owned_location = {
+			limit = {
+				is_location_affected_by_little_ice_age = yes
+			}
+			order_by = {
+				value = num_buildings
+				if = {
+					limit = { 
+						winter_level = severe
+					}
+					multiply = 5
+				}
+				else_if = {
+					limit = { 
+						winter_level = normal
+					}
+					multiply = 2.5
+				}
+				else_if = {
+					limit = { 
+						winter_level = mild
+					}
+					multiply = 1.5
+				}
+				if = {
+					limit = { has_variable = recent_snowstorm_event_variable }
+					multiply = 0.2
+				}
+			}
+			max = 1
+			check_range_bounds = no
+			save_scope_as = target_location
+			province = { save_scope_as = target_province }
+			set_variable = {
+				name = recent_snowstorm_event_variable
+				years = 5
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.15.a
+
+		scope:target_location = {
+			ordered_buildings_in_location = {
+				order_by = {
+					value = building_level
+					if = {
+						limit = { building_pop_type = peasants }
+						multiply = 1.5
+					}
+					if = {
+						limit = { building_pop_type = peasants }
+						multiply = 1.75
+					}
+				}
+				limit = { owner = root }
+				max = {
+					value = 1
+					if = {
+						limit = { 
+							NOT = { has_variable = recent_snowstorm_event_variable }
+						}
+						add = {
+							value = num_buildings
+							divide = 10
+							max = 5
+						}
+					}
+				}
+				check_range_bounds = no
+				location = { minor_destroy_building_levels_in_location = yes }
+			}
+			change_prosperity = prosperity_mild_penalty
+			province = {
+				add_province_modifier = {
+					modifier = recent_white_storm_modifier
+					years = 1
+					mode = replace
+				}
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.15.b
+		
+		scope:target_location = {
+			ordered_buildings_in_location = {
+				order_by = {
+					value = building_level
+					if = {
+						limit = { building_pop_type = peasants }
+						multiply = 1.5
+					}
+					if = {
+						limit = { building_pop_type = peasants }
+						multiply = 1.75
+					}
+				}
+				limit = { owner = root }
+				max = {
+					value = 1
+					if = {
+						limit = { 
+							NOT = { has_variable = recent_snowstorm_event_variable }
+						}
+						add = {
+							value = num_buildings
+							divide = 15
+							max = 3
+						}
+					}
+				}
+				check_range_bounds = no
+				location = { minor_destroy_building_levels_in_location = yes }
+			}
+			change_prosperity = prosperity_very_weak_penalty
+			province = {
+				add_province_modifier = {
+					modifier = recent_white_storm_modifier
+					years = 1
+					mode = replace
+				}
+			}
+		}
+		add_gold = {
+			value = scope:target_location.location_tax_base
+			multiply = -12
+		}
+		custom_tooltip = scales_with_location_tax_base_tt
+	}
+}
+
+little_ice_age.16 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.16.title
+	desc = winter_events.16.desc
+	historical_info = winter_events.16.historical_info
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+
+	immediate = {
+		add_country_modifier = {
+			modifier = great_frost_modifier
+			mode = replace
+			years = 1
+		}
+		every_province = {
+			if = {
+				limit = {
+					any_location_in_province = { winter_level = severe }
+				}
+				change_province_food_percentage = -0.15
+			}
+			if = {
+				limit = {
+					any_location_in_province = { winter_level = normal }
+				}
+				change_province_food_percentage = -0.1
+			}
+			if = {
+				limit = {
+					any_location_in_province = { winter_level = mild }
+				}
+				change_province_food_percentage = -0.05
+			}
+			else = {
+				change_province_food_percentage = -0.03
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.16.a
+		
+		show_as_tooltip = {
+			add_country_modifier = {
+				modifier = great_frost_modifier
+				mode = replace
+				years = 2
+			}
+		}
+		custom_tooltip = food_stockpiles_go_bad_depending_on_winter_tt
+		add_stability = stability_very_extreme_penalty
+	}
+}
+
+little_ice_age.17 = { #Brrr it's getting cold!
+	type = country_event
+	category = situation_event
+	title = winter_events.17.title
+	desc = winter_events.17.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		current_year >= 1650
+		current_year <= 1715
+		capital ?= { is_location_affected_by_little_ice_age = yes }
+		at_war = yes
+		any_army = { 
+			count > 0
+			unit_location = {
+				OR = { 
+					winter_level = severe
+					winter_level = normal
+				}
+			}
+			is_moving = yes
+		}
+	}
+
+	immediate = {
+		ordered_army = {
+			order_by = num_subunits  
+			max = 1
+			check_range_bounds = no  
+			save_scope_as = target_army
+			unit_location = { 
+				save_scope_as = target_location
+				province = { 
+					save_scope_as = target_province 
+					
+				}
+			}
+		}
+	}
+
+	option = {
+		name = winter_events.17.a
+		
+		scope:target_army = {
+			damage_unit_percent = { 0.33 1 }
+			damage_unit_morale_percent = { 0.5 1 }
+			add_food_percentage = { -0.5 1 }
+		}
+	}
+
+	option = {
+		name = winter_events.17.b
+		
+		trigger = {
+			scope:target_army = { 
+				unit_location = {
+					top_owner = root
+					province = {
+						province_food_percentage >= {
+							value = scope:target_army.food_percentage
+							divide = 2
+						}
+					}
+				}
+				
+			}
+		}
+		change_gold_effect = { scale = -4 }
+		scope:target_army ?= {
+			unit_location = {
+				province = {
+					change_province_food_percentage = -0.2
+				}
+			}
+			add_food = {
+				value = scope:target_province.province_food
+				multiply = 0.1
+			}
+			damage_unit_percent = { 0.05 0.1 }
+			damage_unit_morale_percent = { 0.2 0.4 }
+		}
+		if = {
+			limit = {
+				scope:target_location = {
+					NOT = { owner = root }
+				}
+			}
+			scope:target_location = {
+				owner = {
+					add_opinion = {
+						target = root
+						modifier = opinion_confiscated_food_stockpiles
+					}
+				}
+			}
+		}
+		custom_tooltip = {
+			text = target_province_loses_10_prosperity_tt
+			scope:target_province = { every_location_in_province = { change_prosperity = prosperity_weak_penalty } }
+		}
+	}
+}
+
+little_ice_age.18 = { #Lumber Shortage
+	type = country_event
+	category = situation_event
+	title = winter_events.18.title
+	desc = winter_events.18.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		current_year >= 1650
+		current_year <= 1715
+		time_of_year = {  
+			min = 10.1 
+			max = 1.29
+		}
+		capital ?= { is_location_affected_by_little_ice_age = yes }
+		any_owned_location = { raw_material ?= goods:lumber }
+	}
+
+	immediate = {
+		
+	}
+
+	option = {
+		name = winter_events.18.a
+		
+		ordered_owned_location = {
+			limit = {
+				raw_material = goods:lumber
+			}
+			order_by = {
+				value = rgo_workers
+				if = {
+					limit = { has_location_modifier = lower_lumber_production_modifier }
+					multiply = 0.33
+				}
+				if = {
+					limit = { winter_level = severe }
+					multiply = 1.25
+				}
+				else_if = {
+					limit = { winter_level = normal }
+					multiply = 1.1
+				}
+				else_if = {
+					limit = { winter_level = mild }
+					multiply = 0.9
+				}
+				else = { multiply = 0.75 }
+			}
+			check_range_bounds = no
+			max = {
+				value = 1
+				add = {
+					value = num_provinces
+					divide = 10
+				}
+				max = 5
+			}
+			add_location_modifier = {
+				modifier = lower_lumber_production_modifier
+				years = 1
+				mode = add_and_extend
+			}
+		}
+		if = {
+			limit = { 
+				any_owned_location = {
+					#winter_level = severe 
+					#rgo_workers > 1
+					raw_material = goods:lumber
+				}
+			}	
+			custom_tooltip = {
+				text = workers_may_quit_or_have_accidents_here_tt
+				every_owned_location = {
+					limit = { has_location_modifier = lower_lumber_production_modifier }
+					random_list = {
+						1 = { change_max_raw_material_workers = -1 }
+						1 = { 
+							ordered_pop = {
+								max = 1
+								order_by = pop_size
+								check_range_bounds = no
+								limit = {
+									owner = root
+									pop_type = pop_type:peasants
+								}
+								add_pop_satisfaction = pop_satisfaction_weak_penalty
+								add_pop_size = {
+									value = pop_size
+									multiply = -0.01
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+little_ice_age.100 = {
+	type = country_event
+	category = situation_event
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"
+	title = little_ice_age.100.title
+	desc = little_ice_age.100.desc
+		
+	option = {
+		name = little_ice_age.100.a
+		custom_tooltip = end_of_little_ice_age_tt
+	}
+
+}
+
+scripted_trigger has_crops = {
+	OR = {
+		raw_material = goods:wheat
+#		raw_material = goods:maize #maize_staple
+#		raw_material = goods:rice #rice_staple
+#		raw_material = goods:millet #millet_staple
+		raw_material = goods:legumes
+#		raw_material = goods:potato #potato_staple
+		raw_material = goods:olives
+		raw_material = goods:fruit
+	}
+}
+
+scripted_trigger has_location_with_crops = {
+	any_location_in_province = {
+		has_crops = yes
+	}
+}
+ 
+little_ice_age.101 = { #A Divine Plague
+ 	type = country_event
+	category = situation_event
+ 	title = winter_events.101.title
+ 	desc = winter_events.101.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	
+ 	trigger = {
+ 		capital ?= { area = { has_extended_winter = yes	} }
+		
+		any_province = {
+			has_location_with_crops = yes
+			is_province_affected_by_little_ice_age = yes
+		}
+ 	}
+ 	illustration_tags = {
+ 		10 = angry
+ 		10 = exterior
+ 	}
+ 	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+		random_province = {
+			limit = {
+				has_location_with_crops = yes
+				is_province_affected_by_little_ice_age = yes
+			}
+			save_scope_as = target_province_scope
+		}
+		set_variable = {
+			name = var_number_rgo_deleted
+			value = 0
+		}
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					has_crops = yes
+				}
+
+				owner = {
+					change_variable = {
+						name = var_number_rgo_deleted
+						add = {
+							value = 2
+							max = prev.rgo_workers
+						}
+					}
+				}
+			}
+		}
+	
+ 	}
+ 	option = {
+ 		name = winter_events.101.a
+
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					has_crops = yes
+				}
+
+				change_max_raw_material_workers = {
+					value = 3
+					max = rgo_workers
+					multiply = -1
+				}
+			}
+		}
+
+		change_gold_effect = { scale = -3 }
+
+		add_stability = stability_weak_penalty
+		add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_weak_bonus }
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_mild_bonus }
+		
+ 	}
+ 	option = {
+ 		name = winter_events.101.b
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					has_crops = yes
+				}
+
+				change_max_raw_material_workers = {
+					value = 2
+					max = rgo_workers
+					multiply = -1
+				}
+			}
+		}
+		
+		change_gold_effect = { scale = -2 }
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_bonus }		
+
+ 	}
+ 	option = {
+ 		name = winter_events.101.c	
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					has_crops = yes
+				}
+				change_max_raw_material_workers = {
+					value = 3
+					max = rgo_workers
+					multiply = -1
+				}
+				change_prosperity = prosperity_weak_penalty
+			}
+		}
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_penalty }		
+
+ 	}
+	after = {
+		if = {
+			limit = { has_variable = var_number_rgo_deleted }
+			remove_variable = var_number_rgo_deleted
+		}
+	}
+}
+ 
+scripted_trigger has_main_grain_crops = {
+	OR = {
+		raw_material = goods:wheat
+#		raw_material = goods:maize #maize_staple
+#		raw_material = goods:rice #rice_staple
+	}
+}
+
+scripted_trigger has_location_with_main_grain_crops = {
+	any_location_in_province = {
+		has_main_grain_crops = yes
+	}
+}
+ 
+little_ice_age.102 = { #No Other Option
+ 	type = country_event
+	category = situation_event
+ 	title = winter_events.102.title
+ 	desc = winter_events.102.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+
+ 	trigger = {
+		NOT = { has_variable = recently_had_winter_events_102_variable }
+		capital ?= { area = { has_extended_winter = yes	} }
+		any_province = {
+			has_location_with_main_grain_crops = yes
+			is_province_affected_by_little_ice_age = yes
+		}
+ 	}
+ 	illustration_tags = {
+ 		10 = angry
+ 		10 = exterior
+ 	}
+ 	immediate = {
+		set_variable = {
+			name = recently_had_winter_events_102_variable
+			years = 50
+		}
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+		random_province = {
+			limit = {
+				has_location_with_main_grain_crops = yes
+				is_province_affected_by_little_ice_age = yes
+			}
+			save_scope_as = target_province_scope
+		}
+		set_variable = {
+			name = var_number_levels_rgo_changed_to_millet
+			value = 0
+		}
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					has_main_grain_crops = yes
+				}
+				owner = {
+					change_variable = {
+						name = var_number_levels_rgo_changed_to_millet
+						add = prev.rgo_workers
+					}
+				}
+			}
+		}
+		ordered_owned_location = {  
+			limit = {
+				has_main_grain_crops = yes
+				is_location_affected_by_little_ice_age = yes
+			} 
+			order_by = rgo_workers
+			max = {
+				value = 1
+				add = {
+					value = num_provinces
+					divide = 10
+				}
+				max = 4
+			}
+			check_range_bounds = no 
+			set_variable = location_to_undergo_rgo_downgrade_variable
+		}
+ 	}
+ 	option = {
+ 		name = winter_events.102.a
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_penalty }
+		every_owned_location = {
+			limit = {
+				has_variable = location_to_undergo_rgo_downgrade_variable
+			}
+			change_max_raw_material_workers = {
+				value = 3
+				max = rgo_workers
+				multiply = -1
+			}
+		}
+ 	}
+
+ 	option = {
+ 		name = winter_events.102.b
+
+		add_gold = {
+			value = scope:target_province_scope.province_tax_base
+			multiply = -12
+		}
+		add_stability = stability_mild_penalty
+		#Charge the player for the changes	
+		every_owned_location = {
+			limit = {
+				has_variable = location_to_undergo_rgo_downgrade_variable
+			}
+			change_max_raw_material_workers = {
+				value = 3
+				max = rgo_workers
+				multiply = -1
+			}
+		}
+		#Change the rgos of the selected province
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					has_main_grain_crops = yes
+					NOT = { has_variable = location_to_undergo_rgo_downgrade_variable }
+				}
+#				change_raw_material = goods:millet
+				change_prosperity  = prosperity_very_weak_bonus
+			}
+		}
+ 	}
+}
+ 
+little_ice_age.103 = { #A Cold and Bitter place
+	hide_portraits = yes
+	type = country_event
+	category = situation_event
+	title = winter_events.103.title
+	desc = winter_events.103.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	trigger = {
+		time_of_year = {  #Winter
+			min = 12.1 
+			max = 3.29
+		}
+		any_colonial_charter = {
+			province_definition ?= {
+				any_location_in_province_definition = {
+					is_location_affected_by_little_ice_age = yes
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_colonial_charter = {
+			limit = {
+				province_definition ?= {
+					any_location_in_province_definition = {
+						is_location_affected_by_little_ice_age = yes
+					}
+				}
+			}
+			province_definition = {
+				save_scope_as = target_province_scope
+			}
+			save_scope_as = target_charter
+		}
+		
+	}
+
+	option = {
+		name = winter_events.103.a
+		add_government_power = government_power_weak_bonus
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_weak_bonus }
+		add_gold = {
+			value = monthly_income_total multiply = -5
+		}
+		
+	}
+
+	option = {
+		name = winter_events.103.b
+		add_government_power = government_power_weak_penalty
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_weak_penalty }
+	
+		abandon_colonial_charter = scope:target_charter
+		
+	}
+}
+
+scripted_trigger has_location_with_livestock = {
+	any_location_in_province = {
+		raw_material = goods:livestock
+	}
+}
+
+little_ice_age.104 = { #A Feast for Wolves
+	type = country_event
+	category = situation_event
+	title = winter_events.104.title
+	desc = winter_events.104.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+
+	trigger = {
+		time_of_year = {  #Winter
+			min = 12.1 
+			max = 3.29
+		}
+		capital ?= { area = { has_extended_winter = yes	} }
+
+		any_province = {
+			has_location_with_livestock = yes
+			is_province_affected_by_little_ice_age = yes
+		}
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+		random_province = {
+			limit = {
+				has_location_with_livestock = yes
+				is_province_affected_by_little_ice_age = yes
+			}
+			save_scope_as = target_province_scope
+		}
+		
+	}
+
+	option = {
+		name = winter_events.104.a
+		add_prestige = prestige_weak_bonus
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_severe_bonus }
+		add_gold = {
+			value = monthly_income_total multiply = -5
+		}
+	}
+
+	option = {
+		name = winter_events.104.b
+
+		scope:target_province_scope = {
+			every_location_in_province = {
+				limit = {
+					raw_material = goods:livestock
+				}
+	
+				change_max_raw_material_workers = {
+					value = 3
+					max = rgo_workers
+					multiply = -1
+				}
+			}
+		}
+		
+		add_stability = stability_severe_penalty
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_penalty }
+	}
+}
+
+little_ice_age.105 = { #Hunger Makes a Thief of Any Man
+	hide_portraits = yes
+ 	type = country_event
+	category = situation_event
+ 	title = winter_events.100.title
+ 	desc = winter_events.100.desc
+	image = "gfx/interface/illustrations/situation/little_ice_age.dds"	
+	
+ 	trigger = {
+		country_type = location
+
+		capital ?= { area = { has_extended_winter = yes	} }
+
+		capital.province.province_food_percentage > 0.5
+		any_province = {
+			NOT = { capital.province = this }
+			province_food_percentage < 0.1
+		}
+		gold > 3
+ 	}
+ 	illustration_tags = {
+ 		10 = happy
+ 		10 = exterior
+ 	}
+ 	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+		ordered_province = {
+			limit = { province_food_percentage < 0.1 }
+			order_by = population
+			max = 1
+			check_range_bounds = no
+			save_scope_as = target_province_scope
+		}
+		set_variable = {
+			name = provider_food_amount_variable
+			value = {
+				add = capital.province.province_food
+				divide = 5
+			}
+		}
+		set_variable = {
+			name = robbed_treasury_variable
+			value = {
+				value = gold
+				divide = 3
+			}
+		}
+		if = {
+			limit = {
+				any_rebel = {
+					has_support_from = pop_type:nobles
+				}
+			}
+			random_rebel = {
+				limit = { 
+					has_support_from = pop_type:nobles
+				}
+				save_scope_as = target_rebel_scope
+			}
+		}
+		if = {
+			limit = { NOT = { exists = scope:target_rebel_scope } }
+			set_variable = {
+				name = rebel_origin_province_variable
+				value = scope:target_province_scope
+			}
+		}
+ 	}	
+ 	option = {
+ 		name = winter_events.100.a
+		add_prestige = prestige_weak_penalty
+		add_stability = stability_weak_penalty
+		add_gold = {
+			value = {
+				value = root.var:robbed_treasury_variable
+				multiply = -1
+			}
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:peasants_estate
+			value = root.var:robbed_treasury_variable
+		}
+
+		if = {
+			limit = { exists = scope:target_rebel_scope }
+			scope:target_rebel_scope = { add_rebel_progress = 0.5 }
+			scope:target_province_scope = {
+				every_location_in_province = {
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						change_pop_allegiance = scope:target_rebel_scope
+						add_pop_satisfaction = pop_satisfaction_extreme_penalty
+					}
+				}
+			}
+		}
+		else = {
+			create_rebel = {
+				name = winter_events.100.rebel_name
+				category = estate
+				estate = peasants_estate
+				save_scope_as = target_rebel_scope
+			}
+			scope:target_province_scope = {
+				every_location_in_province = {
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						change_pop_allegiance = scope:target_rebel_scope
+						add_pop_satisfaction = pop_satisfaction_extreme_penalty
+					}
+				}
+			}
+		}
+ 	}
+ 	option = {
+ 		name = winter_events.100.b
+		add_prestige = prestige_mild_penalty
+		add_stability = stability_weak_penalty 
+
+		add_gold = {
+			value = {
+				value = root.var:robbed_treasury_variable
+				add = monthly_income_total
+				multiply = -3
+			}
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:peasants_estate
+			value = root.var:robbed_treasury_variable
+		}
+		
+		scope:target_province_scope = { 
+			change_province_food = root.var:provider_food_amount_variable
+		}
+		capital.province = {
+			change_province_food = {
+				value = root.var:provider_food_amount_variable
+				multiply = -1
+			}
+		}
+ 	}
+ 	option = {
+ 		name = winter_events.100.c
+		add_prestige = prestige_severe_penalty
+
+		add_gold = {
+			value = {
+				value = root.var:robbed_treasury_variable
+				multiply = -1
+			}
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:peasants_estate
+			value = root.var:robbed_treasury_variable
+		}
+
+		add_army_tradition = army_tradition_weak_penalty	
+ 	}
+	
+	after = {
+		if = {
+			limit = { has_variable = robbed_treasury_variable }
+			remove_variable = robbed_treasury_variable
+		}
+	}
+}

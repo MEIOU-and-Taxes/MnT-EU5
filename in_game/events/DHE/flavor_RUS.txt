@@ -1,0 +1,7992 @@
+﻿namespace = flavor_rus
+
+# The Pomjestija Reform
+flavor_rus.1 = {
+	type = country_event
+	title = flavor_rus.1.title
+	desc = flavor_rus.1.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1450.1.1
+		to = 1551.1.1
+		monthly_chance = 5
+	}
+
+	illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+	
+	trigger = {
+
+		NOT = { country_exists = c:MOS }
+
+		NOT = { country_exists = c:NOV }
+
+		location:novgorod = {
+			num_pop_type:nobles > 0
+			owner = root
+			controller = root
+		}
+
+	}
+
+	immediate = {
+
+		location:novgorod = {
+			save_scope_as = target_location
+		}
+
+		religion = {
+			save_scope_as = target_religion
+		}
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:burghers_estate }
+
+	}
+
+
+	option = {
+		name = flavor_rus.1.a
+		historical_option = yes
+
+		location:novgorod = {
+			add_location_modifier = {
+				modifier = add_unrest_5_modifier
+				months = 60
+				mode = add_and_extend
+			}
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:nobles
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+			}
+		}
+
+		change_societal_value = { type = aristocracy_vs_plutocracy value = societal_value_move_to_left }
+
+		change_societal_value = { type = serfdom_vs_free_subjects value = societal_value_move_to_left }
+
+		change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_right }
+
+		add_government_power = government_power_mild_bonus
+
+	}
+	option = {
+		name = flavor_rus.1.b
+
+		culture = {
+			add_cultural_influence = cultural_influence_mild_penalty
+		}
+
+		change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_left }
+		change_societal_value = { type = aristocracy_vs_plutocracy value = societal_value_move_to_right }
+
+	}
+
+	option = {
+		name = flavor_rus.1.c
+		trigger = {
+			ruler = {
+				has_trait = malevolent
+			}
+		}
+
+		location:novgorod = {
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:nobles
+					NOT = { culture = root.culture }
+				}
+				add_pop_size = {
+					value = pop_size
+					multiply = -0.5
+				}
+			}
+			change_control = control_ultimate_bonus
+		}
+
+		change_societal_value = { type = aristocracy_vs_plutocracy value = societal_value_move_to_left }
+
+	}
+
+	historical_info = flavor_rus.1.historical_info
+
+}
+
+# Malyuta Skuratov
+flavor_rus.2 = {
+	type = country_event
+	title = flavor_rus.2.title
+	desc = flavor_rus.2.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1560.1.1
+		to = 1573.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+		create_character = {
+			first_name = malyuta
+			last_name = skuratov
+			adm = 91
+			dip = 45
+			mil = 88
+			birth_date = 1530.1.1
+			estate = estate_type:nobles_estate
+			birth_location = location:moscow
+			add_trait = trait:cruel
+			save_scope_as = malyuta_skuratov
+			script = rus_malyuta_skuratov
+			create_in_limbo = yes
+		}
+		capital = {
+			save_scope_as = target_location
+		}
+		root = { save_scope_as = target_root_country }
+	}
+
+	option = {
+		name = flavor_rus.2.a
+		historical_option = yes
+
+		if = {
+			limit = {
+				ruler ?= {
+					has_character_modifier = terrible
+				}
+			}
+			ruler = {
+				add_mil = 10
+			}
+			change_societal_value = {
+				type = belligerent_vs_conciliatory
+				value = societal_value_move_to_left
+			}
+			custom_tooltip = flavor_rus.2.tt1
+		}
+
+		scope:malyuta_skuratov = { move_country = root }
+
+	}
+
+	option = {
+		name = flavor_rus.2.b
+
+		hidden_effect = { kill_character_silently = scope:malyuta_skuratov }
+
+		change_societal_value = { type = belligerent_vs_conciliatory value = societal_value_move_to_right }
+
+	}
+
+	historical_info = flavor_rus.2.historical_info
+
+}
+
+# Russia looks to the East
+flavor_rus.3 = {
+	type = country_event
+	title = flavor_rus.3.title
+	desc = flavor_rus.3.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1450.1.1
+		to = 1700.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		own_entire_area = area:tambov_area
+		own_entire_area = area:samara_area
+		own_entire_area = area:astrakhan_area
+
+		any_known_country = {
+			capital.region = region:ural_region
+			OR = {
+				country_type = army
+				country_type = location
+			}
+		}
+	}
+
+		illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate	background = estate_type:nobles_estate }
+
+	}
+
+
+	option = {
+		name = flavor_rus.3.a
+		historical_option = yes
+
+		every_known_country = {
+			limit = {
+				capital.region = region:ural_region
+				OR = {
+					country_type = army
+					country_type = location
+				}
+			}
+			add_opinion = {
+				target = root
+				modifier = rus_claimed_land
+			}
+			add_antagonism = {
+				target = root
+				modifier = rus_claimed_land_antagonism
+			}
+			root = {
+				add_casus_belli = {
+					target = prev
+					type = casus_belli:cb_conquer_province
+					province = prev.capital.province
+				}
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.3.b
+		add_stability = stability_mild_bonus
+		nudge_towards_isolationism = yes
+
+	}
+
+	option = {
+		name = flavor_rus.3.c
+
+		every_known_country = {
+			limit = {
+				capital.region = region:ural_region
+			}
+			add_opinion = {
+				target = root
+				modifier = careful_diplomatic_manouvering
+			}
+		}
+	}
+
+	historical_info = flavor_rus.3.historical_info
+
+}
+
+# The Polish-Lithuanian Hindrance
+flavor_rus.4 = {
+	type = country_event
+	title = flavor_rus.4.title
+	desc = flavor_rus.4.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1450.1.1
+		to = 1700.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+		own_entire_area = area:smolensk_area
+
+		NOT = { own_entire_area = area:white_ruthenia_area }
+		country_exists = c:PLC
+		c:PLC = {
+			is_neighbor_of = root
+		}
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:soldiers background = pop_type:soldiers }
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		root = { save_scope_as = target_root_country }
+
+		area:white_ruthenia_area = {
+			every_province_in_area = {
+				limit = {
+					owner != root
+				}
+				owner = {
+					set_variable = {
+						name = white_ruthenia_area_owner
+						value = 1
+					}
+				}
+			}
+		}
+	}
+
+	#We press forward.
+	option = {
+		name = flavor_rus.4.a
+		historical_option = yes
+
+		area:white_ruthenia_area = {
+			every_province_in_area = {
+				limit = {
+					owner != root
+				}
+				root = {
+					add_casus_belli = {
+						target = prev.owner
+						type = casus_belli:cb_conquer_province
+						province = prev
+					}
+				}
+			}
+		}
+
+		every_known_country = {
+			limit = {
+				has_variable = white_ruthenia_area_owner
+			}
+			add_opinion = {
+				target = root
+				modifier = rus_claimed_land
+			}
+			add_antagonism = {
+				target = root
+				modifier = rus_claimed_land_antagonism
+			}
+		}
+
+	}
+
+	#It would strain diplomatic relations.
+	option = {
+		name = flavor_rus.4.b
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		drop_antagonism_bomb = {
+			target = capital
+			modifier = antagonism_renounced_claim
+			value = -2
+		}
+
+		custom_tooltip = flavor_rus.4.tt1
+
+	}
+
+	#Once upon a time, these lands were ours.
+	option = {
+		name = flavor_rus.4.c
+		trigger = {
+			ruler ?= {
+				dip >= 75
+			}
+		}
+
+		area:white_ruthenia_area = {
+			every_province_in_area = {
+				limit = {
+					owner != root
+				}
+				root = {
+					add_casus_belli = {
+						target = prev.owner
+						type = casus_belli:cb_conquer_province
+						province = prev
+					}
+				}
+			}
+		}
+
+		drop_antagonism_bomb = {
+			target = capital
+			modifier = antagonism_pressed_claim
+			value = 2
+		}
+
+		add_government_power = government_power_mild_bonus
+		custom_tooltip = flavor_rus.4.tt2
+	}
+
+	historical_info = flavor_rus.4.historical_info
+
+}
+
+# The Subjugation of the Steppes
+flavor_rus.5 = {
+	type = country_event
+	title = flavor_rus.5.title
+	desc = flavor_rus.5.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1450.1.1
+		to = 1700.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		own_entire_area = area:tambov_area
+
+		own_entire_area = area:samara_area
+
+		own_entire_area = area:astrakhan_area
+
+		own_entire_area = area:kazan_area
+
+		NOT = { own_entire_area = area:lower_yik_area }
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:nobles background = pop_type:soldiers }
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.5.a
+
+		area:lower_yik_area = {
+			every_province_in_area = {
+				limit = {
+					owner != root
+				}
+				root = {
+					add_casus_belli = {
+						target = prev.owner
+						type = casus_belli:cb_conquer_province
+						province = prev
+					}
+				}
+				owner = {
+					add_opinion = {
+						target = root
+						modifier = rus_claimed_land
+					}
+				}
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.5.b
+
+		add_prestige = prestige_mild_bonus
+
+	}
+
+	historical_info = flavor_rus.5.historical_info
+
+}
+
+# The Chosen Council
+flavor_rus.6 = {
+	type = country_event
+	title = flavor_rus.6.title
+	desc = flavor_rus.6.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1540.1.1
+		to = 1560.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+		has_regent = no
+		OR = {
+			"estate_power(estate_type:nobles_estate)" >= 0.25
+			societal_value:centralization_vs_decentralization >= 10
+		}
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+
+		create_character = {
+			first_name = name_alexander
+			last_name = adashev
+			adm = 67
+			dip = 64
+			mil = 68
+			estate = estate_type:nobles_estate
+			birth_location = location:moscow
+			save_scope_as = alexi_adashev
+			script = rus_alexi_adashev
+			create_in_limbo = yes
+		}
+		create_character = {
+			first_name = name_silvester
+			adm = 87
+			dip = 88
+			mil = 91
+			estate = estate_type:clergy_estate
+			birth_location = location:moscow
+			save_scope_as = sylvestr_the_priest
+			script = rus_sylvestr_the_priest
+			create_in_limbo = yes
+		}
+		capital = {
+			save_scope_as = target_location
+		}
+
+		root = { save_scope_as = target_root_country }
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.6.a
+		historical_option = yes
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+		custom_tooltip = {
+			text = enable_chosen_rada_reform
+			set_variable = { name = chosen_rada value = 1 }
+		}
+		scope:alexi_adashev = { move_country = root }
+		scope:sylvestr_the_priest = { move_country = root }
+
+	}
+
+	option = {
+		name = flavor_rus.6.b
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+		hidden_effect = { kill_character_silently = scope:alexi_adashev }
+		hidden_effect = { kill_character_silently = scope:sylvestr_the_priest }
+		custom_tooltip = flavor_rus.6.tt3
+
+	}
+
+	historical_info = flavor_rus.6.historical_info
+
+}
+
+# The Sacking of Moscow
+flavor_rus.7 = { #DEVASTATION
+	type = country_event
+	title = flavor_rus.7.title
+	desc = flavor_rus.7.desc
+	image = "gfx/interface/illustrations/situation/black_death.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1540.1.1
+		to = 1560.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+		location:moscow = {
+			owner = root
+			controller != root
+			controller != c:REB
+		}
+	}
+
+	immediate = {
+		location:moscow = {
+			controller = {
+				save_scope_as = moscow_sacker
+			}
+			save_scope_as = target_location
+		}
+	}
+
+
+	option = {
+		name = flavor_rus.7.a
+		historical_option = yes
+
+		add_opinion = { target = scope:moscow_sacker  modifier = rus_sacked_moscow }
+
+		change_gold_effect = { scale = -3 }
+
+		location:moscow = {
+			every_pop = {
+				limit = {
+					owner = root
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_bonus
+			}
+		}
+		change_societal_value = { type = belligerent_vs_conciliatory value = societal_value_move_to_right }
+	}
+
+	option = {
+		name = flavor_rus.7.b
+
+		location:moscow = {
+			every_pop = {
+				limit = {
+					owner = root
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+			}
+		}
+		change_societal_value = { type = belligerent_vs_conciliatory value = societal_value_move_to_left }
+		change_societal_value = { type = centralization_vs_decentralization	value = societal_value_move_to_left	}
+	}
+
+	historical_info = flavor_rus.7.historical_info
+
+}
+
+# The Kormlenije System
+flavor_rus.8 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.8.title
+	desc = flavor_rus.8.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1550.1.1
+		to = 1650.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+		"estate_power(estate_type:nobles_estate)" > 0.25
+		NOT = {	has_estate_privilege = estate_privilege:kormlenije }
+		has_regent = no
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+		capital = {
+			save_scope_as = target_location
+		}
+
+		ruler = {
+			save_scope_as = target_character
+		}
+		#event_illustration_estate_background_effect = { background = estate_type:crown_estate }
+
+	}
+
+	option = {
+		name = flavor_rus.8.a
+		historical_option = yes
+		grant_estate_privilege = estate_privilege:kormlenije
+	}
+
+	option = {
+		name = flavor_rus.8.b
+		add_stability = stability_mild_bonus
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+	}
+
+	historical_info = flavor_rus.8.historical_info
+
+}
+
+# The Independence of the Orthodox Church
+flavor_rus.9 = {
+	type = country_event
+	title = flavor_rus.9.title
+	desc = flavor_rus.9.desc
+	image = "gfx/interface/illustrations/situation/rise_of_the_ottomans.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1400.1.1
+		to = 1700.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+		religion = religion:orthodox
+		NOT = {	country_exists = c:BYZ }
+		location:constantinople.owner = {
+			religion.group = religion_group:muslim
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		NOT = {
+			autocephalous_patriarchate = {
+				leader_country = root
+			}
+		}
+	}
+
+	immediate = {
+		location:constantinople = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.9.a
+		historical_option = yes
+		add_religious_influence = religious_influence_mild_bonus
+
+		every_other_country = {
+			limit = {
+				religion = religion:orthodox
+				within_diplomatic_range = root
+			}
+			add_opinion = { target = root modifier = rus_aspires_to_lead_orthodoxy }
+		}
+	}
+
+	option = {
+		name = flavor_rus.9.b
+		add_prestige = prestige_mild_bonus
+		add_casus_belli = {
+			target = location:constantinople.owner
+			type = casus_belli:cb_conquer_province
+			province = location:constantinople.province
+		}
+	}
+
+	historical_info = flavor_rus.9.historical_info
+
+}
+
+# The Yoke of Serfdom
+flavor_rus.10 = {
+	type = country_event
+	title = flavor_rus.10.title
+	desc = flavor_rus.10.desc
+	image = "gfx/interface/illustrations/situation/black_death.dds"
+	
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1600.1.1
+		to = 1700.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		any_owned_rural_location = {
+			count > 3
+			disease_presence = {
+				disease = disease:bubonic_plague
+				value >= 0.1
+			}
+		}
+		has_estate_privilege = estate_privilege:peasants_free_peasantry
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+
+	option = {
+		name = flavor_rus.10.a
+		historical_option = yes
+
+		revoke_estate_privilege = estate_privilege:peasants_free_peasantry
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_left
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_extreme_penalty
+		}
+
+		if = {
+			limit = {
+				OR = {
+					estate_satisfaction:peasants_estate < 0.5
+					"estate_power(estate_type:peasants_estate)" >= 25
+				}
+				any_owned_rural_location = {
+					count >= 3
+					num_pop_type:nobles > 50
+				}
+			}
+			while = {
+				count = 3
+				random_owned_rural_location = {
+					limit = {
+						num_pop_type:nobles > 50
+					}
+					every_pop = {
+						limit = {
+							pop_type = pop_type:nobles
+						}
+						add_pop_size = {
+							value = pop_size
+							multiply = -0.5
+						}
+					}
+				}
+			}
+			custom_tooltip = flavor_rus.10.tt
+		}
+	}
+
+	option = {
+		name = flavor_rus.10.b
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_right
+		}
+
+		add_country_modifier = {
+			modifier = unattended_crops
+			years = 5
+		}
+	}
+
+	historical_info = flavor_rus.10.historical_info
+
+}
+
+# Hundred Chapter Synod
+flavor_rus.11 = {
+	type = country_event
+
+	title = flavor_rus.11.title
+	desc = flavor_rus.11.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1500.1.1
+		to = 1600.1.1
+		monthly_chance = 1
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	trigger = {
+		religion = religion:orthodox	
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate	background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.11.a
+		add_religious_influence = religious_influence_mild_bonus
+	}
+	option = {
+		name = flavor_rus.11.b
+		add_stability = stability_mild_bonus
+	}
+}
+
+# Boris Morozov
+flavor_rus.12 = {
+	type = country_event
+	title = flavor_rus.12.title
+	desc = flavor_rus.12.desc
+	image = "gfx/interface/illustrations/institutions/banking.dds"
+	
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1620.1.1
+		to = 1650.1.1
+		monthly_chance = 20
+	}
+
+	trigger = {
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		OR = {
+			societal_value:aristocracy_vs_plutocracy <= 10
+			any_cabinet_character = {
+				count > 0
+				has_estate = estate_type:nobles_estate
+			}
+		}
+	}
+
+	immediate = {
+
+		create_character = {
+			first_name = name_boris
+			last_name = Morozov
+			adm = 81
+			dip = 83
+			mil = 80
+			birth_date = 1590.1.1
+			female = no
+			estate = estate_type:nobles_estate
+			birth_location = location:moscow
+			script = rus_boris_morozov
+			save_scope_as = boris_morozov
+			create_in_limbo = yes
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.12.a
+		historical_option = yes
+
+		if = {
+			limit = {
+				has_regent = yes
+			}
+			set_regent = scope:boris_morozov
+			change_societal_value = {
+				type = aristocracy_vs_plutocracy
+				value = societal_value_move_to_left
+			}
+			custom_tooltip = flavor_rus.12.tt2
+		}
+
+		scope:boris_morozov = {
+			move_country = root
+			add_character_modifier = {
+				modifier = steamroll_administrator
+				years = -1
+				mode = add_and_extend
+			}
+		}
+		custom_tooltip = flavor_rus.12.tt3
+	}
+
+	option = {
+		name = flavor_rus.12.b
+		add_government_power = government_power_mild_bonus
+		kill_character_silently = scope:boris_morozov
+	}
+
+	historical_info = flavor_rus.12.historical_info
+
+}
+
+# The Sobornoye Ulozheniye Legal Code
+flavor_rus.13 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.13.title
+	desc = flavor_rus.13.desc
+	image = "gfx/interface/illustrations/institutions/legalism.dds"
+
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1650.1.1
+		to = 1700.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		government_type = government_type:monarchy
+
+		OR = {
+			societal_value:centralization_vs_decentralization <= 20
+			has_reform = government_reform:autocracy
+			character:rus_boris_morozov ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+		}
+		has_regent = no
+	}
+
+	immediate = {
+		ruler = {
+			save_scope_as = target_character
+		}
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.13.a
+		historical_option = yes
+
+		unlock_policy_effect = { type = sobornoye_ulozheniye_policy }
+
+		add_policy = policy:sobornoye_ulozheniye_policy
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_penalty }
+
+	}
+
+	option = {
+		name = flavor_rus.13.b
+
+		change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_right }
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_bonus }
+
+	}
+
+	historical_info = flavor_rus.13.historical_info
+
+}
+
+# The Reforms of Nikon
+flavor_rus.14 = {
+	type = country_event
+	title = flavor_rus.14.title
+	desc = flavor_rus.14.desc
+	image = "gfx/interface/illustrations/international_organization_types/autocephalous_patriarchate.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1635.1.1
+		to = 1685.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		religion = religion:orthodox
+
+		is_member_of_international_organization_of_type = {
+			type = autocephalous_patriarchate
+		}
+
+		autocephalous_patriarchate = {
+			var:seat = {
+				owner = root
+			}
+		}
+
+		area:northern_greece_area = {
+			any_location_in_area = {
+				owner = {
+					is_member_of_international_organization_of_type = {
+						type = autocephalous_patriarchate
+					}
+					autocephalous_patriarchate = {
+						var:seat = location:constantinople
+					}
+				}
+			}
+		}
+
+	}
+
+	immediate = {
+		create_character = {
+			first_name = name_nicetas
+			last_name = Minin
+			nickname = Nikon
+			adm = 81
+			dip = 36
+			mil = 39
+			estate = estate_type:clergy_estate
+			birth_location = location:nizhny_novgorod
+			save_scope_as = nikita_minin
+			script = rus_nikita_minin
+			create_in_limbo = yes
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+
+	option = {
+		name = flavor_rus.14.a
+		historical_option = yes
+
+		add_religious_influence = religious_influence_mild_bonus
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_right
+		}
+
+		scope:nikita_minin = { move_country = root }
+		custom_tooltip = flavor_rus.14.tt2
+	}
+
+	option = {
+		name = flavor_rus.14.b
+
+		add_stability = stability_mild_bonus
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_left
+		}
+
+		scope:nikita_minin = {
+			move_country = root
+			add_character_modifier = {
+				modifier = refuses_to_serve_in_cabinet
+				years = -1
+				mode = add_and_extend
+			}
+		}
+	}
+
+	historical_info = flavor_rus.14.historical_info
+
+}
+
+# Raskol
+flavor_rus.15 = {
+	type = country_event
+	title = flavor_rus.15.title
+	desc = flavor_rus.15.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1640.1.1
+		to = 1750.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+		religion = religion:orthodox
+		OR = {
+			character:rus_nikita_minin ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+			societal_value:traditionalist_vs_innovative > 20
+		}
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:clergy_estate }
+		capital = {
+			save_scope_as = target_location
+		}
+
+		character:rus_nikita_minin ?= {
+			save_scope_as = nikita_minin
+		}
+	}
+
+	option = {
+		name = flavor_rus.15.a
+		historical_option = yes
+
+		add_religious_influence = religious_influence_severe_bonus
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		if = {
+			limit = {
+				character:rus_nikita_minin ?= {
+					is_alive = yes
+					in_cabinet = yes
+				}
+			}
+			add_religious_influence = religious_influence_severe_bonus
+
+			add_estate_satisfaction = { type = estate_type:clergy_estate
+				value = estate_satisfaction_severe_penalty
+			}
+
+			custom_tooltip = flavor_rus.15.tt1
+		}
+	}
+
+	option = {
+		name = flavor_rus.15.b
+		trigger = {
+			religious_influence > religious_influence_extreme_bonus
+		}
+
+		add_religious_influence = religious_influence_extreme_penalty
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_left
+		}
+	}
+
+	option = {
+		name = flavor_rus.15.c
+		trigger = {
+			OR = {
+				has_estate_privilege = estate_privilege:clergy_powerful_dioceses
+				"estate_power(estate_type:clergy_estate)" > 0.2
+			}
+			character:rus_nikita_minin ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+		}
+
+		add_stability = stability_mild_bonus
+
+		character:rus_nikita_minin = {
+			add_character_modifier = {
+				modifier = refuses_to_serve_in_cabinet
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		custom_tooltip = flavor_rus.15.tt2
+
+	}
+
+	historical_info = flavor_rus.15.historical_info
+
+}
+
+# The Great Reforms
+flavor_rus.16 = {
+	type = country_event
+	title = flavor_rus.16.title
+	desc = flavor_rus.16.desc
+	image = "gfx/interface/illustrations/institutions/scientific_revolution.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1690.1.1
+		to = 1740.1.1
+		monthly_chance = 20
+	}
+
+	trigger = {
+
+		has_variable = grand_embassy
+
+		NOT = {
+			has_variable = incognito_travels_in_progress
+		}
+
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.16.a
+		historical_option = yes
+
+		if = {
+			limit = {
+				NOT = { has_policy = most_holy_synod_policy }
+				culture = { has_culture_group = culture_group:russian_group }
+				country_rank_level > 2
+				religion = religion:orthodox
+			}
+			add_policy = policy:most_holy_synod_policy
+			add_estate_satisfaction = { type = estate_type:clergy_estate
+				value = estate_satisfaction_severe_penalty
+			}
+			custom_tooltip = flavor_rus.16.tt1
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		nudge_towards_openness = yes
+
+		change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_left }
+
+		change_societal_value = { type = centralization_vs_decentralization	value = societal_value_move_to_left }
+
+		trigger_event_silently = {
+			id = flavor_rus.17
+			days = { 250 900 }
+		}
+
+		custom_tooltip = flavor_rus.16.tt2
+
+	}
+
+	option = {
+		name = flavor_rus.16.b
+
+		add_stability = stability_mild_bonus
+
+		change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_right }
+
+		nudge_towards_isolationism = yes
+
+		custom_tooltip = flavor_rus.16.tt3
+
+	}
+
+	historical_info = flavor_rus.16.historical_info
+
+}
+
+# The Bulavin Rebellion
+flavor_rus.17 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.17.title
+	desc = flavor_rus.17.desc
+
+	illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+
+	immediate = {
+		create_rebel = {
+			name = bulavin_rebellion
+			category = estate
+			estate = nobles_estate
+			save_scope_as = bulavin_rebellion
+		}
+
+		capital = { save_scope_as = target_location }
+
+		root = { save_scope_as = target_root_country }
+
+		event_illustration_poptype_effect = { foreground = pop_type:nobles background = pop_type:soldiers }
+	}
+
+	option = {
+		name = flavor_rus.17.a
+		historical_option = yes
+
+		add_stability = stability_severe_penalty
+
+		ordered_owned_non_rural_location = {
+			limit = {
+				dominant_religion = religion:orthodox
+				province != root.capital.province
+			}
+			order_by = population
+			max = {
+				value = 1
+				add = {
+					value = num_provinces
+					multiply = 0.1
+				}
+				max = 15
+			}
+
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:nobles
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+				change_pop_allegiance = scope:bulavin_rebellion
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.17.b
+		trigger = {
+			ruler ?= {
+				OR = {
+					mil > 75
+					has_trait = architectural_visionary
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				ruler = {
+					mil > 75
+					NOT = {
+						has_trait = architectural_visionary
+					}
+				}
+			}
+			ordered_owned_non_rural_location = {
+				limit = {
+					dominant_religion = religion:orthodox
+					province != root.capital.province
+				}
+				order_by = population
+				max = {
+					value = 1
+					add = {
+						value = num_provinces
+						multiply = 0.1
+					}
+					max = 10
+				}
+
+				every_pop = {
+					limit = {
+						owner = root
+						pop_type = pop_type:nobles
+					}
+					add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+					change_pop_allegiance = scope:bulavin_rebellion
+				}
+			}
+			custom_tooltip = flavor_rus.17.tt1
+		}
+
+		else = {
+
+			destroy_rebel = scope:bulavin_rebellion
+
+			custom_tooltip = flavor_rus.17.tt2
+
+		}
+	}
+
+		option = {
+			name = flavor_rus.17.c
+
+			add_government_power = government_power_severe_penalty
+
+			change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_right }
+
+			change_societal_value = { type = centralization_vs_decentralization	value = societal_value_move_to_right	}
+
+			nudge_towards_isolationism = yes
+
+			destroy_rebel = scope:bulavin_rebellion
+
+	}
+
+	historical_info = flavor_rus.17.historical_info
+
+}
+
+# The Diplomatic Intermezzo
+flavor_rus.18 = {
+	type = country_event
+	title = flavor_rus.18.title
+	desc = flavor_rus.18.desc
+	image = "gfx/interface/illustrations/government/diplomacy_illustration.dds"
+	#event_illustration_estate_background_effect = { background = estate_type:crown_estate } CHI
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1650.1.1
+		to = 1750.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		is_neighbor_of = c:CHI
+
+		NOT = {
+			is_allied_with ={ target = c:CHI }
+		}
+
+		at_war = no
+
+		character:rus_fyodor_baikov ?= {
+			is_alive = yes
+			in_cabinet = yes
+		}
+
+	}
+
+	immediate = {
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		character:rus_fyodor_baikov = {
+			save_scope_as = fyodor_baikov
+		}
+
+		root = { save_scope_as = target_root_country }
+
+	}
+
+	option = {
+		name = flavor_rus.18.a
+
+		c:CHI = {
+			add_opinion = {
+				target = root
+				modifier = rus_ignored_vassal_demands
+			}
+		}
+
+		if = {
+			limit = {
+				c:CHI = {
+					opinion = {
+						target = root
+						value <= -50
+					}
+				}
+			}
+			block_treaties = c:CHI
+			custom_tooltip = flavor_rus.18.tt1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.18.b
+
+		add_government_power = government_power_severe_penalty
+
+		c:CHI = {
+			add_opinion = {
+				target = root
+				modifier = rus_paid_vassal_respect
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.18.c
+
+		add_stability = stability_mild_penalty
+
+		change_gold_effect = { scale = -3 }
+
+		c:CHI = {
+			add_opinion = { target = root modifier = rus_paid_vassal_tribute }
+		}
+	}
+
+	historical_info = flavor_rus.18.historical_info
+
+}
+
+# The Cossack Uprising of Stenka Razin
+flavor_rus.19 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.19.title
+	desc = flavor_rus.19.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1650.1.1
+		to = 1750.1.1
+		monthly_chance = 1
+	}
+	illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+
+	trigger = {
+
+		any_owned_location = {
+			area = area:zaporizhzhia_area
+			dominant_culture = {
+				this != root.culture
+				has_culture_group = culture_group:russian_group
+			}
+			count > 7
+		}
+
+		OR = {
+			societal_value:centralization_vs_decentralization <= -20
+			modifier:peasants_estate_max_tax > 0.35
+		}
+
+	}
+
+	immediate = {
+
+		ordered_owned_location = {
+			limit = {
+				region = region:steppes_region
+				dominant_culture = {
+					this != root.culture
+					has_culture_group = culture_group:russian_group
+				}
+			}
+			order_by = population
+			max = 1
+
+			dominant_culture = {
+				save_scope_as = rebel_origin
+			}
+			save_scope_as = target_location
+		}
+
+		create_rebel = {
+			name = stenka_razin
+			culture = scope:rebel_origin
+			category = nationalist
+			save_scope_as = stenka_razin
+		}
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+	}
+
+	option = {
+		name = flavor_rus.19.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = stenka_razin_tt
+			every_owned_location = {
+				limit = {
+					region = region:steppes_region
+				}
+				every_pop = {
+					limit = {
+						owner = root
+						culture = scope:rebel_origin
+					}
+					add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+					change_pop_allegiance = scope:stenka_razin
+				}
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.19.b
+
+		destroy_rebel = scope:stenka_razin
+
+		add_government_power = government_power_severe_penalty
+
+		custom_tooltip = {
+			text = stenka_razin_gives_up_tt1
+			every_owned_location = {
+				limit = {
+					region = region:steppes_region
+				}
+				change_control = control_ultimate_penalty
+			}
+		}
+	}
+
+	option = {
+		name = flavor_rus.19.c
+		trigger = {
+			religion = religion:orthodox
+			religious_influence > religious_influence_extreme_bonus
+		}
+
+		add_religious_influence = religious_influence_extreme_penalty
+
+		destroy_rebel = scope:stenka_razin
+
+		custom_tooltip = {
+			text = stenka_razin_gives_up_tt2
+			every_owned_location = {
+				limit = {
+					region = region:steppes_region
+				}
+				change_control = control_mild_penalty
+			}
+		}
+	}
+
+	historical_info = flavor_rus.19.historical_info
+
+}
+
+# Treaty of Nerchinsk
+flavor_rus.20 = {
+	type = country_event
+	title = flavor_rus.20.title
+	desc = flavor_rus.20.desc
+	image = "gfx/interface/illustrations/government/diplomacy_illustration.dds"
+	
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1650.1.1
+		to = 1750.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		is_neighbor_of = c:CHI
+
+		at_war = no
+
+		any_owned_location = {
+			OR = {
+				region = region:west_siberia_region
+				region = region:east_siberia_region
+			}
+		}
+		c:CHI = {
+			any_owned_location = {
+				region = region:manchuria_region
+			}
+		}
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+		root = {
+			save_scope_as = target_root_country
+		}
+		#event_illustration_estate_background_effect = { background = estate_type:crown_estate } CHI
+	}
+
+	option = {
+		name = flavor_rus.20.a
+		historical_option = yes
+
+		every_owned_location = {
+			limit = {
+				region = region:manchuria_region
+			}
+			change_location_owner = c:CHI
+			remove_core = root
+		}
+
+		add_truce_with = { target = c:CHI }
+
+		c:CHI = {
+			add_opinion = {
+				target = root
+				modifier = rus_treaty_of_nerchinsk
+			}
+			add_truce_with = { target = root }
+		}
+
+		every_other_country = {
+			limit = {
+				any_owned_location = {
+					OR = {
+						region = region:west_siberia_region
+						region = region:east_siberia_region
+					}
+				}
+			}
+			add_opinion = {
+				target = root
+				modifier = rus_claimed_siberia
+			}
+		}
+
+		custom_tooltip = flavor_rus.20.tt1
+	}
+
+	option = {
+		name = flavor_rus.20.b
+
+		c:CHI = {
+			add_opinion = {
+				target = root
+				modifier = rus_refused_treaty_of_nerchinsk
+			}
+		}
+	}
+
+	historical_info = flavor_rus.20.historical_info
+
+}
+
+# The Great Northern Conflict
+flavor_rus.21 = {
+	type = country_event
+	title = flavor_rus.21.title
+	desc = flavor_rus.21.desc
+	image = "gfx/interface/illustrations/government/diplomacy_illustration.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1680.1.1
+		to = 1730.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		is_neighbor_of = c:SWE
+
+		NOT = {	is_allied_with = { target = c:SWE } }
+
+		c:SWE = {
+			country_rank = country_rank:rank_empire
+			is_subject = no
+			any_enemy = {
+				NOT = {
+					tag = RUS
+					is_enemy_of = c:RUS
+					is_rival_of = c:RUS
+				}
+			}
+		}
+	}
+
+	immediate = {
+		c:SWE.capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.21.a
+
+		add_opinion = {
+			target = c:SWE
+			modifier = rus_political_aggressions
+		}
+
+		c:SWE = {
+			every_enemy = {
+				limit = {
+					NOT = {
+						tag = RUS
+						is_enemy_of = root
+						is_rival_of = root
+					}
+				}
+				add_opinion = {
+					target = root
+					modifier = rus_enemy_of_sweden
+				}
+				root = {
+					add_opinion = {
+						target = prev
+						modifier = rus_enemy_of_sweden
+					}
+				}
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.21.b
+		nudge_towards_isolationism = yes
+	}
+
+	historical_info = flavor_rus.21.historical_info
+
+}
+
+# The Absolute Overhaul of Governance
+flavor_rus.22 = {
+	hide_portraits = no
+	type = country_event
+	title = flavor_rus.22.title
+	desc = flavor_rus.22.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1680.1.1
+		to = 1740.1.1
+		monthly_chance = 5
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		has_regent = no
+
+		at_war = no
+
+		OR = {
+			has_reform = government_reform:autocracy
+			societal_value:centralization_vs_decentralization <= -30
+		}
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+		ruler = {
+			save_scope_as = target_ruler
+		}
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate	background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.22.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = enable_russian_absolutism_reform
+			set_variable = { name = russian_absolutism value = yes }
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		add_stability = stability_severe_penalty
+
+		custom_tooltip = flavor_rus.22.tt1
+	}
+
+	option = {
+		name = flavor_rus.22.b
+
+		change_societal_value = {
+			type = centralization_vs_decentralization
+			value = societal_value_move_to_right
+		}
+
+		add_stability = stability_severe_bonus
+	}
+
+	historical_info = flavor_rus.22.historical_info
+
+}
+
+# The Governmental Guardianship
+flavor_rus.23 = {
+	type = country_event
+	title = flavor_rus.23.title
+	desc = flavor_rus.23.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1720.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+	
+	trigger = {
+		religion = religion:orthodox
+		has_reform = government_reform:russian_absolutism
+
+		"estate_power(estate_type:clergy_estate)" < 0.3
+
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate	background = estate_type:clergy_estate }
+	}
+
+	option = {
+		name = flavor_rus.23.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = enable_state_controlled_church_reform
+			set_variable = { name = state_controlled_church value = 1 }
+		}
+
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		if = {
+			limit = {
+				has_policy = most_holy_synod_policy
+				OR = { has_policy = limited_censorship has_policy = no_censorship }
+			}
+			add_policy = policy:strict_censorship
+			custom_tooltip = flavor_rus.23.tt1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.23.b
+
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		change_societal_value = {
+			type = spiritualist_vs_humanist
+			value = societal_value_move_to_left
+		}
+		add_stability = stability_mild_bonus
+	}
+
+		option = {
+		name = flavor_rus.23.c
+		trigger = {
+			ruler ?= {
+				has_trait = greedy
+			}
+		}
+
+		change_gold_effect = { scale = 6 }
+
+		add_government_power = government_power_severe_bonus
+	}
+
+	historical_info = flavor_rus.23.historical_info
+
+}
+
+# Academy Of Sciences
+flavor_rus.24 = {
+	hide_portraits = no
+	type = country_event
+	title = flavor_rus.24.title
+	desc = flavor_rus.24.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1724.1.1
+		to = 1784.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		OR = {
+			character:rus_vasily_tatishchev ?= {
+				is_alive = yes
+			}
+			ruler ?= {
+				OR = {
+					has_trait = scholar
+					adm > 75
+				}
+			}
+		}
+
+		location:neva = {
+			owner = root
+			controller = root
+			is_capital = yes
+		}
+
+	}
+
+	immediate = {
+		location:neva = {
+			save_scope_as = target_location
+		}
+
+		character:rus_vasily_tatishchev ?= {
+			if = {
+				limit = {
+					is_alive = yes
+				}
+				save_scope_as = vasily_tatishchev
+			}
+		}
+
+		character:mos_james_bruce ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					in_cabinet = yes
+				}
+				save_scope_as = james_bruce
+			}
+		}
+
+		root = {
+			save_scope_as = target_root_country
+		}
+	}
+
+	option = {
+		name = flavor_rus.24.a
+		historical_option = yes
+
+		set_variable = {
+			name = academy_of_sciences
+			value = 1
+		}
+
+		location:neva = {
+			construct_building = {
+				building_type = building_type:academy_of_sciences
+			}
+		}
+
+		if = {
+			limit = {
+				character:rus_vasily_tatishchev ?= {
+					is_alive = yes
+				}
+			}
+			location:neva = {
+				change_prosperity = prosperity_very_weak_bonus
+				custom_tooltip = flavor_rus.24.tt1
+			}
+		}
+		else = {
+			ruler = {
+				save_scope_as = target_character
+			}
+		}
+
+		if = {
+			limit = {
+				character:mos_james_bruce ?= {
+					is_alive = yes
+					in_cabinet = yes
+				}
+			}
+			add_research_progress = research_progress_mild_bonus
+			custom_tooltip = flavor_rus.24.tt2
+		}
+	}
+
+	option = {
+		name = flavor_rus.24.b
+
+		nudge_towards_openness = yes
+
+		custom_tooltip = flavor_rus.24.tt3
+	}
+
+	historical_info = flavor_rus.24.historical_info
+
+}
+
+# The Ambitious Commission
+flavor_rus.25 = {
+	type = country_event
+	title = flavor_rus.25.title
+	desc = flavor_rus.25.desc
+	image = "gfx/interface/illustrations/institutions/legalism.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1740.1.1
+		to = 1840.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		has_reform = government_reform:russian_absolutism
+		modifier:has_a_parliamentary_system = yes
+	}
+
+	immediate = {
+		root = { save_scope_as = target_root_country }
+	}
+
+	option = {
+		name = flavor_rus.25.a
+		historical_option = yes
+
+		change_societal_value = { type = aristocracy_vs_plutocracy value = societal_value_move_to_left }
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_severe_penalty }
+		add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_severe_penalty }
+		add_estate_satisfaction = { type = estate_type:burghers_estate value = estate_satisfaction_severe_penalty }
+	}
+
+	option = {
+		name = flavor_rus.25.b
+
+		add_stability = stability_mild_penalty
+
+		change_societal_value = { type = serfdom_vs_free_subjects value = societal_value_move_to_right }
+		if = {
+			limit = {
+				ruler ?= {
+					OR = {
+						dip > 75
+						has_character_modifier = great
+					}
+				}
+			}
+			add_government_power = government_power_mild_bonus
+			custom_tooltip = flavor_rus.25.tt1
+		}
+	}
+
+	historical_info = flavor_rus.25.historical_info
+
+}
+
+# State Control over Trade
+flavor_rus.26 = {
+	type = country_event
+	title = flavor_rus.26.title
+	desc = flavor_rus.26.desc
+	image = "gfx/interface/illustrations/institutions/global_trade.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1750.1.1
+		to = 1830.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+		# in deficit
+		modifier:trade_efficiency < 0.1
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.26.a
+		historical_option = yes
+
+		change_societal_value = {
+			type = mercantilism_vs_free_trade
+			value = societal_value_move_to_left
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		capital = {
+			market = {
+				add_merchant_power = {
+					country = root
+					power = merchant_power_mild_bonus
+					years = 10
+					key = state_promoted_mercantilism_key
+				}
+			}
+		}
+	}
+
+	option = {
+		name = flavor_rus.26.b
+
+		change_societal_value = {
+			type = mercantilism_vs_free_trade
+			value = societal_value_move_to_right
+		}
+	}
+
+	historical_info = flavor_rus.26.historical_info
+
+}
+
+# The Pugatchev Uprising
+flavor_rus.27 = {
+	hide_portraits = no
+	type = country_event
+	title = flavor_rus.27.title
+	desc = flavor_rus.27.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1762.1.1
+		to = 1800.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		OR = {
+			estate_satisfaction:peasants_estate < 0.3
+			societal_value:serfdom_vs_free_subjects <= -20
+		}
+		stability < 25
+		any_owned_location = {
+			region = region:ural_region
+		}
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	immediate = {
+		create_rebel = {
+			name = pugatchev_uprising
+			category = pretender
+			save_scope_as = pugatchev_uprising
+		}
+
+		create_character = {
+			first_name = Yemelyan
+			last_name = pugatchev
+			estate = estate_type:peasants_estate
+			adm = 65
+			dip = 54
+			mil = 60
+			birth_date = 1742.1.1
+			script = rus_yemelyan_pugatchev
+			save_scope_as = yemelyan_pugatchev
+			change_character_allegiance = scope:pugatchev_uprising
+		}
+
+		random_owned_location = {
+			limit = {
+				region = region:ural_region
+			}
+			save_scope_as = target_location
+		}
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.27.a
+		historical_option = yes
+
+		set_variable = { name = rus_pugachev_uprising value = 1 }
+
+		custom_tooltip = {
+			text = pugatchev_uprising_tt
+			region:ural_region = {
+				every_location_in_region = {
+					random_pop = {
+						limit = {
+							owner = root
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:pugatchev_uprising
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				OR = {
+					estate_satisfaction:peasants_estate < 0.3
+					societal_value:serfdom_vs_free_subjects <= -20
+				}
+				any_owned_location = {
+					count > 3
+					region = region:russian_region
+				}
+			}
+			while = {
+				count = 3
+				region:russian_region = {
+					random_location_in_region = {
+						every_pop = {
+							limit = {
+								owner = root
+								pop_type = pop_type:peasants
+							}
+							add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+							change_pop_allegiance = scope:pugatchev_uprising
+						}
+					}
+				}
+			}
+			custom_tooltip = flavor_rus.27.tt1
+		}
+	}
+
+	option = {
+		name = flavor_rus.27.b
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_right
+		}
+
+		add_government_power = government_power_severe_penalty
+	}
+
+	historical_info = flavor_rus.27.historical_info
+
+}
+
+# The Reactionary Policy
+flavor_rus.28 = {
+	type = country_event
+	title = flavor_rus.28.title
+	desc = flavor_rus.28.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1750.1.1
+		to = 1800.1.1
+		monthly_chance = 10
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	trigger = {
+		has_variable = rus_pugachev_uprising
+
+		NOT = { exists = scope:pugatchev_uprising }
+		NOT = {
+			ruler = character:rus_yemelyan_pugatchev
+		}
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.28.a
+		historical_option = yes
+
+		grant_estate_privilege = estate_privilege:charter_of_the_nobility
+
+		change_societal_value = { type = capital_economy_vs_traditional_economy value = societal_value_move_to_right }
+	}
+
+	option = {
+		name = flavor_rus.28.b
+		change_societal_value = { type = serfdom_vs_free_subjects value = societal_value_move_to_right }
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_extreme_penalty
+		}
+
+	}
+
+	historical_info = flavor_rus.28.historical_info
+
+}
+
+# The Somewhat Liberal Legislation
+flavor_rus.29 = {
+	type = country_event
+	title = flavor_rus.29.title
+	desc = flavor_rus.29.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1775.1.1
+		to = 1825.1.1
+		monthly_chance = 5
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+
+	trigger = {
+
+		societal_value:serfdom_vs_free_subjects <= 30
+		ruler ?= {
+			NOR = {
+				has_trait = cruel
+				has_trait = malevolent
+				has_trait = greedy
+			}
+		}
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.29.a
+		historical_option = yes
+		if = {
+			limit = {
+				ruler ?= {
+					has_trait = careful
+				}
+			}
+			change_societal_value = {
+			type = serfdom_vs_free_subjects
+				value = societal_value_move_to_right
+			}
+			add_estate_satisfaction = { type = estate_type:nobles_estate
+				value = estate_satisfaction_severe_penalty
+			}
+			custom_tooltip = flavor_rus.29.tt1
+		}
+		else = {
+			change_societal_value = {
+				type = serfdom_vs_free_subjects
+				value = societal_value_move_to_right
+			}
+			add_estate_satisfaction = { type = estate_type:nobles_estate
+				value = estate_satisfaction_severe_penalty
+			}
+			custom_tooltip = flavor_rus.29.tt2
+		}
+	}
+
+	option = {
+		name = flavor_rus.29.b
+
+		add_stability = stability_mild_bonus
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_penalty
+		}
+	}
+
+	historical_info = flavor_rus.29.historical_info
+
+}
+
+# The Sparks of Change
+flavor_rus.30 = {
+	type = country_event
+	title = flavor_rus.30.title
+	desc = flavor_rus.30.desc
+	image = "gfx/interface/illustrations/institutions/enlightenment.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1792.1.1
+		to = 1840.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		societal_value:serfdom_vs_free_subjects <= 10
+
+		character:rus_mikhail_speransky ?= {
+			is_alive = yes
+			in_cabinet = yes
+		}
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+		character:rus_mikhail_speransky ?= {
+			save_scope_as = mikhail_speransky
+		}
+		root = { save_scope_as = target_root_country }
+	}
+
+	option = {
+		name = flavor_rus.30.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = enable_speransky_liberalization_reform
+			set_variable = { name = speransky_liberalization value = 1 }
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		custom_tooltip = flavor_rus.30.tt1
+
+	}
+
+	option = {
+		name = flavor_rus.30.b
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_left
+		}
+
+		add_stability = stability_mild_bonus
+
+	}
+
+	historical_info = flavor_rus.30.historical_info
+
+}
+
+# The Anjala conspiracy
+flavor_rus.31 = {
+	type = country_event
+	title = flavor_rus.31.title
+	desc = flavor_rus.31.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1778.1.1
+		to = 1820.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		is_at_war_with = c:SWE
+
+		c:SWE = {
+			government_type = government_type:monarchy
+			own_entire_area = area:finland_area
+		}
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:soldiers background = pop_type:nobles }
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		if = {
+			limit = {
+				NOT = {
+					exists = dynasty:jagerhorn_dynasty
+				}
+			}
+			location:helsinge = { create_dynasty_from_location = jagerhorn_dynasty }
+		}
+
+		c:SWE = {
+
+			create_rebel = {
+				name = anjala_conspirators
+				culture = culture:finnish
+				category = nationalist
+				save_scope_as = anjala_conspirators
+			}
+
+			create_character = {
+				first_name = name_john
+				dynasty = dynasty:jagerhorn_dynasty
+				estate = estate_type:nobles_estate
+				adm = 28
+				dip = 46
+				mil = 60
+				birth_date = 1752.1.1
+				birth_location = location:helsinge
+				save_scope_as = johan_jagerhorn
+				script = swe_johan_jagerhorn
+				change_character_allegiance = scope:anjala_conspirators
+			}
+		}
+	}
+
+	#Give them our support.
+	option = {
+		name = flavor_rus.31.a
+
+		change_gold_effect = { scale = -6 }
+
+		drop_antagonism_bomb = {
+			target = location:helsinge
+			modifier = antagonism_pressed_claim
+			value = 3
+		}
+
+		custom_tooltip = {
+			text = flavor_rus.31.a.custom
+			area:finland_area = {
+				every_location_in_area = {
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:anjala_conspirators
+					}
+				}
+			}
+		}
+	}
+
+	#Reject their pleas.
+	option = {
+		name = flavor_rus.31.b
+
+		drop_antagonism_bomb = {
+			target = c:SWE.capital
+			modifier = antagonism_renounced_claim
+			value = -2
+		}
+
+		c:SWE = {
+			add_opinion = {
+				target = root
+				modifier = rus_rejected_anjala_league
+			}
+		}
+		custom_tooltip = flavor_rus.31.tt1
+	}
+
+	historical_info = flavor_rus.31.historical_info
+
+}
+
+# Mikhail Shcherbatov
+flavor_rus.32 = {
+	type = country_event
+	title = flavor_rus.32.title
+	desc = flavor_rus.32.desc
+	image = "gfx/interface/illustrations/institutions/enlightenment.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1763.1.1
+		to = 1793.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		OR = {
+			location:moscow = {
+				has_institution = institution:enlightenment
+			}
+			societal_value:traditionalist_vs_innovative > 0
+		}
+	}
+
+	immediate = {
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+		location:moscow = {
+			create_dynasty_from_location = shcherbatov_dynasty
+		}
+
+		create_character = {
+			first_name = name_michael
+			estate = estate_type:nobles_estate
+			adm = 65
+			dip = 46
+			mil = 31
+			dynasty = dynasty:shcherbatov_dynasty
+			birth_date = 1733.1.1
+			birth_location = location:moscow
+			artist_skill = 0.89
+			artist = philosopher
+			save_scope_as = michailo_shcherbatov
+			script = rus_michailo_shcherbatov
+			create_in_limbo = yes
+		}
+
+		root = {
+			save_scope_as = target_root_country
+		}
+	}
+
+	option = {
+		name = flavor_rus.32.a
+		historical_option = yes
+
+		scope:michailo_shcherbatov = {
+			move_country = root
+			add_character_modifier = {
+				modifier = literary_moralist
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		custom_tooltip = flavor_rus.32.tt2
+
+		if = {
+			limit = {
+				has_policy = strict_censorship
+			}
+			add_estate_satisfaction = { type = estate_type:clergy_estate
+				value = estate_satisfaction_severe_bonus
+			}
+			custom_tooltip = flavor_rus.32.tt3
+		}
+	}
+
+	option = {
+		name = flavor_rus.32.b
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_right
+		}
+
+		hidden_effect = { kill_character_silently = scope:michailo_shcherbatov }
+	}
+
+	historical_info = flavor_rus.32.historical_info
+
+}
+
+# Vasily Tatishchev
+flavor_rus.33 = {
+	type = country_event
+	title = flavor_rus.33.title
+	desc = flavor_rus.33.desc
+	image = "gfx/interface/illustrations/institutions/enlightenment.dds"
+	
+	fire_only_once = yes	
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1706.1.1
+		to = 1746.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		location:pskov = {
+			owner = root
+			controller = root
+		}
+
+		OR = {
+			any_owned_location = {
+				region = region:russian_region
+				has_institution = institution:enlightenment
+			}
+			has_reform = government_reform:autocracy
+		}
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:nobles background = pop_type:soldiers }
+
+		location:pskov = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_basil
+			last_name = tatishchev
+			estate = estate_type:nobles_estate
+			adm = 58
+			dip = 73
+			mil = 43
+			birth_date = 1686.1.1
+			birth_location = location:pskov
+			artist_skill = 0.80
+			artist = writer
+			save_scope_as = vasily_tatishchev
+			script = rus_vasily_tatishchev
+			create_in_limbo = yes
+		}
+	}
+
+	option = {
+		name = flavor_rus.33.a
+		historical_option = yes
+
+		scope:vasily_tatishchev = { move_country = root }
+	}
+
+
+	option = {
+		name = flavor_rus.33.b
+		trigger = {
+			has_regent = no
+		}
+
+		hidden_effect = { kill_character_silently = scope:vasily_tatishchev }
+
+		ruler = {
+			add_trait = trait:well_advised
+			add_adm = 10
+		}
+	}
+
+	option = {
+		name = flavor_rus.33.c
+		trigger = {
+			any_owned_location = {
+				count > 0
+				region = region:east_siberia_region
+			}
+		}
+
+		add_prestige = prestige_mild_bonus
+		scope:vasily_tatishchev = {
+			move_country = root
+			add_character_modifier = {
+				modifier = exiled
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		custom_tooltip = flavor_rus.33.tt2
+	}
+
+	historical_info = flavor_rus.33.historical_info
+
+}
+
+# Mikhail Lomonosov
+flavor_rus.34 = {
+	type = country_event
+	title = flavor_rus.34.title
+	desc = flavor_rus.34.desc
+	image = "gfx/interface/illustrations/institutions/scientific_revolution.dds"
+	
+	fire_only_once = yes	
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1741.1.1
+		to = 1765.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+			has_building = building_type:university
+		}
+	}
+
+	immediate = {
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_michael
+			last_name = Lomonosov
+			estate = estate_type:burghers_estate
+			adm = 54
+			dip = 33
+			mil = 34
+			birth_date = 1711.1.1
+			birth_location = location:pskov
+			artist_skill = 0.80
+			artist = philosopher
+			save_scope_as = mikhail_lomonosov
+			script = rus_mikhail_lomonosov
+			create_in_limbo = yes
+		}
+
+		root = {
+			save_scope_as = target_root_country
+		}
+	}
+
+
+	option = {
+		name = flavor_rus.34.a
+
+		add_research_progress = research_progress_mild_bonus
+		scope:mikhail_lomonosov = { move_country = root }
+	}
+
+	option = {
+		name = flavor_rus.34.b
+
+		set_variable = { name = unlocked_advance_imperatorskiy_moskovskiy_universitet value = 1 }
+
+		custom_tooltip = enable_imperatorskiy_moskovskiy_universitet_advance
+
+		hidden_effect = { kill_character_silently = scope:mikhail_lomonosov }
+
+		custom_tooltip = flavor_rus.34.tt2
+	}
+
+	option = {
+		name = flavor_rus.34.c
+
+		add_prestige = prestige_mild_bonus
+
+		hidden_effect = { kill_character_silently = scope:mikhail_lomonosov }
+	}
+
+	historical_info = flavor_rus.34.historical_info
+
+}
+
+# The Unchecked Madman
+flavor_rus.35 = {
+	hide_portraits = no
+	type = country_event
+	title = flavor_rus.35.title
+	desc = flavor_rus.35.desc
+	#GRAVEYARD or #PRISON
+	image = "gfx/interface/illustrations/disaster/coup_attempt.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1525.1.1
+		to = 1550.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		has_regent = no
+
+		ruler ?= {
+			first_spouse ?= {
+				is_alive = yes
+			}
+			is_married = yes
+		}
+
+		any_cabinet_character = {
+			count > 0
+		}
+
+		has_reform = government_reform:chosen_rada_reform
+	}
+
+	immediate = {
+
+		ruler.first_spouse = {
+			save_scope_as = first_spouse
+			kill_character = this
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		every_cabinet_character = {
+			kill_character = {
+			target = this
+			reason = execution
+			killer = ruler
+			}
+		}
+
+		ruler = {
+			save_scope_as = target_ruler
+		}
+	}
+
+	option = {
+		name = flavor_rus.35.a
+		historical_option = yes
+
+		remove_reform = government_reform:chosen_rada_reform
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+		custom_tooltip = flavor_rus.35.tt1
+	}
+
+	option = {
+		name = flavor_rus.35.b
+
+		add_government_power = government_power_mild_penalty
+
+		ruler = {
+			add_adm = -15
+			add_dip = -15
+			add_mil = -15
+		}
+
+		custom_tooltip = flavor_rus.35.tt1
+	}
+
+	historical_info = flavor_rus.35.historical_info
+
+}
+
+# The Chamber of Finance
+flavor_rus.36 = {
+	type = country_event
+	title = flavor_rus.36.title
+	desc = flavor_rus.36.desc
+	image = "gfx/interface/illustrations/institutions/banking.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1515.1.1
+		to = 1565.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		has_reform = government_reform:oprichnina
+		has_regent = no
+	}
+
+	option = {
+		name = flavor_rus.36.a
+		historical_option = yes
+
+		add_inflation = inflation_mild_bonus
+
+		change_societal_value = {
+			type = capital_economy_vs_traditional_economy
+			value = societal_value_move_to_left
+		}
+	}
+
+	option = {
+		name = flavor_rus.36.b
+
+		add_government_power = government_power_mild_bonus
+
+		change_societal_value = {
+			type = belligerent_vs_conciliatory
+			value = societal_value_move_to_left
+		}
+	}
+
+	historical_info = flavor_rus.36.historical_info
+
+}
+
+# The Feeding from the Earth
+flavor_rus.37 = {
+	type = country_event
+	title = flavor_rus.37.title
+	desc = flavor_rus.37.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1370.1.1
+		to = 1500.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		NOT = {	has_estate_privilege = estate_privilege:kormlenije }
+
+		any_owned_location = {
+			count > 10
+			region = region:russian_region
+		}
+
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = exterior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+	}
+
+	option = {
+		name = flavor_rus.37.a
+		historical_option = yes
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_left
+		}
+
+		add_stability = stability_mild_bonus
+	}
+
+	option = {
+		name = flavor_rus.37.b
+
+		change_gold_effect = { scale = -3 }
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_right
+		}
+	}
+
+	historical_info = flavor_rus.37.historical_info
+
+}
+
+# The Austerity Measures of Boris Morozov
+flavor_rus.38 = {
+	type = country_event
+	title = flavor_rus.38.title
+	desc = flavor_rus.38.desc
+	image = "gfx/interface/illustrations/institutions/banking.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1620.1.1
+		to = 1650.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		character:rus_boris_morozov ?= {
+			is_alive = yes
+			OR = {
+			in_cabinet = yes
+			is_regent = yes
+			}
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+	}
+
+	immediate = {
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+		character:rus_boris_morozov = {
+			save_scope_as = boris_morozov
+		}
+	}
+
+	option = {
+		name = flavor_rus.38.a
+		historical_option = yes
+
+		add_country_modifier = {
+			modifier = reduced_government_expenses
+			years = 5
+		}
+
+		change_societal_value = {
+			type = quality_vs_quantity
+			value = societal_value_move_to_right
+		}
+	}
+
+	option = {
+		name = flavor_rus.38.b
+
+		change_societal_value = {
+			type = aristocracy_vs_plutocracy
+			value = societal_value_move_to_left
+		}
+
+		character:rus_boris_morozov = {
+			add_adm = -20
+		}
+
+		custom_tooltip = flavor_rus.38.tt1
+	}
+
+	historical_info = flavor_rus.38.historical_info
+
+}
+
+# The Misconstrued Diplomat
+flavor_rus.39 = {
+	type = country_event
+	title = flavor_rus.39.title
+	desc = flavor_rus.39.desc
+	image = "gfx/interface/illustrations/government/diplomacy_illustration.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1632.1.1
+		to = 1662.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		societal_value:outward_vs_inward < 10
+
+		any_known_country = {
+			capital = {
+				OR = {
+					sub_continent = sub_continent:south_east_asia
+					sub_continent = sub_continent:east_asia
+				}
+			}
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+	}
+
+	immediate = {
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_theodore
+			last_name = Baikov
+			estate = estate_type:nobles_estate
+			adm = 26
+			dip = 68
+			mil = 20
+			birth_date = 1612.1.1
+			birth_location = location:moscow
+			save_scope_as = fyodor_baikov
+			script = rus_fyodor_baikov
+			create_in_limbo = yes
+		}
+		#event_illustration_estate_background_effect = { background = estate_type:crown_estate } #country_room = CHI
+	}
+
+	option = {
+		name = flavor_rus.39.a
+		historical_option = yes
+
+		scope:fyodor_baikov = { move_country = root }
+		custom_tooltip = flavor_rus.39.tt2
+	}
+
+	option = {
+		name = flavor_rus.39.b
+
+		scope:fyodor_baikov = {
+			move_country = root
+			add_character_modifier = {
+				modifier = refuses_to_serve_in_cabinet
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		nudge_towards_openness = yes
+
+		custom_tooltip = flavor_rus.39.tt3
+
+	}
+
+	option = {
+		name = flavor_rus.39.c
+
+		add_prestige = prestige_mild_bonus
+
+		hidden_effect = { kill_character_silently = scope:fyodor_baikov }
+
+	}
+
+	historical_info = flavor_rus.39.historical_info
+
+}
+
+# Istoriya Rossiyskaya
+flavor_rus.40 = {
+	type = country_event
+	title = flavor_rus.40.title
+	desc = flavor_rus.40.desc
+	image = "gfx/interface/illustrations/institutions/legalism.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1730.1.1
+		to = 1830.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		character:rus_vasily_tatishchev ?= {
+			is_alive = yes
+		}
+	}
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+
+		character:rus_vasily_tatishchev = {
+			save_scope_as = vasily_tatishchev
+		}
+	}
+
+	option = {
+		name = flavor_rus.40.a
+		historical_option = yes
+
+		capital = {
+			create_art = {
+				artist = scope:vasily_tatishchev
+				quality = 80
+				type = work_of_art_type:treatise
+				key = istoriya_rossiskaya
+			}
+		}
+
+		scope:vasily_tatishchev = {
+			add_artist_skill = 0.03
+		}
+	}
+
+	option = {
+		name = flavor_rus.40.b
+		trigger = {
+			has_reform = government_reform:autocracy
+		}
+
+		add_government_power = government_power_severe_bonus
+	}
+
+	option = {
+		name = flavor_rus.40.c
+
+		add_prestige = prestige_mild_bonus
+	}
+
+	historical_info = flavor_rus.40.historical_info
+
+}
+
+# Russian-American Company
+flavor_rus.41 = {
+	type = country_event
+
+	fire_only_once = yes
+
+	title = flavor_rus.41.title
+	desc = flavor_rus.41.desc
+
+	image = "gfx/interface/icons/trade_goods/illustrations/icon_goods_fur.dds"
+
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1770.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		capital.market = {
+			any_import = {
+				goods = goods:fur
+			}
+		}
+
+		NOT = {
+			any_subject_or_below = {
+				is_subject_type = trade_company
+				capital.region = region:alaska_region
+			}
+		}
+
+		region:alaska_region = {
+			any_location_in_region = {
+				is_coastal_within_range = yes
+			}
+			any_location_in_region = {
+				count >= 3
+				raw_material = goods:fur
+				is_discovered_by = root
+				location_rank = location_rank:rural_settlement
+				NOT = { has_building = building_type:overseas_trading_post }
+			}
+		}
+	}
+
+
+
+	immediate = {
+		region:alaska_region = {
+			random_location_in_region = {
+				limit = {
+					raw_material = goods:fur
+					is_discovered_by = root
+					location_rank = location_rank:rural_settlement
+					NOT = { has_building = building_type:overseas_trading_post }
+				}
+				save_scope_as = target_location
+			}
+		}
+	}
+
+	option = {
+		name = flavor_rus.41.a
+
+		change_gold_effect = { scale = -1 }
+
+		scope:target_location.market = {
+			ordered_location_in_market = {
+				limit = {
+					location_rank = location_rank:rural_settlement
+					raw_material = goods:fur
+					NOT = { has_building = building_type:overseas_trading_post }
+				}
+				order_by = population
+				max = 8
+
+				change_building_level_in_location = {
+					building = building_type:overseas_trading_post
+					value = 1
+					owner = root
+				}
+			}
+		}
+	}
+
+	option = {
+		name = flavor_rus.41.b
+
+		change_societal_value = {
+			type = mercantilism_vs_free_trade
+			value = societal_value_move_to_right
+		}
+	}
+
+	historical_info = flavor_rus.41.historical_info
+
+}
+
+# Free Economic Society
+flavor_rus.42 = {
+	type = country_event
+	title = flavor_rus.42.title
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					character:rus_grigory_orlov ?= {
+						is_alive = yes
+						in_cabinet = yes
+					}
+					ruler ?= {
+						OR = {
+							AND = {
+								has_character_modifier = great
+								is_female = yes
+							}
+							has_trait = free_thinker
+						}
+					}
+				}
+				desc = flavor_rus.42.desc_both
+			}
+			triggered_desc = {
+				trigger = {
+					character:rus_grigory_orlov ?= {
+						is_alive = yes
+						in_cabinet = yes
+					}
+				}
+				desc = flavor_rus.42.desc_orlov
+			}
+			triggered_desc = {
+				trigger = {
+					ruler ?= {
+						OR = {
+							AND = {
+								has_character_modifier = great
+								is_female = yes
+							}
+							has_trait = free_thinker
+						}
+					}
+				}
+				desc = flavor_rus.42.desc_ruler
+			}
+		}
+	}
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1760.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+		location:neva = {
+			owner = root
+			controller = root
+			OR = {
+				location_rank = location_rank:town
+				location_rank = location_rank:city
+			}
+		}
+
+		OR = {
+			ruler ?= {
+				OR = {
+					AND = {
+						has_character_modifier = great
+						is_female = yes
+					}
+					has_trait = free_thinker
+				}
+			}
+			character:rus_grigory_orlov ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+		}
+		societal_value:capital_economy_vs_traditional_economy > 10
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+
+		location:neva = {
+			save_scope_as = target_location
+		}
+
+		character:rus_grigory_orlov ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					in_cabinet = yes
+				}
+				save_scope_as = grigory_orlov
+			}
+		}
+
+		if = {
+			limit = {
+				has_regent = no
+			}
+			ruler ?= {
+				save_scope_as = target_character
+			}
+		}
+	}
+
+	option = {
+		name = flavor_rus.42.a
+		historical_option = yes
+
+		if = {
+			limit = {
+				ruler ?= {
+					NOR = {
+						OR = {
+							AND = {
+								has_character_modifier = great
+								is_female = yes
+							}
+							has_trait = free_thinker
+						}
+					}
+				}
+			}
+			add_gold = {
+				value = root.monthly_income_trade_and_tax
+				multiply = -3
+			}
+		}
+
+		set_variable = { name = free_economic_society value = 1 }
+
+		location:neva = {
+			construct_building = {
+				building_type = building_type:free_economic_society
+			}
+		}
+
+		if = {
+			limit = {
+				any_owned_building = {
+					building_type = building_type:RGO_building_potato #potato_staple
+				}
+			}
+			add_country_modifier = {
+				modifier = potato_varieties_introduced
+				years = 25
+				mode = add_and_extend
+			}
+			custom_tooltip = flavor_rus.42.tt1
+		}
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.42.b
+
+		nudge_towards_isolationism = yes
+
+		if = {
+			limit = {
+				societal_value:serfdom_vs_free_subjects < -10
+			}
+			add_estate_satisfaction = { type = estate_type:nobles_estate
+				value = estate_satisfaction_severe_bonus
+			}
+			custom_tooltip = flavor_rus.42.tt2
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.42.historical_info
+
+}
+
+# Grigory Orlov
+flavor_rus.43 = {
+	type = country_event
+	title = flavor_rus.43.title
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					ruler ?= {
+						is_female = yes
+					}
+				}
+				desc = flavor_rus.43.desc_empress
+			}
+			triggered_desc = {
+				trigger = {
+					location:moscow = {
+						has_building = building_type:moscow_artillery_yard
+					}
+				}
+				desc = flavor_rus.43.desc_artillery_yard
+			}
+		}
+	}
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1752.1.1
+		to = 1794.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:novgorod = {
+			owner = root
+			controller = root
+		}
+
+		OR = {
+			location:moscow = {
+				has_building = building_type:moscow_artillery_yard
+			}
+			ruler ?= {
+				is_female = yes
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = exterior
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:soldiers background = pop_type:soldiers }
+		location:novgorod = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_gregory
+			last_name = Orlov
+			adm = 90
+			dip = 30
+			mil = 90
+			birth_date = 1734.1.1
+			estate = estate_type:nobles_estate
+			birth_location = location:novgorod
+			save_scope_as = grigory_orlov
+			script = rus_grigory_orlov
+			create_in_limbo = yes
+		}
+		root = { save_scope_as = target_root_country }
+	}
+
+	option = {
+		name = flavor_rus.43.a
+		historical_option = yes
+
+		scope:grigory_orlov = { move_country = root }
+		custom_tooltip = flavor_rus.43.tt2
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.43.b
+
+		scope:grigory_orlov = {
+			move_country = root
+			add_character_modifier = {
+				modifier = refuses_to_serve_in_cabinet
+				years = -1
+				mode = add_and_extend
+			}
+			add_trait = trait:unsuited_for_army_command
+			add_trait = trait:level_headed
+		}
+
+		add_navy_tradition = navy_tradition_severe_bonus
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.43.c
+
+		hidden_effect = { kill_character_silently = scope:grigory_orlov }
+
+		add_prestige = prestige_mild_bonus
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.43.historical_info
+
+}
+
+# The Splendor of Gatchina
+flavor_rus.44 = {
+	type = country_event
+	title = flavor_rus.44.title
+	desc = flavor_rus.44.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1754.1.1
+		to = 1784.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:neva = {
+			owner = root
+			controller = root
+			OR = {
+				location_rank = location_rank:town
+				location_rank = location_rank:city
+			}
+		}
+
+		character:rus_grigory_orlov ?= {
+			is_alive = yes
+			in_cabinet = yes
+		}
+	}
+
+	immediate = {
+
+		location:neva = {
+			save_scope_as = target_location
+		}
+
+		character:rus_grigory_orlov = {
+			save_scope_as = grigory_orlov
+		}
+
+		create_character = {
+			first_name = name_anthony
+			last_name = Rinaldi
+			estate = estate_type:burghers_estate
+			artist = architect
+			artist_skill = 0.8
+			adm = 32
+			dip = 31
+			mil = 12
+			birth_date = 1709.1.1
+			birth_location = location:palermo
+			save_scope_as = antonio_rinaldi
+			script = mos_antonio_rinaldi
+			create_in_limbo = yes
+		}
+	}
+
+	option = {
+		name = flavor_rus.44.a
+		historical_option = yes
+
+		change_gold_effect = { scale = -6 }
+
+		location:neva = {
+			create_art = {
+				quality = 85
+				artist = scope:antonio_rinaldi
+				type = work_of_art_type:palace
+				key = gatchina_palace
+			}
+			market = {
+				add_temporary_demand = {
+					type = demand:rus_gatchina_palace_construction
+					months = 100
+				}
+			}
+		}
+
+		scope:antonio_rinaldi = {
+			move_country = root
+			add_artist_skill = 0.03
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.44.b
+		trigger = {
+			location:neva = {
+				any_work_of_art_in_location = {
+					count > 1
+					work_of_art_type = work_of_art_type:palace
+				}
+			}
+		}
+
+		change_societal_value = {
+			type = aristocracy_vs_plutocracy
+			value = societal_value_move_to_right
+		}
+
+		add_estate_satisfaction = { type = estate_type:burghers_estate
+			value = estate_satisfaction_severe_bonus
+		}
+		scope:antonio_rinaldi = { banish_character = yes }
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.44.c
+
+		hidden_effect = { kill_character_silently = scope:antonio_rinaldi }
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.44.historical_info
+
+}
+
+# On The Corruption of Morals
+flavor_rus.45 = {
+	type = country_event
+	title = flavor_rus.45.title
+	desc = flavor_rus.45.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1763.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		character:rus_michailo_shcherbatov ?= {
+			is_alive = yes
+		}
+		government_type = government_type:monarchy
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_poptype_effect = { foreground = pop_type:clergy   background = pop_type:clergy }
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		character:rus_michailo_shcherbatov = {
+			save_scope_as = michailo_shcherbatov
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.45.a
+		historical_option = yes
+
+		capital = {
+			create_art = {
+				quality = 85
+				artist = scope:michailo_shcherbatov
+				type = work_of_art_type:treatise
+				key = on_the_corruption_of_morals
+			}
+		}
+
+		scope:michailo_shcherbatov = {
+			add_artist_skill = 0.03
+		}
+
+		nudge_towards_isolationism = yes
+
+		if = {
+			limit = {
+				religion = religion:orthodox
+			}
+			add_estate_satisfaction = { type = estate_type:clergy_estate
+				value = estate_satisfaction_severe_bonus
+			}
+			custom_tooltip = flavor_rus.45.tt1
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.45.b
+
+		add_government_power = government_power_mild_penalty
+
+		add_stability = stability_mild_penalty
+
+		nudge_towards_openness = yes
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.45.historical_info
+
+}
+
+# The Ideological Editing of the Moscow Gazette
+flavor_rus.46 = {
+	type = country_event
+	title = flavor_rus.46.title
+	desc = flavor_rus.46.desc
+	image = "gfx/interface/illustrations/institutions/printing_press.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1755.1.1
+		to = 1840.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+			has_building = building_type:university
+		}
+
+		OR = {
+			has_variable = the_first_vedomosti
+			societal_value:individualism_vs_communalism > 0
+		}
+	}
+
+	immediate = {
+		location:neva = {
+			construct_building = {
+				building_type = building_type:academy_of_sciences
+			}
+		}
+
+		location:moscow = {
+			set_variable = {
+				name = moscow_gazette
+				value = 1
+			}
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.46.a
+		historical_option = yes
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_left
+		}
+
+		culture = {
+			add_cultural_influence = cultural_influence_mild_bonus
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.46.b
+
+		add_government_power = government_power_mild_penalty
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_left
+		}
+
+		custom_tooltip = flavor_rus.46.tt1
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.46.historical_info
+
+}
+
+# The Liberal Father
+flavor_rus.47 = {
+	type = country_event
+	title = flavor_rus.47.title
+	desc = flavor_rus.47.desc
+	image = "gfx/interface/illustrations/institutions/enlightenment.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1792.1.1
+		to = 1840.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		location:vladimir = {
+			owner = root
+			controller = root
+		}
+
+		any_owned_location = {
+			has_building = building_type:university
+			has_institution = institution:enlightenment
+		}
+	}
+
+
+	immediate = {
+		location:vladimir = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_michael
+			last_name = Speransky
+			adm = 89
+			dip = 71
+			mil = 42
+			birth_date = 1772.1.1
+			estate = estate_type:clergy_estate
+			birth_location = location:vladimir
+			save_scope_as = mikhail_speransky
+			script = rus_mikhail_speransky
+			create_in_limbo = yes
+		}
+
+		random_owned_location = {
+			limit = {
+				has_building = building_type:university
+				has_institution = institution:enlightenment
+			}
+			save_scope_as = university_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.47.a
+		historical_option = yes
+
+		scope:mikhail_speransky = { move_country = root }
+
+		if = {
+			limit = {
+				location:neva = {
+					owner = root
+					controller = root
+					has_building = building_type:academy_of_sciences
+				}
+			}
+			scope:mikhail_speransky = {
+				add_dip = 10
+			}
+			custom_tooltip = flavor_rus.47.tt2
+		}
+
+		if = {
+			limit = {
+				location:neva = {
+					owner = root
+					controller = root
+					has_building = building_type:free_economic_society
+				}
+			}
+			scope:mikhail_speransky = {
+				add_adm = 10
+			}
+			custom_tooltip = flavor_rus.47.tt3
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.47.b
+
+		hidden_effect = { kill_character_silently = scope:mikhail_speransky }
+
+		add_prestige = prestige_mild_bonus
+
+		custom_tooltip = flavor_rus.47.tt4
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.47.historical_info
+
+}
+
+# The Enlightened Usurper
+flavor_rus.48 = {
+	type = country_event
+	title = flavor_rus.48.title
+	desc = flavor_rus.48.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1747.1.1
+		to = 1796.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		ruler ?= {
+			is_married = no
+			is_adult = yes
+			is_female = no
+		}
+
+		government_type = government_type:monarchy
+
+		location:stettin = {
+			owner = {
+				religion.group = religion_group:christian
+				NOT = { is_at_war_with = root }
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		location:stettin = {
+			save_scope_as = target_location
+			owner.culture = {
+				save_scope_as = target_culture
+			}
+		}
+
+		create_character = {
+			first_name = name_catherine
+			nickname = nick_the_great
+			adm = 80
+			dip = 100
+			mil = 45
+			fertility = 75
+			female = yes
+			dynasty = dynasty:askanier_dynasty
+			estate = estate_type:nobles_estate
+			age = 18
+			birth_location = location:stettin
+			save_scope_as = sophie_of_anhalt_zerbst
+			script = rus_sophie_of_anhalt_zerbst
+			create_in_limbo = yes
+		}
+	}
+
+	option = {
+		name = flavor_rus.48.a
+		historical_option = yes
+
+		scope:sophie_of_anhalt_zerbst = {
+			move_country = root
+			add_character_modifier = {
+				modifier = great
+				years = -1
+				mode = add_and_extend
+			}
+		}
+		ruler = {
+			marry_character = scope:sophie_of_anhalt_zerbst
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.48.b
+
+		hidden_effect = { kill_character_silently = scope:sophie_of_anhalt_zerbst }
+
+		change_societal_value = {
+			type = outward_vs_inward
+			value = societal_value_move_to_right
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.48.historical_info
+
+}
+
+# The Coup D'Etat
+flavor_rus.49 = {
+	type = country_event
+	title = flavor_rus.49.title
+	desc = flavor_rus.49.desc
+	image = "gfx/interface/illustrations/disaster/coup_attempt.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1750.1.1
+		to = 1800.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		character:rus_sophie_of_anhalt_zerbst ?= {
+			is_alive = yes
+			is_spouse_of = root.ruler
+		}
+
+		ruler ?= {
+			OR = {
+				adm < 25
+				has_trait = babbling_buffoon
+				has_variable = rus_manifesto_of_freedom
+			}
+		}
+
+		OR = {
+			character:rus_grigory_orlov ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+			character:rus_ivan_betskoy ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+			any_cabinet_character = {
+				has_character_modifier = head_of_the_cabinet_modifier
+				mil > 50
+			}
+		}
+	}
+
+	immediate = {
+		character:rus_sophie_of_anhalt_zerbst ?= {
+			save_scope_as = sophie_of_anhalt_zerbst
+		}
+
+		ruler = {
+			save_scope_as = target_ruler
+		}
+
+		if = {
+			limit = {
+				character:rus_grigory_orlov ?= {
+					is_alive = yes
+					in_cabinet = yes
+				}
+			}
+			character:rus_grigory_orlov = {
+				save_scope_as = coup_leader
+			}
+		}
+
+		else_if = {
+			limit = {
+				character:rus_ivan_betskoy ?= {
+					is_alive = yes
+					in_cabinet = yes
+				}
+			}
+			character:rus_ivan_betskoy = {
+				save_scope_as = coup_leader
+			}
+		}
+
+		else = {
+			random_cabinet_character = {
+				limit = {
+					has_character_modifier = head_of_the_cabinet_modifier
+					mil > 50
+				}
+				save_scope_as = coup_leader
+			}
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		root = { save_scope_as = target_root_country }
+	}
+
+	option = {
+		name = flavor_rus.49.a
+		historical_option = yes
+
+		set_new_ruler = scope:sophie_of_anhalt_zerbst
+
+		scope:target_ruler = {
+			add_trait = trait:unsuited_for_country_ruling
+		}
+
+		add_government_power = government_power_severe_penalty
+
+		scope:coup_leader = {
+			if = {
+				limit = {
+					is_alive = yes
+					in_cabinet = yes
+					NOT = { has_character_modifier = head_of_the_cabinet_modifier }
+					root = { country_can_promote_head_of_cabinet = yes }
+				}
+				root = {
+					promote_to_head_of_cabinet_effect = {
+						target = scope:coup_leader
+					}
+				}
+			}
+		}
+
+		custom_tooltip = flavor_rus.49.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.49.b
+
+		set_new_ruler = scope:sophie_of_anhalt_zerbst
+
+		add_stability = stability_severe_penalty
+
+		scope:coup_leader = {
+			if = {
+				limit = {
+					is_alive = yes
+					in_cabinet = yes
+					NOT = { has_character_modifier = head_of_the_cabinet_modifier }
+					root = { country_can_promote_head_of_cabinet = yes }
+				}
+				root = {
+					promote_to_head_of_cabinet_effect = {
+						target = scope:coup_leader
+					}
+				}
+			}
+		}
+
+		scope:target_ruler = {
+			kill_character = {
+				target = this
+				reason = assassination
+				killer = scope:sophie_of_anhalt_zerbst
+			}
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.49.c
+
+		change_gold_effect = { scale = -6 }
+
+		scope:coup_leader = {
+			if = {
+				limit = {
+					is_alive = yes
+					in_cabinet = yes
+				}
+			}
+			kill_character = {
+				target = this
+				reason = execution
+				killer = ruler
+			}
+		}
+
+		scope:sophie_of_anhalt_zerbst = {
+			add_trait = trait:unsuited_for_country_ruling
+			add_adm = -20
+			add_dip = -20
+		}
+
+		custom_tooltip = flavor_rus.49.tt2
+		custom_tooltip = flavor_rus.49.tt3
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.49.historical_info
+
+}
+
+# Imperial Academy of Arts
+flavor_rus.50 = {
+	type = country_event
+	title = flavor_rus.50.title
+	desc = flavor_rus.50.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1757.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		character:rus_ivan_shuvalov ?= {
+			is_alive = yes
+			in_cabinet = yes
+		}
+
+		location:neva = {
+			owner = root
+			controller = root
+			OR = {
+				location_rank = location_rank:town
+				location_rank = location_rank:city
+			}
+		}
+
+		sub_continent:western_europe = {
+			any_location_in_sub_continent = {
+				owner.country_art_quality > root.country_art_quality
+			}
+		}
+
+	}
+
+	immediate = {
+		location:neva = {
+			save_scope_as = target_location
+		}
+
+		character:rus_ivan_shuvalov = {
+			save_scope_as = ivan_shuvalov
+		}
+	}
+
+	option = {
+		name = flavor_rus.50.a
+		historical_option = yes
+
+		set_variable = {
+			name = imperial_academy_of_arts
+			value = 1
+		}
+
+		location:neva = {
+			construct_building = {
+				building_type = building_type:imperial_academy_of_arts
+			}
+		}
+
+		if = {
+			limit = {
+				character:rus_grigory_orlov ?= {
+					is_alive = yes
+					in_cabinet = yes
+				}
+			}
+			character:rus_grigory_orlov = {
+				save_scope_as = grigory_orlov
+			}
+			culture = {
+				add_cultural_tradition = cultural_tradition_mild_bonus
+			}
+			custom_tooltip = flavor_rus.50.tt1
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.50.b
+
+		character:rus_ivan_shuvalov = {
+			add_character_modifier = {
+				modifier = excellent_minister
+				years = -1
+				mode = add_and_extend
+			}
+			add_adm = 10
+		}
+
+		add_government_power = government_power_mild_bonus
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.50.c
+
+		nudge_towards_isolationism = yes
+
+		culture = {
+			add_cultural_influence = cultural_influence_severe_bonus
+		}
+
+		custom_tooltip = flavor_rus.50.tt3
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.50.historical_info
+
+}
+
+# The Gentleman Maecenas
+flavor_rus.51 = {
+	type = country_event
+	title = flavor_rus.51.title
+	desc = flavor_rus.51.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1745.1.1
+		to = 1790.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		any_owned_location = {
+			OR = {
+				location_rank = location_rank:town
+				location_rank = location_rank:city
+			}
+			has_institution = institution:enlightenment
+		}
+
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		create_character = {
+			first_name = name_john
+			last_name = Shuvalov
+			adm = 85
+			dip = 71
+			mil = 13
+			birth_date = 1727.1.1
+			estate = estate_type:nobles_estate
+			birth_location = location:moscow
+			save_scope_as = ivan_shuvalov
+			script = rus_ivan_shuvalov
+			create_in_limbo = yes
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.51.a
+		historical_option = yes
+
+		scope:ivan_shuvalov = { move_country = root }
+		custom_tooltip = flavor_rus.51.tt2
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.51.b
+
+		character:rus_ivan_shuvalov = {
+			move_country = root
+			add_character_modifier = {
+				modifier = refuses_to_serve_in_cabinet
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		change_societal_value = {
+			type = quality_vs_quantity
+			value = societal_value_move_to_left
+		}
+
+		custom_tooltip = flavor_rus.51.tt3
+
+		location:moscow = {
+			if = {
+				limit = {
+					has_building = building_type:university
+				}
+				set_variable = {
+					name = shuvalov_the_teacher
+					value = 1
+				}
+				root = {
+					custom_tooltip = flavor_rus.51.tt4
+				}
+
+			}
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.51.c
+
+		hidden_effect = { kill_character_silently = scope:ivan_shuvalov }
+
+		add_prestige = prestige_mild_bonus
+
+		custom_tooltip = flavor_rus.51.tt5
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	historical_info = flavor_rus.51.historical_info
+
+}
+
+# Fellow of the Royal Society
+flavor_rus.52 = {
+	type = country_event
+	title = flavor_rus.52.title
+	desc = flavor_rus.52.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1760.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		character:rus_ivan_shuvalov ?= {
+			is_alive = yes
+		}
+
+		OR  = {
+			location:neva = {
+				owner = root
+				controller = root
+				has_building = building_type:imperial_academy_of_arts
+			}
+			location:moscow = {
+				owner = root
+				controller = root
+				has_building = building_type:university
+				has_variable = shuvalov_the_teacher
+			}
+		}
+
+		OR = {
+			AND = {
+				country_exists = c:ENG
+				c:ENG.capital = {
+					#has_building = building_type:royal_society
+				}
+			}
+			AND = {
+				country_exists = c:GBR
+				c:GBR.capital = {
+					#has_building = building_type:royal_society
+				}
+			}
+		}
+
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		if = {
+			limit = {
+				country_exists = c:ENG
+			}
+			c:ENG.capital = {
+				save_scope_as = target_location
+			}
+		}
+		else = {
+			c:GBR.capital = {
+				save_scope_as = target_location
+			}
+		}
+
+
+		character:rus_ivan_shuvalov = {
+			save_scope_as = ivan_shuvalov
+		}
+
+		root = { save_scope_as = target_root_country }
+
+	}
+
+	#Graciously accept.
+	option = {
+		name = flavor_rus.52.a
+		historical_option = yes
+
+		add_prestige = prestige_mild_bonus
+
+		location:neva = {
+			if = {
+				limit = {
+					has_building = building_type:imperial_academy_of_arts
+				}
+				add_location_modifier = {
+					modifier = artist_enrollment_surge
+					years = 10
+					mode = add_and_extend
+				}
+				root = {
+					custom_tooltip = flavor_rus.52.tt1
+				}
+			}
+		}
+
+		location:moscow = {
+			if = {
+				limit = {
+					has_building = building_type:university
+					has_variable = shuvalov_the_teacher
+				}
+				add_location_modifier = {
+					modifier = magnet_for_scholars
+					years = 10
+					mode = add_and_extend
+				}
+				root = {
+					custom_tooltip = flavor_rus.52.tt2
+				}
+			}
+			if = {
+				limit = {
+					has_variable = moscow_gazette
+				}
+				add_location_modifier = {
+					modifier = gazette_subscription_surge
+					years = 10
+					mode = add_and_extend
+				}
+				root = {
+					custom_tooltip = flavor_rus.52.tt3
+				}
+			}
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	#Accept, but with a different agenda in mind.
+	option = {
+		name = flavor_rus.52.b
+
+		drop_antagonism_bomb = {
+			target = capital
+			modifier = antagonism_skilled_diplomat
+			value = -3
+		}
+
+		nudge_towards_openness = yes
+
+		custom_tooltip = flavor_rus.52.tt4
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.52.historical_info
+
+}
+
+# The Well-Intended Orphanage
+flavor_rus.53 = {
+	type = country_event
+	title = flavor_rus.53.title
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					character:rus_ivan_betskoy ?= {
+						is_alive = yes
+						in_cabinet = yes
+					}
+					ruler ?= {
+						NOR = {
+							has_trait = kind_hearted
+							AND = {
+								has_character_modifier = great
+								is_female = yes
+							}
+							first_spouse ?= {
+								has_character_modifier = great
+							}
+						}
+					}
+				}
+				desc = flavor_rus.53.desc_ivan_betskoy_sole_contributor
+			}
+			triggered_desc = {
+				trigger = {
+					character:rus_ivan_betskoy ?= {
+						is_alive = yes
+						in_cabinet = yes
+					}
+					ruler ?= {
+						OR = {
+							has_trait = kind_hearted
+							AND = {
+								has_character_modifier = great
+								is_female = yes
+							}
+							first_spouse ?= {
+								has_character_modifier = great
+							}
+						}
+					}
+				}
+				desc = flavor_rus.53.desc_common_initiative
+			}
+			triggered_desc = {
+				trigger = { always = yes }
+				desc = flavor_rus.53.desc_ruler_sole_contributor
+			}
+		}
+	}
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1760.1.1
+		to = 1820.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		OR = {
+			character:rus_ivan_betskoy ?= {
+				is_alive = yes
+				in_cabinet = yes
+			}
+			ruler ?= {
+				OR = {
+					has_trait = kind_hearted
+					AND = {
+						has_character_modifier = great
+						is_female = yes
+					}
+					first_spouse ?= {
+						has_character_modifier = great
+					}
+				}
+			}
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_poptype_effect = { foreground = pop_type:peasants background = pop_type:peasants }
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+		character:rus_ivan_betskoy ?= {
+			save_scope_as = ivan_betskoy
+		}
+
+		ruler ?= {
+			if = {
+				limit = {
+					OR = {
+						has_trait = kind_hearted
+						AND = {
+							has_character_modifier = great
+							is_female = yes
+						}
+					}
+				}
+				save_scope_as = target_character
+			}
+			first_spouse ?= {
+				if = {
+					limit = {
+						has_character_modifier = great
+					}
+					save_scope_as = target_character
+				}
+			}
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.53.a
+		historical_option = yes
+
+		set_variable = {
+			name = moscow_orphanage
+			value = 1
+		}
+
+		location:moscow = {
+			construct_building = {
+				building_type = building_type:moscow_orphanage
+			}
+		}
+
+		change_societal_value = {
+			type = capital_economy_vs_traditional_economy
+			value = societal_value_move_to_left
+		}
+
+
+		add_estate_satisfaction = { type = estate_type:burghers_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		custom_tooltip = flavor_rus.53.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.53.b
+
+		set_variable = {
+			name = moscow_orphanage
+			value = 1
+		}
+
+		location:moscow = {
+			construct_building = {
+				building_type = building_type:moscow_orphanage
+			}
+		}
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_right
+		}
+
+		change_gold_effect = { scale = -3 }
+
+		add_government_power = government_power_mild_bonus
+
+		custom_tooltip = flavor_rus.53.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.53.c
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_left
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.53.historical_info
+
+}
+
+# The Instigations of Ivan Betskoy
+flavor_rus.54 = {
+	type = country_event
+	title = flavor_rus.54.title
+	desc = flavor_rus.54.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1734.1.1
+		to = 1780.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		location:stockholm = {
+			owner = c:SWE
+			controller = c:SWE
+		}
+
+		OR = {
+			is_neighbor_of = c:SWE
+			is_at_war_with = c:SWE
+		}
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = exterior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		location:stockholm = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_john
+			last_name = Betskoy
+			adm = 67
+			dip = 61
+			mil = 23
+			birth_date = 1704.1.1
+			estate = estate_type:nobles_estate
+			birth_location = location:stockholm
+			save_scope_as = ivan_betskoy
+			script = rus_ivan_betskoy
+			create_in_limbo = yes
+		}
+	}
+
+	option = {
+		name = flavor_rus.54.a
+		historical_option = yes
+
+		scope:ivan_betskoy = { move_country = root }
+		custom_tooltip = flavor_rus.54.tt2
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.54.b
+		trigger = {
+			"estate_power(estate_type:nobles_estate)" > 0.35
+		}
+
+		scope:ivan_betskoy = {
+			move_country = root
+			add_character_modifier = {
+				modifier = barred_from_educational_ministry
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		custom_tooltip = flavor_rus.54.tt3
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.54.c
+
+		hidden_effect = { kill_character_silently = scope:ivan_betskoy }
+
+		add_prestige = prestige_mild_bonus
+
+		custom_tooltip = flavor_rus.54.tt4
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	historical_info = flavor_rus.54.historical_info
+
+}
+
+# Institute of Noble Maidens
+flavor_rus.55 = {
+	type = country_event
+	title = flavor_rus.55.title
+	desc = flavor_rus.55.desc
+	image = "gfx/interface/illustrations/institutions/enlightenment.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1750.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		character:rus_ivan_betskoy ?= {
+			is_alive = yes
+			in_cabinet = yes
+			NOT = { has_character_modifier = barred_from_educational_ministry }
+		}
+
+		OR = {
+			location:neva = {
+				owner = root
+				controller = root
+				OR = {
+					location_rank = location_rank:town
+					location_rank = location_rank:city
+				}
+				has_institution = institution:enlightenment
+			}
+			capital = {
+				has_institution = institution:enlightenment
+				controller = root
+			}
+		}
+
+		NOT = {
+			has_policy = education_of_the_people
+		}
+	}
+
+
+	immediate = {
+
+		character:rus_ivan_betskoy ?= {
+			save_scope_as = ivan_betskoy
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.55.a
+		trigger = {
+			location:neva = {
+				owner = root
+				controller = root
+				OR = {
+					location_rank = location_rank:town
+					location_rank = location_rank:city
+				}
+				has_institution = institution:enlightenment
+			}
+		}
+		historical_option = yes
+
+		set_variable = {
+			name = institute_of_noble_maidens
+			value = 1
+		}
+
+		location:neva = {
+			construct_building = {
+				building_type = building_type:institute_of_noble_maidens
+			}
+			market = {
+				add_temporary_demand = {
+					type = demand:rus_printed_charters
+					months = 24
+				}
+			}
+		}
+
+		custom_tooltip = flavor_rus.55.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.55.b
+		trigger = {
+			capital = {
+				NOT = { this = location:neva }
+				has_institution = institution:enlightenment
+				controller = root
+			}
+		}
+
+		set_variable = {
+			name = institute_of_noble_maidens
+			value = 1
+		}
+
+		capital = {
+			construct_building = {
+				building_type = building_type:institute_of_noble_maidens
+			}
+			market = {
+				add_temporary_demand = {
+					type = demand:rus_printed_charters
+					months = 24
+				}
+			}
+		}
+
+		custom_tooltip = flavor_rus.55.tt1
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.55.c
+		trigger = {
+			location:moscow = {
+				has_building = building_type:novodevichy_convent
+				owner = root
+				controller = root
+			}
+		}
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_right
+		}
+
+		change_societal_value = {
+			type = aristocracy_vs_plutocracy
+			value = societal_value_move_to_right
+		}
+
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.55.d
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_left
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.55.historical_info
+
+}
+
+# The Affordable Performance
+flavor_rus.56 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.56.title
+	desc = flavor_rus.56.desc
+	
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1783.1.1
+		to = 1840.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		location:moscow = {
+			has_building = building_type:moscow_orphanage
+			OR = {
+				has_building = building_type:theater
+				has_building = building_type:bolshoi_theater
+			}
+			controller = root
+			owner = root
+		}
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_poptype_effect = { foreground = pop_type:peasants background = pop_type:peasants }
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+		character:rus_michael_maddox ?= {
+			if = {
+				limit = {
+					is_alive = yes
+				}
+				save_scope_as = michael_maddox
+			}
+		}
+	}
+
+	option = {
+		name = flavor_rus.56.a
+		historical_option = yes
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_left
+		}
+
+		location:moscow = {
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+			}
+		}
+
+		custom_tooltip = flavor_rus.56.tt1
+		custom_tooltip = flavor_rus.56.tt2
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.56.b
+		trigger = {
+			location:moscow = {
+				has_building = building_type:theater
+				has_building = building_type:bolshoi_theater
+			}
+		}
+
+		location:moscow = {
+			destroy_building = "building(building_type:theater|owner)"
+		}
+
+		culture = {
+			add_cultural_tradition = cultural_tradition_mild_penalty
+		}
+
+		custom_tooltip = flavor_rus.56.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.56.c
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_right
+		}
+
+		location:moscow = {
+			if = {
+				limit = {
+					has_building = building_type:bolshoi_theater
+				}
+				random_list = {
+					50 = {
+						destroy_building = "building(building_type:bolshoi_theater|owner)"
+						custom_tooltip = flavor_rus.56.tt3
+					}
+					50 = {
+						root = {
+							add_gold = {
+								value = root.monthly_income_trade_and_tax
+								multiply = -3
+							}
+						}
+						custom_tooltip = flavor_rus.56.tt4
+					}
+				}
+			}
+			else = {
+				destroy_building = "building(building_type:theater|owner)"
+				custom_tooltip = flavor_rus.56.tt5
+			}
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.56.historical_info
+
+}
+
+# Michael Maddox
+flavor_rus.57 = {
+	type = country_event
+	title = flavor_rus.57.title
+	desc = flavor_rus.57.desc
+
+	fire_only_once = yes
+	
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1766.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			controller = root
+			owner = root
+			has_building = building_type:theater
+		}
+		societal_value:outward_vs_inward < -10
+	}
+
+	illustration_tags = {
+        10 = regular
+        10 = exterior
+    }
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+		create_character = {
+			first_name = name_michael
+			last_name = Maddox
+			estate = estate_type:burghers_estate
+			adm = 32
+			dip = 42
+			mil = 18
+			birth_date = 1747.1.1
+			birth_location = location:london
+			artist_skill = 0.82
+			artist = composer
+			save_scope_as = michael_maddox
+			script = rus_michael_maddox
+			create_in_limbo = yes
+		}
+
+		location:london = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.57.a
+		historical_option = yes
+
+		location:moscow = {
+			add_location_modifier = {
+				modifier = theatrical_monopoly_granted
+				years = 50
+				mode = add_and_extend
+			}
+		}
+
+		scope:michael_maddox = { move_country = root }
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.57.b
+
+		hidden_effect = { kill_character_silently = scope:michael_maddox }
+
+		culture = {
+			add_cultural_influence = cultural_influence_mild_penalty
+		}
+
+		custom_tooltip = flavor_rus.57.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.57.historical_info
+}
+
+# The Bolshoi Theater
+flavor_rus.58 = {
+	type = country_event
+	title = flavor_rus.58.title
+	desc = flavor_rus.58.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1800.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			controller = root
+			owner = root
+			has_location_modifier = theatrical_monopoly_granted
+			OR = {
+				location_rank = location_rank:city
+				location_rank = location_rank:town
+			}
+		}
+	}
+
+	immediate = {
+
+		create_character = {
+			first_name = name_joseph
+			last_name = Bove
+			estate = estate_type:burghers_estate
+			artist = architect
+			artist_skill = 0.85
+			adm = 29
+			dip = 44
+			mil = 22
+			birth_date = 1784.1.1
+			birth_location = location:naples
+			save_scope_as = joseph_bove
+			script = rus_joseph_bove
+			create_in_limbo = yes
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.58.a
+		historical_option = yes
+
+		location:moscow = {
+			construct_building = {
+				building_type = building_type:bolshoi_theater
+			}
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				add_pop_satisfaction = pop_satisfaction_extreme_bonus
+			}
+		}
+
+		culture = {
+			add_cultural_tradition = cultural_tradition_mild_bonus
+		}
+
+		scope:joseph_bove = {
+			move_country = root
+			add_artist_skill = 0.03
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.58.b
+
+		location:moscow = {
+			change_prosperity = prosperity_very_weak_bonus
+		}
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_right
+		}
+
+		scope:joseph_bove = { move_country = root }
+		custom_tooltip = flavor_rus.58.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.58.c
+
+		hidden_effect = { kill_character_silently = scope:joseph_bove }
+
+		change_societal_value = {
+			type = individualism_vs_communalism
+			value = societal_value_move_to_left
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.58.historical_info
+
+}
+
+# Nakaz
+flavor_rus.59 = {
+	type = country_event
+	title = flavor_rus.59.title
+	desc = flavor_rus.59.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1760.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		OR = {
+			has_advance = humanism
+			capital = {
+				has_institution = institution:enlightenment
+			}
+		}
+
+		sub_continent:western_europe = {
+			any_location_in_sub_continent = {
+				count > 10
+				has_institution = institution:enlightenment
+			}
+		}
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = exterior
+	}
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.59.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = enable_nakaz_reform
+			set_variable = { name = nakaz value = 1 }
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		custom_tooltip = flavor_rus.59.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.59.b
+
+		change_societal_value = {
+			type = spiritualist_vs_humanist
+			value = societal_value_move_to_right
+		}
+
+		add_stability = stability_mild_penalty
+
+		ordered_owned_non_rural_location = {
+			order_by = population
+			max = 5
+
+			change_control = control_severe_penalty
+		}
+
+		custom_tooltip = flavor_rus.59.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.59.c
+
+		add_government_power = government_power_severe_penalty
+
+		change_societal_value = {
+			type = traditionalist_vs_innovative
+			value = societal_value_move_to_left
+		}
+
+		custom_tooltip = flavor_rus.59.tt3
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.59.historical_info
+
+}
+
+# The Decembrist Revolt
+flavor_rus.60 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.60.title
+	desc = flavor_rus.60.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1817.1.1
+		to = 1840.1.1
+		monthly_chance = 20
+	}
+
+	trigger = {
+
+		OR = {
+			has_reform = government_reform:speransky_liberalization_reform
+			societal_value:individualism_vs_communalism < -20
+		}
+
+
+		weighted_calc_true_if = {
+			amount >= 2
+			1 = { societal_value:serfdom_vs_free_subjects < -10 }
+			1 = {  estate_satisfaction:peasants_estate < 0.35 }
+			1 = {
+				location:moscow = {
+					any_work_of_art_in_location = {
+						this = work_of_art:a_journey_from_st_petersburg_to_moscow
+					}
+				}
+			}
+			1 = {
+				location:moscow = {
+					any_work_of_art_in_location = {
+						this = work_of_art:ode_to_liberty
+					}
+				}
+			}
+			1 = {  has_policy = curtail_peasants_policy }
+			1 = { has_reform = government_reform:autocracy }
+		}
+	}
+
+	illustration_tags = {
+		10 = armed
+		10 = exterior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:peasants_estate background = estate_type:peasants_estate }
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_sergius
+			last_name = Trubetskoy
+			estate = estate_type:nobles_estate
+			adm = 10
+			dip = 35
+			mil = 80
+			birth_date = 1790.1.1
+			birth_location = location:moscow
+			save_scope_as = sergei_trubetskoy
+			script = rus_sergei_trubetskoy
+		}
+
+		create_rebel = {
+			name = decembrist_revolt
+			category = estate
+			estate = peasants_estate
+			save_scope_as = decembrist_revolt
+		}
+		scope:sergei_trubetskoy = { change_character_allegiance = scope:decembrist_revolt }
+	}
+
+	option = {
+		name = flavor_rus.60.a
+		historical_option = yes
+
+		ordered_owned_non_rural_location = {
+			order_by = population
+			max = 5
+
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:nobles
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+				change_pop_allegiance = scope:decembrist_revolt
+			}
+		}
+
+		add_country_modifier = {
+			modifier = rus_decembrist_movement
+			years = 5
+			mode = add_and_extend
+		}
+
+		if = {
+			limit = {
+				AND = {
+					location:moscow = {
+						any_work_of_art_in_location = {
+							this = work_of_art:a_journey_from_st_petersburg_to_moscow
+						}
+					}
+					location:moscow = {
+						any_work_of_art_in_location = {
+							this = work_of_art:ode_to_liberty
+						}
+					}
+				}
+			}
+			custom_tooltip = {
+				text = flavor_rus.60.tt1
+				ordered_owned_non_rural_location = {
+					order_by = population
+					max = 25
+
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:decembrist_revolt
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				location:moscow = {
+					any_work_of_art_in_location = {
+						this = work_of_art:a_journey_from_st_petersburg_to_moscow
+					}
+				}
+			}
+			custom_tooltip = {
+				text = flavor_rus.60.tt2
+				ordered_owned_non_rural_location = {
+					order_by = population
+					max = 20
+
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:decembrist_revolt
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				location:moscow = {
+					any_work_of_art_in_location = {
+						this = work_of_art:ode_to_liberty
+					}
+				}
+			}
+			custom_tooltip = {
+				text = flavor_rus.60.tt3
+				ordered_owned_non_rural_location = {
+					order_by = population
+					max = 20
+
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:decembrist_revolt
+					}
+				}
+			}
+		}
+		else = {
+			custom_tooltip = {
+				text = flavor_rus.60.tt4
+				ordered_owned_non_rural_location = {
+					order_by = population
+					max = 15
+
+					every_pop = {
+						limit = {
+							owner = root
+							pop_type = pop_type:peasants
+						}
+						add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+						change_pop_allegiance = scope:decembrist_revolt
+					}
+				}
+			}
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.60.b
+
+		destroy_rebel = scope:decembrist_revolt
+
+		if = {
+			limit = {
+				has_reform = government_reform:speransky_liberalization_reform
+			}
+			set_variable = {
+				name = liberal_values_enshrined
+				value = 1
+			}
+			custom_tooltip = flavor_rus.60.tt5
+		}
+		else = {
+			change_societal_value = {
+				type = individualism_vs_communalism
+				value = societal_value_large_move_to_left
+			}
+		}
+
+		if = {
+			limit = {
+				has_policy = curtail_peasants_policy
+			}
+			add_policy = policy:strengthen_peasants_rights_policy
+		}
+		else = {
+			change_societal_value = {
+				type = serfdom_vs_free_subjects
+				value = societal_value_move_to_right
+			}
+		}
+
+		add_government_power = government_power_severe_penalty
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.60.c
+		trigger = {
+			ruler ?= {
+				OR = {
+					has_trait = charismatic_negotiator
+					has_trait = kind_hearted
+				}
+			}
+		}
+
+		destroy_rebel = scope:decembrist_revolt
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_right
+		}
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		custom_tooltip = flavor_rus.60.tt6
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.60.historical_info
+
+}
+
+# The Critiques of Alexander Radishchev
+flavor_rus.61 = {
+	type = country_event
+	title = flavor_rus.61.title
+	desc = flavor_rus.61.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1776.1.1
+		to = 1802.1.1
+		monthly_chance = 15
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+			has_building = building_type:university
+		}
+
+		OR = {
+			location:moscow = {
+				has_institution = institution:enlightenment
+			}
+			societal_value:outward_vs_inward < -10
+		}
+
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = exterior
+	}
+
+	immediate = {
+
+		event_illustration_poptype_effect = { foreground = pop_type:peasants background = pop_type:burghers }
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_alexander
+			last_name = Radishchev
+			estate = estate_type:nobles_estate
+			adm = 32
+			dip = 15
+			mil = 50
+			birth_date = 1749.1.1
+			birth_location = location:moscow
+			artist_skill = 0.90
+			artist = writer
+			save_scope_as = alexander_radishchev
+			script = rus_alexander_radishchev
+			create_in_limbo = yes
+		}
+	}
+
+	option = {
+		name = flavor_rus.61.a
+		historical_option = yes
+
+		scope:alexander_radishchev = {
+			move_country = root
+			add_character_modifier = {
+				modifier = exiled
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		custom_tooltip = flavor_rus.61.tt2
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.61.b
+
+		scope:alexander_radishchev = { move_country = root }
+		change_societal_value = {
+			type = spiritualist_vs_humanist
+			value = societal_value_move_to_right
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.61.historical_info
+
+}
+
+# A Journey from St. Petersburg to Moscow
+flavor_rus.62 = {
+	type = country_event
+	title = flavor_rus.62.title
+	desc = flavor_rus.62.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1790.1.1
+		to = 1840.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		character:rus_alexander_radishchev ?= {
+			is_alive = yes
+			NOT = {
+				has_character_modifier = exiled
+			}
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+		location:neva = {
+			owner = root
+			controller = root
+		}
+
+		OR = {
+			societal_value:serfdom_vs_free_subjects < -10
+			has_reform = government_reform:autocracy
+		}
+
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		character:rus_alexander_radishchev = {
+			save_scope_as = alexander_radishchev
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.62.a
+		historical_option = yes
+
+		add_country_modifier = {
+			modifier = exodus_of_artists
+			years = 25
+			mode = add_and_extend
+		}
+
+		add_government_power = government_power_severe_penalty
+
+		custom_tooltip = flavor_rus.62.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.62.b
+
+		location:moscow = {
+			create_art = {
+				quality = 90
+				artist = scope:alexander_radishchev
+				type = work_of_art_type:novel
+				key = a_journey_from_st_petersburg_to_moscow
+			}
+		}
+
+		scope:alexander_radishchev = {
+			add_artist_skill = 0.03
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		custom_tooltip = flavor_rus.62.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.62.historical_info
+
+}
+
+# The Manifesto of Freedom
+flavor_rus.63 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.63.title
+	desc = flavor_rus.63.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1750.1.1
+		to = 1800.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		OR = {
+			has_policy = absolute_rule_policy
+			has_reform = government_reform:autocracy
+		}
+
+		OR = {
+			government_power < 50
+			stability < 50
+		}
+
+		has_regent = no
+	}
+
+	illustration_tags = {
+		10 = happy
+		10 = exterior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		ruler = {
+			save_scope_as = target_character
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		root = { save_scope_as = target_root_country }
+	}
+
+	option = {
+		name = flavor_rus.63.a
+		historical_option = yes
+
+		ruler = {
+			set_variable = {
+				name = rus_manifesto_of_freedom
+				value = 1
+			}
+		}
+
+		grant_estate_privilege = estate_privilege:manifesto_of_freedom
+
+		add_stability = stability_mild_bonus
+		add_government_power = government_power_mild_bonus
+
+		custom_tooltip = flavor_rus.63.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.63.b
+		trigger = {
+			has_policy = absolute_rule_policy
+			ruler = {
+				OR = {
+					dip > 75
+					has_trait = charismatic_negotiator
+				}
+			}
+		}
+
+		add_policy = policy:equal_power_relation_policy
+
+		change_societal_value = {
+			type = aristocracy_vs_plutocracy
+			value = societal_value_move_to_left
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.63.c
+
+		ruler = {
+			add_adm = -10
+			add_dip = -10
+			add_mil = -10
+		}
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		custom_tooltip = flavor_rus.63.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.63.historical_info
+
+}
+
+# Bironovshchina
+flavor_rus.64 = {
+	hide_portraits = yes
+	type = country_event
+	title = flavor_rus.64.title
+	desc = flavor_rus.64.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1710.1.1
+		to = 1750.1.1
+		monthly_chance = 20
+	}
+
+	trigger = {
+
+		has_regent = no
+
+		ruler ?= {
+			OR = {
+				adm < 50
+				has_trait = naive
+				is_female = yes
+			}
+		}
+
+		own_entire_province = province_definition:courland_province
+
+		NOT = {
+			has_policy = figurehead_position_policy
+		}
+
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:nobles_estate background = estate_type:nobles_estate }
+
+		province_definition:courland_province = {
+			random_location_in_province_definition = {
+				save_scope_as = von_biron_origin
+			}
+		}
+
+		create_character = {
+			first_name = name_ernest
+			last_name = von_biron
+			adm = 90
+			dip = 55
+			mil = 31
+			birth_date = 1690.1.1
+			estate = estate_type:nobles_estate
+			culture = culture:german_silesian
+			birth_location = scope:von_biron_origin
+			save_scope_as = ernst_von_biron
+			script = rus_ernst_von_biron
+			create_in_limbo = yes
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		dominant_culture = {
+			save_scope_as = target_culture
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.64.a
+		historical_option = yes
+
+		unlock_cabinet_action_effect = { type = bironovshchina }
+		scope:ernst_von_biron = {
+			move_country = root
+			root = {
+				random_cabinet = {
+					limit = { NOT = { exists = cabinet_member } }
+					add_to_cabinet = scope:ernst_von_biron
+				}
+			}
+			if = {
+				limit = {
+					root = { country_can_promote_head_of_cabinet = yes }
+					NOT = { has_character_modifier = head_of_the_cabinet_modifier }
+				}
+				root = {
+					promote_to_head_of_cabinet_effect = {
+						target = scope:ernst_von_biron
+					}
+				}
+			}
+		}
+
+		custom_tooltip = flavor_rus.64.tt2
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.64.b
+		trigger = {
+			ruler ?= {
+				is_female = yes
+			}
+		}
+
+		add_government_power = government_power_mild_bonus
+		unlock_cabinet_action_effect = { type = bironovshchina }
+
+		scope:ernst_von_biron = {
+			move_country = root
+			root = {
+				random_cabinet = {
+					limit = { NOT = { exists = cabinet_member } }
+					add_to_cabinet = scope:ernst_von_biron
+				}
+			}
+			if = {
+				limit = {
+					root = { country_can_promote_head_of_cabinet = yes }
+					NOT = { has_character_modifier = head_of_the_cabinet_modifier }
+				}
+				root = {
+					promote_to_head_of_cabinet_effect = {
+						target = scope:ernst_von_biron
+					}
+				}
+			}
+		}
+
+		custom_tooltip = flavor_rus.64.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.64.c
+
+		hidden_effect = { kill_character_silently = scope:ernst_von_biron }
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		custom_tooltip = flavor_rus.64.tt3
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.64.historical_info
+
+}
+
+# The Bolshoi Ballet
+flavor_rus.65 = {
+	type = country_event
+	title = flavor_rus.65.title
+	desc = flavor_rus.65.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1775.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		location:moscow = {
+			owner = root
+			controller = root
+			has_building = building_type:bolshoi_theater
+		}
+		OR = {
+			societal_value:individualism_vs_communalism > 0
+			societal_value:traditionalist_vs_innovative < 0
+		}
+	}
+
+	illustration_tags = {
+        10 = regular
+        10 = exterior
+    }
+
+	immediate = {
+		event_illustration_estate_effect = { foreground = estate_type:burghers_estate background = estate_type:nobles_estate }
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+		root = { save_scope_as = target_root_country }
+
+		character:rus_michael_maddox ?= {
+			save_scope_as = michael_maddox
+		}
+	}
+
+	option = {
+		name = flavor_rus.65.a
+		historical_option = yes
+
+		culture = {
+			add_cultural_influence = cultural_influence_severe_bonus
+		}
+
+		add_prestige = prestige_mild_bonus
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.65.b
+
+		culture = {
+			add_cultural_tradition = cultural_tradition_mild_bonus
+		}
+
+		custom_tooltip = flavor_rus.65.tt1
+
+		if = {
+			limit = {
+				character:rus_michael_maddox ?= {
+					is_alive = yes
+				}
+			}
+			culture = {
+				add_cultural_tradition = cultural_tradition_weak_bonus
+			}
+			custom_tooltip = flavor_rus.65.tt2
+		}
+
+		nudge_towards_openness = yes
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	historical_info = flavor_rus.65.historical_info
+}
+
+# The Secret Office of Investigation
+flavor_rus.66 = {
+	type = country_event
+	title = flavor_rus.66.title
+	desc = flavor_rus.66.desc
+	#ESPIONAGE
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1770.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		any_cabinet_action = {
+			this = cabinet_action:bironovshchina
+		}
+
+		OR = {
+			has_policy = secret_police_policy
+			has_policy = spy_office_policy
+		}
+
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_poptype_effect = { foreground = pop_type:soldiers background = pop_type:nobles }
+
+		if = {
+			limit = {
+				has_policy = secret_police_policy
+			}
+			policy:secret_police_policy = {
+				save_scope_as = current_policy
+			}
+		}
+		else = {
+			policy:spy_office_policy = {
+				save_scope_as = current_policy
+			}
+		}
+
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.66.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = enable_secretnoye_byuro_policy
+			set_variable = { name = secretnoye_byuro value = 1 }
+		}
+
+		custom_tooltip = flavor_rus.66.tt1
+
+		add_government_power = government_power_mild_bonus
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.66.b
+
+		change_societal_value = {
+			type = belligerent_vs_conciliatory
+			value = societal_value_move_to_right
+		}
+
+		add_stability = stability_mild_bonus
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.66.historical_info
+
+}
+
+# The Knout-Induced Baptism
+flavor_rus.67 = {
+	type = country_event
+	title = flavor_rus.67.title
+	desc = flavor_rus.67.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1760.1.1
+		to = 1840.1.1
+		monthly_chance = 1
+	}
+
+	trigger = {
+
+		has_policy = separate_clergy_from_state_policy
+
+		religion = religion:orthodox
+
+		location:kazan = {
+			owner = root
+			controller = root
+			province ?= {
+				religion_percentage = {
+					religion = religion:orthodox
+					value < 0.85
+				}
+			}
+		}
+
+	}
+
+	illustration_tags = {
+		10 = regular
+		10 = exterior
+	}
+
+	immediate = {
+
+		event_illustration_estate_effect = { foreground = estate_type:clergy_estate background = estate_type:peasants_estate }
+
+		location:kazan = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.67.a
+		historical_option = yes
+
+		location:kazan = {
+			if = {
+				limit = {
+					NOT = {
+						has_building = building_type:orthodox_monastery
+					}
+				}
+				construct_building = {
+					building_type = building_type:orthodox_monastery
+				}
+			}
+			add_location_modifier = {
+				modifier = office_of_new_converts
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		custom_tooltip = {
+			text = enable_office_of_new_converts_cabinet_action
+		}
+
+		custom_tooltip = flavor_rus.67.tt1
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.67.b
+
+		add_stability = stability_mild_bonus
+
+		change_societal_value = {
+			type = spiritualist_vs_humanist
+			value = societal_value_move_to_right
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.67.historical_info
+
+}
+
+# Alexander Pushkin
+flavor_rus.68 = {
+	type = country_event
+	title = flavor_rus.68.title
+	desc = flavor_rus.68.desc
+	image = "gfx/interface/icons/trade_goods/illustrations/icon_goods_books.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1815.1.1
+		to = 1840.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		has_variable = alexander_pushkin
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+	}
+
+
+	immediate = {
+
+		character:mos_abram_petrovich ?= {
+			save_scope_as = abram_petrovich
+		}
+
+		create_character = {
+			first_name = name_alexander
+			last_name = Pushkin
+			estate = estate_type:nobles_estate
+			adm = 33
+			dip = 22
+			mil = 5
+			birth_date = 1799.1.1
+			birth_location = location:moscow
+			artist_skill = 0.95
+			artist = philosopher
+			save_scope_as = alexander_pushkin
+			script = rus_alexander_pushkin
+			create_in_limbo = yes
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.68.a
+		historical_option = yes
+
+		scope:alexander_pushkin = { move_country = root }
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.68.b
+
+		hidden_effect = { kill_character_silently = scope:alexander_pushkin }
+
+		if = {
+			limit = {
+				has_policy = secretnoye_byuro_policy
+			}
+			custom_tooltip = flavor_rus.68.tt2
+		}
+		else = {
+			add_estate_satisfaction = { type = estate_type:nobles_estate
+				value = estate_satisfaction_severe_penalty
+			}
+			custom_tooltip = flavor_rus.68.tt3
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.68.historical_info
+
+}
+
+# The Ode to Liberty
+flavor_rus.69 = {
+	type = country_event
+	title = flavor_rus.69.title
+	desc = flavor_rus.69.desc
+	image = "gfx/interface/illustrations/institutions/printing_press.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1815.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		character:rus_alexander_pushkin ?= {
+			is_alive = yes
+		}
+
+		OR = {
+			has_policy = absolute_rule_policy
+			has_reform = government_reform:autocracy
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+		}
+
+	}
+
+	immediate = {
+
+		character:rus_alexander_pushkin ?= {
+			save_scope_as = alexander_pushkin
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.69.a
+		historical_option = yes
+
+		location:moscow = {
+			create_art = {
+				quality = 90
+				artist = scope:alexander_pushkin
+				type = work_of_art_type:poem
+				key = ode_to_liberty
+			}
+		}
+
+		scope:alexander_pushkin = {
+			add_artist_skill = 0.03
+			add_character_modifier = {
+				modifier = exiled
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		if = {
+			limit = {
+				has_policy = strict_censorship
+			}
+			add_government_power = government_power_mild_penalty
+			custom_tooltip = flavor_rus.69.tt1
+		}
+		else = {
+			add_government_power = government_power_severe_penalty
+		}
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_left
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.69.b
+
+		location:moscow = {
+			create_art = {
+				quality = 90
+				artist = scope:alexander_pushkin
+				type = work_of_art_type:poem
+				key = ode_to_liberty
+			}
+		}
+
+		scope:alexander_pushkin = {
+			add_artist_skill = 0.03
+		}
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_right
+		}
+
+		change_societal_value = {
+			type = spiritualist_vs_humanist
+			value = societal_value_move_to_right
+		}
+
+		add_stability = stability_severe_penalty
+
+		custom_tooltip = flavor_rus.69.tt2
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.69.c
+		trigger = {
+			has_policy = secretnoye_byuro_policy
+			location:moscow = {
+				has_building_with_at_least_one_level = printing_press_shop
+			}
+		}
+
+		hidden_effect = { kill_character_silently = scope:alexander_pushkin }
+
+		location:moscow = {
+			destroy_building = "building(building_type:printing_press_shop|owner)"
+		}
+
+		custom_tooltip = flavor_rus.69.tt3
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	historical_info = flavor_rus.69.historical_info
+
+}
+
+# The Meticulous Enhancements of Yury Felten
+flavor_rus.70 = {
+	type = country_event
+	title = flavor_rus.70.title
+	desc = flavor_rus.70.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1760.1.1
+		to = 1790.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		location:neva = {
+			owner = root
+			controller = root
+			has_building = building_type:academy_of_sciences
+			any_work_of_art_in_location = {
+				OR = {
+					this = work_of_art:winter_palace
+					this = work_of_art:catherine_palace
+				}
+			}
+		}
+	}
+
+
+	immediate = {
+
+		location:neva = {
+			save_scope_as = target_location
+		}
+
+		create_character = {
+			first_name = name_george
+			last_name = Felten
+			estate = estate_type:burghers_estate
+			adm = 43
+			dip = 28
+			mil = 27
+			birth_date = 1730.1.1
+			birth_location = location:neva
+			culture = culture:danube_bavarian
+			artist_skill = 0.77
+			artist = writer
+			save_scope_as = yury_felten
+			script = rus_yury_felten
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.70.a
+		historical_option = yes
+
+		if = {
+			limit = {
+				character:francesco_rastrelli ?= {
+					is_alive = yes
+				}
+			}
+			scope:yury_felten = {
+				add_artist_skill = 0.03
+				custom_tooltip = flavor_rus.70.tt2
+			}
+		}
+
+		location:neva = {
+			random_work_of_art_in_location ?= {
+				limit = {
+					OR = {
+						this = work_of_art:winter_palace
+						this = work_of_art:catherine_palace
+					}
+				}
+				change_art_quality = 5
+			}
+		}
+
+		scope:yury_felten = {
+			move_country = root
+			add_artist_skill = 0.03
+			custom_tooltip = flavor_rus.70.tt3
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.70.b
+		trigger = {
+			location:neva = {
+				has_building = building_type:imperial_academy_of_arts
+			}
+		}
+
+		hidden_effect = { kill_character_silently = scope:yury_felten }
+
+		culture = {
+			add_cultural_tradition = cultural_tradition_mild_bonus
+		}
+
+		location:neva = {
+			change_prosperity = prosperity_very_weak_bonus
+		}
+
+		every_artist = {
+			limit = {
+				owner = root
+				artist_type = architect
+			}
+			add_artist_skill = 0.05
+		}
+
+		custom_tooltip = flavor_rus.70.tt4
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.70.c
+
+		hidden_effect = { kill_character_silently = scope:yury_felten }
+
+		add_prestige = prestige_mild_bonus
+
+		custom_tooltip = flavor_rus.70.tt5
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.70.historical_info
+
+}
+
+# The Military Settlements
+flavor_rus.71 = {
+	type = country_event
+	title = flavor_rus.71.title
+	desc = flavor_rus.71.desc
+	image = "gfx/interface/illustrations/institutions/levee_en_masse.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1780.1.1
+		to = 1840.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		societal_value:serfdom_vs_free_subjects < -10
+
+		OR = {
+			has_policy = early_standing_army_policy
+			manpower <= 3
+		}
+
+		army_size < expected_army_size
+	}
+
+
+	immediate = {
+		capital = {
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = flavor_rus.71.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = enable_military_settlements_policy
+			set_variable = { name = military_settlements value = 1 }
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.71.b
+
+		change_societal_value = {
+			type = serfdom_vs_free_subjects
+			value = societal_value_move_to_right
+		}
+
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	historical_info = flavor_rus.71.historical_info
+
+}
+
+
+# The Onset of Nationalism
+flavor_rus.72 = {
+	type = country_event
+	title = flavor_rus.72.title
+	desc = flavor_rus.72.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1780.1.1
+		to = 1840.1.1
+		monthly_chance = 20
+	}
+
+	trigger = {
+
+		religion = religion:orthodox
+
+
+		dominant_culture = {
+			has_culture_group = culture_group:slavic_group
+		}
+
+		societal_value:outward_vs_inward < 0
+		societal_value:traditionalist_vs_innovative > 0
+		societal_value:individualism_vs_communalism < 0
+	}
+
+	illustration_tags = {
+		10 = interior
+		10 = regular
+	}
+
+	immediate = {
+		event_illustration_government_estate_effect = yes
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		set_variable = { name = intellectual_movements value = 1 }
+
+	}
+
+	option = {
+		name = flavor_rus.72.a
+		historical_option = yes
+
+		custom_tooltip = {
+			text = flavor_rus.72.custom1
+		}
+
+		custom_tooltip = {
+			text = flavor_rus.72.custom2
+		}
+
+		add_policy = policy:slavophiles
+
+		nudge_towards_isolationism = yes
+
+		ai_chance = {
+			factor = 1
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.72.b
+
+		custom_tooltip = {
+			text = flavor_rus.72.custom1
+		}
+
+		custom_tooltip = {
+			text = flavor_rus.72.custom2
+		}
+
+		add_policy = policy:westernizers
+
+		nudge_towards_openness = yes
+
+		ai_chance = {
+			factor = 0.5
+		}
+
+	}
+
+	historical_info = flavor_rus.72.historical_info
+
+}
+
+# The Voltaire Correspondence
+flavor_rus.73 = {
+	type = country_event
+	title = flavor_rus.73.title
+	desc = flavor_rus.73.desc
+	image = "gfx/interface/illustrations/institutions/enlightenment.dds"
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1750.1.1
+		to = 1780.1.1
+		monthly_chance = 10
+	}
+
+	trigger = {
+
+		character:fra_francois_marie_voltaire ?= {
+			is_alive = yes
+			owner = {
+				any_owned_non_rural_location = {
+					has_institution = institution:enlightenment
+				}
+			}
+		}
+
+		ruler ?= {
+			OR = {
+				dip > 50
+				has_trait = scholar
+			}
+			NOT = { has_trait = pious }
+		}
+
+		any_owned_non_rural_location = {
+			has_institution = institution:enlightenment
+		}
+	}
+
+
+	immediate = {
+
+		capital = {
+			save_scope_as = target_location
+		}
+
+		ruler = {
+			save_scope_as = target_ruler
+		}
+
+		character:fra_francois_marie_voltaire ?= {
+			save_scope_as = francois_marie_voltaire
+		}
+	}
+
+	option = {
+		name = flavor_rus.73.a
+		historical_option = yes
+
+		scope:target_ruler = {
+			add_character_modifier = {
+				modifier = extensive_correspondence
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_severe_penalty
+		}
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.73.b
+
+		add_stability = stability_severe_bonus
+
+		add_estate_satisfaction = { type = estate_type:nobles_estate
+			value = estate_satisfaction_severe_bonus
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.73.historical_info
+
+}
+
+# The Uncomfortable Truths of Nikolay Novikov
+flavor_rus.74 = {
+	type = country_event
+	title = flavor_rus.74.title
+	desc = flavor_rus.74.desc
+
+	fire_only_once = yes
+	dynamic_historical_event = {
+		tag = RUS
+		from = 1775.1.1
+		to = 1810.1.1
+		monthly_chance = 5
+	}
+
+	trigger = {
+
+		OR = {
+			any_known_country = {
+				any_active_disaster = {
+					disaster_type = disaster_type:revolution_disaster
+				}
+			}
+			capital = {
+				has_institution = institution:enlightenment
+			}
+		}
+
+		OR = {
+			has_reform = government_reform:autocracy
+			"estate_power(estate_type:crown_estate)" > 0.5
+		}
+
+		location:moscow = {
+			owner = root
+			controller = root
+			has_building = building_type:university
+			has_variable = moscow_gazette
+		}
+	}
+
+	illustration_tags = {
+		10 = angry
+		10 = interior
+	}
+
+	immediate = {
+
+		event_illustration_poptype_effect = { foreground = pop_type:burghers background = pop_type:burghers }
+
+		create_character = {
+			first_name = name_nicholas
+			last_name = Novikov
+			estate = estate_type:burghers_estate
+			adm = 37
+			dip = 35
+			mil = 30
+			birth_date = 1744.1.1
+			birth_location = location:moscow
+			artist_skill = 0.90
+			artist = writer
+			save_scope_as = nikolay_novikov
+			script = rus_nikolay_novikov
+			create_in_limbo = yes
+		}
+
+		location:moscow = {
+			save_scope_as = target_location
+		}
+
+	}
+
+	option = {
+		name = flavor_rus.74.a
+		historical_option = yes
+
+		scope:nikolay_novikov = {
+			move_country = root
+			add_character_modifier = {
+				modifier = exiled
+				years = -1
+				mode = add_and_extend
+			}
+		}
+
+		nudge_towards_isolationism = yes
+
+		location:moscow = {
+			add_location_modifier = {
+				modifier = add_unrest_5_modifier
+				months = 60
+				mode = add_and_extend
+			}
+			every_pop = {
+				limit = {
+					owner = root
+					OR = {
+						pop_type = pop_type:peasants
+						pop_type = pop_type:burghers
+					}
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+			}
+		}
+
+		custom_tooltip = flavor_rus.74.tt2
+
+		ai_chance = {
+			factor = 1
+		}
+	}
+
+	option = {
+		name = flavor_rus.74.b
+
+		scope:nikolay_novikov = { move_country = root }
+		if = {
+			limit = {
+				has_policy = strict_censorship
+			}
+			add_estate_satisfaction = { type = estate_type:clergy_estate
+				value = estate_satisfaction_severe_penalty
+			}
+			custom_tooltip = flavor_rus.74.tt3
+		}
+
+		add_government_power = government_power_severe_penalty
+
+		set_revolution = yes
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	option = {
+		name = flavor_rus.74.c
+		trigger = {
+			has_policy = secretnoye_byuro_policy
+		}
+
+		hidden_effect = { kill_character_silently = scope:nikolay_novikov }
+
+		if = {
+			limit = {
+				NOT = {
+					has_policy = strict_censorship
+				}
+			}
+			add_policy = policy:strict_censorship
+			custom_tooltip = flavor_rus.74.tt4
+		}
+
+		ai_chance = {
+			factor = 0.5
+		}
+	}
+
+	historical_info = flavor_rus.74.historical_info
+
+}
+
