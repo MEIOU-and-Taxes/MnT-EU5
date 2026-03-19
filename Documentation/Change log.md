@@ -137,6 +137,8 @@ Date: 2026-01-20
 - Spawn 1 more Marketplace per town/city to facilitate early-game trade
   - increase Marketplace cap by one per town/city to make sure these extra building levels are supported
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
+- All good prices rebalanced to 50% of vanilla values, with a few exceptions.
+- 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
 
 ##### Population
 
