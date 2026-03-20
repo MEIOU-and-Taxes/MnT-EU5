@@ -1,0 +1,58 @@
+REPLACE:settle_tribesmen = {
+	ability = mil
+	
+	potential = {
+		num_locations > 0 
+		num_pop_type_in_country:tribesmen > 0
+		#MnT restrictions on tribal and steppe countries
+		has_tribal_government = no
+	}
+
+
+	allow_multiple = yes
+	
+	select_trigger = {
+		looking_for_a = province
+		source = actor
+		target_flag = target
+		name = "settle_tribesmen_select_province"
+		none_available_msg_key = "settle_tribesmen_no_provinces"
+		column = {
+			data = name
+		}
+		column = {
+			data = province_tribesmen
+		}
+		column = {
+			data = population
+		}
+		column = {
+			data = province_tax_base
+		}
+		visible = {
+			num_pop_type_in_province:tribesmen > 0
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = settle_tribesmen interaction_target = target } }
+		}
+		map_color = {
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_HIGH
+				max_color = define:NMapColors|MAP_COLOR_LOW
+				factor = percentage_pop_type_in_location:tribesmen
+			}
+		}
+	}
+
+	location_modifier = {
+		local_tribal_promotion = 5.0
+	}
+
+	is_finished = {
+		scope:target ?= {
+			num_pop_type_in_province:tribesmen <= 0
+		}
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+}

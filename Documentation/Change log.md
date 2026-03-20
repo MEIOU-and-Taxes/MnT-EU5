@@ -59,6 +59,7 @@ Date: 2026-01-20
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
 - Tribes estate satisfaction now goes down proportional to average development
+- Block tribal governments (tribes and steppe hordes) from settling their tribes.
 
 ##### Diplomacy
 
