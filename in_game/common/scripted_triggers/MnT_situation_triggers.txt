@@ -40,25 +40,23 @@ REPLACE:is_candidate_for_NW_good = {
 	raw_material = {
 		save_temporary_scope_as = good_to_be_replaced_scope
 	}
-	#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
-	trigger_if = {
-		limit = {
-			OR = {
-				raw_material = goods:copper
-				raw_material = goods:tin
-				raw_material = goods:marble
-				raw_material = goods:alum
-				raw_material = goods:beeswax
-				raw_material = goods:lead
+	market = {
+		#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:good_to_be_replaced_scope = goods:copper
+					scope:good_to_be_replaced_scope = goods:tin
+					scope:good_to_be_replaced_scope = goods:marble
+					scope:good_to_be_replaced_scope = goods:alum
+					scope:good_to_be_replaced_scope = goods:beeswax
+					scope:good_to_be_replaced_scope = goods:lead
+				}
 			}
-		}
-		#check we still have plenty of locations producing these key raw materials
-		market = {
+			#check we still have plenty of locations producing these key raw materials
 			"raw_material_amount(scope:good_to_be_replaced_scope)" > 3
 		}
-	}
-	trigger_else = {					
-		market = {
+		trigger_else = {								
 			#don't care so much about others
 			"raw_material_amount(scope:good_to_be_replaced_scope)" > 1
 		}
@@ -107,25 +105,30 @@ REPLACE:is_candidate_for_OW_good = {
 	raw_material = {
 		save_temporary_scope_as = good_to_be_replaced_scope
 	}
-	#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
-	trigger_if = {
-		limit = {
-			OR = {
-				raw_material = goods:copper
-				raw_material = goods:tin
-				raw_material = goods:marble
-				raw_material = goods:alum
-				raw_material = goods:beeswax
-				raw_material = goods:lead
+	market = {
+		#These resource are needed in bigger quantities so we require a bigger minimum of RGOs
+		trigger_if = {
+			limit = {
+				OR = {
+					scope:good_to_be_replaced_scope = goods:copper
+					scope:good_to_be_replaced_scope = goods:tin
+					scope:good_to_be_replaced_scope = goods:marble
+					scope:good_to_be_replaced_scope = goods:alum
+					scope:good_to_be_replaced_scope = goods:beeswax
+					scope:good_to_be_replaced_scope = goods:lead
+				}
+			}
+			any_location_in_market = {
+				count > 3
+				raw_material = scope:good_to_be_replaced_scope
 			}
 		}
-		market = {
-			"raw_material_amount(scope:good_to_be_replaced_scope)" > 3
-		}
-	}
-	trigger_else = {	
-		market = {
-			"raw_material_amount(scope:good_to_be_replaced_scope)" > 1
+		trigger_else = {								
+			any_location_in_market = {
+				count > 1
+				is_ownable = yes
+				raw_material = scope:good_to_be_replaced_scope
+			}
 		}
 	}
 }

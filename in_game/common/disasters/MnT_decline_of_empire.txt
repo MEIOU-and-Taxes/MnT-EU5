@@ -1,4 +1,5 @@
-﻿REPLACE:decline_of_empire = {
+﻿#this is entirely reworked by M&T
+REPLACE:decline_of_empire = {
 
 	image = "gfx/interface/illustrations/disaster/decline_of_empire.dds"
 	
@@ -41,16 +42,28 @@
 	}
 	
 	can_end = {
-		stability > 0
-		had_disaster_for_years = {
-			disaster_type = disaster_type:decline_of_empire
-			years >= 5
+		OR = {
+			AND = {
+				stability > 0
+				had_disaster_for_years = {
+					disaster_type = disaster_type:decline_of_empire
+					years >= 5
+				}
+			}
+			AND = { #all things end eventually - have pity
+				had_disaster_for_years = {
+					disaster_type = disaster_type:decline_of_empire
+					years >= 20
+				}
+			}
 		}
 	}
 	modifier = {
 		global_estate_target_satisfaction = large_permanent_target_satisfaction_penalty
 		monthly_rebel_growth = 0.002
 		subject_loyalty = -20
+		monthly_complacency = -0.2
+		has_complacency_effects = yes
 	}
 	
 	on_start = {
@@ -71,10 +84,22 @@
 		}
 		hidden_effect = {
 			random_list = {
-				80 = { }
+				82 = { }
 				2 = { trigger_event_silently = decline_of_empire.3 }
 				2 = { trigger_event_silently = decline_of_empire.4 }
-				4 = { 
+				4 = { trigger_event_silently = decline_of_empire.6 }
+				2 = { trigger_event_silently = decline_of_empire.9 }
+				8 = {
+					trigger = {
+						num_subjects > 0
+						any_subject = { is_disloyal_subject = yes }
+					}
+					trigger_event_silently = decline_of_empire.10
+				}
+			}
+			random_list = {
+				90 = { }
+				10 = { 
 					trigger = {
 						any_neighbor_country = {
 							NOT = { any_active_disaster = { disaster_type = disaster_type:decline_of_empire } }
@@ -112,14 +137,6 @@
 						}
 						trigger_event_silently = decline_of_empire.5
 					}
-				}
-				4 = { trigger_event_silently = decline_of_empire.6 }
-				8 = {
-					trigger = {
-						num_subjects > 0
-						any_subject = { is_disloyal_subject = yes }
-					}
-					trigger_event_silently = decline_of_empire.7
 				}
 			}
 		}

@@ -1,11 +1,13 @@
-# Release
+﻿# Release
 
 ### 0.0.1
 
-Date: 2025-11-30
+Date: 2026-01-20
 
 #### Features
 
+- RGOs are replaced by buildings
+  - More in a seperate section below
 - Naval levies  
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
@@ -20,15 +22,24 @@ Date: 2025-11-30
   - Market food stockpile
 - Centers of Importance:
   - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
-  - Each type has an associated score dependent on multiple factors and a absolute minimum threshold per tier.
+  - Each type has an associated score dependent on multiple factors and an absolute minimum threshold per tier.
   - Additionally, per geographical area only one center of each tier can exist.
   - Each location center tier gives bonuses to the location.
 - Goods Domestic Production (proxy for GDP goods domestic product ), sum of goods value * amount
-  - Road maintenance cost
+
+#### RGO Substitution
+  - RGOs are fully replaced by buildings
+  - Basegame RGO sizes hard-locked to zero by removing all base RGO size
+  - Added new RGO replacement buildings, localized them, gave them the pictures of the previous RGOs
+  - Buildings that have similar functionality as RGOs are now merged
+    - E.g. clay/sand pits, Lumbermills, fruit orchards etc. got merged into the RGO-building
+  - Balance changes done with calculation in excel spreadsheet, balance is still a bit rough but should mostly work fine
+  - Addapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
+  - Avoided promoting tribal pops to fill RGO vacancies at the start
 
 #### Bugfixes
 
-- Stability map mode works, where it is red at \<25 and green at \>50 stability
+- Stability map mode works
 - Backend error fixes
 
 #### Balancing
@@ -46,6 +57,7 @@ Date: 2025-11-30
 - Local population growth removed from having positive food.
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
+- Remove enslavement of all non-state-religion pops from Muslim countries on game startup
 
 ##### Diplomacy
 
@@ -198,21 +210,67 @@ Date: 2025-11-30
   - Shia: enemy → negative
 
 ##### Politics
-
+- Base Estate Power split
+  - Commoners (Peasants) estate power per pop: 0.025 → 0.2
+  - Dhimmi estate power per pop: 0.02 → 0.1
+  - Tribes estate power per pop: 0.01 → 0.2
+  - Cossacks estate power per pop: 0.02 → 0.2
+  - Burghers estate power per pop: 2 → 3
 - Dhimmi estate privileges:  
-  - ‘Abrahamic communities’, ‘Promote tolerance’ & ‘Preserve Local Traditions’:  
+  - ‘Abrahamic communities’
+    - No longer reduce local Unrest by 0.1  
     - Tolerance of Heathen Beliefs: 1 → 2  
     - Tolerance of the True Faith: \-0.5 (New)  
-  - ‘Abrahamic communities’:  
-    - No longer reduce local Unrest by 0.1  
+    - Impact on Dhimmi estate power: +100% → +50%
+  - ‘Promote tolerance’ 
+    - Tolerance of Heathen Beliefs: 1 → 2  
+    - Tolerance of the True Faith: \-0.5 (New)  
+    - Impact on Dhimmi estate power: +50% → +25%
+  - ‘Preserve Local Traditions’ 
+    - Tolerance of Heathen Beliefs: 1 → 2  
+    - Tolerance of the True Faith: \-0.5 (New)  
+    - Impact on Dhimmi estate power: +33% → +20%
+  - ‘Pact of Umar’ 
+    - Impact on Dhimmi estate power: +100% → +50%
+- Commoners estate privileges - reduction of impact on estate power to match increased power per pop:  
+  - generic:
+    - peasants_free_peasantry: +50% → +25%
+    - peasants_represented_in_parliament: +20% → +10%
+    - peasant_owns_their_food: +20% → +10%
+    - peasants_fewer_levies: +33% → +15%
+    - peasants_allowed_weapons_privilege: +50% → +25%
+    - allow_hunting: +25% → +15%
+    - no_labor_sunday: +33% → +15%
+    - communal_lands: +20% → +10%
+    - partial_yield: +33% → +15%
+    - access_to_royal_and_ecclesiastical_courts: +33% → +15%
+    - peasants_in_administration: +50% → +25%
+    - peasants_autonomous_villages: +50% → +25%
+  - unique:
+    - invite_german_settlers: +20% → +5%
+    - ayuntamientos: +50% → +25%
+    - cas_caballeros_villanos: +20% → +10%
+- Noble estate privileges - added impact on Commoners and Dhimmi estate power
+  - noble_serfdom_rights: added -10% Commoners and Dhimmi estate power
+  - nobles_land_rights: added -15% Commoners and Dhimmi estate power
+  - manorial_courts: added -25% Commoners and Dhimmi estate power
+  - banal_lordship: added -25% Commoners and Dhimmi estate power
+- Added negative impact of Noble estate privileges targetting peasants (noble_serfdom_rights, nobles_land_rights, manorial_courts and banal_lordship) on Peasant and Dhimmi satisfaction
 - Modify requirements for country rank change
   - prestige requirement changed from 25/50/70 to being positive
   - added requirement about positive stability
   - added requirement about govt. power above 60
+- Scaling of lower class estate power moved to free subjects/serfdom slider, with -100% power at full serfdom slider and +50% at full free subjects
+- Added impact of sefdom slider on noble estate power with +100% at full sefdom slider
+- Scaling of Tribes Estate added to centralization slider, with -50% power at full centralization and +50% at full 
+- Changed impact of government reforms on estate power:
+  - land_inheritance_act: added +10% impact on commoner estate power
+  - universal_serfdom: reduced impact on commoners estate power from -50% to -10% (as effects are moved to actual serfdom value)
 
 ##### Disasters
 
 - ‘Decline of empires’ removed, now is ‘Time of struggle’, applies to everyone with more complex logic and less impossible to escape.
+- ‘Time of Troubles’ removed, it was bad in vanilla, and needs to be fundamentally redesigned to be reimplemented
 
 ##### Warfare
 
@@ -225,8 +283,16 @@ Date: 2025-11-30
 - Fixes to Colombian Exchange situation
   - adapt logic of RGO changing to new mechanics related to demand on goods absent in the market
   - remove prestige cost on changing the RGO
-  - modify mapmode and tooltips, so previous and new good is visible to a player
+  - modify map mode and tooltips, so previous and new good is visible to a player
   - remove ability to plant Tobacco in Oceanic climate
   
 ##### GUI
 - Added Goods Domestic Product UI in the Economy panel
+- Added fIlter button for rgo buildings in building view
+- Changed the behaviour of brgo buttons to show rgo buildings 
+- Unified goods-panel RGO buttons with the Production view RGO visibility toggle and removed sticky per-good RGO force-show state.
+- Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
+- Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
+
+##### Modding
+- Added automated check for correct encodings via GitHub Actions

@@ -2,13 +2,13 @@ from itertools import cycle
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from PyQt6.QtWidgets import QLabel, QComboBox
+from PyQt6.QtWidgets import QLabel
+from matplotlib.ticker import MaxNLocator
 
 from tools.plot.MT_grapher import is_path_found, ERROR_FILE_NOT_FOUND
 from tools.plot.custom_widgets import RightClickableComboBox
 from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population, \
 	parse_data_markets, parse_data_road_types
-from matplotlib.ticker import MaxNLocator
 
 IS_LOGGING_YEARLY = True
 FIRST_MOMENT = 1 + 1337 if IS_LOGGING_YEARLY else 4 # Makes FIRST_MOMENT-1 not have 0 buildings in all regions

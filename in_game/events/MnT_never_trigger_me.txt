@@ -1,0 +1,32 @@
+﻿# Intentionally untriggered event to satisfy the engine's static variable analyzer.
+# Will hide useless errors, doesn't error itself because it's technically triggererd in on_startup (when always = no kek), but the current_year trigger prevents it doing anything just in case. 
+# Variables that are not used in code but are still checked for are flagged as "never set"
+# We can silence the errors from never set vars by setting the vars in an event that is never triggered. 
+# Variables that are set but used only in localization are flagged as "set but never used"
+# We can silence the errors from never used vars by multiplying them by 1 in the same never-triggered event, which counts as "used" without changing their value.
+# Credits for finding this workaround to HappyMonk3y99, ported and adapted to M&T by Mepper.
+
+namespace = mnt_never_trigger_me
+
+mnt_never_trigger_me.1 = {
+    type = country_event
+    title = "hidden_event.t" 
+    desc = "hidden_event.d"
+    hidden = yes
+
+    trigger = {
+        current_year = 42069 #haha
+    }
+
+    immediate = {
+        # Legacy vars "used but never set" (only exist in old saves, cleanup refs them)
+        # e.g. use set_variable = { name = mnt_this_value_should_be_removed value = 0 } 
+
+        # Display vars: "set but never used" (used in e.g. localization)
+        change_variable = { name = mnt_country_total_goods_value multiply = 1 }
+    }
+
+    option = {
+		name = "OK"
+	}
+}
