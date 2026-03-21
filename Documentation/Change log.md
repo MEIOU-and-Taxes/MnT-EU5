@@ -139,7 +139,7 @@ Date: 2026-01-20
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
-
+- now farm based RGOs use peasants as their workforce, while other RGOs use laborers.
 ##### Population
 
 - Cored locations' population growth is not restricted to those of primary culture anymore  
@@ -255,6 +255,6 @@ Date: 2026-01-20
 - Unified goods-panel RGO buttons with the Production view RGO visibility toggle and removed sticky per-good RGO force-show state.
 - Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
-
+- fixed gui to allign with the food consolidation
 ##### Modding
 - Added automated check for correct encodings via GitHub Actions
