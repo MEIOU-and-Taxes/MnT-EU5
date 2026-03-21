@@ -58,6 +58,8 @@ Date: 2026-01-20
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
+- Tribes estate satisfaction now goes down proportional to average development
+- Block tribal governments (tribes and steppe hordes) from settling their tribes.
 
 ##### Diplomacy
 
@@ -253,6 +255,7 @@ Date: 2026-01-20
 - Added fIlter button for rgo buildings in building view
 - Changed the behaviour of brgo buttons to show rgo buildings 
 - Unified goods-panel RGO buttons with the Production view RGO visibility toggle and removed sticky per-good RGO force-show state.
+- Reworked the goods-panel Production opener to set RGO visibility through a dedicated scripted GUI based on the selected good, and removed the unused old per-good force-show path.
 - Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
 - fixed gui to allign with the food consolidation
