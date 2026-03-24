@@ -2,44 +2,92 @@
 build_time_RGO = 365
 
 #The following is used to calculate starting building levels.
-rgo_max_bonus = {
-	add = {
-		desc = "BUILDING_LEVEL_BASE"
-		value = 1.2 #rural_bonus
-	}
-	add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
-		value = development
-		multiply = 0.1
-	}
-	add = { desc = "BUILDING_LEVEL_POPULATION"
-		value = population
-		multiply = 0.025
-	}
-	if = { limit = { location_rank ?= location_rank:rural_settlement }
-		multiply = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
-			value = 1.2 #rural_bonus
-		}
-	}
+
+#Grabs the current RGO building level per location based on the Location's active raw material. NOT a rounded value, see script_value below for that. 
+mnt_location_max_rgo_building_level = {
+	if = { limit = { raw_material = goods:alum } value = rgo_alum_max_level }
+	if = { limit = { raw_material = goods:amber } value = rgo_amber_max_level }
+	if = { limit = { raw_material = goods:beeswax } value = rgo_beeswax_max_level }
+	if = { limit = { raw_material = goods:chili } value = rgo_chili_max_level }
+	if = { limit = { raw_material = goods:clay } value = rgo_clay_max_level }
+	if = { limit = { raw_material = goods:cloves } value = rgo_cloves_max_level }
+	if = { limit = { raw_material = goods:coal } value = rgo_coal_max_level }
+	if = { limit = { raw_material = goods:cocoa } value = rgo_cocoa_max_level }
+	if = { limit = { raw_material = goods:coffee } value = rgo_coffee_max_level }
+	if = { limit = { raw_material = goods:copper } value = rgo_copper_max_level }
+	if = { limit = { raw_material = goods:cotton } value = rgo_cotton_max_level }
+	if = { limit = { raw_material = goods:dyes } value = rgo_dyes_max_level }
+	if = { limit = { raw_material = goods:elephants } value = rgo_elephants_max_level }
+	if = { limit = { raw_material = goods:fiber_crops } value = rgo_fiber_crops_max_level }
+	if = { limit = { raw_material = goods:fish } value = rgo_fish_max_level }
+	if = { limit = { raw_material = goods:fruit } value = rgo_fruit_max_level }
+	if = { limit = { raw_material = goods:fur } value = rgo_fur_max_level }
+	if = { limit = { raw_material = goods:gems } value = rgo_gems_max_level }
+	if = { limit = { raw_material = goods:goods_gold } value = rgo_goods_gold_max_level }
+	if = { limit = { raw_material = goods:horses } value = rgo_horses_max_level }
+	if = { limit = { raw_material = goods:incense } value = rgo_incense_max_level }
+	if = { limit = { raw_material = goods:iron } value = rgo_iron_max_level }
+	if = { limit = { raw_material = goods:ivory } value = rgo_ivory_max_level }
+	if = { limit = { raw_material = goods:lead } value = rgo_lead_max_level }
+	if = { limit = { raw_material = goods:legumes } value = rgo_legumes_max_level }
+	if = { limit = { raw_material = goods:livestock } value = rgo_livestock_max_level }
+	if = { limit = { raw_material = goods:lumber } value = rgo_lumber_max_level }
+	if = { limit = { raw_material = goods:maize } value = rgo_maize_max_level }
+	if = { limit = { raw_material = goods:marble } value = rgo_marble_max_level }
+	if = { limit = { raw_material = goods:medicaments } value = rgo_medicaments_max_level }
+	if = { limit = { raw_material = goods:mercury } value = rgo_mercury_max_level }
+	if = { limit = { raw_material = goods:millet } value = rgo_millet_max_level }
+	if = { limit = { raw_material = goods:olives } value = rgo_olives_max_level }
+	if = { limit = { raw_material = goods:pearls } value = rgo_pearls_max_level }
+	if = { limit = { raw_material = goods:pepper } value = rgo_pepper_max_level }
+	if = { limit = { raw_material = goods:potato } value = rgo_potato_max_level }
+	if = { limit = { raw_material = goods:rice } value = rgo_rice_max_level }
+	if = { limit = { raw_material = goods:saffron } value = rgo_saffron_max_level }
+	if = { limit = { raw_material = goods:salt } value = rgo_salt_max_level }
+	if = { limit = { raw_material = goods:saltpeter } value = rgo_saltpeter_max_level }
+	if = { limit = { raw_material = goods:sand } value = rgo_sand_max_level }
+	if = { limit = { raw_material = goods:silk } value = rgo_silk_max_level }
+	if = { limit = { raw_material = goods:silver } value = rgo_silver_max_level }
+	if = { limit = { raw_material = goods:stone } value = rgo_stone_max_level }
+	if = { limit = { raw_material = goods:sugar } value = rgo_sugar_max_level }
+	if = { limit = { raw_material = goods:tea } value = rgo_tea_max_level }
+	if = { limit = { raw_material = goods:tin } value = rgo_tin_max_level }
+	if = { limit = { raw_material = goods:tobacco } value = rgo_tobacco_max_level }
+	if = { limit = { raw_material = goods:wheat } value = rgo_wheat_max_level }
+	if = { limit = { raw_material = goods:wild_game } value = rgo_wild_game_max_level }
+	if = { limit = { raw_material = goods:wine } value = rgo_wine_max_level }
+	if = { limit = { raw_material = goods:wool } value = rgo_wool_max_level }
 }
 
+#Rounded value of the max RGO level, corresponds to the 'real' max size as displayed in-game. 
+mnt_location_max_rgo_building_level_rounded = {
+	value = mnt_location_max_rgo_building_level
+	floor = yes
+}
+
+#Value only used for initial setup. 0.1 * peasants pops in thousands, with minimum of 1 spawned RGO building per Location, and max level of 1/3 of the max level defined for the Location's active raw material
 rgo_building_level_precise = {
 	value = num_pop_type:peasants
 	multiply = 0.1
 	max = {
-		add = rgo_max_bonus
+		add = mnt_location_max_rgo_building_level	#Value defined in MnT_rgo_ui_values.txt
 		multiply = 0.333
 	}
+	min = 1
 }
 
+#Grabs the value above and round it UP
 rgo_building_level = {
 	value = rgo_building_level_precise
 	ceiling = yes
 }
 
+#Grabs the initial setup value, multiplies it by 2 and rounds it DOWN
 rgo_building_level_double = {
 	value = rgo_building_level_precise
 	multiply = 2
-	ceiling = yes
+	max = mnt_location_max_rgo_building_level
+	floor = yes
 }
 
 #Max level calculation for the RGO replacement buildings
@@ -83,6 +131,7 @@ rgo_alum_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -189,6 +238,7 @@ rgo_amber_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -295,6 +345,7 @@ rgo_beeswax_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -401,6 +452,7 @@ rgo_chili_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -507,6 +559,7 @@ rgo_clay_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -613,6 +666,7 @@ rgo_cloves_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -719,6 +773,7 @@ rgo_coal_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -825,6 +880,7 @@ rgo_cocoa_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -931,6 +987,7 @@ rgo_coffee_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1037,6 +1094,7 @@ rgo_copper_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1143,6 +1201,7 @@ rgo_cotton_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1249,6 +1308,7 @@ rgo_dyes_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1355,6 +1415,7 @@ rgo_elephants_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1461,6 +1522,7 @@ rgo_fiber_crops_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1567,6 +1629,7 @@ rgo_fish_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1632,6 +1695,16 @@ rgo_fish_max_level = {
 			}
 		}
 	}
+	if = {
+		limit = { 
+			has_river = yes
+			NOT = { raw_material = goods:fish }
+		}
+		max = {
+			desc = "BUILDING_LEVEL_FISH_RIVER_LIMITS_MAXIMUM_LEVEL"
+			value = 1
+		}		
+	}
 }
 
 rgo_fruit_max_level = {
@@ -1673,6 +1746,7 @@ rgo_fruit_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1779,6 +1853,7 @@ rgo_fur_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1885,6 +1960,7 @@ rgo_gems_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -1991,6 +2067,7 @@ rgo_goods_gold_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2058,46 +2135,45 @@ rgo_goods_gold_max_level = {
 	}
 }
 
-rgo_horses_max_level = {
+bad_horses_max_level = {
 	save_temporary_value_as = { 
 		name = base_value
 		value = 0
 	}
-	if = { limit = { can_build_horses_RGO = yes }
-	    # base
-		save_temporary_value_as = { name = base_value
-			value = { value = scope:base_value
-				add = 0.25
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_BASE"
-			value = 0.25
-		}
-		# dev bonus
-		save_temporary_value_as = { name = base_value
-			value = { value = scope:base_value
-				add = { value = development
-					multiply = 0.05
-				}
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
-			value = development
-			multiply = 0.05
-		}
-		# pop bonus
-		save_temporary_value_as = { name = base_value
-			value = { value = scope:base_value
-				add = { value = population
-					multiply = 0.01
-				}
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_POPULATION"
-			value = population
-			multiply = 0.01
+    # base
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = 0.25
 		}
 	}
+	add = { desc = "BUILDING_LEVEL_BASE"
+		value = 0.25
+	}
+	# dev bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = development
+				multiply = 0.05
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.05
+	}
+	# pop bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = population
+				multiply = 0.01
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_POPULATION"
+		value = population
+		multiply = 0.01
+	}
+
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
 			value = { value = scope:base_value
@@ -2109,6 +2185,107 @@ rgo_horses_max_level = {
 		add = { desc = "IDEAL_RGO_AREA"
 			value = { value = scope:base_value
 				multiply = 2
+			}
+		}
+	}
+	if = { limit = { owner ?= { modifier:global_max_rgo_size_modifier != 0 } }
+        add = { desc = "GLOBAL_MAX_RGO"
+            value = { value = scope:base_value
+                multiply = owner.modifier:global_max_rgo_size_modifier
+            }
+        }
+	}
+	if = {
+	    limit = { 
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+			}
+	        owner ?= { modifier:global_max_rgo_size_modifier_in_non_rural != 0 }
+	    }
+		add = { desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+	else_if = { 
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner ?= { modifier:global_max_rgo_size_modifier_in_rural != 0 }
+		}
+	    add = { desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+	}
+	if = {
+		limit = { owner ?= { modifier:global_raw_material_output != 0 } }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
+		}
+	}
+}
+
+rgo_horses_max_level = {
+	save_temporary_value_as = { 
+		name = base_value
+		value = 0
+	}
+	if = { limit = { can_build_horses_RGO = yes }
+	    # base
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = 0.5
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_BASE"
+			value = 0.5
+		}
+		# dev bonus
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = { value = development
+					multiply = 0.1
+				}
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+			value = development
+			multiply = 0.1
+		}
+		# pop bonus
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = { value = population
+					multiply = 0.02
+				}
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_POPULATION"
+			value = population
+			multiply = 0.02
+		}
+		min = 1
+	}
+	
+	if = { limit = { location_rank ?= location_rank:rural_settlement }
+		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
+			value = { value = scope:base_value
+				multiply = 0.2
 			}
 		}
 	}
@@ -2203,6 +2380,7 @@ rgo_incense_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2270,6 +2448,107 @@ rgo_incense_max_level = {
 	}
 }
 
+bad_iron_max_level = { #this is for places without good mines, relying on impure ores and bulk work halved cap, no min, low maximum
+	save_temporary_value_as = { 
+		name = base_value
+		value = 0
+	}
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = 0.25
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_BASE"
+		value = 0.25
+	}
+	# dev bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = development
+				multiply = 0.05
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.05
+	}
+	# pop bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = population
+				multiply = 0.01
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_POPULATION"
+		value = population
+		multiply = 0.01
+	}
+	
+	if = { limit = { location_rank ?= location_rank:rural_settlement }
+		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
+			value = { value = scope:base_value
+				multiply = 0.2
+			}
+		}
+	}
+	if = { limit = { owner ?= { modifier:global_max_rgo_size_modifier != 0 } }
+        add = { desc = "GLOBAL_MAX_RGO"
+            value = { value = scope:base_value
+                multiply = owner.modifier:global_max_rgo_size_modifier
+            }
+        }
+	}
+	if = {
+	    limit = { 
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+			}
+	        owner ?= { modifier:global_max_rgo_size_modifier_in_non_rural != 0 }
+	    }
+		add = { desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+	else_if = { 
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner ?= { modifier:global_max_rgo_size_modifier_in_rural != 0 }
+		}
+	    add = { desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+	}
+	if = {
+		limit = { owner ?= { modifier:global_raw_material_output != 0 } }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
+		}
+	}
+	max = {
+		desc = "BUILDING_LEVEL_IRON_IMPURE_ORE"
+		value = 2
+	}		
+}
+
 rgo_iron_max_level = {
 	save_temporary_value_as = { 
 		name = base_value
@@ -2279,48 +2558,42 @@ rgo_iron_max_level = {
 	    # base
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
-				add = 0.25
+				add = 0.5
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_BASE"
-			value = 0.25
+			value = 0.5
 		}
 		# dev bonus
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
 				add = { value = development
-					multiply = 0.05
+					multiply = 0.1
 				}
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
 			value = development
-			multiply = 0.05
+			multiply = 0.1
 		}
 		# pop bonus
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
 				add = { value = population
-					multiply = 0.01
+					multiply = 0.02
 				}
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_POPULATION"
 			value = population
-			multiply = 0.01
+			multiply = 0.02
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
 			value = { value = scope:base_value
 				multiply = 0.2
-			}
-		}
-	}
-	if = { limit = { raw_material = goods:iron }
-		add = { desc = "IDEAL_RGO_AREA"
-			value = { value = scope:base_value
-				multiply = 2
 			}
 		}
 	}
@@ -2415,6 +2688,7 @@ rgo_ivory_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2521,6 +2795,7 @@ rgo_lead_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2627,6 +2902,7 @@ rgo_legumes_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2733,6 +3009,7 @@ rgo_livestock_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2839,6 +3116,7 @@ rgo_lumber_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -2945,6 +3223,7 @@ rgo_maize_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3051,6 +3330,7 @@ rgo_marble_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3157,6 +3437,7 @@ rgo_medicaments_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3263,6 +3544,7 @@ rgo_mercury_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3369,6 +3651,7 @@ rgo_millet_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3475,6 +3758,7 @@ rgo_olives_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3581,6 +3865,7 @@ rgo_pearls_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3687,6 +3972,7 @@ rgo_pepper_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3793,6 +4079,7 @@ rgo_potato_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -3899,6 +4186,7 @@ rgo_rice_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4005,6 +4293,7 @@ rgo_saffron_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4072,6 +4361,103 @@ rgo_saffron_max_level = {
 	}
 }
 
+bad_salt_max_level = {
+	save_temporary_value_as = { 
+		name = base_value
+		value = 0
+	}
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = 0.25
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_BASE"
+		value = 0.25
+	}
+	# dev bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = development
+				multiply = 0.05
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.05
+	}
+	# pop bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = population
+				multiply = 0.01
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_POPULATION"
+		value = population
+		multiply = 0.01
+	}
+	
+	if = { limit = { location_rank ?= location_rank:rural_settlement }
+		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
+			value = { value = scope:base_value
+				multiply = 0.2
+			}
+		}
+	}
+	if = { limit = { owner ?= { modifier:global_max_rgo_size_modifier != 0 } }
+        add = { desc = "GLOBAL_MAX_RGO"
+            value = { value = scope:base_value
+                multiply = owner.modifier:global_max_rgo_size_modifier
+            }
+        }
+	}
+	if = {
+	    limit = { 
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+			}
+	        owner ?= { modifier:global_max_rgo_size_modifier_in_non_rural != 0 }
+	    }
+		add = { desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+	else_if = { 
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner ?= { modifier:global_max_rgo_size_modifier_in_rural != 0 }
+		}
+	    add = { desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+	}
+	if = {
+		limit = { owner ?= { modifier:global_raw_material_output != 0 } }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
+		}
+	}
+}
+
 rgo_salt_max_level = {
 	save_temporary_value_as = { 
 		name = base_value
@@ -4081,48 +4467,43 @@ rgo_salt_max_level = {
 	    # base
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
-				add = 0.25
+				add = 0.5
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_BASE"
-			value = 0.25
+			value = 0.5
 		}
 		# dev bonus
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
 				add = { value = development
-					multiply = 0.05
+					multiply = 0.1
 				}
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
 			value = development
-			multiply = 0.05
+			multiply = 0.1
 		}
 		# pop bonus
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
 				add = { value = population
-					multiply = 0.01
+					multiply = 0.02
 				}
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_POPULATION"
 			value = population
-			multiply = 0.01
+			multiply = 0.02
 		}
+		min = 1
 	}
+	
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
 			value = { value = scope:base_value
 				multiply = 0.2
-			}
-		}
-	}
-	if = { limit = { raw_material = goods:salt }
-		add = { desc = "IDEAL_RGO_AREA"
-			value = { value = scope:base_value
-				multiply = 2
 			}
 		}
 	}
@@ -4217,6 +4598,7 @@ rgo_saltpeter_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4284,6 +4666,104 @@ rgo_saltpeter_max_level = {
 	}
 }
 
+bad_sand_max_level = {
+	save_temporary_value_as = { 
+		name = base_value
+		value = 0
+	}
+    # base
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = 0.25
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_BASE"
+		value = 0.25
+	}
+	# dev bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = development
+				multiply = 0.05
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.05
+	}
+	# pop bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = population
+				multiply = 0.01
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_POPULATION"
+		value = population
+		multiply = 0.01
+	}
+	
+	if = { limit = { location_rank ?= location_rank:rural_settlement }
+		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
+			value = { value = scope:base_value
+				multiply = 0.2
+			}
+		}
+	}
+	if = { limit = { owner ?= { modifier:global_max_rgo_size_modifier != 0 } }
+        add = { desc = "GLOBAL_MAX_RGO"
+            value = { value = scope:base_value
+                multiply = owner.modifier:global_max_rgo_size_modifier
+            }
+        }
+	}
+	if = {
+	    limit = { 
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+			}
+	        owner ?= { modifier:global_max_rgo_size_modifier_in_non_rural != 0 }
+	    }
+		add = { desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+	else_if = { 
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner ?= { modifier:global_max_rgo_size_modifier_in_rural != 0 }
+		}
+	    add = { desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+	}
+	if = {
+		limit = { owner ?= { modifier:global_raw_material_output != 0 } }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
+		}
+	}
+}
+
 rgo_sand_max_level = {
 	save_temporary_value_as = { 
 		name = base_value
@@ -4293,29 +4773,29 @@ rgo_sand_max_level = {
 	    # base
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
-				add = 0.25
+				add = 0.5
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_BASE"
-			value = 0.25
+			value = 0.5
 		}
 		# dev bonus
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
 				add = { value = development
-					multiply = 0.05
+					multiply = 0.1
 				}
 			}
 		}
 		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
 			value = development
-			multiply = 0.05
+			multiply = 0.1
 		}
 		# pop bonus
 		save_temporary_value_as = { name = base_value
 			value = { value = scope:base_value
 				add = { value = population
-					multiply = 0.01
+					multiply = 0.02
 				}
 			}
 		}
@@ -4323,18 +4803,13 @@ rgo_sand_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
+	
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
 			value = { value = scope:base_value
 				multiply = 0.2
-			}
-		}
-	}
-	if = { limit = { raw_material = goods:sand }
-		add = { desc = "IDEAL_RGO_AREA"
-			value = { value = scope:base_value
-				multiply = 2
 			}
 		}
 	}
@@ -4429,6 +4904,7 @@ rgo_silk_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4535,6 +5011,7 @@ rgo_silver_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4602,46 +5079,45 @@ rgo_silver_max_level = {
 	}
 }
 
-rgo_stone_max_level = {
+bad_stone_max_level = { #represents areas where desired stone is difficult to access, much more material has to be moved, more broken up, etc
 	save_temporary_value_as = { 
 		name = base_value
 		value = 0
 	}
-	if = { limit = { can_build_stone_RGO = yes }
-	    # base
-		save_temporary_value_as = { name = base_value
-			value = { value = scope:base_value
-				add = 0.25
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_BASE"
-			value = 0.25
-		}
-		# dev bonus
-		save_temporary_value_as = { name = base_value
-			value = { value = scope:base_value
-				add = { value = development
-					multiply = 0.05
-				}
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
-			value = development
-			multiply = 0.05
-		}
-		# pop bonus
-		save_temporary_value_as = { name = base_value
-			value = { value = scope:base_value
-				add = { value = population
-					multiply = 0.01
-				}
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_POPULATION"
-			value = population
-			multiply = 0.01
+    # base
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = 0.25
 		}
 	}
+	add = { desc = "BUILDING_LEVEL_BASE"
+		value = 0.25
+	}
+	# dev bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = development
+				multiply = 0.05
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.05
+	}
+	# pop bonus
+	save_temporary_value_as = { name = base_value
+		value = { value = scope:base_value
+			add = { value = population
+				multiply = 0.01
+			}
+		}
+	}
+	add = { desc = "BUILDING_LEVEL_POPULATION"
+		value = population
+		multiply = 0.01
+	}
+	
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
 			value = { value = scope:base_value
@@ -4653,6 +5129,106 @@ rgo_stone_max_level = {
 		add = { desc = "IDEAL_RGO_AREA"
 			value = { value = scope:base_value
 				multiply = 2
+			}
+		}
+	}
+	if = { limit = { owner ?= { modifier:global_max_rgo_size_modifier != 0 } }
+        add = { desc = "GLOBAL_MAX_RGO"
+            value = { value = scope:base_value
+                multiply = owner.modifier:global_max_rgo_size_modifier
+            }
+        }
+	}
+	if = {
+	    limit = { 
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+			}
+	        owner ?= { modifier:global_max_rgo_size_modifier_in_non_rural != 0 }
+	    }
+		add = { desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+	else_if = { 
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner ?= { modifier:global_max_rgo_size_modifier_in_rural != 0 }
+		}
+	    add = { desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = { 
+				value = scope:base_value
+				multiply = modifier:local_raw_material_output
+			}
+		}
+	}
+	if = {
+		limit = { owner ?= { modifier:global_raw_material_output != 0 } }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = { 
+				value = scope:base_value
+				multiply = owner.modifier:global_raw_material_output
+			}
+		}
+	}
+}
+
+rgo_stone_max_level = {
+	save_temporary_value_as = { 
+		name = base_value
+		value = 0
+	}
+	if = { limit = { can_build_stone_RGO = yes }
+	    # base
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = 0.5
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_BASE"
+			value = 0.5
+		}
+		# dev bonus
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = { value = development
+					multiply = 0.1
+				}
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+			value = development
+			multiply = 0.1
+		}
+		# pop bonus
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = { value = population
+					multiply = 0.02
+				}
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_POPULATION"
+			value = population
+			multiply = 0.02
+		}
+		min = 1
+	}
+	if = { limit = { location_rank ?= location_rank:rural_settlement }
+		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
+			value = { value = scope:base_value
+				multiply = 0.2
 			}
 		}
 	}
@@ -4747,6 +5323,7 @@ rgo_sugar_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4853,6 +5430,7 @@ rgo_tea_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -4959,6 +5537,7 @@ rgo_tin_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -5065,6 +5644,7 @@ rgo_tobacco_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -5171,6 +5751,7 @@ rgo_wheat_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -5277,6 +5858,7 @@ rgo_wild_game_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -5383,6 +5965,7 @@ rgo_wine_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
@@ -5489,6 +6072,7 @@ rgo_wool_max_level = {
 			value = population
 			multiply = 0.01
 		}
+		min = 1
 	}
 	if = { limit = { location_rank ?= location_rank:rural_settlement }
 		add = { desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
