@@ -141,11 +141,8 @@ Date: 2026-01-20
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
-<<<<<<< .merge_file_a19272
 - now farm based RGOs use peasants as their workforce, while other RGOs use laborers.
-=======
 
->>>>>>> .merge_file_a21028
 ##### Population
 
 - Cored locations' population growth is not restricted to those of primary culture anymore  
