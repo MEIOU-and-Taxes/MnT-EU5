@@ -58,6 +58,7 @@ Date: 2026-01-20
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
+- half army cost to keep pace with halved state incomes
 
 ##### Diplomacy
 
