@@ -266,4 +266,4 @@ Date: 2026-01-20
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
 
 ##### Modding
-- Added automated check for correct encodings via GitHub Actions
+- Added automated check for correct encodings and line endings via GitHub Actions
