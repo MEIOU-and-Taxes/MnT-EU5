@@ -65,7 +65,8 @@ Date: 2026-01-20
 
 - Steal map’s antagonism bomb will not impact the robbed tag, but the discovered place  
 - Sabotage reputation spy network cost: 5 → 10  
-- Sow discontent & Corrupt officials diplomatic actions’ cost in gold will scale 10X slower and will be between 60-360 yearly  
+- Sow discontent & Corrupt officials diplomatic actions’ cost in gold will scale 10X slower and will be between 60-360 yearly
+- Antagonism from Stealing maps decimated from 10 to 1
 - Culture conversion cabinet action will be prevented for subjects of the same culture as the top overlord  
 - Ask for money country interaction  
   - Cannot put the recipient in debt anymore  
