@@ -250,6 +250,10 @@ Date: 2026-01-20
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
 
+##### Setup
+- Allow tags on the Indian ocean to see each other for trade.
+- Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
+
 ##### Situations
 
 - Fixes to Colombian Exchange situation
