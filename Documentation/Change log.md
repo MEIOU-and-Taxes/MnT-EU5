@@ -66,7 +66,8 @@ Date: 2026-01-20
 
 - Steal map’s antagonism bomb will not impact the robbed tag, but the discovered place  
 - Sabotage reputation spy network cost: 5 → 10  
-- Sow discontent & Corrupt officials diplomatic actions’ cost in gold will scale 10X slower and will be between 60-360 yearly  
+- Sow discontent & Corrupt officials diplomatic actions’ cost in gold will scale 10X slower and will be between 60-360 yearly
+- Stealing maps now incurs an opinion penalty with the nation that the maps are stolen from, instead of an antagonism bomb on the place the maps are about. 
 - Culture conversion cabinet action will be prevented for subjects of the same culture as the top overlord  
 - Ask for money country interaction  
   - Cannot put the recipient in debt anymore  
@@ -134,6 +135,9 @@ Date: 2026-01-20
   - Burgher mansion:  
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
+  - Pastoral flock:
+    - Building representing nomadic husbandry; minor but present economic effects
+	- Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
 - Sand added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 - Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
@@ -264,4 +268,4 @@ Date: 2026-01-20
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
 
 ##### Modding
-- Added automated check for correct encodings via GitHub Actions
+- Added automated check for correct encodings and line endings via GitHub Actions
