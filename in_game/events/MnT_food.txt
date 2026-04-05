@@ -34,14 +34,18 @@ mnt_food.1 = {
 		every_owned_location = {
 			limit = { 
 				can_build_building = building_type:pastoral_flock
-				num_pop_type:tribesmen > 0.1 # We're going for partial employment here
+				num_pop_type:tribesmen > 0.5
 			}
 			change_building_level_in_location = {
 				building = building_type:pastoral_flock
 				value = {
 					add = num_pop_type:tribesmen
-					divide = 0.5 #one per 500 tribesmen
+					multiply = 2 #one per 500 tribesmen
 					max = pastoral_flock_cap
+					multiply = { # Multiply by 1 - local control
+						value = 1
+						subtract = local_control
+					}
 					floor = yes	#round down to make sure we don't accidentally go over the cap
 				}
 			}
