@@ -145,7 +145,14 @@ Date: 2026-01-20
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
-
+- price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
+- Require less profit for AI trade to happen per used merchant capacity, to compensate for lower price levels
+- Reworked how trade flows
+	- base transport cost lowered by 10x for all goods
+	- base travel cost increased by 40x
+	- rivers give 0.5x reduction in trade distance cost
+	- oceans give 0.25x reduction in trade distance cost. 
+	
 ##### Population
 
 - Cored locations' population growth is not restricted to those of primary culture anymore  
@@ -246,6 +253,10 @@ Date: 2026-01-20
 - Land war exhaustion from losses: 100 → 300  
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
+
+##### Setup
+- Allow tags on the Indian ocean to see each other for trade.
+- Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
 
 ##### Situations
 
