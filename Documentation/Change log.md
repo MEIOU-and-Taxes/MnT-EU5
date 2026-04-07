@@ -151,7 +151,8 @@ Date: 2026-01-20
 	- base transport cost lowered by 10x for all goods
 	- base travel cost increased by 40x
 	- rivers give 0.5x reduction in trade distance cost
-	- oceans give 0.25x reduction in trade distance cost. 
+	- oceans give 0.25x reduction in trade distance cost.
+- Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
 	
 ##### Population
 
