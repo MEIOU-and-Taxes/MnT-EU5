@@ -153,6 +153,7 @@ Date: 2026-01-20
 	- rivers give 0.5x reduction in trade distance cost
 	- oceans give 0.25x reduction in trade distance cost.
 - Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
+- Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy.
 	
 ##### Population
 
