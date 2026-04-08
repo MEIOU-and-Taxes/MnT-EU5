@@ -135,7 +135,8 @@ Date: 2026-01-20
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
 - Transhumant wool pasture:
-  - Building representing nomadic husbandry; minor but present economic effects
+  - Building representing nomadic husbandry
+  - Produces wool while also boosting tribe estate power and reducing tribe promotion
   - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
 - Sand added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
