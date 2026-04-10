@@ -44,7 +44,7 @@ Date: 2026-01-20
 
 #### Balancing
 
-- Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+- Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
