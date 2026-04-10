@@ -157,6 +157,8 @@ Date: 2026-01-20
 - Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
 - Reduced number of glass production buildings from 6 to 1 for indian town setup profile
 - Add population demand for glass as in April 8 TT
+- Remove the market attraction impact from prestige, trade income vs tax base and staffed building levels to stabalize market size
+- Reduced market attraction from trade attraction buildings by roughly half. Whilst increasing effects of same province/area so markets don't get too small and crowded out by others.
 	
 ##### Population
 
