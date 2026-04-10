@@ -136,7 +136,8 @@ Date: 2026-01-20
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
 - Transhumant wool pasture:
-  - Building representing nomadic husbandry; minor but present economic effects
+  - Building representing nomadic husbandry
+  - Produces wool while also boosting tribe estate power and reducing tribe promotion
   - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
 - Sand added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
@@ -157,6 +158,7 @@ Date: 2026-01-20
 - Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
 - Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
 - Reduced number of glass production buildings from 6 to 1 for indian town setup profile
+- Add population demand for glass as in April 8 TT
 	
 ##### Population
 
