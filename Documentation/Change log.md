@@ -1,4 +1,4 @@
-﻿# Release
+﻿# Release 
 
 ### 0.0.1
 
@@ -7,7 +7,7 @@ Date: 2026-01-20
 #### Features
 
 - RGOs are replaced by buildings
-  - More in a seperate section below
+  - More in a separate section below
 - Naval levies  
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
@@ -34,7 +34,7 @@ Date: 2026-01-20
   - Buildings that have similar functionality as RGOs are now merged
     - E.g. clay/sand pits, Lumbermills, fruit orchards etc. got merged into the RGO-building
   - Balance changes done with calculation in excel spreadsheet, balance is still a bit rough but should mostly work fine
-  - Addapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
+  - Adapted global RGO size modifiers and RGO ouput modifiers to both affect the maximum amount available of our RGO buildings in Locations
   - Avoided promoting tribal pops to fill RGO vacancies at the start
 
 #### Bugfixes
@@ -58,12 +58,15 @@ Date: 2026-01-20
 - Major vassal swarm nerf, vassals will now require managing and will use their full power to consider their loyalty.
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
+- Tribes estate satisfaction now goes down proportional to average development
+- Block tribal governments (tribes and steppe hordes) from settling their tribes.
 
 ##### Diplomacy
 
 - Steal map’s antagonism bomb will not impact the robbed tag, but the discovered place  
 - Sabotage reputation spy network cost: 5 → 10  
-- Sow discontent & Corrupt officials diplomatic actions’ cost in gold will scale 10X slower and will be between 60-360 yearly  
+- Sow discontent & Corrupt officials diplomatic actions’ cost in gold will scale 10X slower and will be between 60-360 yearly
+- Stealing maps now incurs an opinion penalty with the nation that the maps are stolen from, instead of an antagonism bomb on the place the maps are about. 
 - Culture conversion cabinet action will be prevented for subjects of the same culture as the top overlord  
 - Ask for money country interaction  
   - Cannot put the recipient in debt anymore  
@@ -123,11 +126,6 @@ Date: 2026-01-20
       - Forest: 5.5X
       - Jungle: 8X
 - Market  
-  - Market access cost reduction doubled for roads:  
-    - Gravel: \-10% → \-20%  
-    - Paved road: \-15% → \-30%  
-    - Modern road: \-20% → \-40%  
-    - Railroad: \-25% → \-50%  
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
@@ -148,21 +146,7 @@ Date: 2026-01-20
   - Cities give:  
     - Local food capacity: 500 → 400  
     - Local food production: \-33% → \-25%  
-  - RGOs give less food:  
-    - Wool: 5 → 2  
-    - Wild game: 3.5 → 2  
-    - Fur: 2 → 1  
-    - Fish: 5 → 3  
-    - Wheat: 8 → 5  
-    - Maize: 8 → 5  
-    - Rice: 10 → 6  
-    - Millet: 5 → 3  
-    - Legumes: 5 → 3  
-    - Potato: 8 → 5  
-    - Livestock: 8 → 4  
-    - Olives: 4 → 2  
-    - Fruit: 4 → 2.5  
-    - Beeswax: 2.5 → 1  
+  - RGOs provide less food
 - Estate buildings:  
   - Toll castle:  
     - No longer give fort defense value of 25%  
@@ -174,10 +158,30 @@ Date: 2026-01-20
   - Burgher mansion:  
     - Give Possible Burghers value of 20  
     - Local burgher food consumption: 20% → 10%
--Sand added to several production methods, including masonry, weapons, and tools.
--Estate built buildings do not consume goods directly, now add pop to consume goods for them.
--Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
-
+- Transhumant wool pasture:
+  - Building representing nomadic husbandry
+  - Produces wool while also boosting tribe estate power and reducing tribe promotion
+  - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
+- Sand added to several production methods, including masonry, weapons, and tools.
+- Estate built buildings do not consume goods directly, now add pop to consume goods for them.
+- Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
+- Spawn 1 more Marketplace per town/city to facilitate early-game trade
+  - increase Marketplace cap by one per town/city to make sure these extra building levels are supported
+- Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
+- All good prices rebalanced to 50% of vanilla values, with a few exceptions.
+- 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
+- price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
+- Require less profit for AI trade to happen per used merchant capacity, to compensate for lower price levels
+- Reworked how trade flows
+	- base transport cost lowered by 10x for all goods
+	- base travel cost increased by 40x
+	- rivers give 0.5x reduction in trade distance cost
+	- oceans give 0.25x reduction in trade distance cost.
+- Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
+- Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
+- Reduced number of glass production buildings from 6 to 1 for indian town setup profile
+- Add population demand for glass as in April 8 TT
+	
 ##### Population
 
 - Cored locations' population growth is not restricted to those of primary culture anymore  
@@ -199,6 +203,7 @@ Date: 2026-01-20
 - Pop Conversion speed  
   - Base conversion speed is now relative instead of absolute  
     - It will require 200+ years to fully convert
+- Tribesmen pops now have same share of the tax base as peasants
 
 ##### Religion
 
@@ -278,6 +283,10 @@ Date: 2026-01-20
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
 
+##### Setup
+- Allow tags on the Indian ocean to see each other for trade.
+- Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
+
 ##### Situations
 
 - Fixes to Colombian Exchange situation
@@ -291,8 +300,9 @@ Date: 2026-01-20
 - Added fIlter button for rgo buildings in building view
 - Changed the behaviour of brgo buttons to show rgo buildings 
 - Unified goods-panel RGO buttons with the Production view RGO visibility toggle and removed sticky per-good RGO force-show state.
+- Reworked the goods-panel Production opener to set RGO visibility through a dedicated scripted GUI based on the selected good, and removed the unused old per-good force-show path.
 - Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
 
 ##### Modding
-- Added automated check for correct encodings via GitHub Actions
+- Added automated check for correct encodings and line endings via GitHub Actions

@@ -28,6 +28,12 @@ on_game_start_MnT = {
 	effect = {
 		# Initialize center of importance systems on game start
 		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
+		every_market_in_world = {	#Helicopter-tools to make the world go vroom
+			add_goods_supply = {
+				goods = goods:tools
+				amount = 250
+			}
+		}
 
 		# Initialize GDP update frequency variable and trigger first update
 		every_country = {
@@ -42,7 +48,13 @@ on_game_start_MnT = {
 			trigger_event_silently = { id = mnt_goods_value.1 }
 		}
 		# Handle Pop and Food building startup
-		every_country = { limit = { num_locations > 0 }	trigger_event_silently = { id = mnt_food.1 } }
+		every_country = {
+			limit = {
+				num_locations > 0
+			}
+			trigger_event_silently = { id = mnt_food.1 }
+			trigger_event_silently = { id = mnt_tribes.1 }
+		}
 		if = { limit = { always = no } random_country = { trigger_event_silently = { id = mnt_never_trigger_me.1 } } }
 	}
 }
@@ -61,6 +73,7 @@ pulse_yearly_MnT = {
 
 pulse_yearly_per_country_MnT = {
 	events = {
+		mnt_tribes.1
 		mnt_food.2
 		mnt_goods_value.2
 	}

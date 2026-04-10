@@ -124,7 +124,7 @@ mason = {
 	unique_production_methods = {
 		stone_bricks = {
 			stone = 0.4
-			sand = 0.15 #added by M&T
+#			sand = 0.15 #added by M&T
 			produced = masonry
 			output = 0.6
 			category = guild_input
@@ -133,7 +133,7 @@ mason = {
 		}
 		clay_bricks = {
 			clay = 0.8
-			sand = 0.15 #added by M&T
+#			sand = 0.15 #added by M&T
 			produced = masonry
 			output = 0.6
 			category = guild_input
@@ -220,12 +220,13 @@ tar_kiln = {
 	construction_demand = guild_construction
 }
 
+#entirely taken over by M&T
 horse_breeders = {
 	is_foreign = no
 	pop_type = laborers
-	max_levels = rural_building_cap
+	max_levels = bad_horses_max_level
 	
-	employment_size = rural_peasant_produce_employment
+	employment_size = employment_size_RGO
 	
 	category = rgo_building_category
 	
@@ -234,12 +235,17 @@ horse_breeders = {
 	city = yes
 
 	location_potential = {
-		market = {
+		topography = flatland
+		OR = {
+			vegetation = grasslands
+			vegetation = farmland
+			vegetation = sparse
+			vegetation = woods
+		}
+		NOT = { raw_material = goods:horses }
+		market ?= {
 			is_produced_in_market = goods:horses
 		}
-	}
-	
-	allow = {
 		OR = {
 			climate = mediterranean
 			climate = continental
@@ -248,31 +254,64 @@ horse_breeders = {
 	}
 	
 	unique_production_methods = {
-		
-		horse_breeders_maintenance = {
+		PM_bad_horses_land = {
 			produced = horses
-			output = 1
-			wheat = 1.5
-			horses = 0.3
+			output = 0.5
+
+			land = 0.1
+
+			category = building_maintenance 
+		}
+		PM_bad_horses_wheat = {
+			produced = horses
+			output = 0.5
+
+			wheat = 0.2
+
+			category = building_maintenance 
+		}
+		PM_bad_horses_tool_normal_millet = {
+			produced = horses
+			output = 0.5
+
+			millet = 0.2
+
+			category = building_maintenance
+		}
+		PM_bad_horses_tool_normal_rice = {
+			produced = horses
+			output = 0.5
+
+			rice = 0.2
+
+			category = building_maintenance
+		}
+		PM_bad_horses_tool_normal_maize = {
+			produced = horses
+			output = 0.5
+
+			maize = 0.2
+
 			category = building_maintenance
 		}
 	}
 
-	build_time = rural_build_time
+	build_time = build_time_RGO
 
-	construction_demand = horse_breeders_construction
+	construction_demand = rgo_constructions_lumber
 }
 
+#entirely taken over by M&T
 stone_quarry = {
 	is_foreign = no
-	max_levels = rural_building_cap
+	max_levels = bad_stone_max_level
 	pop_type = laborers
 	
-	employment_size = rural_peasant_produce_employment
+	employment_size = employment_size_RGO
 	
 	rural_settlement = yes
 	town = yes
-	city = yes
+	city = yes	
 	
 	location_potential = {
 		OR = {
@@ -287,32 +326,42 @@ stone_quarry = {
 
 	category = rgo_building_category
 	
-	unique_production_methods = {
-	
-		stone_quarry_maintenance = {
-			tools = 0.1
-			lumber = 0.12
-			leather = 0.1
-			
+	unique_production_methods = { #less effective method of producing stone compared to RGO, same inputs
+		PM_RGO_stone_poor_quality_livestock = {
 			produced = stone
-			output = 1
-			
-			category = building_maintenance
+			output = 0.4 
+
+			land = 0.02
+			livestock = 0.01
+#			sand = 0.05
+
+			category = building_maintenance 
 		}
-		
-		crude_quarry_maintenance = {
-			lumber = 0.28
-			
+		PM_RGO_stone_poor_quality_horses = {
 			produced = stone
-			output = 0.5
-			
-			category = building_maintenance
+			output = 0.4
+
+			land = 0.02
+			horses = 0.01
+#			sand = 0.05
+
+			category = building_maintenance 
+		}
+		PM_RGO_stone_poor_quality_elephants = {
+			produced = stone
+			output = 0.4
+
+			land = 0.02
+			elephants = 0.005
+#			sand = 0.05
+
+			category = building_maintenance 
 		}
 	}
 
-	build_time = rural_build_time
+	build_time = build_time_RGO
 
-	construction_demand = basic_construction_needs
+	construction_demand = rgo_constructions_lumber
 }
 
 fiber_crops_farm = {
@@ -353,50 +402,66 @@ fiber_crops_farm = {
 	construction_demand = farm_constructions
 }
 
+#entirely taken over by M&T
 bog_iron_smelter = {
 	is_foreign = no
-	max_levels = rural_building_cap
+	max_levels = bad_iron_max_level
 	pop_type = laborers
 	
-	employment_size = rural_peasant_produce_employment
+	employment_size = employment_size_RGO
 	
 	rural_settlement = yes
 	town = yes
-	city = yes
-
+	city = yes	
 	
 	location_potential = {
 		OR = {
 			is_adjacent_to_lake = yes
 			topography = wetlands
+			topography = mountains
 		}
-		NOT = {
-			raw_material = goods:iron
-		}
+		NOT = { raw_material = goods:iron }
 	}
 
 	category = rgo_building_category
 	
-	unique_production_methods = {
-		bog_iron_maintenance = {
+	unique_production_methods = { #less effective method of producing iron compared to RGO, representing low grade ores
+		diffuse_iron_extraction = {
 			produced = iron
-			output = 0.3
-			coal = 0.40
-			debug_max_profit = 0.2
+			output = 0.4
+			
+			land = 0.1
+			coal = 0.1
+#			sand = 0.03
+			debug_max_profit = 0.4
+			
+			category = building_maintenance
+		}
+		diffuse_iron_extraction_lumber = {
+			produced = iron
+			output = 0.4
+			
+			land = 0.1
+			lumber = 0.2
+#			sand = 0.03
+			debug_max_profit = 0.4
+			
 			category = building_maintenance
 		}
 	}
 	
-	build_time = rural_build_time
-	construction_demand = basic_construction_needs
+	build_time = build_time_RGO
+
+	construction_demand = rgo_constructions_lumber
 }
 
+#entirely taken over by M&T
 salt_collector = {
 	is_foreign = no
 	pop_type = laborers
-	max_levels = rural_building_cap
+	max_levels = bad_salt_max_level
 	
-	employment_size = rural_peasant_produce_employment
+	employment_size = employment_size_RGO
 	
 	category = rgo_building_category
 	
@@ -412,12 +477,12 @@ salt_collector = {
 	}
 
 	unique_production_methods = {
-		
-		salt_collector_maintenance = {
+		evaporative_salt_collection = {
 			produced = salt
-			output = 0.3
+			output = 0.6
 			
-			clay  = 2.0
+			clay = 0.3
+			land = 0.1
 			category = building_maintenance
 		}
 	}
