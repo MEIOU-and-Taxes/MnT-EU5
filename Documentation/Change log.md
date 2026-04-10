@@ -60,6 +60,7 @@ Date: 2026-01-20
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
 - Tribes estate satisfaction now goes down proportional to average development
 - Block tribal governments (tribes and steppe hordes) from settling their tribes.
+- half army cost to keep pace with halved state incomes
 
 ##### Diplomacy
 
@@ -140,12 +141,13 @@ Date: 2026-01-20
   - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
 - Sand added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
-- Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement
+- Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement)
 - Spawn 1 more Marketplace per town/city to facilitate early-game trade
   - increase Marketplace cap by one per town/city to make sure these extra building levels are supported
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
+- Halved ducat prices for army/navy and doubled their goods-demand
 - price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
 - Require less profit for AI trade to happen per used merchant capacity, to compensate for lower price levels
 - Reworked how trade flows
@@ -258,6 +260,9 @@ Date: 2026-01-20
 - Land war exhaustion from losses: 100 → 300  
 - Fishing boats’ crew is not peasants, but laborers  
 - Remove effect of dismantle fort peace option on Theodosian walls
+- Tribal levies for non-tribal non-steppe government: 2% → 15%
+- Steppe hordes only make steppe cavalry out of tribesmen and nobles of Turkic and Mongolian cultures
+- Steppe cavalry levies for steppe hordes: 2% → 50%
 
 ##### Setup
 - Allow tags on the Indian ocean to see each other for trade.
