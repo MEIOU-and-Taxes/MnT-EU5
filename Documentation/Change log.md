@@ -282,3 +282,6 @@ Date: 2026-01-20
 
 ##### Modding
 - Added automated check for correct encodings and line endings via GitHub Actions
+
+##### Climates
+- TODO: make changelog for Climate changes
