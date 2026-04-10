@@ -1,0 +1,410 @@
+﻿bubonic_plague = {
+	monthly_spawn_chance = {
+		#Has the Black Death spawned already?
+		if = {
+			#It has happened already
+			limit = {
+				situation:black_death = {
+					situation_is_active = no
+					situation_has_ended = yes
+				}
+			}
+			value = 0.005 #Should happen around once per 20 years
+		}
+		else_if = {
+			#It is ongoing
+			limit = {
+				situation:black_death = {
+					situation_is_active = yes
+					situation_has_ended = no
+				}
+			}
+			#We wait untill it ends
+			value = 0
+		}
+		else = {
+			#It has not started
+			if = {
+				limit = {
+					OR = {
+						disease_is_active = scope:disease
+						has_game_rule = black_death_date_off
+					}
+				}
+				value = 0
+			}
+			else_if = {
+				limit = { has_game_rule = black_death_date_historical }
+				if = {
+					limit = { current_date > 1346.10.1  }
+					value = 1.0
+				}
+				else_if = {
+					limit = { current_date > 1346.1.1  }
+					value = 0.2
+				}
+				else = { value = 0 }
+			}
+			else_if = {
+				limit = { has_game_rule = black_death_date_random }
+
+				if = {
+					limit = { current_age = age_2_renaissance }
+					value = 0.005 #  # median time it occurs will be around 100 years
+				}
+				else_if = {
+					# come on lets hurry you up a little
+					limit = { current_age = age_3_discovery }
+					value = 0.01
+				}
+				else_if = {
+					# we've spent enough time waiting!
+					limit = { current_age = age_4_reformation }
+					value = 1.0
+				}
+				else = {  value = 0 }
+			}
+			else = { value = 0 }
+		}
+	}
+
+	monthly_resistance_reduction = 0.0001
+
+	spawn = {
+		#Has the Black Death spawned already?
+		if = {
+			#It has happened already
+			limit = {
+				situation:black_death = {
+					situation_is_active = no
+					situation_has_ended = yes
+				}
+			}
+			random_ownable_location = {
+				limit = {
+					#Not empty location
+					population > 1
+					is_endemic_bubonic_plague_location = yes
+					#If the Columbian Exchange has not happened yet, exclude America
+					trigger_if = {
+						limit = {
+							situation:black_death = {
+								situation_is_active = no
+								situation_has_ended = no
+							}
+						}
+						#Endemic regions
+						OR = {
+							continent = continent:asia
+							continent = continent:europe
+							continent = continent:africa
+							continent = continent:oceania
+						}
+					}
+
+					"disease_resistance(scope:disease)" < 0.5
+
+					#If we can't find an appropiate location we don't spawn
+				}
+				spawn_disease = {
+					disease = scope:disease
+					value = 1
+					#save the outbreak created for later
+					save_scope_as = outbreak
+				}
+			}
+		}
+		else_if = {
+			#It is ongoing
+			limit = {
+				situation:black_death = {
+					situation_is_active = yes
+					situation_has_ended = no
+				}
+			}
+			#We wait untill it ends
+		}
+		else = {
+			random_ownable_location = {
+				limit = {
+					population > 1
+					OR = {
+						AND = {
+							has_game_rule = black_death_origin_historical
+							OR = {
+								area = area:desht_kipchak_area
+								area = area:astrakhan_area
+								area = area:lower_yik_area
+							}
+						}
+						AND = {
+							has_game_rule = black_death_origin_random
+							OR = {
+								continent = continent:asia
+								continent = continent:europe
+								sub_continent = sub_continent:north_africa
+							}
+						}
+					}
+					"disease_resistance(scope:disease)" < 0.5
+				}
+				spawn_disease = {
+					disease = scope:disease
+					value = 1
+
+					#save the outbreak created for later
+					save_scope_as = outbreak
+				}
+				if = {
+					limit = {
+						situation:black_death = {
+							situation_is_active = no
+							situation_has_ended = no
+						}
+					}
+					activate_situation = situation:black_death
+					situation:black_death = {
+						set_variable = {
+							name = original_outbreak
+							value = scope:outbreak
+						}
+					}
+				}
+			}
+		}
+	}
+
+	#range between 1.5599 to 1.9332
+	r0 = {
+		#base
+		if = {
+			limit = {
+				OR = {
+					topography = mountains
+					topography = wetlands
+					vegetation = desert
+					vegetation = jungle
+					OR = { climate = boreal_climate climate = hypercontinental_climate climate = monsoon_boreal_climate climate = monsoon_hypercontinental_climate climate = mediterranean_boreal_climate climate = mediterranean_hypercontinental_climate climate = tundra_climate climate = polar_climate climate = andean_tundra_climate }
+					OR = { climate = rainforest_climate climate = monsoon_climate climate = savanna_winter_climate climate = savanna_summer_climate }
+					location_rank ?= location_rank:rural_settlement
+				}
+			}
+			value = { 1.1 1.3 }
+		}
+		else_if = {
+			limit = {
+				location_rank ?= location_rank:town
+			}
+			value = { 1.3 1.6 }
+		}
+		else = {
+			value = { 1.5 1.9 }
+		}
+		#markets spread more person to person
+		if = {
+			limit = {
+				OR = {
+					has_building_with_at_least_one_level = market_village
+					has_building_with_at_least_one_level = marketplace
+					has_building_with_at_least_one_level = slave_market
+					has_building_with_at_least_one_level = entrepot
+					has_building_with_at_least_one_level = trading_hub
+					has_building_with_at_least_one_level = stock_exchange
+				}
+			}
+			multiply = 1.2
+		}
+		#stagnation reduces R0
+		if = {
+			limit = {
+				OR = {
+					disease_has_stagnated = scope:disease
+					"disease_resistance(scope:disease)" > 0.5
+				}
+			}
+			subtract = { 0.2 0.7 }
+			#if low and we have stagnation, move to kill it off quickly
+			if = {
+				limit  = {
+					disease_presence = {
+						disease = scope:disease
+						value <= 0.2
+					}
+				}
+				subtract = 0.3
+			}
+		}
+	}
+
+	calc_interval_days = 25
+
+	location_stagnation_chance = {
+		#some locations will spread it much more easily than others.
+		#For this disease, rural places have much more distance between people so spread it less
+		if = {
+			limit = {
+				location_rank ?= location_rank:rural_settlement
+			}
+			value = 0.08
+		}
+		else_if = {
+			limit = {
+				location_rank ?= location_rank:town
+			}
+			value = 0.04
+		}
+		else = {
+			value = 0.02
+		}
+
+		if = { #It can easily die out in difficult terrain
+			limit = {
+				OR = {
+					topography = mountains
+					topography = wetlands
+					vegetation = desert
+					vegetation = jungle
+					OR = { climate = boreal_climate climate = hypercontinental_climate climate = monsoon_boreal_climate climate = monsoon_hypercontinental_climate climate = mediterranean_boreal_climate climate = mediterranean_hypercontinental_climate climate = tundra_climate climate = polar_climate climate = andean_tundra_climate }
+					OR = { climate = rainforest_climate climate = monsoon_climate climate = savanna_winter_climate climate = savanna_summer_climate }
+				}
+			}
+			add = 0.2
+		}
+		if = { #It can easily die out in low density areas
+			limit = {
+				location_population_percentage < 0.1
+			}
+			add = 0.2
+		}
+
+		#if we've got a bit of resistance then stagnation chance will go up
+		if = {
+			limit = {
+				"disease_resistance(scope:disease)" > 0.5
+			}
+			add = {
+				value = "disease_resistance(scope:disease)"
+				subtract = 0.4
+			}
+		}
+		if = {
+			limit = {
+				"disease_resistance(scope:disease)" > 0.95
+			}
+			add = 0.1
+		}
+		if = {
+			limit = {
+				"disease_resistance(scope:disease)" > 0.98
+			}
+			add = 0.2
+		}
+
+		#We need a minimum spread for the black death to work, we make it immune for a small radius so it can move outside of the Golden horde
+		if = {
+			limit = {
+				distance_to_squared = {
+					location = scope:disease.origin
+					value < 15000
+				}
+			}
+			value = 0
+		}
+	}
+
+	percentage_to_meet_their_fate_on_calc = {
+		value = 0.25
+	}
+
+	#general bad effects on locations that have this
+	location_modifier = {
+		potential_trigger = {
+			disease_presence = {
+				disease = scope:disease
+				value >= 0.2
+			}
+			NOT = {	disease_has_stagnated = scope:disease }
+		}
+		local_forced_attrition = 5
+		max_attrition = 10
+
+		local_pop_promotion_speed_modifier = -2.0
+		local_pop_demotion_speed_modifier = 0.5
+
+		local_prosperity_decay = 0.1
+		local_monthly_control = -0.002
+
+		local_monthly_development = -0.01
+
+		local_migration_attraction = -5.0
+		local_migration_speed = 0.01
+	}
+
+	# If untreated, the mortality rate is between 40% and 70%
+	mortality_rate = { 0.3 0.6 }
+
+	character_mortality_chance = {
+		value = 0.08
+		if = {
+			limit = {
+				NOT = {
+					owner = {
+						has_country_modifier = hiding_from_black_death
+					}
+				}
+			}
+			add = 0.08
+		}
+		multiply = "disease_presence(scope:disease)"
+	}
+
+	on_spread_to_country = {
+		trigger_event_non_silently = black_death.2
+	}
+
+	map_color = {
+		lerp = {
+			min_color = define:NMapColors|DISEASE_BUBONIC_PLAGUE_MIN
+			max_color = define:NMapColors|DISEASE_BUBONIC_PLAGUE_MAX
+			factor = "disease_presence(scope:disease)"
+		}
+	}
+
+	secondary_map_color = {
+		if = {
+			limit = {
+				disease_affects_pops_here = scope:disease
+			}
+			value = rgb { 100  120  188 }
+		}
+	}
+
+	# script value for the minimum percentage there has to be in a location before it will start spreading
+	# to new locations.
+	#(root is the location, scope:disease is the disease,
+	# scope:disease_outbreak is the specific outbreak,
+	# scope:current_presence is the current disease presence in the location)
+	location_infection_spread_threshold = {
+		value = 0.30 #30% of the people need to be infected to spread to neighbors
+		if = {#Reduce the spread in difficult terrain locations or rural
+			limit = {
+				num_roads = 0
+				OR = {
+					topography = mountains
+					topography = wetlands
+					vegetation = desert
+					vegetation = jungle
+					OR = { climate = boreal_climate climate = hypercontinental_climate climate = monsoon_boreal_climate climate = monsoon_hypercontinental_climate climate = mediterranean_boreal_climate climate = mediterranean_hypercontinental_climate climate = tundra_climate climate = polar_climate climate = andean_tundra_climate }
+					location_rank ?= location_rank:rural_settlement
+				}
+			}
+			multiply = 1.75
+		}#If there is a road reduce it
+		else_if = {
+			limit = {
+				num_roads >= 0
+			}
+			multiply = 0.50
+		}
+	}
+}
