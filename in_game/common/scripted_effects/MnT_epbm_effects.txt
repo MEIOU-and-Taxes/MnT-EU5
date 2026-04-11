@@ -1,0 +1,278 @@
+﻿# MnT EPBM — lifecycle effects, hooks, and estate-fanout macros.
+
+# ═══════════════════════════════════════════════
+# Seed a location's building list from its existing buildings
+# ═══════════════════════════════════════════════
+# Scope: location
+
+MnT_epbm_initialize_location = {
+	every_buildings_in_location = {
+		save_temporary_scope_as = MnT_epbm_bldg
+
+		ordered_production_method_of_building = {
+			limit = {
+				is_key_in_global_variable_map = {
+					name = MnT_epbm_profiles
+					target = this
+				}
+			}
+			order_by = "this.production_method_profit(scope:MnT_epbm_bldg)"
+			position = 0
+			check_range_bounds = no
+
+			# Back in building scope: add this building to the location's list
+			prev = {
+				location = {
+					add_to_variable_list = {
+						name = MnT_epbm_buildings
+						target = scope:MnT_epbm_bldg
+					}
+				}
+			}
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Estate-fanout macros — callers invoke each 7x (one per estate) via $estate$.
+# ═══════════════════════════════════════════════
+
+# Split pool by estate power. multiply references a per-estate script_value
+# (MnT_epbm_estate_power_$estate$) because $estate$ substitution inside a
+# quoted dynamic expression gets mangled by adjacent `:` chars.
+MnT_epbm_set_pay_from_power = {
+	if = {
+		limit = { country_has_estate = estate_type:$estate$_estate }
+		set_variable = {
+			name = MnT_epbm_pay_$estate$
+			value = {
+				value = local_var:MnT_epbm_total_cost
+				multiply = MnT_epbm_estate_power_$estate$
+			}
+		}
+	}
+}
+
+# Zero one estate's pay var.
+MnT_epbm_zero_pay = {
+	if = {
+		limit = { country_has_estate = estate_type:$estate$_estate }
+		set_variable = { name = MnT_epbm_pay_$estate$ value = 0 }
+	}
+}
+
+# Fold one estate-assigned bucket's cost into its pay var.
+MnT_epbm_add_estate_cost = {
+	if = {
+		limit = { local_var:MnT_epbm_estate_$estate$ > 0 }
+		change_variable = {
+			name = MnT_epbm_pay_$estate$
+			add = { value = local_var:MnT_epbm_estate_$estate$ multiply = MnT_epbm_maint_burden }
+		}
+	}
+}
+
+# Route one building's cost to one estate bucket.
+# Called 7x; exactly one branch fires (estate_ref holds a single value).
+MnT_epbm_route_to_estate = {
+	if = {
+		limit = { global_var:MnT_epbm_estate_ref = estate_type:$estate$_estate }
+		change_local_variable = {
+			name = MnT_epbm_estate_$estate$
+			add = local_var:MnT_epbm_bldg_cost
+		}
+	}
+}
+
+# Charge one estate its saved pay amount. Used by both player and AI passes.
+MnT_epbm_charge_estate_pay = {
+	if = {
+		limit = {
+			any_estate = { estate_type = estate_type:$estate$_estate }
+			has_variable = MnT_epbm_pay_$estate$
+			var:MnT_epbm_pay_$estate$ > 0
+		}
+
+		add_gold_to_estate = {
+			estate_type = estate_type:$estate$_estate
+			value = var:MnT_epbm_pay_$estate$
+		}
+	}
+}
+
+# Snapshot one estate's pay var into its show var.
+MnT_epbm_snapshot_estate = {
+	if = {
+		limit = { country_has_estate = estate_type:$estate$_estate }
+		set_variable = {
+			name = MnT_epbm_show_$estate$
+			value = var:MnT_epbm_pay_$estate$
+		}
+	}
+}
+
+# Add one good entry to the IO currently being created.
+# Called by MnT_epbm_register_pm's goods_block (nested metascripting).
+MnT_epbm_good = {
+	add_to_variable_map = {
+		name = MnT_epbm_goods
+		key = goods:$good$
+		value = $amount$
+	}
+}
+
+# Register one PM's IO during stamp_globals: create the IO with its goods
+# map, stamp the profile-map entry, record it in all_ios. Scope: country.
+# $goods_block$ takes nested MnT_epbm_good calls (nested metascripting).
+MnT_epbm_register_pm = {
+	create_international_organization = {
+		type = international_organization_type:MnT_epbm_pm_$pm$
+		$goods_block$
+	}
+	add_to_global_variable_map = {
+		name = MnT_epbm_profiles
+		key = production_method:$pm$
+		value = international_organization:MnT_epbm_pm_$pm$
+	}
+	add_to_global_variable_list = {
+		name = MnT_epbm_all_ios
+		target = international_organization:MnT_epbm_pm_$pm$
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Rebuild a country's locations list from its owned locations. Scope: country.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_rebuild_location_lists = {
+	clear_variable_list = MnT_epbm_locations
+
+	# Register every owned location that already holds at least one tracked building
+	every_owned_location = {
+		limit = { has_variable_list = MnT_epbm_buildings }
+
+		save_temporary_scope_as = MnT_epbm_loc
+
+		prev = {
+			add_to_variable_list = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Structural rebuild: drift-correction safety net. Scope: country.
+# Runs every 10 years. Skips globals/display/calc — those run on their own cadence.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_structural_rebuild = {
+	# Reseed each owned location's building list from scratch
+	every_owned_location = {
+		clear_variable_list = MnT_epbm_buildings
+		MnT_epbm_initialize_location = yes
+	}
+
+	# Then rebuild this country's locations list
+	MnT_epbm_rebuild_location_lists = yes
+}
+
+# ═══════════════════════════════════════════════
+# Full rebuild: stamp globals and index every country. Scope: none.
+# Runs once on game_start from MnT_epbm_initialize_all.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_full_rebuild = {
+	MnT_epbm_stamp_globals = yes
+
+	# Seed every ownable location's building list
+	every_location_in_the_world = {
+		limit = { is_ownable = yes }
+		clear_variable_list = MnT_epbm_buildings
+		MnT_epbm_initialize_location = yes
+	}
+
+	# For every country with non-crown estates: seed the locations list and do a first calc+charge
+	every_country = {
+		limit = {
+			is_real_country = yes
+			any_estate = { estate_type != estate_type:crown_estate }
+		}
+
+		MnT_epbm_rebuild_location_lists = yes
+		MnT_epbm_calculate_maintenance = yes
+		MnT_epbm_charge_estates = yes
+
+		# Zero display vars for player (engine hides income data until month 1)
+		if = {
+			limit = { is_ai = no }
+			MnT_epbm_zero_pay = { estate = nobles }
+			MnT_epbm_zero_pay = { estate = clergy }
+			MnT_epbm_zero_pay = { estate = burghers }
+			MnT_epbm_zero_pay = { estate = peasants }
+			MnT_epbm_zero_pay = { estate = tribes }
+			MnT_epbm_zero_pay = { estate = dhimmi }
+			MnT_epbm_zero_pay = { estate = cossacks }
+		}
+
+		# Arm the 10-year rebuild counter
+		set_variable = { name = MnT_epbm_rebuild_counter value = 0 }
+	}
+}
+
+# ═══════════════════════════════════════════════
+# on_built hook: register the location with its owner if it isn't already.
+# The injected on_built already added this building to the location's list.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_on_building_built = {
+	location = {
+		save_temporary_scope_as = MnT_epbm_loc
+	}
+
+	# Add the location to the owner's list if it isn't there yet
+	owner ?= {
+		if = {
+			limit = {
+				NOT = {
+					is_target_in_variable_list = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+				}
+			}
+
+			add_to_variable_list = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# on_destroyed hook: drop the location from the owner's list if no
+# tracked buildings remain. The injected on_destroyed already removed
+# this building from the location's list.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_on_building_destroyed = {
+	location = {
+		if = {
+			limit = {
+				NOT = {
+					has_variable_list = MnT_epbm_buildings
+				}
+			}
+
+			save_temporary_scope_as = MnT_epbm_loc
+
+			owner ?= {
+				remove_list_variable = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+			}
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Player monthly: snapshot → recalc → charge. Order matters — snapshot
+# must capture last month's numbers before the recalc clobbers them.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_collect_maintenance = {
+	MnT_epbm_snapshot_for_display = yes
+	MnT_epbm_calculate_maintenance = yes
+	MnT_epbm_charge_estates = yes
+}

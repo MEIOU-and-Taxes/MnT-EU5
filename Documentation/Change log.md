@@ -45,6 +45,7 @@ Date: 2026-01-20
 #### Balancing
 
 - Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
+- Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
