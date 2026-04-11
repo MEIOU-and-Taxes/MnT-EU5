@@ -159,6 +159,7 @@ Date: 2026-01-20
 - Add population demand for glass as in April 8 TT
 - Increase base max RGO level's of limited RGO's to 1 and for mining goods to 2
 - increase the cost of each next level of mining RGO by 1.1x
+- Move some of the iron output bonuses to better production methods
 	
 ##### Population
 
