@@ -157,6 +157,8 @@ Date: 2026-01-20
 - Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
 - Reduced number of glass production buildings from 6 to 1 for indian town setup profile
 - Add population demand for glass as in April 8 TT
+- Increase base max RGO level's of limited RGO's to 1 and for mining goods to 2
+- increase the cost of each next level of mining RGO by 1.1x
 	
 ##### Population
 
