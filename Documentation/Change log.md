@@ -270,6 +270,7 @@ Date: 2026-01-20
 ##### Setup
 - Allow tags on the Indian ocean to see each other for trade.
 - Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
+- Remove al-hajr and urgench market as they were too small with viable nearby alternatives for its locations
 
 ##### Situations
 
