@@ -37,6 +37,7 @@ on_location_changed_owner = {
 
 weather_monthly_pulse = {
 	on_actions = {
+		MnT_epbm_save_game_compat_init
 		MnT_epbm_monthly_cache_clear
 	}
 }
@@ -319,6 +320,24 @@ MnT_epbm_monthly_cache_clear = {
 		every_in_global_list = {
 			variable = MnT_epbm_all_ios
 			clear_variable_map = MnT_epbm_costs
+		}
+	}
+}
+
+# Global monthly pulse: save-game compat init for EPBM.
+# weather_monthly_pulse appears to fire after (or at least not before)
+# monthly_country_pulse, so the full_rebuild also charges estates.
+MnT_epbm_save_game_compat_init = {
+	effect = {
+		if = {
+			limit = {
+				NOT = {
+					has_global_variable = MnT_EPBM_initialized
+					global_var:MnT_EPBM_initialized > 0  # if we need another rebuild because something is broken just pump up the value here and on the set variable
+				}
+			}
+			MnT_epbm_full_rebuild = yes
+			set_global_variable = { name = MnT_EPBM_initialized value = 1 }
 		}
 	}
 }
