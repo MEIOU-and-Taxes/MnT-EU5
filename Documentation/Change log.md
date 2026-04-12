@@ -163,6 +163,9 @@ Date: 2026-01-20
 - Add population demand for glass as in April 8 TT
 - Remove the market attraction impact from prestige, trade income vs tax base and staffed building levels to stabalize market size
 - Reduced market attraction from trade attraction buildings by roughly half. Whilst increasing effects of same province/area so markets don't get too small and crowded out by others.
+- Increase base max RGO level's of limited RGO's to 1 and for mining goods to 2
+- increase the cost of each next level of mining RGO by 1.1x
+- Move some of the iron output bonuses to better production methods
 	
 ##### Population
 
