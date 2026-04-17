@@ -146,7 +146,7 @@ Date: 2026-01-20
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
-- price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
+- Price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
 - Require less profit for AI trade to happen per used merchant capacity, to compensate for lower price levels
 - Reworked how trade flows
 	- base transport cost lowered by 10x for all goods
