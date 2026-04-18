@@ -94,13 +94,37 @@ Date: 2026-01-20
     - Proximity Cost of going upstream along a River: 30 → 11
     - Proximity Cost of going downstream along a River: 10 → 11  
     - Proximity Cost on Frozen Water: 20 → 15  
-  - Roads  
-    - Build cost scaled & maintenance market demands scaled  
-      - Gravel roads: 2X
-      - Paved roads: 3X  
-      - Modern roads: 10X  
-      - Railroads: 50X
-    - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
+- Roads
+  - Estates & government pay for road maintenance, based on effective political power   
+  - Build cost scaled & maintenance market demands scaled  
+    - Gravel roads: 2X
+    - Paved roads: 3X  
+    - Modern roads: 10X  
+    - Railroads: 50X
+  - Maintenance cost is 3X higher, rebalanced ratios & non-gravel roads need wood
+  - Climate, topography & vegetation impact maintenance cost:
+    - Climate:
+      - Oceanic: base
+      - Tropical: 2.4X
+      - Subtropical: 1.8X
+      - Arid: 2X
+      - Cold arid: 1.6X
+      - Mediterranean: 1.65X
+      - Continental: 2.75X
+      - Arctic: 6X
+    - Topography:
+      - Flatlands: base
+      - Mountains: 4.5X
+      - Hills: 2X
+      - Plateau: 1.6X
+      - Wetlands: 6X
+    - Vegetation:
+      - Desert: base
+      - Grasslands: 2X
+      - Farmland: 2.4X
+      - Woods: 3.5X
+      - Forest: 5.5X
+      - Jungle: 8X
 - Market  
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  

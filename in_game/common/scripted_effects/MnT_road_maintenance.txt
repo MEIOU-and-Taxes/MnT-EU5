@@ -1,0 +1,201 @@
+﻿calculate_road_maintenance_country = {
+	every_country = {
+		set_local_variable = { name = loc_road_maint_total value = 0 }
+		set_local_variable = { name = loc_country_curr value = this }
+		every_road_type = {
+			limit = { is_road_available = yes }
+			set_local_variable = { name = loc_road_curr value = this }
+
+			prev = {
+				every_owned_location = {
+					every_connected_location = {
+						limit = {
+							has_road_of_type_to = {
+								target = prev
+								type = local_var:loc_road_curr
+							}
+						}
+						apply_maintenance_cost = yes
+					}
+				}
+			}
+		}
+		set_variable = { name = road_maintenance_total value = { add = local_var:loc_road_maint_total divide = 2 } }
+		every_estate = {
+			set_local_variable = {
+				name = loc_road_maint
+				value = { add = local_var:loc_road_maint_total multiply = power }
+			}
+
+			if = {
+				limit = { estate_type = estate_type:crown_estate }
+				owner = { set_variable = { name = crown_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:nobles_estate }
+				owner = { set_variable = { name = nobles_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:burghers_estate }
+				owner = { set_variable = { name = burghers_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:clergy_estate }
+				owner = { set_variable = { name = clergy_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:peasants_estate }
+				owner = { set_variable = { name = peasants_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:tribes_estate }
+				owner = { set_variable = { name = tribes_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:dhimmi_estate }
+				owner = { set_variable = { name = dhimmi_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+			else_if = {
+				limit = { estate_type = estate_type:cossacks_estate }
+				owner = { set_variable = { name = cossacks_road_maint value = local_var:loc_road_maint days = 365 } }
+			}
+		}
+	}
+}
+
+apply_maintenance_cost = {
+	if = {
+		limit = { local_var:loc_road_curr = road_type:gravel_road }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 0.012
+					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { local_var:loc_road_curr = road_type:paved_road }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 0.0075
+					multiply = "market_price(goods:lumber)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 0.0825
+					multiply = "market_price(goods:masonry)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 0.0075
+					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { local_var:loc_road_curr = road_type:modern_road }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 0.04
+					multiply = "market_price(goods:lumber)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 0.035
+					multiply = "market_price(goods:masonry)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 0.01
+					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { local_var:loc_road_curr = road_type:railroad }
+		market = {
+			change_local_variable = {
+				name = loc_road_maint_total
+				add = {
+					value = 2.1
+					multiply = "market_price(goods:lumber)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 0.75
+					multiply = "market_price(goods:masonry)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 0.75
+					multiply = "market_price(goods:sand)"
+					multiply = prev.var:road_maintenance_cost
+				}
+				add = {
+					value = 1.66
+					multiply = "market_price(goods:steel)"
+					multiply = prev.var:road_maintenance_cost
+				}
+			}
+		}
+
+	}
+}
+
+calculate_road_maintenance_location = {
+	if = {
+		limit = { not = { has_global_variable = has_calculated_location_road_maintenance_cost } }
+		every_location_in_the_world = {
+			limit = { is_ownable = yes }
+			set_variable = { name = road_maintenance_cost value = 1 }
+
+			switch = {
+				trigger = climate
+				tropical = { change_variable = { name = road_maintenance_cost multiply = 2.4 } }
+				subtropical = { change_variable = { name = road_maintenance_cost multiply = 1.8 } }
+				arid = { change_variable = { name = road_maintenance_cost multiply = 2 } }
+				cold_arid = { change_variable = { name = road_maintenance_cost multiply = 1.6 } }
+				mediterranean = { change_variable = { name = road_maintenance_cost multiply = 1.65 } }
+				continental = { change_variable = { name = road_maintenance_cost multiply = 2.75 } }
+				arctic = { change_variable = { name = road_maintenance_cost multiply = 6 } }
+			}
+			switch = {
+				trigger = topography
+				mountains = { change_variable = { name = road_maintenance_cost multiply = 4.5 } }
+				hills = { change_variable = { name = road_maintenance_cost multiply = 2 } }
+				plateau = { change_variable = { name = road_maintenance_cost multiply = 1.6 } }
+				wetlands = { change_variable = { name = road_maintenance_cost multiply = 6 } }
+			}
+			switch = {
+				trigger = vegetation
+				sparse = { change_variable = { name = road_maintenance_cost multiply = 1.2 } }
+				grasslands = { change_variable = { name = road_maintenance_cost multiply = 2 } }
+				farmland = { change_variable = { name = road_maintenance_cost multiply = 2.4 } }
+				woods = { change_variable = { name = road_maintenance_cost multiply = 3.5 } }
+				forest = { change_variable = { name = road_maintenance_cost multiply = 5.5 } }
+				jungle = { change_variable = { name = road_maintenance_cost multiply = 8 } }
+			}
+			if = {
+				limit = { has_volcano = yes }
+				change_variable = { name = road_maintenance_cost multiply = 2 }
+			}
+			if = {
+				limit = { has_earthquakes = yes }
+				change_variable = { name = road_maintenance_cost multiply = 2 }
+			}
+		}
+		set_global_variable = has_calculated_location_road_maintenance_cost
+	}
+}
