@@ -4076,6 +4076,356 @@ lateralview = {
 									using = layoutpolicy_expanding
 									spacing = 6
 
+									# BUILDINGS BREAKDOWN
+									vbox = {
+										name = "location_buildings"
+										layoutpolicy_horizontal = expanding
+										spacing = 3
+										datamodel = "[LocationView.GetPopTypes]"
+										# visible = "[GreaterThan_int32(LocationView.GetNumPopBuildings, '(int32)0')]"
+
+											item = {
+												vbox = {
+													visible = "[ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self)]"
+													layoutpolicy_horizontal = expanding
+													spacing = 3
+
+											location_conditions_item = {
+												blockoverride "location_conditions_card_visible" {
+													visible = "[ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self)]"
+												}
+
+												# blockoverride "location_conditions_header_color"{
+												# 	color = "[PopType.GetColor]"
+												# 	alpha = 0.7
+												# }
+
+												blockoverride "location_conditions_item_size" {
+													size = { -1 67 }
+												}
+
+												blockoverride "header_obj" {
+													# BUILD BUILDINGS
+													widget = {
+														size = { 70 -1 }
+														layoutpolicy_vertical = expanding
+														using = bg_building_card_colors
+														blockoverride "building_color" {
+															color = "[PopType.GetColor]"
+															alpha = 0.8
+															blend_mode = overlay
+														}
+														card_header_button_04 = {
+															allow_outside = yes
+															size = { 100% 100% }
+															action_tooltip = {
+																click_type = left
+																click_mode = single
+																on_action = "[OpenLateralViewWithParams('location_production', 'display = lists')]"
+																on_action = "[OpenLateralViewWithFilter('location_production', PopType.GetKey)]"
+																on_action = "[ShowLocationProductionView(LocationView.GetLocation.GetId, '(bool)no')]"
+																title = "MANAGE_BUILDINGS_POP_TYPE"
+															}
+
+															datacontext = "[LocationView.GetLocation]"
+															tooltipwidget = {
+																using = locationview_employed_tt
+															}
+
+															vbox = {
+																margin = { 3 4 }
+																spacing = 2
+																widget = {
+																	size = { 20 20 }
+																	using = bg_circle_piechart
+
+																	icon = {
+																		size = { 92% 92% }
+																		parentanchor = center
+																		position = {-1 0}
+																		texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, LocationView.GetLocation.GetOwner.Self)]"
+																		glow = {
+																			name = "drop_shadow"
+																			glow_radius = 3
+																			color = {0.0 0.0 0.0 1.0}
+																			alpha = 0.3
+																		}
+																	}
+																}
+
+																vbox = {
+																	layoutpolicy_horizontal = expanding
+																	spacing = 4
+																	margin = { 2 0 }
+																	datacontext = "[LocationView.GetLocation]"
+
+																	text_single = {
+																		visible = "[LocationView.GetPopTypeItem(PopType.Self).HasPop]"
+																		layoutpolicy_horizontal = expanding
+																		size = { -1 10 }
+																		autoresize = no
+																		align = center
+																		fontsize = 12
+																		raw_text = "[Location.GetExpectedUnEmployed(PopType.Self)] / [Location.GetTotalPopTypeSize(PopType.Self)|s]"
+																	}
+
+																	text_single = {
+																		visible = "[Not(LocationView.GetPopTypeItem(PopType.Self).HasPop)]"
+																		layoutpolicy_horizontal = expanding
+																		size = { -1 10 }
+																		autoresize = no
+																		align = center
+																		fontsize = 12
+																		raw_text = "[Location.GetTotalPopTypeSize(PopType.Self)|s]"
+																	}
+
+																	hbox = {
+																		layoutpolicy_horizontal = expanding
+																		margin = { 2 0 }
+
+																		progressbar = {
+																			visible = "[And(LocationView.GetPopTypeItem(PopType.Self).HasPop, GreaterThan_CFixedPoint(Location.GetExpectedUnEmployedValue(PopType.Self), '(CFixedPoint)0'))]"
+																			layoutpolicy_horizontal = expanding
+																			size = { -1 5 }
+																			using = progress_bar_green_blue_alt
+																			min = 0
+																			max = 1
+																			value = "[FixedPointToFloat(Location.GetUnEmployedPercentageWithConstruction(PopType.Self))]"
+																			direction = horizontal
+																		}
+
+																		progressbar = {
+																			visible = "[And(LocationView.GetPopTypeItem(PopType.Self).HasPop, Not(GreaterThan_CFixedPoint(Location.GetExpectedUnEmployedValue(PopType.Self), '(CFixedPoint)0')))]"
+																			layoutpolicy_horizontal = expanding
+																			size = { -1 5 }
+																			using = progress_bar_red_blue_alt
+																			min = 0
+																			max = 1
+																			value = "[FixedPointToFloat(Location.GetUnEmployedPercentageWithConstruction(PopType.Self))]"
+																			direction = horizontal
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+
+												blockoverride "location_conditions_card_datamodel" {
+													datamodel = "[DataModelFirst(LocationView.GetLocationBuildings(PopType.Self),'(int32)9')]"
+												}
+
+												blockoverride "location_conditions_card_spacing" {
+													spacing = 3
+												}
+
+												blockoverride "location_conditions_card_item" {
+													widget = {
+														size = { 41 55 }
+														visible = "[LocationBuildingItem.IsBuildingForPopType(PopType.Self)]"
+														row_building_card = {}
+													}
+												}
+
+												blockoverride "location_conditions_card_extra_text" {
+													widget = {
+														layoutpolicy_vertical = expanding
+														size = { 45 55 }
+														vbox = {
+															vbox = {
+																extra_list = {
+																	visible = "[GreaterThan_int32(LocationView.GetNumPopTypeOwnedBuildings(PopType.Self), '(int32)9')]"
+																	blockoverride "extra_list_text_content" {
+																		raw_text = "+[Subtract_int32(LocationView.GetNumPopTypeOwnedBuildings(PopType.Self), '(int32)9')]"
+																	}
+																	blockoverride "extra_list_icon" {
+																		texture = "[GetConceptTexture('buildings')]"
+																		texture_density = 2
+																	}
+
+																	tooltipwidget = {
+																		ContextualTooltipType = {
+																			datacontext = "[LocationView.GetLocation]"
+																			blockoverride "title_text" {
+																				text = "LOCATION_POPTYPE_BUILDINGS"
+																			}
+
+																			blockoverride "concept_link" {
+																				text = "[buildings|e]"
+																			}
+
+																			blockoverride "title_icon" {
+																				icon = {
+																					using = tooltip_title_icon_size
+																					texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, LocationView.GetLocation.GetOwner.Self)]"
+																					modify_texture = {
+																						using = overlay_window_texture
+																						blend_mode = overlay
+																						alpha = 0.7
+																					}
+
+																					modify_texture = {
+																						texture = "gfx/interface/buttons/buttons_texture.dds"
+																						texture_density = 2
+																						blend_mode = overlay
+																						alpha = 0.6
+																					}
+
+																					glow = {
+																						name = "drop_shadow"
+																						glow_radius = 3
+																						color = {0.0 0.0 0.0 1.0}
+																						alpha = 0.4
+																					}
+																				}
+																			}
+
+																			blockoverride "tooltip_content" {
+																				TooltipListBase = {
+																					TooltipListScrollArea = {
+																						blockoverride "block_scrollarea" {
+																							maximumsize = { -1 440 }
+																						}
+
+																						blockoverride "scrollarea_content" {
+																							location_buildings_tooltip = {
+																								blockoverride "location_buildings_tooltip_datamodel" {
+																									datamodel = "[DataModelSkipFirst(LocationView.GetLocationBuildings(PopType.Self), '(int32)9')]"
+																								}
+																								blockoverride "location_buildings_tooltip_items_visible" {
+																									visible = "[And(LocationBuildingItem.IsBuildingForPopType(PopType.Self), Not(LocationBuildingItem.GetBuilding.GetType.IsForeign))]"
+																								}
+																							}
+																						}
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
+
+																extra_list = {
+																	visible = "[GreaterThan_int32(LocationView.GetNumPopTypeBuildings(PopType.Self), '(int32)9')]"
+																	blockoverride "extra_list_text_content" {
+																		raw_text = "+[LocationView.GetNumPopTypeForeignBuildings(PopType.Self)]"
+																	}
+																	blockoverride "extra_list_icon" {
+																		texture = "gfx/interface/icons/flat_icons/balance/foreign_buildings.dds"
+																		texture_density = 2
+																	}
+
+																	tooltipwidget = {
+																		ContextualTooltipType = {
+																			blockoverride "title_text" {
+																				text = "game_concept_foreign_buildings"
+																			}
+
+																			blockoverride "concept_link" {
+																				text = "[foreign_buildings|e]"
+																			}
+
+																			blockoverride "title_icon" {
+																				icon = {
+																					using = tooltip_title_icon_size
+																					texture = "gfx/interface/icons/flat_icons/balance/foreign_buildings.dds"
+																				}
+																			}
+
+																			blockoverride "tooltip_content" {
+																				TooltipListScrollArea = {
+																					blockoverride "block_scrollarea" {
+																						maximumsize = { -1 440 }
+																					}
+
+																					blockoverride "scrollarea_content" {
+																						location_buildings_tooltip = {}
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
+															}
+
+														}
+													}
+												}
+											}
+
+												location_conditions_item = {
+													blockoverride "location_conditions_card_visible" {
+														visible = "[And(ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self), ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self))]"
+													}
+
+													blockoverride "location_conditions_item_size" {
+														size = { -1 67 }
+													}
+
+													blockoverride "header_obj" {
+														widget = {
+															size = { 70 -1 }
+															layoutpolicy_vertical = expanding
+															using = bg_building_card_colors
+															blockoverride "building_color" {
+																color = "[PopType.GetColor]"
+																alpha = 0.8
+																blend_mode = overlay
+															}
+
+															card_header_button_04 = {
+																allow_outside = yes
+																size = { 100% 100% }
+																action_tooltip = {
+																	click_type = left
+																	click_mode = single
+																	on_action = "[OpenLateralViewWithParams('location_production', 'display = lists')]"
+																	on_action = "[OpenLateralViewWithFilter('location_production', PopType.GetKey)]"
+																	on_action = "[ShowLocationProductionView(LocationView.GetLocation.GetId, '(bool)no')]"
+																	title = "MANAGE_BUILDINGS_POP_TYPE"
+																}
+
+																widget = {
+																	size = { 20 20 }
+																	parentanchor = center
+																	using = bg_circle_piechart
+
+																	icon = {
+																		size = { 92% 92% }
+																		parentanchor = center
+																		position = {-1 0}
+																		texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, LocationView.GetLocation.GetOwner.Self)]"
+																		glow = {
+																			name = "drop_shadow"
+																			glow_radius = 3
+																			color = {0.0 0.0 0.0 1.0}
+																			alpha = 0.3
+																		}
+																	}
+																}
+															}
+														}
+													}
+
+													blockoverride "location_conditions_card_datamodel" {
+														datamodel = "[DataModelSkipFirst(LocationView.GetLocationBuildings(PopType.Self), '(int32)9')]"
+													}
+
+													blockoverride "location_conditions_card_spacing" {
+														spacing = 3
+													}
+
+													blockoverride "location_conditions_card_item" {
+														widget = {
+															size = { 41 55 }
+															visible = "[LocationBuildingItem.IsBuildingForPopType(PopType.Self)]"
+															row_building_card = {}
+														}
+													}
+												}
+											}
+										}
+									}
+
 									# INFRASTRUCTURE HUB
 									hbox = {
 										visible = "[LocationView.GetLocation.HasRawMaterial]"
@@ -5149,278 +5499,6 @@ lateralview = {
 										}
 									}
 
-									# BUILDINGS BREAKDOWN
-									vbox = {
-										name = "location_buildings"
-										layoutpolicy_horizontal = expanding
-										spacing = 3
-										datamodel = "[LocationView.GetPopTypes]"
-										# visible = "[GreaterThan_int32(LocationView.GetNumPopBuildings, '(int32)0')]"
-
-										item = {
-											location_conditions_item = {
-												blockoverride "location_conditions_card_visible" {
-													visible = "[ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self)]"
-												}
-
-												# blockoverride "location_conditions_header_color"{
-												# 	color = "[PopType.GetColor]"
-												# 	alpha = 0.7
-												# }
-
-												blockoverride "location_conditions_item_size" {
-													size = { -1 67 }
-												}
-
-												blockoverride "header_obj" {
-													# BUILD BUILDINGS
-													widget = {
-														size = { 70 -1 }
-														layoutpolicy_vertical = expanding
-														using = bg_building_card_colors
-														blockoverride "building_color" {
-															color = "[PopType.GetColor]"
-															alpha = 0.8
-															blend_mode = overlay
-														}
-														card_header_button_04 = {
-															allow_outside = yes
-															size = { 100% 100% }
-															action_tooltip = {
-																click_type = left
-																click_mode = single
-																on_action = "[OpenLateralViewWithParams('location_production', 'display = lists')]"
-																on_action = "[OpenLateralViewWithFilter('location_production', PopType.GetKey)]"
-																on_action = "[ShowLocationProductionView(LocationView.GetLocation.GetId, '(bool)no')]"
-																title = "MANAGE_BUILDINGS_POP_TYPE"
-															}
-
-															datacontext = "[LocationView.GetLocation]"
-															tooltipwidget = {
-																using = locationview_employed_tt
-															}
-
-															vbox = {
-																margin = { 3 4 }
-																spacing = 2
-																widget = {
-																	size = { 20 20 }
-																	using = bg_circle_piechart
-
-																	icon = {
-																		size = { 92% 92% }
-																		parentanchor = center
-																		position = {-1 0}
-																		texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, LocationView.GetLocation.GetOwner.Self)]"
-																		glow = {
-																			name = "drop_shadow"
-																			glow_radius = 3
-																			color = {0.0 0.0 0.0 1.0}
-																			alpha = 0.3
-																		}
-																	}
-																}
-
-																vbox = {
-																	layoutpolicy_horizontal = expanding
-																	spacing = 4
-																	margin = { 2 0 }
-																	datacontext = "[LocationView.GetLocation]"
-
-																	text_single = {
-																		visible = "[LocationView.GetPopTypeItem(PopType.Self).HasPop]"
-																		layoutpolicy_horizontal = expanding
-																		size = { -1 10 }
-																		autoresize = no
-																		align = center
-																		fontsize = 12
-																		raw_text = "[Location.GetExpectedUnEmployed(PopType.Self)] / [Location.GetTotalPopTypeSize(PopType.Self)|s]"
-																	}
-
-																	text_single = {
-																		visible = "[Not(LocationView.GetPopTypeItem(PopType.Self).HasPop)]"
-																		layoutpolicy_horizontal = expanding
-																		size = { -1 10 }
-																		autoresize = no
-																		align = center
-																		fontsize = 12
-																		raw_text = "[Location.GetTotalPopTypeSize(PopType.Self)|s]"
-																	}
-
-																	hbox = {
-																		layoutpolicy_horizontal = expanding
-																		margin = { 2 0 }
-
-																		progressbar = {
-																			visible = "[And(LocationView.GetPopTypeItem(PopType.Self).HasPop, GreaterThan_CFixedPoint(Location.GetExpectedUnEmployedValue(PopType.Self), '(CFixedPoint)0'))]"
-																			layoutpolicy_horizontal = expanding
-																			size = { -1 5 }
-																			using = progress_bar_green_blue_alt
-																			min = 0
-																			max = 1
-																			value = "[FixedPointToFloat(Location.GetUnEmployedPercentageWithConstruction(PopType.Self))]"
-																			direction = horizontal
-																		}
-	
-																		progressbar = {
-																			visible = "[And(LocationView.GetPopTypeItem(PopType.Self).HasPop, Not(GreaterThan_CFixedPoint(Location.GetExpectedUnEmployedValue(PopType.Self), '(CFixedPoint)0')))]"
-																			layoutpolicy_horizontal = expanding
-																			size = { -1 5 }
-																			using = progress_bar_red_blue_alt
-																			min = 0
-																			max = 1
-																			value = "[FixedPointToFloat(Location.GetUnEmployedPercentageWithConstruction(PopType.Self))]"
-																			direction = horizontal
-																		}
-																	}
-																}
-															}
-														}
-													}
-												}
-
-												blockoverride "location_conditions_card_datamodel" {
-													datamodel = "[DataModelFirst(LocationView.GetLocationBuildings(PopType.Self),'(int32)9')]"
-												}
-
-												blockoverride "location_conditions_card_spacing" {
-													spacing = 3
-												}
-
-												blockoverride "location_conditions_card_item" {
-													widget = {
-														size = { 41 55 }
-														visible = "[LocationBuildingItem.IsBuildingForPopType(PopType.Self)]"
-														row_building_card = {}
-													}
-												}
-
-												blockoverride "location_conditions_card_extra_text" {
-													widget = {
-														layoutpolicy_vertical = expanding
-														size = { 45 55 }
-														vbox = {
-															vbox = {
-																extra_list = {
-																	visible = "[GreaterThan_int32(LocationView.GetNumPopTypeOwnedBuildings(PopType.Self), '(int32)9')]"
-																	blockoverride "extra_list_text_content" {
-																		raw_text = "+[Subtract_int32(LocationView.GetNumPopTypeOwnedBuildings(PopType.Self), '(int32)9')]"
-																	}
-																	blockoverride "extra_list_icon" {
-																		texture = "[GetConceptTexture('buildings')]"
-																		texture_density = 2
-																	}
-																	
-																	tooltipwidget = {
-																		ContextualTooltipType = {
-																			datacontext = "[LocationView.GetLocation]"
-																			blockoverride "title_text" {
-																				text = "LOCATION_POPTYPE_BUILDINGS"
-																			}
-		
-																			blockoverride "concept_link" {
-																				text = "[buildings|e]"
-																			}
-		
-																			blockoverride "title_icon" {
-																				icon = {
-																					using = tooltip_title_icon_size
-																					texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, LocationView.GetLocation.GetOwner.Self)]"
-																					modify_texture = {
-																						using = overlay_window_texture
-																						blend_mode = overlay
-																						alpha = 0.7
-																					}
-		
-																					modify_texture = {
-																						texture = "gfx/interface/buttons/buttons_texture.dds"
-																						texture_density = 2
-																						blend_mode = overlay
-																						alpha = 0.6
-																					}
-		
-																					glow = {
-																						name = "drop_shadow"
-																						glow_radius = 3
-																						color = {0.0 0.0 0.0 1.0}
-																						alpha = 0.4
-																					}
-																				}
-																			}
-		
-																			blockoverride "tooltip_content" {
-																				TooltipListBase = {
-																					TooltipListScrollArea = {
-																						blockoverride "block_scrollarea" {
-																							maximumsize = { -1 440 }
-																						}
-		
-																						blockoverride "scrollarea_content" {
-																							location_buildings_tooltip = {
-																								blockoverride "location_buildings_tooltip_datamodel" {
-																									datamodel = "[DataModelSkipFirst(LocationView.GetLocationBuildings(PopType.Self), '(int32)9')]"
-																								}
-																								blockoverride "location_buildings_tooltip_items_visible" {
-																									visible = "[And(LocationBuildingItem.IsBuildingForPopType(PopType.Self), Not(LocationBuildingItem.GetBuilding.GetType.IsForeign))]"
-																								}
-																							}
-																						}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}	
-																
-																extra_list = {
-																	visible = "[GreaterThan_int32(LocationView.GetNumPopTypeBuildings(PopType.Self), '(int32)9')]"
-																	blockoverride "extra_list_text_content" {
-																		raw_text = "+[LocationView.GetNumPopTypeForeignBuildings(PopType.Self)]"
-																	}
-																	blockoverride "extra_list_icon" {
-																		texture = "gfx/interface/icons/flat_icons/balance/foreign_buildings.dds"
-																		texture_density = 2
-																	}
-																	
-																	tooltipwidget = {
-																		ContextualTooltipType = {
-																			blockoverride "title_text" {
-																				text = "game_concept_foreign_buildings"
-																			}
-			
-																			blockoverride "concept_link" {
-																				text = "[foreign_buildings|e]"
-																			}
-			
-																			blockoverride "title_icon" {
-																				icon = {
-																					using = tooltip_title_icon_size
-																					texture = "gfx/interface/icons/flat_icons/balance/foreign_buildings.dds"
-																				}
-																			}
-			
-																			blockoverride "tooltip_content" {
-																				TooltipListScrollArea = {
-																					blockoverride "block_scrollarea" {
-																						maximumsize = { -1 440 }
-																					}
-			
-																					blockoverride "scrollarea_content" {
-																						location_buildings_tooltip = {}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}
-															}
-				
-														}
-													}	
-												}
-											}
-										}
-									}
 									
 									# MARKET
 									widget = {
