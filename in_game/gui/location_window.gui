@@ -4221,7 +4221,7 @@ lateralview = {
 									hbox = {
 										visible = "[LocationView.GetLocation.HasRawMaterial]"
 										using = layoutpolicy_expanding
-										maximumsize = { -1 67 }
+										maximumsize = { -1 46 }
 
 										# ROAD BUILDER
 										header_button_right = {
@@ -4328,7 +4328,7 @@ lateralview = {
 										hbox = {
 											using = layoutpolicy_expanding
 											widget = {
-												size = {330 67}
+												size = {414 46}
 												datacontext = "[LocationView.GetLocation]"
 
 												hbox = {
@@ -4585,8 +4585,8 @@ lateralview = {
 													vbox = {
 														name = "location_buildings_laborers"
 														layoutpolicy_horizontal = fixed
-														size = { 41 67 }
-														maximumsize = { 41 67 }
+														size = { 125 40 }
+														maximumsize = { 125 40 }
 														spacing = 3
 														datamodel = "[LocationView.GetPopTypes]"
 														# visible = "[GreaterThan_int32(LocationView.GetNumPopBuildings, '(int32)0')]"
@@ -4595,8 +4595,8 @@ lateralview = {
 																vbox = {
 																	visible = "[ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self)]"
 																	layoutpolicy_horizontal = fixed
-																	size = { 41 67 }
-																	maximumsize = { 41 67 }
+																	size = { 125 40 }
+																	maximumsize = { 125 40 }
 																	spacing = 3
 
 
@@ -4606,7 +4606,7 @@ lateralview = {
 																	}
 
 																	blockoverride "location_conditions_item_size" {
-																		size = { 41 67 }
+																		size = { 125 40 }
 																	}
 
 																	blockoverride "header_obj" {
@@ -4631,9 +4631,116 @@ lateralview = {
 
 																	blockoverride "location_conditions_card_item" {
 																		widget = {
-																			size = { 41 55 }
+																			size = { 125 40 }
 																			visible = "[LocationBuildingItem.IsBuildingForPopType(PopType.Self)]"
-																			row_building_card = {}
+																			header_button_left = {
+																				name = "location_laborer_building_button"
+																				size = { 125 40}
+																				enabled = "[LocationBuildingItem.IsPlayerBuilding]"
+
+																				action_tooltip = {
+																					click_type = left
+																					click_mode = single
+																					title = "OPEN_PROD_METHOD_BUILDING_ITEM_LOCATION"
+																					enabled = "[LocationBuildingItem.IsPlayerBuilding]"
+																					on_action = "[LocationBuildingItem.OpenBuildingView]"
+																				}
+
+																				action_tooltip = {
+																					click_type = right
+																					click_mode = single
+																					title = "BUILD_BUILDING_FROM_LOCATION"
+																					on_action = "[SelectLocationToBuildDefault(LocationBuildingItem.GetBuilding.GetType)]"
+																				}
+
+																				datacontext = "[LocationBuildingItem.GetBuilding]"
+																				tooltipwidget = {
+																					using = Building_tooltip
+																				}
+
+																				blockoverride "bg_color" {
+																					modify_texture = {
+																						using = color_dark_brown_texture
+																						blend_mode = multiply
+																					}
+																				}
+
+																				blockoverride "header_button_icon_obj" {
+																					piechart = {
+																						visible = "[GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded'), '(CFixedPoint)0')]"
+																						alwaystransparent = yes
+																						parentanchor = center
+																						size = { 30 30 }
+																						using = piechart_angles
+																						using = bg_circle_piechart
+																						pieslice_no_highlight = {
+																							filter_mouse = none
+																							alwaystransparent = yes
+																							texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+																							value = "[Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded'))]"
+																							color = { 1 1 1 1 }
+																						}
+
+																						pieslice_no_highlight = {
+																							filter_mouse = none
+																							alwaystransparent = yes
+																							texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+																							value = "[Subtract_float('(float)1.0', FixedPointToFloatPercentageCapped(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded')), '(bool)yes'))]"
+																							color = { 1 1 1 1 }
+																						}
+
+																						icon = {
+																							alwaystransparent = yes
+																							size = { 18 18 }
+																							parentanchor = center
+																							texture = "[GetGoodsIcon(LocationView.GetLocation.GetRawMaterial)]"
+																						}
+																					}
+																				}
+
+																				blockoverride "header_button_text_layout" {
+																					hbox = {
+																						using = layoutpolicy_expanding
+																						margin_left = 5
+																						margin_right = 2
+
+																						vbox = {
+																							layoutpolicy_horizontal = expanding
+																							layoutpolicy_vertical = expanding
+
+																							hbox = {
+																								layoutpolicy_horizontal = expanding
+																								layoutpolicy_vertical = expanding
+																								spacing = 5
+
+																								text_single = {
+																									maximumsize = { 70 -1 }
+																									align = left|nobaseline
+																									autoresize = yes
+																									fontsize = 13
+																									text = "[LocationView.GetLocation.GetRawMaterial.GetNameWithNoTooltip|L]"
+																								}
+
+																								expand = {}
+																							}
+
+																							hbox = {
+																								layoutpolicy_horizontal = expanding
+																								margin_bottom = 2
+
+																								text_single = {
+																									align = left|nobaseline
+																									maximumsize = { 70 -1 }
+																									fontsize = 14
+																									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level')|0]/[LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded')|0]"
+																								}
+
+																								expand = {}
+																							}
+																						}
+																					}
+																				}
+																			}
 																		}
 																	}
 
