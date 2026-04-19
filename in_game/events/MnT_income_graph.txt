@@ -6,18 +6,14 @@ mnt_income_graph.1 = {
 	hidden = yes
 	trigger = {
 		is_ai = no
-		OR = {
-			NOT = { has_variable = mnt_income_graph_update_freq }
-			var:mnt_income_graph_update_freq = 0
-		}
 	}
 
 	immediate = {
+		mnt_income_graph_push_monthly = yes
 		if = {
-			limit = { NOT = { has_variable = mnt_income_graph_update_freq } }
-			set_variable = { name = mnt_income_graph_update_freq value = 0 }
+			limit = { current_month = 12 }
+			mnt_income_graph_push_yearly_average = yes
 		}
-		mnt_update_income_graph_history = yes
 	}
 }
 
@@ -26,12 +22,8 @@ mnt_income_graph.2 = {
 	title = hidden_event.t
 	hidden = yes
 	trigger = {
-		is_ai = no
-		has_variable = mnt_income_graph_update_freq
-		var:mnt_income_graph_update_freq = 1
+		always = no
 	}
 
-	immediate = {
-		mnt_update_income_graph_history = yes
-	}
+	immediate = { }
 }
