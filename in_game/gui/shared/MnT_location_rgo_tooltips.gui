@@ -1,0 +1,335 @@
+template mnt_location_rgo_button_tooltip {
+	ContextualTooltipType = {
+		datacontext = "[Location]"
+		datacontext = "[Location.GetRawMaterial]"
+		datacontext = "[Location.GetOwner]"
+		datacontext = "[Location.GetMarket]"
+		blockoverride "title_text" {
+			text = "RAW_MATERIAL_LOCATION_TOOLTIP_T"
+		}
+		blockoverride "title_icon" {
+			button = {
+				using = tooltip_title_icon_size
+				texture = "[GetGoodsIcon(Location.GetRawMaterial)]"
+				tooltipwidget = {
+					using = SpecificGoodsMarket_tooltip
+				}
+				action_tooltip = {
+					click_type = left
+					click_mode = single
+					title = "OPEN_GOOD_PANEL"
+					on_action = "[ShowGoods(Location.GetRawMaterial)]"
+				}
+			}
+		}
+		blockoverride "concept_link" {
+			text = [resource_gathering_operations|e]
+		}
+		blockoverride "title_button" {
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('raw_material')]"
+			}
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipDebugTextBlock = {
+				textcontext = "[Location.GetUpgradeRGOTooltip]"
+			}
+
+			TooltipContentSection = {
+				using = mnt_location_rgo_tooltip_location_content
+			}
+
+			TooltipContentSection = {
+				using = mnt_location_rgo_tooltip_content
+			}
+		}
+	}
+}
+
+template mnt_location_rgo_tooltip_location_content {
+	hbox = {
+		layoutpolicy_horizontal = expanding
+		spacing = 10
+		widget = { ### EMPLOYMENT PIECHART
+			visible = "[GreaterThan_CFixedPoint(Location.GetMaxRGOWorkers, '(CFixedPoint)0')]"
+			size = { 100 100 }
+			using = marker_bg_circle
+			tooltip = "[rgo_pops|e]"
+			tagtooltip_enabled = yes
+
+			piechart = {
+				parentanchor = center
+				block "piechart_size" {
+					size = { 90% 90% }
+				}
+				using = piechart_angles
+
+				datacontext = "[Location.GetRawMaterial]"
+				datacontext = "[Location.GetOwner]"
+				datacontext = "[Location.GetMarket]"
+
+				icon = {
+					size = { 55% 55% }
+					parentanchor = vcenter|hcenter
+					texture = "gfx/interface/icons/pops/laborers.dds"
+				}
+
+				pieslice_no_highlight = {
+					filter_mouse = none
+					alwaystransparent = yes
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+					value = "[Divide_CFixedPoint(Location.GetEffectiveRGOWorkers, Location.GetMaxRGOWorkers)]"
+					color = { 1 1 1 1 }
+				}
+
+				pieslice_no_highlight = {
+					filter_mouse = none
+					alwaystransparent = yes
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+					value = "[Subtract_float('(float)1.0', FixedPointToFloatPercentageCapped(Divide_CFixedPoint(Location.GetEffectiveRGOWorkers, Location.GetMaxRGOWorkers), '(bool)yes'))]"
+					color = { 1 1 1 1 }
+				}
+			}
+		}
+
+		TooltipListBase = { ### SIDE TABLE
+			TooltipListRowContent = {
+				TooltipManualTableField = {
+					blockoverride "field_content" {
+						tooltip = "[rgo_pops|e]"
+						tagtooltip_enabled = yes
+						text_single = {
+							text = "RAW_MATERIAL_LOCATION_TABLE_TT"
+						}
+						expand = {}
+						text_single = {
+							raw_text = "[Location.GetRGOWorkers|Y]/[Multiply_CFixedPoint(Location.GetMaxRGOWorkers, '(CFixedPoint)1000')|0Y]"
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					blockoverride "field_content" {
+						text_single = {
+							text = "RAW_MATERIAL_LOCATION_TABLE_START_TT"
+						}
+						expand = {}
+						text_single = {
+							text = "RAW_MATERIAL_LOCATION_TABLE_START_RIGHT_TT"
+							tooltipwidget = {
+								using = mnt_location_rgo_max_level_breakdown_tooltip
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					blockoverride "field_content" {
+						text_single = {
+							text = "RAW_MATERIAL_LOCATION_TABLE_END_TT"
+						}
+						expand = {}
+						text_single = {
+							visible = "[GreaterThan_CFixedPoint(Location.GetMaxRGOWorkers, '(CFixedPoint)0')]"
+							raw_text = "[Divide_CFixedPoint(Location.GetRawMaterialsOutput, Location.GetMaxRGOWorkers)|2L] @supply! "
+
+							tooltipwidget = {
+								using = mnt_rgo_output_tooltip
+							}
+						}
+
+						text_single = {
+							visible = "[Not(GreaterThan_CFixedPoint(Location.GetMaxRGOWorkers, '(CFixedPoint)0'))]"
+							raw_text = "- @supply! "
+						}
+					}
+				}
+
+				TooltipManualTableField = {                    
+					blockoverride "field_content" {
+						text_single = {
+							text = "RAW_MATERIAL_LOCATION_TABLE_PROFIT_PER_LEVEL"
+						}
+						expand = {}
+						text_single = {
+							visible = "[GreaterThan_CFixedPoint(Location.GetRGOProfitPerLevel, '(CFixedPoint)0')]"
+							maximumsize = {55 -1}
+							align = nobaseline
+							fontsize = 14
+							raw_text = "[Location.GetRGOProfitPerLevel|+2] [tax_base_icon]"
+						}
+					}
+				}
+
+				TooltipManualTableField = {                    
+					blockoverride "field_content" {
+						text_single = {
+							text = "RAW_MATERIAL_LOCATION_TABLE_PRICE"
+						}
+						expand = {}
+						text_single = {
+							maximumsize = {55 -1}
+							align = nobaseline
+							fontsize = 14
+							raw_text = "[Location.GetMarket.GetPrice(Location.GetRawMaterial)|2]@[Goods.GetPriceDifferenceIconName(Location.GetMarket.GetPrice(Location.GetRawMaterial))]!"
+							datacontext = "[Location.GetMarket.GetMarketEntry(Location.GetRawMaterial)]"
+							tooltipwidget = {
+								using = goods_market_price_tooltip
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	datacontext = "[GetPopTypeByName('laborers')]"
+	TooltipContentSection = {
+		using = construct_building_in_location_employment_info
+	}
+}
+
+template mnt_location_rgo_tooltip_content {
+	block "mnt_location_rgo_cost_and_time" {
+		TooltipContentSection = { # Cost and time
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				spacing = 5
+				vbox = {
+					layoutpolicy_horizontal = expanding
+					TooltipTableHeader = {
+						blockoverride "tableheader_text" {
+							text = "CONSTRUCTION_UNITTYPE"
+							default_format = "#W"
+						}
+					}
+
+					TooltipContentSection = {
+						layoutpolicy_horizontal = expanding
+						visible = "[Location.HasUpgradeRGOConstructionDemand]"
+						datacontext = "[Location.GetUpgradeRGOConstructionDemand]"
+						using = demands_details_no_location_rgo
+					}
+				}
+
+				TooltipStringPairList = {
+					block "cost_and_time_context" {
+						textcontext = "[Location.GetUpgradeRGOBuildCostAndTime]"
+					}
+
+					blockoverride "field_text_format" {
+						tooltipwidget = {
+							using = mnt_location_rgo_build_time_breakdown_tooltip
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_location_rgo_max_level_breakdown_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			button = {
+				using = tooltip_title_icon_size
+				texture = "[GetGoodsIcon(Location.GetRawMaterial)]"
+				onclick = "[ShowGoods(Location.GetRawMaterial)]"
+				tooltipwidget = {
+					LeftClickButtonTooltip = {
+						blockoverride "onclick_text" { text = "OPEN_GOOD_PANEL" }
+					}
+				}
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "RAW_MATERIAL_LOCATION_TABLE_MAX_LEVEL_T"
+		}
+
+		blockoverride "concept_link" {
+			text = [rgo|e]
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				blockoverride "block_title" {
+					text = "RAW_MATERIAL_LOCATION_TABLE_MAX_LEVEL_TT_TITLE"
+				}
+				textcontext = "[Location.GetMaximumMaxRGOWorkersInfoForUI][Localize('RAW_MATERIAL_LOCATION_TABLE_MAX_LEVEL_POP_DISPLAY')]"
+			}
+		}
+	}
+}
+
+template mnt_location_rgo_build_time_breakdown_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			button = {
+				using = tooltip_title_icon_size
+				texture = "gfx/interface/icons/text_icons/time.dds"
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "RAW_MATERIAL_BUILD_TIME_T"
+		}
+
+		blockoverride "concept_link" {
+			text = [goods|e]
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				block "rgo_upgrade_cost_time_breakdown_context" {
+					textcontext = "[LocationView.GetUpgradeRGOBuildTimeBreakdown]"
+				}
+			}
+		}
+	}
+}
+
+template mnt_rgo_output_tooltip {
+	ContextualTooltipType = {
+		datacontext = "[Location]"
+		datacontext = "[Location.GetRawMaterial]"
+		datacontext = "[Location.GetOwner]"
+		datacontext = "[Location.GetMarket]"
+		blockoverride "title_text" {
+			text = "RGO_EXPAND_RGO_TOOLTIP_TITLE_TEXT"
+		}
+		blockoverride "title_icon" {
+			button = {
+				using = tooltip_title_icon_size
+				texture = "[GetGoodsIcon(Location.GetRawMaterial)]"
+				tooltipwidget = {
+					using = SpecificGoodsMarket_tooltip
+				}
+				action_tooltip = {
+					click_type = left
+					click_mode = single
+					title = "OPEN_GOOD_PANEL"
+					on_action = "[ShowGoods(Location.GetRawMaterial)]"
+				}
+			}
+		}
+		blockoverride "concept_link" {
+			text = [raw_material|e]
+		}
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "RAW_MATERIAL_LOCATION_TABLE_CURRENT_OUTPUT_TT_TEXT"
+				}
+			}
+
+			TooltipStringPairList = {
+				blockoverride "block_title" {
+					text = "RAW_MATERIAL_LOCATION_TABLE_CURRENT_OUTPUT_TT_TITLE"
+				}
+				textcontext = "[Location.GetRawMaterialsOutputBreakdown]"
+			}
+		}
+	}
+}
