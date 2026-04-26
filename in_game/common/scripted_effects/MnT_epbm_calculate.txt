@@ -1,0 +1,292 @@
+﻿# MnT EPBM — calculation engine. Entry point: MnT_epbm_calculate_maintenance.
+# Estate-assigned buildings are charged in full to the owning estate;
+# everything else goes to a shared pool split by estate_power.
+
+# ═══════════════════════════════════════════════
+# PM cost lookup with lazy per-market cache. Scope: PM IO.
+# Requires scope:MnT_epbm_mkt. Sets local_var:MnT_epbm_pm_cost.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_lookup_pm_cost = {
+	# Fast path: return the cached cost for this market if we already have one
+	if = {
+		limit = {
+			has_variable_map = MnT_epbm_costs
+			is_key_in_variable_map = { name = MnT_epbm_costs target = scope:MnT_epbm_mkt }
+		}
+
+		set_local_variable = {
+			name = MnT_epbm_pm_cost
+			value = "variable_map(MnT_epbm_costs|scope:MnT_epbm_mkt)"
+		}
+	}
+	else = {
+		# Slow path: price every good in the PM's goods map and sum them up
+		set_local_variable = { name = MnT_epbm_pm_cost value = 0 }
+
+		every_key_in_variable_map = {
+			variable = MnT_epbm_goods
+
+			# Look up the per-level quantity needed of this good
+			global_var:MnT_epbm_pm_ref = {
+				set_local_variable = {
+					name = MnT_epbm_qty
+					value = "variable_map(MnT_epbm_goods|prev)"
+				}
+			}
+
+			# Add quantity × current market price to the running cost
+			change_local_variable = {
+				name = MnT_epbm_pm_cost
+
+				add = {
+					value = "price_in_market(scope:MnT_epbm_mkt)"
+					multiply = local_var:MnT_epbm_qty
+				}
+			}
+		}
+
+		# Stash the computed cost so subsequent lookups this month are free
+		add_to_variable_map = {
+			name = MnT_epbm_costs
+			key = scope:MnT_epbm_mkt
+			value = local_var:MnT_epbm_pm_cost
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Main calculation entry point. Scope: country.
+# Monthly for player, yearly for AI.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_calculate_maintenance = {
+	# Shared accumulator for non-estate buildings (split by estate_power)
+	set_local_variable = {
+		name = MnT_epbm_total_cost
+		value = 0
+	}
+
+	# Per-estate accumulators for estate-assigned buildings (charged in full)
+	set_local_variable = { name = MnT_epbm_estate_nobles value = 0 }
+	set_local_variable = { name = MnT_epbm_estate_clergy value = 0 }
+	set_local_variable = { name = MnT_epbm_estate_burghers value = 0 }
+	set_local_variable = { name = MnT_epbm_estate_peasants value = 0 }
+	set_local_variable = { name = MnT_epbm_estate_tribes value = 0 }
+	set_local_variable = { name = MnT_epbm_estate_dhimmi value = 0 }
+	set_local_variable = { name = MnT_epbm_estate_cossacks value = 0 }
+
+	# Process each tracked location
+	every_in_list = {
+		variable = MnT_epbm_locations
+		save_temporary_scope_as = MnT_epbm_loc
+		market ?= { save_temporary_scope_as = MnT_epbm_mkt }
+		MnT_epbm_calc_location_costs = yes
+	}
+
+	# Process foreign buildings (country-level iteration, same accumulators)
+	MnT_epbm_calc_foreign_building_costs = yes
+
+	# Apply maintenance burden to the shared pool
+	change_local_variable = {
+		name = MnT_epbm_total_cost
+		multiply = MnT_epbm_maint_burden
+	}
+
+	# Split shared pool by estate power, then add estate-assigned costs on top
+	MnT_epbm_split_by_estate_power = yes
+	MnT_epbm_add_estate_building_costs = yes
+}
+
+# ═══════════════════════════════════════════════
+# Route one building's cost. Scope: building.
+# Requires scope:MnT_epbm_bt and local_var:MnT_epbm_bldg_cost.
+# Estate-assigned → that estate's bucket; otherwise → shared pool.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_route_building_cost = {
+	if = {
+		limit = {
+			is_key_in_global_variable_map = {
+				name = MnT_epbm_estate_map
+				target = scope:MnT_epbm_bt
+			}
+		}
+
+		# Estate-assigned: look up the owning estate and charge that estate in full
+		set_global_variable = {
+			name = MnT_epbm_estate_ref
+			value = "global_variable_map(MnT_epbm_estate_map|scope:MnT_epbm_bt)"
+		}
+
+		# Dispatch on estate type — exactly one branch fires
+		MnT_epbm_route_to_estate = { estate = nobles }
+		MnT_epbm_route_to_estate = { estate = clergy }
+		MnT_epbm_route_to_estate = { estate = burghers }
+		MnT_epbm_route_to_estate = { estate = peasants }
+		MnT_epbm_route_to_estate = { estate = tribes }
+		MnT_epbm_route_to_estate = { estate = dhimmi }
+		MnT_epbm_route_to_estate = { estate = cossacks }
+	}
+	else = {
+		# No estate assignment: add to the shared pool
+		change_local_variable = {
+			name = MnT_epbm_total_cost
+			add = local_var:MnT_epbm_bldg_cost
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Price every tracked building in one location and route its cost.
+# Scope: location. Requires scope:MnT_epbm_mkt.
+# ═══════════════════════════════════════════════
+
+MnT_epbm_calc_location_costs = {
+	every_in_list = {
+		variable = MnT_epbm_buildings
+		limit = { is_opened = yes }
+		save_temporary_scope_as = MnT_epbm_bldg
+		building_type ?= { save_temporary_scope_as = MnT_epbm_bt }
+
+		# Pick this building's highest-profit tracked PM; limit filters to
+		# PMs present in the profile map (output-only PMs get ignored).
+		# check_range_bounds=no silently no-ops when nothing matches.
+		ordered_production_method_of_building = {
+			limit = {
+				is_key_in_global_variable_map = {
+					name = MnT_epbm_profiles
+					target = this
+				}
+			}
+			order_by = "this.production_method_profit(scope:MnT_epbm_bldg)"
+			position = 0
+			check_range_bounds = no
+
+			# scope = the chosen PM; label it for the lookup below
+			save_temporary_scope_as = MnT_epbm_pm
+
+			# Pop back to building scope to price and route the cost
+			prev = {
+				# Look up the IO for the chosen PM
+				set_global_variable = {
+					name = MnT_epbm_pm_ref
+					value = "global_variable_map(MnT_epbm_profiles|scope:MnT_epbm_pm)"
+				}
+
+				# Ask that IO for the per-level goods cost in this market (cached)
+				global_var:MnT_epbm_pm_ref = { MnT_epbm_lookup_pm_cost = yes }
+
+				# Scale to the actual building level
+				set_local_variable = {
+					name = MnT_epbm_bldg_cost
+					value = { value = local_var:MnT_epbm_pm_cost multiply = building_level }
+				}
+
+				# Route cost to the shared pool or the estate-assigned bucket
+				MnT_epbm_route_building_cost = yes
+			}
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Same shape as MnT_epbm_calc_location_costs but scoped to country and
+# iterating foreign buildings (they live outside the owner's territory
+# so they aren't in any per-location cache).
+# ═══════════════════════════════════════════════
+
+MnT_epbm_calc_foreign_building_costs = {
+	every_owned_foreign_building = {
+		limit = { is_opened = yes }
+		save_temporary_scope_as = MnT_epbm_bldg
+		building_type ?= { save_temporary_scope_as = MnT_epbm_bt }
+
+		# Use the host location's market for price lookups
+		location ?= { market ?= { save_temporary_scope_as = MnT_epbm_mkt } }
+
+		ordered_production_method_of_building = {
+			limit = {
+				is_key_in_global_variable_map = {
+					name = MnT_epbm_profiles
+					target = this
+				}
+			}
+			order_by = "this.production_method_profit(scope:MnT_epbm_bldg)"
+			position = 0
+			check_range_bounds = no
+
+			save_temporary_scope_as = MnT_epbm_pm
+
+			prev = {
+				# Look up the IO for the chosen PM
+				set_global_variable = {
+					name = MnT_epbm_pm_ref
+					value = "global_variable_map(MnT_epbm_profiles|scope:MnT_epbm_pm)"
+				}
+
+				# Ask that IO for the per-level goods cost in this market (cached)
+				global_var:MnT_epbm_pm_ref = { MnT_epbm_lookup_pm_cost = yes }
+
+				# Scale to the actual building level
+				set_local_variable = {
+					name = MnT_epbm_bldg_cost
+					value = { value = local_var:MnT_epbm_pm_cost multiply = building_level }
+				}
+
+				# Route cost to the shared pool or the estate-assigned bucket
+				MnT_epbm_route_building_cost = yes
+			}
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Country: split the shared pool across estates by estate power
+# ═══════════════════════════════════════════════
+# Scope: country
+# Reads: local_var:MnT_epbm_total_cost (already scaled by maint_burden)
+# Sets: var:MnT_epbm_pay_* (one per estate)
+
+MnT_epbm_split_by_estate_power = {
+	if = {
+		limit = { local_var:MnT_epbm_total_cost > 0 }
+
+		# Weight each estate's bill by its share of country estate power
+		MnT_epbm_set_pay_from_power = { estate = nobles }
+		MnT_epbm_set_pay_from_power = { estate = clergy }
+		MnT_epbm_set_pay_from_power = { estate = burghers }
+		MnT_epbm_set_pay_from_power = { estate = peasants }
+		MnT_epbm_set_pay_from_power = { estate = tribes }
+		MnT_epbm_set_pay_from_power = { estate = dhimmi }
+		MnT_epbm_set_pay_from_power = { estate = cossacks }
+	}
+	else = {
+		# Nothing to split — zero every pay var so charge passes are a no-op
+		MnT_epbm_zero_pay = { estate = nobles }
+		MnT_epbm_zero_pay = { estate = clergy }
+		MnT_epbm_zero_pay = { estate = burghers }
+		MnT_epbm_zero_pay = { estate = peasants }
+		MnT_epbm_zero_pay = { estate = tribes }
+		MnT_epbm_zero_pay = { estate = dhimmi }
+		MnT_epbm_zero_pay = { estate = cossacks }
+	}
+}
+
+# ═══════════════════════════════════════════════
+# Country: fold estate-assigned building costs on top of the split
+# ═══════════════════════════════════════════════
+# Scope: country
+# Runs after MnT_epbm_split_by_estate_power seeds MnT_epbm_pay_* from the
+# shared pool. Each estate-assigned bucket (still in its local var) gets
+# scaled by maint_burden and added to the matching estate's pay var.
+
+MnT_epbm_add_estate_building_costs = {
+	MnT_epbm_add_estate_cost = { estate = nobles }
+	MnT_epbm_add_estate_cost = { estate = clergy }
+	MnT_epbm_add_estate_cost = { estate = burghers }
+	MnT_epbm_add_estate_cost = { estate = peasants }
+	MnT_epbm_add_estate_cost = { estate = tribes }
+	MnT_epbm_add_estate_cost = { estate = dhimmi }
+	MnT_epbm_add_estate_cost = { estate = cossacks }
+}
