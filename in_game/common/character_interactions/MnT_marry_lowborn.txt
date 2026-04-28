@@ -1,0 +1,162 @@
+﻿REPLACE:marry_lowborn = { 
+
+	sound = UI_action_character_marry_lowborn
+
+	is_consort_action = yes
+	on_own_nation = yes
+	
+	message = yes
+	
+	
+	potential = {
+		scope:actor = {
+			OR = {
+				modifier:care_about_producing_heirs = yes
+				succession_law = heir_selection:signoria_selection
+			}
+		}
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 365
+	
+	allow = {
+		scope:actor = {
+			modifier:forbid_marrying_lowborn = no
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+			is_female = no
+		}
+		enabled = {
+			is_eligible_for_royal_marriage = yes
+			modifier:block_marrying_lowborn = no
+			NOT = { has_trait = eunuch }
+			scope:actor.ruler_or_heir_if_regent ?= {
+				is_close_relative = root
+			}
+		}
+	}
+
+	#MnT rewrites entire ai_will_do
+	ai_will_do = {
+		
+		# Don't use this action if your legitimacy is much too low
+		add = {
+			if = {
+				limit = {
+					scope:actor ?= {
+						legitimacy < 40
+					}
+				}
+				value = -1000
+			}
+		}
+		
+		# Old rulers must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						is_ruler = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = {
+					value = scope:recipient.modifier:character_life_expectancy
+					multiply = 0.75
+				    # If already married and still no kid but has marriage slots, means we're taking a second wife; be greedy
+					if = {
+						limit = {
+							scope:recipient = {
+								is_married = yes
+								NOT = {
+									any_child = { is_eligible_heir = scope:actor }
+								}
+							}
+						}
+						multiply = 0.9
+					}
+				}
+				multiply = 10
+			}
+		}
+	}
+	
+	effect = {
+		scope:actor = {
+			custom_tooltip = "DEBUTANTE_WILL_MARRY"
+			hidden_effect = {
+				create_character = {
+					religion = scope:recipient.religion
+					age = { 16 21 }
+					female = yes
+					random_estate_type_trigger = {
+						NOR = {
+							this = estate_type:nobles_estate
+							this = estate_type:clergy_estate
+							this = estate_type:dhimmi_estate
+						}
+					}
+					
+					marry_character = scope:recipient 
+				}
+			}
+			if = {
+				limit = {
+					NOR = {
+						has_policy = muslim_marriage
+						has_policy = polygyny
+						has_policy = dishu_system
+						religion = religion:inti
+					}
+				}
+				if = {
+					limit = { 
+						scope:recipient = {
+							has_dynasty = yes
+							OR = {
+								is_ruler = yes
+								is_heir = yes
+							}
+						}
+					}
+					add_legitimacy = legitimacy_mild_penalty
+					add_prestige = prestige_extreme_penalty
+				}
+				else_if = {
+					limit = { 
+						scope:recipient = {
+							has_dynasty = yes
+						}
+					}
+					add_legitimacy = legitimacy_weak_penalty
+					add_prestige = prestige_mild_penalty
+				}
+				else_if = {
+					limit = { 
+						scope:recipient = {
+							has_estate = estate_type:nobles_estate
+						}
+					}
+					add_prestige = prestige_weak_penalty
+				}
+			}
+			else = {
+				add_legitimacy = legitimacy_weak_penalty
+				add_prestige = prestige_weak_penalty
+			}
+		}
+	}
+	
+}	

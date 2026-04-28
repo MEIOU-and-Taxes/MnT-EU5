@@ -1,0 +1,247 @@
+﻿REPLACE:marry_noble = { 
+
+	sound = UI_action_character_marry_noble
+
+	is_consort_action = yes
+	on_own_nation = yes
+	context_menu_click_mode = click # Disable confirm
+	
+	#commenting out the below temporarily in favour of hooking this to the effect scope
+	# sound = "event:/SFX/UI/Character/Unique/sfx_ui_character_arrange_marriage"
+	
+	message = yes
+	
+	
+	potential = {
+		scope:actor = {
+			OR = {
+				government_type = government_type:monarchy
+				succession_law = heir_selection:signoria_selection
+				succession_law = heir_selection:matrilineal_non_exclusive
+			}
+		}
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 120
+	
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+		}
+		enabled = {
+			is_eligible_for_royal_marriage = yes
+		}
+	}
+
+	select_trigger = {
+		top_widget = marry_noble_character_top
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		name = "marry_noble_select_title"
+		none_available_msg_key = "marry_noble_no_characters"
+		column = {
+			data = character_info
+		}
+		visible = {
+			OR = {
+				scope:actor = { modifier:can_marry_only_overlord_dynasty_characters = no }
+				AND = {
+					scope:actor = { modifier:can_marry_only_overlord_dynasty_characters = yes }
+					has_dynasty = yes
+					OR = {
+						owner = { any_subject = { this = scope:actor } }
+						dynasty = {
+							any_character_in_dynasty = {
+								owner = { any_subject = { this = scope:actor } }
+							}
+						}
+					}
+				}
+			}
+			OR = {
+				has_estate = estate_type:nobles_estate
+				AND = {
+					scope:actor = { succession_law = heir_selection:signoria_selection }
+					has_estate = estate_type:burghers_estate
+				}
+			}
+			NOT = { is_same_gender = scope:recipient }
+			NOT = { is_close_relative = scope:recipient }
+			character_can_marry_trigger = yes
+			not = { is_spouse_of = scope:recipient }
+			modifier:blocked_from_character_interactions = no
+			character_can_marry_recipient_trigger = yes
+		}
+
+		#enabled = {
+		#	scope:recipient = {
+		#		character_can_marry_recipient_trigger = yes
+		#	}
+		#}
+	}
+	
+	effect = {
+		if = {	
+			limit = {
+				exists = scope:recipient
+				exists = scope:target
+			}
+			scope:recipient = {
+				marry_character = scope:target
+			}
+		}
+		
+		if = {	
+			limit = {
+				scope:actor ?= { NOT = { has_estate_privilege = estate_privilege:noble_marriage_rights } }
+			}
+			scope:actor = {
+				add_legitimacy = legitimacy_mild_penalty
+			}
+		}
+		if = {
+			limit = {
+				scope:recipient = character:vij_bukka_raya_sangama
+			}
+			scope:target = {
+				add_to_list = bukka_raya_previous_spouses
+			}
+		}
+	}
+
+	#MnT rewrites entire ai_will_do
+	ai_will_do = {
+		# We treat scope:recipient as the important character. This will be evaluated both ways though	
+
+		# Old rulers must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						is_ruler = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = {
+					value = scope:recipient.modifier:character_life_expectancy
+					multiply = 0.66
+				    # If already married and still no kid but has marriage slots, means we're taking a second wife; be greedy
+					if = {
+						limit = {
+							scope:recipient = {
+								is_married = yes
+								NOT = {
+									any_child = { is_eligible_heir = scope:actor }
+								}
+							}
+						}
+						multiply = 0.9
+					}
+				}
+				multiply = 10
+			}
+		}
+		
+		# Old heirs must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						OR = {
+							is_heir = yes
+							AND = {
+								exists = father
+								father = {
+									is_ruler = yes
+								}
+							}
+							AND = {
+								exists = mother
+								mother = {
+									is_ruler = yes
+								}
+							}
+						}
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = {
+					value = scope:recipient.modifier:character_life_expectancy
+					multiply = 0.66
+				    # If already married and still no kid but has marriage slots, means we're taking a second wife; be greedy
+					if = {
+						limit = {
+							scope:recipient = {
+								is_married = yes
+								NOT = {
+									any_child = { is_eligible_heir = scope:actor }
+								}
+							}
+						}
+						multiply = 0.9
+					}
+				}
+				multiply = 10
+			}
+		}
+
+		# Do not marry a woman who cannot have a child if you're without eligible heir
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						is_female = yes
+						age_in_years >= "define:NCharacter|MAX_PREGNANCY_AGE"
+					}
+					scope:recipient = {
+						OR = {
+							is_ruler = yes
+							is_heir = yes
+							AND = {
+								exists = father
+								father = {
+									is_ruler = yes
+								}
+							}
+							AND = {
+								exists = mother
+								mother = {
+									is_ruler = yes
+								}
+							}
+						}
+						NOT = {
+							any_child = { is_eligible_heir = scope:actor }
+						}
+					}
+				}
+				value = -1000
+			}
+		}
+		
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						is_female = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = "define:NCharacter|ADULT_AGE" # Subtract from them every year they're older than the minimum age of marriage
+				multiply = 5
+			}
+		}
+	}
+}	

@@ -44,7 +44,8 @@ Date: 2026-01-20
 
 #### Balancing
 
-- Crown power now increase percent of building upkeep paid by the state, low crown power reduces it.
+- Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
+- Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
@@ -59,7 +60,9 @@ Date: 2026-01-20
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
 - Tribes estate satisfaction now goes down proportional to average development
-- Block tribal governments (tribes and steppe hordes) from settling their tribes.
+- Block tribal governments (tribes and steppe hordes) from settling their tribes
+- Tribal strongholds privilege now improves rural control instead of making it worse
+- AI now has better non-royal marriage logic so that dynasties don't die out nearly as often due to refusal to wed
 
 ##### Diplomacy
 
@@ -146,7 +149,7 @@ Date: 2026-01-20
 - Significantly reduce Trade Maintenance base to facilitate more trade; especially given that our base prices for goods are lower than Vanilla's
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
-- price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
+- Price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
 - Require less profit for AI trade to happen per used merchant capacity, to compensate for lower price levels
 - Reworked how trade flows
 	- base transport cost lowered by 10x for all goods
