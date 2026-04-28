@@ -60,9 +60,10 @@ Date: 2026-01-20
 - Capital Location gives no max control or population capacity anymore.
 - Remove enslavement of all non-state-religion pops from Muslim countries on game startup
 - Tribes estate satisfaction now goes down proportional to average development
-- Block tribal governments (tribes and steppe hordes) from settling their tribes.
+- Block tribal governments (tribes and steppe hordes) from settling their tribes
 - Half army cost to keep pace with halved state incomes
 - Tribal strongholds privilege now improves rural control instead of making it worse
+- AI now has better non-royal marriage logic so that dynasties don't die out nearly as often due to refusal to wed
 
 ##### Diplomacy
 
