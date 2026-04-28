@@ -122,6 +122,7 @@ Date: 2026-01-20
     - Local food capacity: 500 → 400  
     - Local food production: \-33% → \-25%  
   - RGOs provide less food
+  - The "monthly food" modifier has been removed
 - Estate buildings:  
   - Toll castle:  
     - No longer give fort defense value of 25%  
