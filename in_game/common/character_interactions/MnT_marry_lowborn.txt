@@ -51,8 +51,9 @@
 	#MnT rewrites entire ai_will_do
 	ai_will_do = {
 	
+		# Don't use this action if you quite literally cannot
 		add = {
-			if= {
+			if = {
 				limit = {
 					scope:recipient ?= {
 						has_available_marriage_slot = no
@@ -61,15 +62,25 @@
 				value = -1000
 			}
 		}
+		
+		# Don't use this action if your legitimacy is much too low
+		add = {
+			if = {
+				limit = {
+					scope:actor ?= {
+						legitimacy < 20
+					}
+				}
+				value = -1000
+			}
+		}
+		
 		# Old rulers must get married
 		add = {
 			if = {
 				limit = {
 					scope:recipient = {
 						is_ruler = yes
-					}
-					scope:actor = {
-						legitimacy > 80
 					}
 				}
 				value = scope:recipient.age_in_years
