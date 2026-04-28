@@ -1,0 +1,66 @@
+﻿REPLACE:enclosure_movement = {
+	law_category = socioeconomic
+	potential = {
+		has_law = enclosure_movement
+	}
+
+	locked = {
+		has_policy = enclosure_act
+		"estate_power(estate_type:peasants_estate)" <= 0.25
+	}
+
+	enclosure_allowed = {
+		country_modifier = {
+			monthly_towards_aristocracy = societal_value_monthly_move
+			nobles_estate_target_satisfaction = small_permanent_target_satisfaction
+			global_peasants_migration_allowed = yes
+			rural_migration_attraction = -0.2
+			non_rural_migration_attraction = 0.2
+		}
+		estate_preferences = {
+			nobles_estate
+			burghers_estate
+		}
+		years = 2
+		on_deactivate = {
+			add_estate_satisfaction = { type = estate_type:nobles_estate
+				value = estate_satisfaction_severe_penalty
+			}
+		}
+	}
+	enclosure_disallowed = {
+		country_modifier = {
+			nobles_estate_target_satisfaction = medium_permanent_target_satisfaction_penalty
+			monthly_towards_free_subjects = societal_value_monthly_move
+		}
+		estate_preferences = {
+			peasants_estate
+		}
+		years = 2
+		on_activate = {
+			add_estate_satisfaction = { type = estate_type:peasants_estate
+				value = estate_satisfaction_severe_penalty
+			}
+		}
+	}
+	enclosure_act = {
+		country_modifier = {
+			#MnT removed: global_monthly_food_modifier = 0.2
+			monthly_towards_aristocracy = societal_value_large_monthly_move
+			global_peasants_migration_allowed = yes
+			rural_migration_attraction = -0.4
+			non_rural_migration_attraction = 0.4
+		}
+		estate_preferences = {
+			crown_estate
+			nobles_estate
+		}
+		years = 2
+		allow = {
+			culture = culture:english
+		}
+		potential = {
+			has_variable = enclosure_act
+		}
+	}
+}
