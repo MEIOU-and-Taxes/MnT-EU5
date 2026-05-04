@@ -27,3 +27,100 @@ mnt_tribes.1 = {
 		}
 	}
 }
+
+# Our "steppe cultures" are specifically Turkic and Mongolian, excluding Turkoman (since that cuts along religious lines) and Turkish and Azeri (which represent settled people)
+scripted_trigger mnt_tribes_steppe_culture = {
+	OR = {
+		culture = {
+			OR = {
+				has_culture_group = culture_group:turkic_group
+				has_culture_group = culture_group:mongolian_group
+			}
+		}
+		# These cultures are Iranian, but closely associated with Turko-Mongolian
+		culture = culture:tajik_culture
+		culture = culture:afghan_culture
+		culture = culture:ormur_culture
+		culture = culture:hazara_culture
+	}
+	NOT = { culture = culture:turkish_culture }
+	NOT = { culture = culture:azeri_culture }
+	NOT = { culture = culture:turkoman_culture }
+}
+
+# Setup event for redoing the Turkic and Mongolian tribal distribution; our tribes produce food
+mnt_tribes.2 = {
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+
+    immediate = {
+		# We do this in two passes. The first pass converts all the Turkic and Mongolian peasants to tribesmen
+		every_owned_location = {
+			every_pop = {
+				limit = {
+					pop_type = pop_type:peasants
+					mnt_tribes_steppe_culture = yes
+				}
+				change_pop_type = pop_type:tribesmen
+			}
+		}
+		# The second pass converts all the Turkic and Mongolian tribesmen to peasants based on local development
+		every_owned_location = {
+			save_temporary_scope_value_as = {
+				name = location_development
+				value = {
+					value = development
+					multiply = 0.01 # development is 0-100, so we need to convert this into something 0-1
+				}
+			}
+			every_pop = {
+				limit = {
+					pop_type = pop_type:tribesmen
+					mnt_tribes_steppe_culture = yes
+					NOT = { culture = culture:oirat_culture }
+					NOT = { culture = culture:mongolian_culture }
+				}
+				split_pop = {
+					fraction = scope:location_development
+					type = pop_type:peasants
+				}
+			}
+		} 
+		# The third pass fixes our Oirat and Mongol pops for the Oirat and Mongol contingents in the Middle East
+		every_owned_location = {
+			limit = {
+				NOR = {
+					sub_continent = sub_continent:eastern_europe
+					sub_continent = sub_continent:middle_east
+					area = area:western_khorasan_area
+					area = area:eastern_khorasan_area
+					area = area:khwarazm_area
+					area = area:transoxiana_area
+					area = area:badakhshan_area
+				}
+			}
+			save_temporary_scope_value_as = {
+				name = location_development
+				value = {
+					value = development
+					multiply = 0.01 # development is 0-100, so we need to convert this into something 0-1
+				}
+			}
+			every_pop = {
+				limit = {
+					pop_type = pop_type:tribesmen
+					OR = {
+						culture = culture:oirat_culture
+						culture = culture:mongolian_culture
+					}
+				}
+				split_pop = {
+					fraction = scope:location_development
+					type = pop_type:peasants
+				}
+			}
+		}
+    }
+	
+}
