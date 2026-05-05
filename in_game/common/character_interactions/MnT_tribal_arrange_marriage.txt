@@ -1,0 +1,200 @@
+﻿REPLACE:tribal_arrange_marriage = { 
+
+	sound = UI_action_character_marry_noble
+
+	is_consort_action = yes
+	on_own_nation = yes
+	context_menu_click_mode = click # Disable confirm
+	
+	message = yes
+	
+	
+	potential = {
+		scope:actor = {
+			OR = {
+				government_type = government_type:tribe
+				government_type = government_type:steppe_horde
+			}
+		}
+	}
+	
+	ai_tick = daily
+	ai_tick_frequency = 45
+	
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+		}
+		enabled = {
+			character_can_marry_trigger = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = target
+		name = "tribal_arrange_marriage_select_title"
+		none_available_msg_key = "tribal_arrange_marriage_no_characters"
+		column = {
+			data = character_info
+		}
+		visible = {
+			is_alive = yes
+			is_adult = yes
+			has_available_marriage_slot = yes
+			NOT = { is_same_gender = scope:recipient }
+			NOT = { is_close_relative = scope:recipient }
+			modifier:blocked_from_character_interactions = no
+		}
+		enabled = {
+			character_can_marry_trigger = yes
+		}
+	}
+	effect = {
+		if = {	
+			limit = {
+				exists = scope:recipient
+				exists = scope:target
+			}
+			scope:recipient = {
+				marry_character = scope:target
+			}
+		}
+	}
+
+	#MnT rewrites entire ai_will_do
+	ai_will_do = {
+		# We treat scope:recipient as the important character. This will be evaluated both ways though	
+
+		# Old rulers must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						is_ruler = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = {
+					value = scope:recipient.modifier:character_life_expectancy
+					multiply = 0.5
+				    # If already married and still no kid but has marriage slots, means we're taking a second wife; be greedy
+					if = {
+						limit = {
+							scope:recipient = {
+								is_married = yes
+								NOT = {
+									any_child = { is_eligible_heir = scope:actor }
+								}
+							}
+						}
+						multiply = 0.9
+					}
+				}
+				multiply = 10
+			}
+		}
+		
+		# Old heirs must get married
+		add = {
+			if = {
+				limit = {
+					scope:recipient = {
+						OR = {
+							is_heir = yes
+							AND = {
+								exists = father
+								father = {
+									is_ruler = yes
+								}
+							}
+							AND = {
+								exists = mother
+								mother = {
+									is_ruler = yes
+								}
+							}
+						}
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = {
+					value = scope:recipient.modifier:character_life_expectancy
+					multiply = 0.5
+				    # If already married and still no kid but has marriage slots, means we're taking a second wife; be greedy
+					if = {
+						limit = {
+							scope:recipient = {
+								is_married = yes
+								NOT = {
+									any_child = { is_eligible_heir = scope:actor }
+								}
+							}
+						}
+						multiply = 0.9
+					}
+				}
+				multiply = 10
+			}
+		}
+
+		# Do not marry a woman who cannot have a child if you're without eligible heir
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						is_female = yes
+						age_in_years >= "define:NCharacter|MAX_PREGNANCY_AGE"
+					}
+					scope:recipient = {
+						OR = {
+							is_ruler = yes
+							is_heir = yes
+							AND = {
+								exists = father
+								father = {
+									is_ruler = yes
+								}
+							}
+							AND = {
+								exists = mother
+								mother = {
+									is_ruler = yes
+								}
+							}
+						}
+						NOT = {
+							any_child = { is_eligible_heir = scope:actor }
+						}
+					}
+				}
+				value = -1000
+			}
+		}
+		
+		add = {
+			if = {
+				limit = {
+					scope:target = {
+						is_female = yes
+					}
+				}
+				value = scope:recipient.age_in_years
+				subtract = "define:NCharacter|ADULT_AGE" # Subtract from them every year they're older than the minimum age of marriage
+				multiply = 5
+			}
+		}
+	}
+	
+}	
