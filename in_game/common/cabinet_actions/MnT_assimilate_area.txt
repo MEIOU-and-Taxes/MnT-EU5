@@ -86,6 +86,10 @@
 					this = scope:actor
 				}
 			}
+			OR = {
+				scope:actor = { is_ai = no }
+				"area_average_control(scope:actor)" >= 0.5
+			}
 		}
 		map_color = {
 			lerp = {
@@ -115,9 +119,40 @@
 		}
 	}
 
+	on_deactivate = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				every_province_in_area = {
+					limit = {
+						owner = scope:actor
+					}
+					remove_variable = promoting_culture
+				}
+			}
+		}
+	}
+
 	location_modifier = {
 		local_pop_assimilation_speed = 0.008 #mnt: from 0.02
+		local_migration_attraction = -0.2
 		local_pop_assimilation_speed_modifier = 0.1 #added by M&T
+	}
+
+
+	ai_will_do = {
+		add = {
+			desc = "Wrong culture"
+			if = {
+				limit = {
+					exists = scope:target_culture
+					scope:target_culture != scope:actor.culture
+				}
+				value = -1000
+			}
+		}
 	}
 
 
