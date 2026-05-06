@@ -725,11 +725,138 @@ types LocationWindowTypes
 							position = {1 0}
 							texture = "[Location.GetRankIcon]"
 						}
-					}
+						}
 
-					hbox = {
-						# INTEGRATION/CORE
+						# Town Rights
 						widget = {
+							size = { 33 33 }
+							visible = "[Or(GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)0'), And(Location.GetOwner.IsPlayer, Not(Location.GetRank.IsDefault)))]"
+							enabled = "[And(ShowGrantLocationTownRights(Location.Self), Not(Location.GetRank.IsDefault))]"
+
+							button_townrights = {
+								visible = "[Not(GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)0'))]"
+
+								size = { 100% 100% }
+								# position = {0 1}
+
+								tooltipwidget = {
+									BasicFunctionalTooltip = {}
+								}
+
+								action_tooltip = {
+									click_type = left
+									click_mode = single
+									title = "GRANT_NEW_TOWN_RIGHTS"
+									on_action = "[GrantLocationTownRights(Location.Self)]"
+									conditions = "[AddLocalizationIf(Not(Location.GetOwner.IsPlayer), 'TWR_NOT_OTHER_COUNTRY_LOCATIONS')]"
+									conditions = "[AddLocalizationIf(And(Location.GetOwner.IsPlayer, Location.GetRank.IsDefault), 'TWR_ONLY_URBAN_LOCATIONS')]"
+									conditions = "[AddLocalizationIf(And3(Location.GetOwner.IsPlayer, Not(Location.GetRank.IsDefault), Not(ShowGrantLocationTownRights(Location.Self))), 'TWR_NOT_CAPABLE')]"
+									enabled = "[And(ShowGrantLocationTownRights(Location.Self), Not(Location.GetRank.IsDefault))]"
+								}
+							}
+
+							widget = {
+								size = { 100% 100% }
+								position = {0 1}
+							}
+
+							button_regular = {
+								visible = "[GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)1')]"
+								size = { 100% 100% }
+								position = {0 1}
+
+								action_tooltip = {
+									click_type = left
+									click_mode = single
+									title = "GRANT_NEW_TOWN_RIGHTS"
+									on_action = "[GrantLocationTownRights(Location.Self)]"
+									conditions = "[AddLocalizationIf(Not(Location.GetOwner.IsPlayer), 'TWR_NOT_OTHER_COUNTRY_LOCATIONS')]"
+									conditions = "[AddLocalizationIf(And(Location.GetOwner.IsPlayer, Location.GetRank.IsDefault), 'TWR_ONLY_URBAN_LOCATIONS')]"
+									conditions = "[AddLocalizationIf(And3(Location.GetOwner.IsPlayer, Not(Location.GetRank.IsDefault), Not(ShowGrantLocationTownRights(Location.Self))), 'TWR_NOT_CAPABLE')]"
+									enabled = "[And(ShowGrantLocationTownRights(Location.Self), Not(Location.GetRank.IsDefault))]"
+								}
+
+								tooltipwidget = {
+									using = location_town_rights_tooltip
+								}
+							}
+
+							# No Town Rights Selected
+							icon = {
+								visible = "[Not(GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)0'))]"
+								size = { 18 18 }
+								parentanchor = center
+								texture = "gfx/interface/buttons/estate_privileges/ep_plus.dds"
+								texture_density = 2
+
+								modify_texture = {
+									using = color_new_gold_texture
+									blend_mode = add
+								}
+
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.8
+								}
+							}
+
+							# ONE TOWN RIGHT SELECTED
+							hbox = {
+								visible = "[EqualTo_int32(GetDataModelSize(Location.GetTownRights), '(int32)1')]"
+								datamodel = "[Location.GetTownRights]"
+								item = {
+									button_townrights = {
+										using = layoutpolicy_expanding
+
+										action_tooltip = {
+											click_type = left
+											click_mode = single
+											title = "GRANT_NEW_TOWN_RIGHTS"
+											on_action = "[GrantLocationTownRights(Location.Self)]"
+											conditions = "[AddLocalizationIf(Not(Location.GetOwner.IsPlayer), 'TWR_NOT_OTHER_COUNTRY_LOCATIONS')]"
+											conditions = "[AddLocalizationIf(And(Location.GetOwner.IsPlayer, Location.GetRank.IsDefault), 'TWR_ONLY_URBAN_LOCATIONS')]"
+											conditions = "[AddLocalizationIf(And3(Location.GetOwner.IsPlayer, Not(Location.GetRank.IsDefault), Not(ShowGrantLocationTownRights(Location.Self))), 'TWR_NOT_CAPABLE')]"
+											enabled = "[And(ShowGrantLocationTownRights(Location.Self), Not(Location.GetRank.IsDefault))]"
+										}
+										tooltipwidget = {
+											using = TownRights_tooltip
+											blockoverride "concept_link" {
+												text = "[location_modifier|e]"
+											}
+										}
+										icon = {
+											size = { 24 24 }
+											parentanchor = center
+											texture = "[TownRights.GetIcon]"
+										}
+									}
+								}
+							}
+
+							# MORE THAN ONE TOWN RIGHT SELECTED
+							hbox = {
+								visible = "[GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)1')]"
+								margin = { 2 0 }
+								text_single = {
+									using = layoutpolicy_expanding
+									align = center
+									autoresize = no
+									text = "[GetDataModelSize(Location.GetTownRights)]"
+								}
+								icon = {
+									size = { 16 16 }
+									texture = "[GetConceptTexture('town_rights')]"
+								}
+							}
+
+							block "location_town_rights_sort_highlight" {}
+						}
+
+						hbox = {
+							# INTEGRATION/CORE
+							widget = {
 							size = { 31 31 }
 							visible = "[Location.HasOwner]"
 
@@ -957,11 +1084,11 @@ types LocationWindowTypes
 							size = {160 31}
 							visible = "[And4(Location.IsOccupied, Not(Location.HasSiege), Not(IsLateralViewOpened('select_interaction_target')), Or(Location.GetController.IsPlayer, Location.GetController.GetDiplomacy.IsSubjectOf(GetPlayer)))]"
 
-							using = location_background
+								using = location_background
 
-							tooltipwidget = {
-								SimpleContextualTooltipType = {
-									blockoverride "title_icon" {
+								tooltipwidget = {
+									SimpleContextualTooltipType = {
+										blockoverride "title_icon" {
 										icon = {
 											using = tooltip_title_icon_size
 											texture = "gfx/interface/icons/flat_icons/declare_war/transfer_occupation.dds"
@@ -3044,6 +3171,33 @@ lateralview = {
 								align = nobaseline
 							}
 							blockoverride "subheader_unified_icon_post"{
+								# MOVEMENTS
+								widget = {
+									size = { 45 26 }
+									visible = "[DataModelHasItems(GetQuickMovements(LocationView.GetLocation).GetMovements)]"
+									widget = {
+										size = { 26 26 }
+										using = bg_circle_piechart
+										icon = {
+											parentanchor = center
+											size = { 20 20 }
+
+											datacontext_from_model = {
+												datamodel = "[GetQuickMovements(LocationView.GetLocation).GetMovements]"
+												index = 0
+											}
+
+											texture = "[GetMovementDefinitionIcon(Movement.GetMovementDefinition)]"
+											texture_density = 2
+										}
+
+										datacontext = "[LocationView.GetLocation]"
+										tooltipwidget = {
+											using = location_movements_tooltip
+										}
+									}
+								}
+
 								expand = {}
 							}
 						}
@@ -3353,7 +3507,7 @@ lateralview = {
 								using = location_background
 
 								tooltipwidget = {
-									SimpleContextualTooltipType = {
+											SimpleContextualStringPairTooltipType = {
 										blockoverride "title_icon" {
 											icon = {
 												using = tooltip_title_icon_size
@@ -3945,8 +4099,8 @@ lateralview = {
 									visible = "[LocationView.GetLocation.HasVolcano]"
 									texture = "gfx/interface/topography/volcano.dds"
 
-									tooltipwidget = {
-										SimpleContextualTooltipType = {
+										tooltipwidget = {
+											SimpleContextualStringPairTooltipType = {
 											blockoverride "title_icon" {
 												icon = {
 													using = tooltip_title_icon_size
@@ -4000,7 +4154,7 @@ lateralview = {
 										alpha = 0.3
 									}
 									tooltipwidget = {
-										SimpleContextualTooltipType = {
+										SimpleContextualStringPairTooltipType = {
 											blockoverride "title_text" {
 												text = "STATIC_MODIFIER_NAME_raised_levies"
 											}
@@ -4796,14 +4950,13 @@ lateralview = {
 													}
 
 													# BUILDINGS BREAKDOWN
-													vbox = {
-														name = "location_buildings_laborers"
-														layoutpolicy_horizontal = fixed
-														size = { 100 42 }
-														maximumsize = { 100 42 }
-														position = { -0.5 -5 }
-														spacing = 3
-														datamodel = "[LocationView.GetPopTypes]"
+														vbox = {
+															name = "location_buildings_laborers"
+															layoutpolicy_horizontal = fixed
+															size = { 100 42 }
+															maximumsize = { 100 42 }
+															spacing = 3
+															datamodel = "[LocationView.GetPopTypes]"
 														# visible = "[GreaterThan_int32(LocationView.GetNumPopBuildings, '(int32)0')]"
 
 															item = {
@@ -4968,34 +5121,6 @@ lateralview = {
 															}
 														}
 													}
-
-													# MOVEMENTS
-													widget = {
-														size = { 45 26 }
-														visible = "[DataModelHasItems(GetQuickMovements(LocationView.GetLocation).GetMovements)]"
-														widget = {
-															size = { 26 26 }
-															using = bg_circle_piechart
-															icon = {
-																parentanchor = center
-																size = { 20 20 }
-
-																datacontext_from_model = {
-																	datamodel = "[GetQuickMovements(LocationView.GetLocation).GetMovements]"
-																	index = 0
-																}
-
-																texture = "[GetMovementDefinitionIcon(Movement.GetMovementDefinition)]"
-																texture_density = 2
-															}
-
-															datacontext = "[LocationView.GetLocation]"
-															tooltipwidget = {
-																using = location_movements_tooltip
-															}
-														}
-													}
-
 												}
 											}
 										}
