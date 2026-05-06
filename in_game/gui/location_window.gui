@@ -213,7 +213,7 @@ types LocationWindowTypes
 					action_tooltip = {
 						click_type = right
 						click_mode = single
-						title = "BUILD_BUILDING_FROM_LOCATION"
+						title = "BUILD_BUILDING_HEADER"
 						on_action = "[SelectLocationToBuildDefault(LocationBuildingItem.GetBuilding.GetType)]"
 					}
 					enabled = "[LocationBuildingItem.IsPlayerBuilding]"
@@ -253,7 +253,7 @@ types LocationWindowTypes
 						action_tooltip = {
 							click_type = right
 							click_mode = single
-							title = "BUILD_BUILDING_FROM_LOCATION"
+							title = "BUILD_BUILDING_HEADER"
 							on_action = "[SelectLocationToBuildDefault(LocationBuildingItem.GetBuilding.GetType)]"
 						}
 						
@@ -2329,7 +2329,7 @@ types LocationWindowTypes
 				action_tooltip = {
 					click_type = left
 					click_mode = single
-					title = "BUILD_BUILDING_FROM_LOCATION"
+					title = "BUILD_BUILDING_HEADER"
 					on_action = "[SelectLocationToBuildWithLocation(LocationBuildingItem.GetBuildingType, LocationView.GetLocation.GetId, '(bool)no')]"
 				}
 				icon = {
@@ -5017,7 +5017,7 @@ lateralview = {
 																				action_tooltip = {
 																					click_type = right
 																					click_mode = single
-																					title = "BUILD_BUILDING_FROM_LOCATION"
+																					title = "BUILD_BUILDING_HEADER"
 																					on_action = "[SelectLocationToBuildDefault(LocationBuildingItem.GetBuilding.GetType)]"
 																				}
 
@@ -5694,7 +5694,66 @@ lateralview = {
 										}
 									}
 
-									
+									# MARKET CONSTRUCTION IN PROGRESS
+									vbox = {
+										datamodel = "[LocationView.GetLocation.GetCivilConstructions]"
+										layoutpolicy_horizontal = expanding
+
+										item = {
+											widget = {
+												visible = "[Construction.IsMarket]"
+												layoutpolicy_horizontal = expanding
+												size = { -1 70 }
+
+												hbox = {
+													using = bg_market_card
+													using = bg_cabinet_card_frame
+													spacing = 10
+													margin = { 10 5 }
+
+													construction_marker = {
+														size = { 50 50 }
+														blockoverride "button_size" {
+															size = { 25 25 }
+														}
+														blockoverride "piechart_size" {
+															size = { 85% 85% }
+														}
+														blockoverride "construction_marker_left_action" {}
+													}
+
+													vbox = {
+														layoutpolicy_horizontal = expanding
+
+														text_single = {
+															layoutpolicy_horizontal = expanding
+															autoresize = no
+															align = left
+															raw_text = "[Construction.GetNameWithNoTooltip]"
+														}
+
+														text_single = {
+															layoutpolicy_horizontal = expanding
+															autoresize = no
+															align = left
+															using = Font_Size_Small
+															visible = "[Not(Construction.IsStalled)]"
+															text = "CONSTRUCTION_DURATION_DAYS"
+														}
+														text_single = {
+															layoutpolicy_horizontal = expanding
+															autoresize = no
+															align = left
+															using = Font_Size_Small
+															visible = "[Construction.IsStalled]"
+															text = "CONSTRUCTION_INFO_STALLED"
+														}
+													}
+												}
+											}
+										}
+									}
+
 									# BUILDINGS BREAKDOWN
 									vbox = {
 										name = "location_buildings"
