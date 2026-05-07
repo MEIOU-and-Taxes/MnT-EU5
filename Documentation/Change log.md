@@ -279,6 +279,6 @@ Date: 2026-01-20
 - Reworked the goods-panel Production opener to set RGO visibility through a dedicated scripted GUI based on the selected good, and removed the unused old per-good force-show path.
 - Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
-
+- Added a row in the loading screen showing MnT version
 ##### Modding
 - Added automated check for correct encodings and line endings via GitHub Actions
