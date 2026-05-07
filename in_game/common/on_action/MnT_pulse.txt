@@ -337,9 +337,14 @@ MnT_epbm_save_game_compat_init = {
 	effect = {
 		if = {
 			limit = {
-				NOT = {
-					has_global_variable = MnT_EPBM_initialized
-					global_var:MnT_EPBM_initialized > 0  # if we need another rebuild because something is broken just pump up the value here and on the set variable
+				OR = {
+					NOT = { has_global_variable = MnT_EPBM_initialized }
+					trigger_if = {
+						limit = {
+							has_global_variable = MnT_EPBM_initialized
+						}
+						NOT = { global_var:MnT_EPBM_initialized > 0 }
+					}
 				}
 			}
 			MnT_epbm_full_rebuild = yes

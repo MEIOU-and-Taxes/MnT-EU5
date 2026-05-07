@@ -1,11 +1,22 @@
-﻿vassal = {
-	subject_pays = subject_pays_vassal
-	color = subject_vassal
-	level = 2
-	annullment_favours_required = 20
-	visible = {
+﻿pronoia = {
+	content_priority = 300
+	subject_pays = subject_pays_pronoia
+	color = subject_pronoia
+	level = 3
+	visible_through_diplomacy = {
 		country_rank_level >= scope:target.country_rank_level
 		NOT = { has_advance = samanta_advance }
+		OR = {
+			AND = {
+				has_or_had_tag = BYZ
+				modifier:enable_pronoia_subject = yes
+			}
+			AND = {
+				country_exists = c:BYZ
+				is_subject_of = c:BYZ
+				is_subject_type = pronoia
+			}
+		}
 		scope:target = { subject_type_is_not_locked = yes }
 
 		#Japanese Imperial Courts Exception
@@ -25,8 +36,67 @@
 		}
 	}
 
+	visible_through_treaty = {
+		country_rank_level >= scope:target.country_rank_level
+		NOT = { has_advance = samanta_advance }
+		OR = {
+			AND = {
+				has_or_had_tag = BYZ
+				modifier:enable_pronoia_subject = yes
+			}
+			AND = {
+				country_exists = c:BYZ
+				is_subject_of = c:BYZ
+				is_subject_type = pronoia
+			}
+		}
+		scope:target = { subject_type_is_not_locked = yes }
+		
+		#Japanese Imperial Courts Exception
+		trigger_if = {
+			limit = {
+				is_member_of_international_organization = international_organization:japanese_shogunate
+				is_situation_active = situation:nanbokuchou
+			}
+			NOT = {
+				scope:target = {
+					has_special_status_in_international_organization = {
+						type = special_status:japanese_emperor
+						international_organization = international_organization:japanese_shogunate
+					}
+				}
+			}
+		}
+	}
+
 	creation_visible = {
 		NOT = { has_advance = samanta_advance }
+		OR = {
+			AND = {
+				has_or_had_tag = BYZ
+				modifier:enable_pronoia_subject = yes
+			}
+			AND = {
+				country_exists = c:BYZ
+				is_subject_of = c:BYZ
+				is_subject_type = pronoia
+			}
+		}
+	}
+
+	release_country_enabled = {
+		NOT = { has_advance = samanta_advance }
+		OR = {
+			AND = {
+				has_or_had_tag = BYZ
+				modifier:enable_pronoia_subject = yes
+			}
+			AND = {
+				country_exists = c:BYZ
+				is_subject_of = c:BYZ
+				is_subject_type = pronoia
+			}
+		}
 	}
 	
 	join_offensive_wars_always = {
@@ -34,37 +104,31 @@
 	}
 	join_offensive_wars_can_call = {
 		scope:actor ?= { is_subject_of = scope:recipient }
+		NOT = { scope:target ?= { is_subject_of = scope:recipient } }
 	}
 	join_defensive_wars_always = {
 		always = yes
 	}
 	
-	diplomatic_capacity_cost_scale = 1.0
-	maritime_path_tolerance = -0.25
-
-	strength_vs_overlord = -1 #M&T from -0.5
+	diplomatic_capacity_cost_scale = 0.75
+	
+	
+	strength_vs_overlord = -1 #M&T from -0.50
 	
 	has_overlords_ruler = no
-	will_join_independence_wars = yes
-	annexation_speed = 1
-	annexation_min_years_before = 10
-	annexation_min_opinion = 150
-	annexation_stall_opinion = 125
-	overlord_can_cancel = yes
+	annexation_speed = 0.5
+	annexation_min_years_before = 20
+	annexation_min_opinion = 190
+	annexation_stall_opinion = 175
+	subject_can_cancel = no
+	overlord_can_cancel = no
+	overlord_inherit_if_no_heir = yes
 	
 	can_overlord_build_roads = yes
 	can_overlord_build_buildings = yes
 	can_overlord_build_rgos = yes
 	
 	has_limited_diplomacy = yes
-
-	allow_declaring_wars = {
-		OR = {
-			military_order_can_declare_wars_trigger = yes
-			lordship_of_ireland_can_declare_wars_trigger = yes
-			frankokratia_vassal_state_can_declare_wars_trigger = yes
-		}
-	}
 
 	fleet_basing_rights = yes
 	food_access = yes
@@ -79,17 +143,25 @@
 	institution_spread_to_overlord = monthly_institution_spread_mild
 	institution_spread_to_subject = monthly_institution_spread_mild
 	
-	overlord_modifier = {
+	overlord_modifier = {	
 		stability_cost = 0.04 #added by M&T
+		monthly_legitimacy = 0.01
 		monthly_towards_decentralization = societal_value_tiny_monthly_move
 	}
 
+
 	subject_modifier = {
-		country_cabinet_efficiency = -0.20
+		global_manpower_modifier = 0.1
+	}
+
+	on_enable = {
+	}
+
+	on_disable = {
 	}
 
 	diplo_chance_accept_subject = {
-		base = -92
+		base = -90
 		current_strength = 0.2
 		border_distance = -0.3
 		negative_opinion = -5
@@ -98,15 +170,14 @@
 		giving_defensive_support = 2
 		receiving_defensive_support = 5
 		royal_ties = 1
-		trust_in_actor = 0.2
 
 		num_of_limited_subjects = -5
 		culture_war = 3
 		diplomatic_reputation = 1
-		different_religion = -20
-		same_common_language = 5
-		same_court_language = 10
-		different_culture = -10
+		different_religion = -100
+		same_common_language = 10
+		same_court_language = 20
+		different_culture = -50
 		different_government_type = -25
 		actor_at_war = -20
 		competing_power = -200
@@ -117,17 +188,16 @@
 	}
 
 	diplo_chance_accept_overlord = {
-		base = -52
+		base = -50
 		border_distance = -0.3
 		negative_opinion = -5
 		positive_opinion = 0.25
-		same_common_language = 5
-		same_court_language = 10
-		different_culture = -10
+		same_common_language = 10
+		same_court_language = 20
+		different_culture = -50
 		different_government_type = -25
 		actor_at_war = -20
 		competing_power = -200
-		trust_in_actor = 0.2
 	}
 
 	ai_wants_to_be_overlord = {
