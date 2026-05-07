@@ -240,9 +240,16 @@ lateralview = {
 
 						sort_by_key_button = {
 							visible = "[GoodsProductionLateralView.IsMarketFilterEnabled]"
-							name = "price"
+							name = "market_price"
 							layoutpolicy_vertical = expanding
-							size = { 170 -1 }
+							size = { 60 -1 }
+						}
+
+						sort_by_key_button = {
+							visible = "[GoodsProductionLateralView.IsMarketFilterEnabled]"
+							name = "market_price_diff"
+							layoutpolicy_vertical = expanding
+							size = { 105 -1 }
 						}
 
 						# sort_by_key_button = {
@@ -451,6 +458,10 @@ lateralview = {
 																	align = center|nobaseline
 																	using = Font_Size_Small
 																	text = "[GoodsMarketEntry.GetPrice|2]"
+
+																	sort_by_small_highlight = {
+																		name = "market_price"
+																	}
 																}
 									
 																text_single = {
@@ -458,12 +469,12 @@ lateralview = {
 																	align = center|nobaseline
 																	using = Font_Size_Small
 																	raw_text = "@[GoodItem.GetGoods.GetPriceDifferenceIconName(GoodsMarketEntry.GetPrice)]!"
+
+																	sort_by_small_highlight = {
+																		name = "market_price_diff"
+																	}
 																}
 															}
-														}
-
-														sort_by_small_highlight = {
-															name = "price"
 														}
 													}
 												}
@@ -752,7 +763,39 @@ lateralview = {
 												# BUILDING GENERATING GOODS
 												button_regular = {
 													size = { 115 28 }
-													tooltipwidget = { BasicFunctionalTooltip = {} }
+													tooltipwidget = {
+														ContextualTooltipType = {
+															blockoverride "title_text" {
+																text = "GOODS_EXPAND_BUILDING_TT_HEADER"
+															}
+
+															blockoverride "title_icon" {
+																icon = {
+																	using = tooltip_title_icon_size
+																	texture = "[GetConceptTexture('building')]"
+																}
+															}
+
+															blockoverride "concept_link" {
+																text = "[building|e]"
+															}
+
+															blockoverride "tooltip_content" {
+																TooltipTextBlock = {
+																	visible = "[GoodItem.CanBuildBuildings]"
+																	blockoverride "text" {
+																		text = "GOODS_EXPAND_BUILDING_TT_TEXT"
+																	}
+																}
+																TooltipTextBlock = {
+																	visible = "[Not(GoodItem.CanBuildBuildings)]"
+																	blockoverride "text" {
+																		text = "NO_GOODS_BUILDINGS"
+																	}
+																}
+															}
+														}
+													}
 													action_tooltip = {
 														click_type = left
 														click_mode = single
@@ -775,7 +818,7 @@ lateralview = {
 															maximumsize = {55 -1}
 															align = nobaseline
 															fontsize = 14
-												raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
+															raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
 														}
 
 														text_single = {
@@ -789,7 +832,7 @@ lateralview = {
 													}
 
 													sort_by_small_highlight = {
-											name = "building_income"
+														name = "building_income"
 													}
 												}
 												
