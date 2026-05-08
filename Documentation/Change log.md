@@ -46,6 +46,9 @@ Date: 2026-01-20
 
 - Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
 - Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
+- Estates now pay their proportional share of inflation-driven maintenance costs on shared buildings.
+- Estate-assigned buildings have goods-based maintenance production methods and their full cost, including inflation, is paid entirely by the owning estate.
+- Estate building tooltips now show actual computed upkeep with a full goods breakdown.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
