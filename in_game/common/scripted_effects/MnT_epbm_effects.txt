@@ -67,7 +67,14 @@ MnT_epbm_add_estate_cost = {
 		limit = { local_var:MnT_epbm_estate_$estate$ > 0 }
 		change_variable = {
 			name = MnT_epbm_pay_$estate$
-			add = { value = local_var:MnT_epbm_estate_$estate$ multiply = MnT_epbm_maint_burden }
+			add = {
+				value = local_var:MnT_epbm_estate_$estate$
+				multiply = MnT_epbm_maint_burden
+				multiply = {
+					value = 1
+					add = inflation
+				}
+			}
 		}
 	}
 }
@@ -95,7 +102,10 @@ MnT_epbm_charge_estate_pay = {
 
 		add_gold_to_estate = {
 			estate_type = estate_type:$estate$_estate
-			value = var:MnT_epbm_pay_$estate$
+			value = {
+				value = var:MnT_epbm_pay_$estate$
+				multiply = -1
+			}
 		}
 	}
 }

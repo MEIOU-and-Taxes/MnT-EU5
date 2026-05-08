@@ -235,7 +235,7 @@ MnT_epbm_player_monthly = {
 	}
 }
 
-# Monthly AI: charge only, reusing the rates cached by the yearly recalc
+# Monthly AI: snapshot + charge, reusing the rates cached by the yearly recalc
 MnT_epbm_ai_monthly_charge = {
 	trigger = {
 		is_ai = yes
@@ -244,6 +244,7 @@ MnT_epbm_ai_monthly_charge = {
 	}
 
 	effect = {
+		MnT_epbm_snapshot_for_display = yes # observer mode visibility
 		MnT_epbm_charge_estates = yes
 	}
 }
@@ -337,14 +338,13 @@ MnT_epbm_save_game_compat_init = {
 	effect = {
 		if = {
 			limit = {
-				OR = {
-					NOT = { has_global_variable = MnT_EPBM_initialized }
-					trigger_if = {
-						limit = {
-							has_global_variable = MnT_EPBM_initialized
-						}
-						NOT = { global_var:MnT_EPBM_initialized > 0 }
-					}
+				# Bump the value here to force a rebuild on version update
+				trigger_if = {
+					limit = { has_global_variable = MnT_EPBM_initialized }
+					NOT = { global_var:MnT_EPBM_initialized >= 1 }
+				}
+				trigger_else = {
+					always = yes
 				}
 			}
 			MnT_epbm_full_rebuild = yes
