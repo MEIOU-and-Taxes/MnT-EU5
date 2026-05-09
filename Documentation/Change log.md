@@ -160,7 +160,6 @@ Date: 2026-01-20
 - Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
 - Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
 - Reduced number of glass production buildings from 6 to 1 for indian town setup profile
-- Add population demand for glass as in April 8 TT
 	
 ##### Population
 
