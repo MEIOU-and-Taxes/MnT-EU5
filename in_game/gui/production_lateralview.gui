@@ -51,6 +51,18 @@ template production_main_tabs {
 			using = TabFoodTooltip
 		}
 	}
+
+	button_main_tab_alt = {
+		using = layoutpolicy_expanding
+		blockoverride "tab_text" {
+			text = "game_concept_locations"
+		}
+		onclick = "[OpenLateralView('town_rights')]"
+		down = "[IsLateralViewOpened('town_rights')]"
+		tooltipwidget = {
+			using = TabTownRightsTooltip
+		}
+	}
 }
 
 template production_view_subtabs {
@@ -363,6 +375,7 @@ template production_view_poptypes {
 						on_action = "[GetScriptedGui('mnt_force_show_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
 						on_action = "[GetScriptedGui('mnt_force_show_non_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
 						on_action = "[OpenLateralViewWithFilter('production', PopType.GetKey)]"
+						on_action = "[OpenLateralViewWithFilterNoClear('production', 'hide_estate_only_buildings')]"
 						on_action = "[ShowProductionViewWithLocation(Location.GetId, '(bool)no')]"
 						datacontext = "[PopType]"
 						title = "TOGGLE_BUILDINGS_POP_TYPE"
@@ -1574,7 +1587,7 @@ lateralview = {
 																						texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
 																					}
 																					visible = "[And(Building.CanPlayerUpgrade, Not(BuildingItem.GetBuildingType.IsForeign))]"
-																					datacontext = "[Building.GetType.GetNextReplaced(Player.Self)]"
+																					datacontext = "[Building.GetType.GetNextReplacementBuilding(Player.Self)]"
 																					datacontext = "[Building.GetLocation]"
 																					enabled = "[CanBuildOrExpandBuilding(BuildingType.Self, Location.Self)]"
 																					action_tooltip = {
@@ -2312,7 +2325,7 @@ types Buildings {
 						icon = {
 							size = { 10 10 }
 							visible = "[BuildingItem.HasBuildingsLackingInput]"
-							position = { 6 6 }
+							position = { 0 6 }
 							parentanchor = top|left
 							using = warning_icon_texture
 							texture_density = 2
@@ -3254,9 +3267,13 @@ types Buildings {
 									spacing = 5
 
 									hbox = {
-										margin_right = 3
 										spacing = 5
 										layoutpolicy_horizontal = expanding
+
+										hbox = {
+											margin_right = 3
+											spacing = 6
+											layoutpolicy_horizontal = expanding
 
 											widget = { # profit/income
 												size = { 60 36 }
@@ -3329,6 +3346,25 @@ types Buildings {
 														}
 													}
 												}
+
+												hbox = { #upkeep
+													expand = {}
+													visible = "[Not(BuildingItem.GetBuildingType.IsProducing)]"
+
+													text_single = {
+														maximumsize = { 60 18 }
+														fontsize = 14
+														raw_text = "#R [Building.GetUpkeep|2]#!@expense!"
+														tooltipwidget = {
+															using = Building_upkeep_tooltip
+														}
+
+														# sort_by_highlight = {
+														# 	size = { 105% 200% }
+														# 	name = "income"
+														# }
+													}
+												}
 											}
 	
 											widget = { #efficiency
@@ -3359,6 +3395,11 @@ types Buildings {
 												}
 											}
 										}
+
+									}
+
+									widget = {
+										size = { 20 41 }
 
 										vbox = { # buttons
 											spacing = 1
@@ -3414,6 +3455,7 @@ types Buildings {
 												}
 											}
 										}
+									}
 
 									widget = { #builder
 										layoutpolicy_vertical = expanding
@@ -3485,6 +3527,10 @@ types Buildings {
 													align = center
 													default_format = "#overview_text"
 
+													tooltipwidget = {
+														using = BuildingMaxLevel_Tooltip
+													}
+
 													sort_by_highlight = {
 														name = "level"
 													}
@@ -3498,6 +3544,10 @@ types Buildings {
 													align = center
 													default_format = "#overview_text"
 
+													tooltipwidget = {
+														using = BuildingMaxLevel_Tooltip
+													}
+
 													sort_by_highlight = {
 														name = "level"
 													}
@@ -3510,6 +3560,10 @@ types Buildings {
 													raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y] ([BuildingCandidate.GetBuilding.GetLevelsUnderConstruction|0+=]) / [BuildingCandidate.GetMaxLevel|0Y]"
 													align = center
 													default_format = "#overview_text"
+
+													tooltipwidget = {
+														using = BuildingMaxLevel_Tooltip
+													}
 
 													sort_by_highlight = {
 														name = "level"
@@ -3567,7 +3621,7 @@ types Buildings {
 													blockoverride "plusminus_icon" {
 														texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
 													}
-													datacontext = "[BuildingItem.GetBuildingType.GetNextReplaced(Player.Self)]"
+													datacontext = "[BuildingItem.GetBuildingType.GetNextReplacementBuilding(Player.Self)]"
 													enabled = "[CanUpgradeToBuilding(BuildingType.Self, Location.Self)]"
 													action_tooltip = {
 														click_mode = single
@@ -4487,7 +4541,6 @@ types Buildings {
 				margin = {1 2}
 				margin_bottom = 0
 				spacing = 2
-				datacontext = "[GetMarketCountryNeeds(Player.Self, Market.Self)]"
 
 				# TRADE CAPACITY
 				widget = {
@@ -4601,7 +4654,6 @@ types Buildings {
 				# Buildings
 				button_regular = {
 					name = "buildings_market_card_button"
-					enabled = "[IsMarketInRange(Market.Self)]"
 					size = { 37 25 }
 					tooltipwidget = {
 						BasicFunctionalTooltip = {}
@@ -4610,8 +4662,6 @@ types Buildings {
 						click_type = left
 						click_mode = single
 						title = "MARKET_HUB_GOTO_BUILDINGS"
-						enabled = "[IsMarketInRange(Market.Self)]"
-						conditions = "[MakeItFailIfLoc(Not(IsMarketInRange(Market.Self)), 'MERCHANT_CAPACITY_TT_OUT_OF_RANGE')]"
 						on_action = "[SetUIFocusMarket(Market.Self)]"
 						on_action = "[OpenLateralView('production')]"
 					}
@@ -4627,10 +4677,6 @@ types Buildings {
 				button_regular = {
 					name = "goods_market_card_button"
 					size = { 37 25 }
-					enabled = "[IsMarketInRange(Market.Self)]"
-					# enabled = "[Or(
-					# 	GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0'),
-					# 	GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0'))]"
 					tooltipwidget = {
 						BasicFunctionalTooltip = {}
 					}
@@ -4638,8 +4684,6 @@ types Buildings {
 						click_type = left
 						click_mode = single
 						title = "MARKET_HUB_GOTO_GOODS"
-						enabled = "[IsMarketInRange(Market.Self)]"
-						conditions = "[MakeItFailIfLoc(Not(IsMarketInRange(Market.Self)), 'MERCHANT_CAPACITY_TT_OUT_OF_RANGE')]"
 						on_action = "[ShowGoodsProductionViewWithMarketAndFilter(Market.Self, '', '(bool)yes')]"
 					}
 
@@ -4657,9 +4701,6 @@ types Buildings {
 					onclick = "[ShowFoodProductionViewWithMarket(Market.Self, '(bool)yes')]"
 					tooltipwidget = {
 						using = market_food_balance_tooltip
-						blockoverride "shift_left_extra" {
-							replacement_shift_item = {}
-						}
 					}
 					action_tooltip = {
 						visible = "[GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0')]"
@@ -4672,6 +4713,7 @@ types Buildings {
 						click_modifier = shift
 						click_type = left
 						title = "ALERT_HINT"
+						click_modifier_description = "OPEN_HINT_TEXT"
 						using = snd_UI_alert_openAndCycle
 						on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_food')]"
 						on_action = "[PdxGuiTriggerAllAnimations('reset_carousel')]"
@@ -4901,6 +4943,7 @@ types Buildings {
 					on_action = "[GetScriptedGui('mnt_force_show_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
 					on_action = "[GetScriptedGui('mnt_force_show_non_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
 					on_action = "[OpenLateralViewWithFilter('production', PopType.GetKey)]"
+					on_action = "[OpenLateralViewWithFilterNoClear('production', 'hide_estate_only_buildings')]"
 					title = "TOGGLE_BUILDINGS_POP_TYPE"
 				}
 			}
@@ -5006,6 +5049,7 @@ types Buildings {
 				size = { -1 21 }
 			}
 			datacontext = "[BuildingType.GetEligibleEstate]"
+			datacontext = "[Building.GetType]"
 			visible = "[And(Not(BuildingType.IsForeign), BuildingType.OnlyEstatesCanBuild)]"
 			background = {
 				texture = "gfx/interface/component_decoration/flag_frames/frame_1.dds"
@@ -5019,7 +5063,7 @@ types Buildings {
 				texture = "[GetEstateIcon(BuildingType.GetEligibleEstate)]"
 			}
 			tooltipwidget = {
-				using = EstateType_tooltip
+				using = Estate_building_Tooltip
 			}
 		}
 	}
@@ -5123,30 +5167,22 @@ template pop_filter_button_tt {
 }
 
 template trade_capacity_button_action {
-	enabled = "[IsMarketInRange(Market.Self)]"
 	datacontext = "[Player]"
 	onclick = "[SetUIFocusMarket(Market.Self)]"
 
 	tooltipwidget = {
 		using = market_hub_trade_tooltip
-		blockoverride "shift_left_extra" {
-			replacement_shift_item = {}
-		}
 	}
 	action_tooltip = {
-		enabled = "[IsMarketInRange(Market.Self)]"
 		click_type = left
 		click_mode = single
 		title = "SHOW_MARKET_TRADES"
-		conditions = "[MakeItFailIfLoc(Not(IsMarketInRange(Market.Self)), 'MERCHANT_CAPACITY_TT_OUT_OF_RANGE')]"
 		on_action = "[OpenLateralViewWithParams('trade', 'subtab = trades')]"
 	}
 	action_tooltip = {
 		click_type = right
 		click_mode = single
 		title = "EXPAND_MERCHANT_CAPACITY"
-		conditions = "[MakeItFailIfLoc(Not(IsMarketInRange(Market.Self)), 'MERCHANT_CAPACITY_TT_OUT_OF_RANGE')]"
-		enabled = "[IsMarketInRange(Market.Self)]"
 		on_action = "[ShowProductionViewWithMarketAndFilter(Market.Self, 'merchant_capacity_from_building', '(bool)yes')]"
 	}
 
@@ -5154,6 +5190,7 @@ template trade_capacity_button_action {
 		click_modifier = shift
 		click_type = left
 		title = "ALERT_HINT"
+		click_modifier_description = "OPEN_HINT_TEXT"
 		using = snd_UI_alert_openAndCycle
 		on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_trade')]"
 		on_action = "[PdxGuiTriggerAllAnimations('reset_carousel')]"
@@ -5232,18 +5269,15 @@ template trade_capacity_button_text {
 		layoutstretchfactor_horizontal = 1
 		layoutpolicy_horizontal = expanding
 		visible = "[GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0')]"
-		datamodel = "[Market.GetMerchants]"
-		item = {
-			text_single = {
-				size = { -1 20 }
-				layoutpolicy_horizontal = expanding
-				autoresize = no
-				fontsize = 14
-				align = center|nobaseline
-				visible = "[Merchant.GetCountry.IsPlayer]"
-				raw_text = "[Merchant.GetTotalTradeProfit|+=2]@gold!"
-				block "trade_income_sort_highlight" {}
-			}
+		datacontext = "[Market.GetMerchant(Player.Self)]"
+		text_single = {
+			size = { -1 20 }
+			layoutpolicy_horizontal = expanding
+			autoresize = no
+			fontsize = 14
+			align = center|nobaseline
+			raw_text = "[Multiply_CFixedPoint(Merchant.GetTotalTradeProfit, Player.GetModifier('trade_income'))|2+=]@income!"
+			block "trade_income_sort_highlight" {}
 		}
 	}
 }
@@ -5255,9 +5289,6 @@ template gov_needs_button_action {
 
 	tooltipwidget = {
 		using = market_hub_gov_needs_tooltip
-		blockoverride "shift_left_extra" {
-			replacement_shift_item = {}
-		}
 	}
 	action_tooltip = {
 		visible = "[Or(GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0'), GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0'))]"
@@ -5272,6 +5303,7 @@ template gov_needs_button_action {
 		click_modifier = shift
 		click_type = left
 		title = "ALERT_HINT"
+		click_modifier_description = "OPEN_HINT_TEXT"
 		using = snd_UI_alert_openAndCycle
 		visible = "[And(MarketCountryNeeds.HasBuildingsMissingGoods, Not(MarketCountryNeeds.HasGovernmentMissingGoods))]"
 		on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_has_buildings_missing_input')]"
@@ -5298,9 +5330,6 @@ template building_needs_button_action {
 
 	tooltipwidget = {
 		using = market_hub_building_needs_tooltip
-		blockoverride "shift_left_extra" {
-			replacement_shift_item = {}
-		}
 	}
 	action_tooltip = {
 		visible = "[Or(GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0'), GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0'))]"
@@ -5314,6 +5343,7 @@ template building_needs_button_action {
 		click_modifier = shift
 		click_type = left
 		title = "ALERT_HINT"
+		click_modifier_description = "OPEN_HINT_TEXT"
 		using = snd_UI_alert_openAndCycle
 		visible = "[MarketCountryNeeds.HasBuildingsMissingGoods]"
 		on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_has_buildings_missing_input')]"
@@ -5327,9 +5357,6 @@ template pop_needs_button_action {
 	onclick = "[ShowGoodsProductionViewWithMarketAndFilter(Market.Self, 'pop_needs', '(bool)yes')]"
 	tooltipwidget = {
 		using = market_hub_pop_needs_tooltip
-		blockoverride "shift_left_extra" {
-			replacement_shift_item = {}
-		}
 	}
 	action_tooltip = {
 		visible = "[GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0')]"
@@ -5343,6 +5370,7 @@ template pop_needs_button_action {
 		click_modifier = shift
 		click_type = left
 		title = "ALERT_HINT"
+		click_modifier_description = "OPEN_HINT_TEXT"
 		using = snd_UI_alert_openAndCycle
 		visible = "[And(MarketCountryNeeds.HasPopsMissingGoods, Not(MarketCountryNeeds.HasRebelPopsMissingGoods))]"
 		on_action = "[ShowGoodsProductionViewWithMarketAndFilter(Market.Self, 'pop_needs', '(bool)yes')]"
@@ -5366,9 +5394,6 @@ template food_needs_button_action {
 	onclick = "[ShowFoodProductionViewWithMarket(Market.Self, '(bool)yes')]"
 	tooltipwidget = {
 		using = market_food_balance_tooltip
-		blockoverride "shift_left_extra" {
-			replacement_shift_item = {}
-		}
 	}
 	action_tooltip = {
 		visible = "[GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0')]"
@@ -5381,6 +5406,7 @@ template food_needs_button_action {
 		click_modifier = shift
 		click_type = left
 		title = "ALERT_HINT"
+		click_modifier_description = "OPEN_HINT_TEXT"
 		using = snd_UI_alert_openAndCycle
 		on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_food')]"
 		on_action = "[PdxGuiTriggerAllAnimations('reset_carousel')]"

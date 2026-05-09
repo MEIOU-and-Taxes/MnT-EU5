@@ -4,22 +4,82 @@ MnT_generate_building_hooks.py — Estate-pays-building-maintenance codegen.
 
 Scans vanilla EU5 + MnT building_types and production_methods, determines
 which buildings should contribute to the MnT_epbm estate-maintenance system,
-and writes out every piece of generated script the runtime needs:
+and writes out every piece of generated script the runtime needs.
 
-  1. Rewrites MnT's own building_types/*.txt in place to inject the
-     on_built / on_destroyed hooks that keep per-location building lists
-     up to date as the player constructs or demolishes buildings.
-  2. Writes an INJECT (and, if needed, a REPLACE) override file targeting
-     any building that lives in a vanilla-only file — the engine merges
-     those directives on load, so vanilla files are never touched.
-  3. Writes the international_organization definitions used as variable-map
-     containers (one IO per maintenance production method).
-  4. Writes the init effect (`MnT_epbm_stamp_globals`) that creates those
-     IOs at game start and populates the global `MnT_epbm_profiles` map
-     from building_type to IO scope.
-  5. Writes the required io_opinion biases (engine mandates one per IO).
-  6. Writes the localization YML that provides empty strings for every IO
-     so the engine doesn't log missing-loc warnings.
+────────────────────────────────────────────────────────────────────────────
+PIPELINE OVERVIEW
+────────────────────────────────────────────────────────────────────────────
+The generator runs in eight stages:
+
+  1. PARSE PRODUCTION METHODS
+     Scans vanilla + mod production_methods/ files. Filters to qualifying
+     PMs: those with goods inputs, no `no_upkeep = yes`, and no output
+     goods. Builds a goods-per-PM map used for pricing at runtime.
+
+  2. PARSE ALL BUILDINGS
+     Scans vanilla + mod building_types/ directories. When a mod file has
+     the same name as a vanilla file, the mod version completely replaces
+     it. INJECT/REPLACE blocks from mod files are applied on top of
+     vanilla building definitions. Records each building's estate
+     assignment, PM references, source file, and existing hook state.
+
+  3. CLASSIFY
+     Matches buildings to qualifying PMs. Skips fort-granting buildings
+     (crown-paid via separate system). Warns about estate-assigned
+     buildings that have no qualifying maintenance PM. Outputs the
+     qualifying building list and a map of unique goods profiles.
+
+  4. REWRITE MOD FILES IN-PLACE
+     For each mod building file containing qualifying buildings, strips
+     any previously-injected on_built/on_destroyed hooks, then re-injects
+     fresh hooks. This is the only destructive step. Files are never
+     modified if their hooks are already up to date.
+
+  5. GENERATE INJECT/REPLACE FOR VANILLA-ONLY BUILDINGS
+     Buildings that live in files the mod doesn't replace get INJECT
+     blocks (hook-only additions) or REPLACE blocks (full building
+     definition with hooks, used when the building already has hooks
+     that need updating or when the PM was renamed to avoid collision).
+
+  6. GENERATE INTERNATIONAL ORGANIZATIONS (IOs)
+     One IO definition per unique PM goods profile. IOs are abused as
+     variable-map containers — each IO holds a goods→quantity map that
+     the runtime prices against the local market. Buildings that share
+     identical goods profiles share a single IO.
+
+  7. GENERATE INIT EFFECTS
+     Writes `MnT_epbm_stamp_globals`: called once at game start (and on
+     save-game load). Creates all IOs, populates the global
+     `MnT_epbm_profiles` map (PM → IO scope), and registers estate-
+     assigned buildings in `MnT_epbm_estate_map` (building_type → estate).
+
+  8. GENERATE BIASES + LOCALIZATION
+     Engine mandates one io_opinion bias entry per IO (even if neutral).
+     Localization provides empty/placeholder strings for IO names and
+     any PMs renamed during the REPLACE step to avoid name collisions.
+
+────────────────────────────────────────────────────────────────────────────
+RUNTIME CONTEXT
+────────────────────────────────────────────────────────────────────────────
+The generated artifacts feed the EPBM runtime (MnT_epbm_*.txt scripts):
+
+  - on_built / on_destroyed hooks keep per-location building lists current
+    as the player builds or demolishes. These lists drive the monthly
+    maintenance calculation without needing to iterate every building in
+    the country each tick.
+
+  - The IO goods maps let the calculator price each building's maintenance
+    against its local market. Goods prices vary by market, so the same
+    building type costs different amounts in different trade nodes.
+
+  - The estate map routes estate-assigned buildings to their owning
+    estate's cost bucket. Non-estate buildings go to a shared pool that
+    is split by estate power.
+
+  - The monthly flow is: snapshot last month's values for display →
+    recalculate all building costs → charge each estate via
+    add_gold_to_estate. Player recalcs monthly; AI recalcs yearly
+    with monthly charges using cached rates.
 
 ────────────────────────────────────────────────────────────────────────────
 CONFIGURATION
@@ -631,6 +691,17 @@ def classify(buildings, pms):
 
     if fort_count > 0:
         print(f"  skipped {fort_count} fort-granting building(s) (crown-paid)")
+
+    qualifying_names = {q[0] for q in qualifying}
+    estate_no_pm = []
+    for bname, b in buildings.items():
+        if b['estate'] is not None and bname not in qualifying_names:
+            estate_no_pm.append((bname, b['estate']))
+    if estate_no_pm:
+        print(f"\n  WARNING: {len(estate_no_pm)} estate building(s) have no qualifying maintenance PM:")
+        for bname, estate in sorted(estate_no_pm):
+            print(f"    {bname} (estate={estate})")
+        print()
 
     return qualifying, all_pm_goods
 
@@ -1422,7 +1493,9 @@ def main():
         _check_git_clean(building_types_dir)
         _confirm_destructive(building_types_dir)
 
-    # ── Parse PMs ──
+    # ── Stage 1: Parse production methods ──
+    # Scan vanilla + mod PM files, filter to qualifying (has goods, no
+    # no_upkeep, no output). Result: pm_name → { goods, no_upkeep, ... }
     print("")
     print("Parsing production methods...")
     pms = parse_production_methods(vanilla_dir, mod_dir)
@@ -1431,13 +1504,17 @@ def main():
                       if not v['no_upkeep'] and not v['has_output'] and v['goods']}
     print(f"  qualifying PMs (has goods, no no_upkeep, no output): {len(qualifying_pms)}")
 
-    # ── Parse buildings ──
+    # ── Stage 2: Parse all buildings ──
+    # Merge vanilla + mod building_types. Mod files replace same-named
+    # vanilla files; INJECT/REPLACE blocks override individual buildings.
     print("")
     print("Parsing building types...")
     buildings = parse_all_buildings(vanilla_dir, mod_dir)
     print(f"  found {len(buildings)} buildings")
 
-    # ── Classify ──
+    # ── Stage 3: Classify buildings ──
+    # Match buildings to qualifying PMs, skip forts, warn about estate
+    # buildings missing maintenance PMs. Produces the qualifying list.
     print("")
     print("Classifying qualifying buildings...")
     qualifying, all_pm_goods = classify(buildings, pms)
@@ -1463,13 +1540,15 @@ def main():
     out_loc = output_dir / "main_menu" / "localization" / "english"
     out_buildings = output_dir / "in_game" / "common" / "building_types"
 
-    # ── In-place hook injection on MnT's own building files ──
+    # ── Stage 4: Rewrite mod files in-place ──
+    # Strip old on_built/on_destroyed hooks and re-inject fresh ones.
+    # Only touches files that contain qualifying buildings.
     print("")
     print("Rewriting MnT building files in place...")
     modified, vanilla_only = apply_in_place(qualifying, buildings, mod_dir)
     print(f"  modified {modified} file(s)")
 
-    # ── INJECT/REPLACE overrides for any vanilla-only buildings ──
+    # ── Stage 5: INJECT/REPLACE for vanilla-only buildings ──
     if vanilla_only:
         print("")
         print(f"Generating INJECT/REPLACE for {len(vanilla_only)} vanilla-only building(s)...")
@@ -1499,7 +1578,10 @@ def main():
                 _delete_stale(stale)
         replace_renamed_pms = OrderedDict()
 
-    # ── Shared generated files ──
+    # ── Stages 6-8: IOs, init effects, biases, localization ──
+    # Generate all runtime artifacts: IO definitions (goods containers),
+    # init effects (game-start setup), biases (engine-required), and
+    # localization (prevent missing-loc warnings).
     print("")
     print("Writing generated IOs / biases / init effects / loc...")
 
