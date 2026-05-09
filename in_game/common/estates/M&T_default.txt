@@ -15,181 +15,29 @@
 	satisfaction = {
 		#not shown for ruler-estate, and as satisfaction is always at max.
 	}
-
-	#multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
-	high_power = {
-		country_cabinet_efficiency = 1.0
-		power_projection = 5
-		building_upkeep_costs = 2.5 #M&T from -1.0
-		revoke_privilege_cost_modifier = -1
-		court_spending_cost = 0.1 #M&T from -0.05
-		change_policy_cost_modifier = -0.5
-		global_estate_target_satisfaction = crown_power_estate_satisfaction_impact
-	}
-	
-	
-	#multiplied with -(relative_power - LOW_POWER_THRESHOLD) if < LOW_POWER_THRESHOLD
-	low_power = {
-		country_cabinet_efficiency = -1.0
-		estate_building_destruction_satisfaction_impact = -0.66
-		change_policy_cost_modifier = 0.5
-		tax_income_efficiency = -1.0
-		diplomatic_reputation = -2
-		building_upkeep_costs = -1.0 #M&T from 2.0
-	}
 	
 	power = {
 		parliament_base_support = 0.5
 		trade_income = 1.0
+
+		country_cabinet_efficiency = 0.5
+		diplomatic_reputation = 2
+		power_projection = 5
+		revoke_privilege_cost_modifier = -1
+		estate_building_destruction_satisfaction_impact = -0.5
+		change_policy_cost_modifier = -0.5
+		
+		
+		remove_bureaucracy_price_cost_modifier = -0.25
+		maintain_bureaucracy_price_cost_modifier = -0.05
+		global_estate_max_tax = 0.20		
+
+		global_estate_target_satisfaction = crown_power_estate_satisfaction_impact
+		
 	}
 
 	ruler = yes
 	
-}
-
-REPLACE:burghers_estate = {
-	color = pop_burghers
-	power_per_pop = 3 #MnT changed from 2
-	tax_per_pop = 20
-	rival = -0.01
-	alliance = 0.01
-	
-	revolt_court_language = common_language
-	characters_have_dynasty = sometimes # new characters may spawn with a dynasty
-	can_generate_mercenary_leaders = yes
-	
-	bank = yes 	#can and will loan money
-	
-	#multiplied with (satisfaction - LOW_SATISFACTION_THRESHOLD)
-	satisfaction = {
-		global_merchant_power = 0.5
-		global_production_efficiency = medium_production_efficiency_bonus
-	}
-	#multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
-	high_power = {
-		burghers_estate_max_tax = -0.5
-		global_merchant_capacity_modifier = 1.0
-		navy_maintenance_cost = -0.33
-		monthly_towards_plutocracy = societal_value_significant_monthly_move
-	}
-	
-	
-	#multiplied with -(relative_power - LOW_POWER_THRESHOLD) if < LOW_POWER_THRESHOLD
-	low_power = {
-		burghers_estate_max_tax = 0.5
-	}
-	
-	opinion = {
-		add = {
-			desc = "ESTATE_OPINION_BASE"
-			value = "opinion(scope:target)"
-			multiply = 0.05
-		}
-		
-		
-		
-		
-		add = {
-			desc = "ESTATE_OPINION_TARGET_B_ESTATE_POWER"
-			value = "scope:target.estate_power(estate_type:burghers_estate)"
-			subtract = 0.2
-			multiply = 5
-		}
-		
-		
-		add = {
-			desc = "ESTATE_OPINION_MERCHANT_CAPACITY"
-			value = total_merchant_capacity
-			subtract = scope:target.total_merchant_capacity
-			multiply = 0.1
-			max = 5
-			min = -5
-		}
-		
-		add = {
-			desc = "capital_economy_vs_traditional_economy"
-			value = {
-				value = societal_value:capital_economy_vs_traditional_economy
-				multiply = -1
-				divide = 10
-			}
-		}
-		
-		add = {
-			desc = "aristocracy_vs_plutocracy"
-			value = {
-				value = societal_value:aristocracy_vs_plutocracy
-				divide = 10
-			}
-		}
-		
-		add = {
-			desc = "mercantilism_vs_free_trade"
-			value = {
-				value = societal_value:mercantilism_vs_free_trade
-				divide = 10
-			}
-		}
-		
-		
-		if = {
-			limit = {
-				capital.market.language = scope:target.capital.market.language
-			}
-			add = {
-				desc = "ESTATE_OPINION_OUR_MARKET_LANGUAGE"
-				value = 10
-			}
-		}
-		
-		
-		if = {
-			limit = {
-				capital.market = { has_merchant = scope:target }
-			}	
-			add = {
-				desc = "ESTATE_OPINION_MERCHANT_IN_CAPITAL"
-				value = -5
-			}
-		}
-		
-		
-		if = {
-			limit = {
-				scope:target.capital.market = { has_merchant = root }
-			}	
-			add = {
-				desc = "ESTATE_OPINION_OUR_MERCHANT_IN_THEIR_CAPITAL"
-				value = 10
-			}
-		}
-
-
-		if = {
-			
-			limit = {
-				government_type = government_type:republic
-				scope:target = { government_type = government_type:republic }
-			}	
-			add = {
-				desc = "ESTATE_OPINION_BOTH_REPUBLIC"
-				value = 5
-			}
-		}
-		
-		
-		if = {
-			limit = {
-				is_embargoed_by = scope:target
-			}	
-			add = {
-				desc = "ESTATE_OPINION_EMBARGOING_US"
-				value = -5
-			}
-		}
-
-
-	}
 }
 
 REPLACE:peasants_estate = {
@@ -198,7 +46,7 @@ REPLACE:peasants_estate = {
     tax_per_pop = 1
     rival = -0.01
     alliance = 0.01
-	
+
 	disenfranchise_to = nobles_estate
 
     bank = yes 	#can and will loan money
@@ -213,6 +61,9 @@ REPLACE:peasants_estate = {
         stability_cost = -0.2
         global_monthly_food_modifier = 0.25
     }
+	power = {
+		building_upkeep_costs = -1.0
+	}
     #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
     high_power = {
         peasants_estate_max_tax = -0.5
@@ -327,9 +178,12 @@ REPLACE:dhimmi_estate = {
 
     #multiplied with (satisfaction - LOW_SATISFACTION_THRESHOLD)
     satisfaction = {
-        global_raw_material_output = 0.05
-        global_monthly_food_modifier = 0.10
+		tolerance_heathen = 2
+		country_cabinet_efficiency = 0.1
     }
+	power = {
+		building_upkeep_costs = -1.0
+	}
     #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
     high_power = {
         dhimmi_estate_max_tax = -0.3
@@ -371,6 +225,9 @@ REPLACE:tribes_estate = {
         global_raw_material_output = 0.05
         global_monthly_food_modifier = 0.10
     }
+	power = {
+		building_upkeep_costs = -1.0
+	}
     #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
     high_power = {
         global_raw_material_output = 0.1
@@ -497,6 +354,9 @@ REPLACE:cossacks_estate = {
         monthly_war_exhaustion = -0.05
         global_monthly_food_modifier = 0.10
     }
+	power = {
+		building_upkeep_costs = -1.0
+	}
     #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
     high_power = {
         cossacks_estate_max_tax = -0.3
@@ -563,4 +423,22 @@ REPLACE:cossacks_estate = {
 
 
     }
+}
+
+INJECT:nobles_estate = {
+	power = {
+		building_upkeep_costs = -1.0
+	}
+}
+
+INJECT:clergy_estate = {
+	power = {
+		building_upkeep_costs = -1.0
+	}
+}
+
+INJECT:burghers_estate = {
+	power = {
+		building_upkeep_costs = -1.0
+	}
 }

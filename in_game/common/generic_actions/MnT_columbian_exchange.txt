@@ -21,17 +21,7 @@ REPLACE:move_nw_good_to_new_location = {
 	allow = {
 		scope:actor ?= {
 			any_market_present_in_country = {
-				save_temporary_scope_as = temp_market
-				any_in_global_list = {
-					variable = new_world_goods
-					save_temporary_scope_as = temp_goods
-					scope:temp_market = {
-						OR = {
-							is_produced_in_market = scope:temp_goods
-							is_traded_in_market = scope:temp_goods
-						}
-					}
-				}
+				has_new_world_goods_in_market = yes
 			}
 		}
 	}
@@ -55,8 +45,10 @@ REPLACE:move_nw_good_to_new_location = {
 		looking_for_a = goods
 		target_flag = target_good
 		ai_interaction_source_list = {# Has a market that demands the good
-			every_in_global_list = {
-				variable = new_world_goods
+			every_goods = {
+				limit = {
+					has_origin_in_new_world = yes
+				}
 				#MnT: bypass the whole commented section below: after changes to good demand, it does not exist when it is not available in the market
 
 				#save_temporary_scope_as = temp_goods
@@ -76,7 +68,7 @@ REPLACE:move_nw_good_to_new_location = {
 		none_available_msg_key = "move_nw_good_to_new_location_no_available_good"
 		column = { data = name }
 		visible = {
-			has_tag = new_world_goods
+			has_origin_in_new_world = yes
 			#MnT: bypass the whole commented section below
 			
 			#scope:actor ?= {
@@ -362,7 +354,7 @@ REPLACE:move_nw_good_to_new_location = {
 				#If there is surplus is less valuable
 				if = {
 					limit = {
-						is_in_surplus_in_market = { market = scope:target_location.market country = root value > 0 }
+						is_in_surplus_in_market = { market = scope:target_location.market country = scope:actor value > 0 }
 					}
 					subtract = 	100
 				}
@@ -389,6 +381,7 @@ REPLACE:move_nw_good_to_new_location = {
 #Plant rice
 #Plant sugar
 #Release horses
+#Release bees
 #Release pigs/ Raise Cattle
 REPLACE:move_ow_good_to_new_location = {
 	type = situation
@@ -407,17 +400,7 @@ REPLACE:move_ow_good_to_new_location = {
 	allow = {
 		scope:actor ?= {
 			any_market_present_in_country = {
-				save_temporary_scope_as = temp_market
-				any_in_global_list = {
-					variable = old_world_goods
-					save_temporary_scope_as = temp_goods
-					scope:temp_market = {
-						OR = {
-							is_produced_in_market = scope:temp_goods
-							is_traded_in_market = scope:temp_goods
-						}
-					}
-				}
+				has_old_world_goods_in_market = yes
 			}
 		}
 	}
@@ -440,8 +423,10 @@ REPLACE:move_ow_good_to_new_location = {
 		looking_for_a = goods
 		target_flag = target_good
 		ai_interaction_source_list = {# Has a market that demands the good
-			every_in_global_list = {
-				variable = old_world_goods
+			every_goods = {
+				limit = {
+					has_origin_in_old_world = yes
+				}
 				#MnT: bypass the whole commented section below: after changes to good demand, it does not exist when it is not available in the market
 
 				# save_temporary_scope_as = temp_goods
@@ -457,10 +442,10 @@ REPLACE:move_ow_good_to_new_location = {
 			}
 		}
 		name = "spread_select_goods"
-		none_available_msg_key = "move_nw_good_to_new_location_no_available_good"
+		none_available_msg_key = "move_ow_good_to_new_location_no_available_good"
 		column = { data = name }
 		visible = {
-			has_tag = old_world_goods
+			has_origin_in_old_world = yes
 			#MnT: bypass the whole commented section below
 			#scope:actor ?= {
 			#	any_market_present_in_country = {
@@ -487,14 +472,8 @@ REPLACE:move_ow_good_to_new_location = {
 				continent = continent:oceania
 				this = region:macaronesia_region
 			}
-			any_area_in_region = {
-				scope:actor = { has_discovered_area = prev }
-				any_location_in_area = {
-					OR = {
-						owner ?= scope:actor
-						top_owner ?= scope:actor
-					}
-				}
+			scope:actor = {
+				owns_or_has_subject_in = prev
 			}
 		}
 	}
@@ -828,6 +807,19 @@ REPLACE:move_ow_good_to_new_location = {
 				}
 				OR = { climate = rainforest_climate climate = monsoon_climate }
 			}
+			#Beeswax
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:beeswax
+				}
+				NOT = { raw_material ?= goods:beeswax }
+				NOR = {
+					vegetation = desert
+				}
+				NOR = {
+					climate = arctic
+				}
+			}
 		}
 	}
 
@@ -946,7 +938,7 @@ REPLACE:learn_from_foreigners = {
 						value = research_progress_weak_bonus
 					}
 				}
-				add_trust = {
+				add_trust_equilibrium = {
 					modifier = trust_learn_from_foreigners
 					target = scope:target
 				}
@@ -1078,7 +1070,7 @@ REPLACE:absorb_institutions = {
 						}
 					}
 				}
-				add_trust = {
+				add_trust_equilibrium = {
 					modifier = trust_absorb_institutions
 					target = scope:target
 				}
