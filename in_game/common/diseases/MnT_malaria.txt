@@ -1,0 +1,143 @@
+﻿REPLACE:malaria = {
+	monthly_spawn_chance = {
+		#malaria is endemic - doesn't "spawn"
+		value = 0
+	}
+
+	spawn = {
+	}
+
+	monthly_resistance_reduction = 0
+
+	r0 = { 
+		#doesn't pass from person to person
+		value = 0
+	}
+
+	environmental_infection = {
+		value = 0.05
+		
+		if = {
+			limit = {
+				OR = {
+					arid_climate_trigger = yes
+					cold_arid_climate_trigger = yes
+                    mediterranean_climate_trigger = yes
+				}
+			}
+			multiply = 0.15
+		}
+		else_if = {
+			limit = {
+				OR = {
+					continental_climate_trigger = yes
+					arctic_climate_trigger = yes
+				}
+			}
+			multiply = 0
+		}
+		else_if = {
+			limit = { oceanic_climate_trigger = yes }
+			multiply = 0.10
+		}
+		else_if = {
+			limit = { subtropic_climate_trigger = yes }
+			multiply = 1.75
+		}
+		else_if = {
+			limit = { tropical_climate_trigger = yes }
+			multiply = 2
+		}
+		#Vegetation
+		if = {
+			limit = {
+				OR = {
+					vegetation = farmland
+					vegetation = grasslands
+				}
+			}
+			multiply = 0.75
+		}
+		else_if = {
+			limit = { vegetation = desert }
+			multiply = 0
+		}
+		else_if = {
+			limit = { vegetation = sparse }
+			multiply = 0.25
+		}
+		else_if = {
+			limit = { vegetation = woods }
+			multiply = 0.8
+		}
+		else_if = {
+			limit = { vegetation = jungle }
+			multiply = 1.25
+		}
+		else_if = {
+			limit = { vegetation = forest }
+			multiply = 1
+		}
+		
+		#Topography		
+		if = {
+			limit = { topography = mountains }
+			multiply = 0
+		}
+		else_if = {
+			limit = { topography = wetlands }
+			multiply = 3
+		}
+
+		if = {
+			limit = {
+				is_coastal = yes
+				is_land = yes
+			}
+			multiply = 0.10
+		}
+	}
+
+	calc_interval_days = { 10 15 }
+
+	location_stagnation_chance = {
+		value = 0
+	}
+
+	percentage_to_meet_their_fate_on_calc = {
+		value = 1
+	}
+
+	location_modifier = {
+		#Nothing
+	}
+
+	mortality_rate = { 
+		value = { 0.85 0.95 }
+	}
+
+	character_mortality_chance = {
+		value = { 0.1 0.5 }
+		multiply = "disease_presence(scope:disease)"
+	}
+
+	on_spread_to_country = {
+	}
+
+	map_color = {
+		lerp = { #Dark Blue
+			min_color = rgb { 100  120  188 }
+			max_color = rgb { 2 30 70 }
+			factor = "disease_presence(scope:disease)"
+		}
+	}
+
+	secondary_map_color = {
+		if = {
+			limit = {
+				disease_has_outbreak_here = scope:disease
+			}
+			value = rgb { 100  120  188 }
+		}
+	}
+}
