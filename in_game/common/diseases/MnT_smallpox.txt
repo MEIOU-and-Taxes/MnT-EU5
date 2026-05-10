@@ -1,0 +1,168 @@
+﻿REPLACE:smallpox = { #https://en.wikipedia.org/wiki/Smallpox
+
+	#script value for how likely the disease is to spawn per month (0..1)
+	monthly_spawn_chance = {
+		#Around 1 outbreaks around the world
+		value = 0.1
+	}
+
+	#effect to spawn the disease somewhere when we've decided it should spawn.
+	#Include a spawn_disease effect here
+	spawn = {
+		random_ownable_location = {
+			limit = {
+				#Not empty location
+				population > 1
+				#Climate preferences
+				OR = {
+					mediterranean_climate_trigger = yes
+					continental_climate_trigger = yes
+					oceanic_climate_trigger = yes
+					cold_arid_climate_trigger = yes
+					tropical_climate_trigger = yes
+				}
+				#If the great_pestilence has not happened yet, exclude America
+				trigger_if = {
+					limit = {
+						situation:great_pestilence = {
+							situation_is_active = no
+							situation_has_ended = no
+						}
+					}
+					#Endemic regions
+					OR = {
+						continent = continent:asia
+						continent = continent:europe
+						continent = continent:africa
+						continent = continent:oceania
+					}
+				}
+
+
+				#If we can't find an appropiate location we don't spawn
+			}
+			spawn_disease = {
+				disease = scope:disease
+				value = 0.5
+				#save the outbreak created for later
+				save_scope_as = outbreak
+			}
+		}
+	}
+
+	#script value to get the R0 number of the disease, or
+	#how many people one person will spread the disease to per interval
+	#In isolated pre-twentieth century populations with negligible herd immunity,
+	#the numbers of cases initially rose exponentially, with an R0 between 3.5 and 6.
+	r0 = {
+		#base
+		if = {
+			limit = {
+				location_rank ?= location_rank:rural_settlement
+			}
+			value = { 3 6 }
+		}
+		else_if = {
+			limit = {
+				location_rank ?= location_rank:town
+			}
+			value = {5 10 }
+		}
+		else = {
+			value = { 10 15 }
+		}
+		#markets spread more person to person
+		if = {
+			limit = {
+				OR = {
+					has_building_with_at_least_one_level = market_village
+					has_building_with_at_least_one_level = marketplace
+					has_building_with_at_least_one_level = slave_market
+					has_building_with_at_least_one_level = entrepot
+					has_building_with_at_least_one_level = trading_hub
+					has_building_with_at_least_one_level = stock_exchange
+				}
+			}
+			multiply = 1.2
+		}
+		multiply = {
+			value = "disease_presence(scope:disease)"
+			multiply = 2
+			add = 1
+		}
+	}
+
+	#script value for how long between spread calculations.
+	#A lower number = possible faster spread, depending on the effect in spread.
+	#Nothing in the scope, this will usually just be a number, but could be a random range
+	#Smallpox was highly contagious, but generally spread more slowly and less widely than some other viral diseases
+	calc_interval_days = {2 8}
+
+	#script value for how much chance there is of the disease stagnating in a location,
+	#slowing its advance greatly. (0..1)
+	location_stagnation_chance = {
+		if = {
+			limit = {
+				"disease_presence(scope:disease)" > 0.05
+			}
+			value = "distance_to_squared(scope:disease.origin)"
+			multiply = 0.0006
+			multiply = 0.005
+		}
+		else = {
+			value = "distance_to_squared(scope:disease.origin)"
+			multiply = 0.00006
+		}
+	}
+
+	#script value for how many of the affected should have their fate decided (live and become resistant, or die)
+	#per calc interval (0..1)
+	percentage_to_meet_their_fate_on_calc = {
+		value = 0.25
+	}
+
+	#modifier applied to locations that have the disease (multiplied by the presence %age)
+	#general bad effects on locations that have this
+	location_modifier = {
+		#Nothing
+	}
+
+	#script value for mortality rate of the disease (0..1)
+	#By the 16th century, smallpox had become entrenched across most of Europe,[3] where it had a mortality rate as high as 30 percent
+	mortality_rate = {
+		0.05 0.3
+	}
+
+	#script value for how likely it is that a character will die per calc interval (0..1)
+	character_mortality_chance = {
+		value = 0.04
+		multiply = "disease_presence(scope:disease)"
+	}
+
+	#event sent when the disease spreads to a country
+	on_spread_to_country = {
+		trigger_event_non_silently = diseases.1
+	}
+
+	#map color for the disease
+	map_color = {
+		lerp = { #Green
+			min_color = rgb { 133  195  136 }
+			max_color = rgb { 2 120 9 }
+			factor = "disease_presence(scope:disease)"
+		}
+	}
+
+	secondary_map_color = {
+		if = {
+			limit = {
+				disease_affects_pops_here = scope:disease
+			}
+			value = rgb { 100  120  188 }
+		}
+	}
+
+	#by default, diseases spread to all pop types equally. This can be adjusted here.
+	#    e.g. specific_pop_type_effect = { pop_type = nobles multiplier = 0 } if you want the disease to leave all nobles alone
+	#specific_pop_type_effect = {}
+}

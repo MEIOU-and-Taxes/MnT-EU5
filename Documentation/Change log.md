@@ -111,7 +111,8 @@ Date: 2026-01-20
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
-    - Diplomatic expenses: paper, jewelry  
+    - Diplomatic expenses: paper, jewelry
+  - Can destroy markets even if there are temporary demands
 - RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
 - Massive rework of the food system, focused on tying up much more of the early game population in food production as peasants.
   - Farming villages  
@@ -285,3 +286,7 @@ Date: 2026-01-20
 - Added M&T logo in the main menu
 ##### Modding
 - Added automated check for correct encodings and line endings via GitHub Actions
+
+##### Climates
+- replace all climates with the more varied koppen climates
+  - references to older climates point to multiple koppen climates  
