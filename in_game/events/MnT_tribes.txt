@@ -74,15 +74,15 @@ mnt_tribes.2 = {
 					multiply = 0.01 # development is 0-100, so we need to convert this into something 0-1
 					if = {
 						limit = {
-							rank_index <= 2 #town
+							development > 0 # Raising 0 to the power of anything is a bad idea
 						}
-						add = 0.4
-					}
-					if = {
-						limit = {
-							rank_index <= 1 #city
+						pow = { # Take the nth root (for a value between 0 and 1 this increases, not decreases
+							value = 1
+							divide = {
+								value = 5 # rank index is 0-1-2-3 with 0 being highest, so we do this so that we end up with divisors of 2-3-4-5, with 5 being highest; we want a minimum of 2 to make the effects of development more dramatic
+								subtract = rank_index
+							}
 						}
-						add = 0.3
 					}
 				}
 			}
