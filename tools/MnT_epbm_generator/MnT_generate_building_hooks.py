@@ -393,6 +393,8 @@ def _parse_pm_file(filepath):
             'no_upkeep': 'no_upkeep' in block and block['no_upkeep'] == 'yes',
             'has_output': 'produced' in block or 'output' in block,
             'has_potential': 'potential' in block,
+            'is_maintenance': block.get('category') == 'building_maintenance',
+            'produced_good': block.get('produced'),
         }
         for k, v in block.items():
             if k not in PM_META_KEYS and isinstance(v, str):
@@ -452,6 +454,7 @@ def _parse_building_block(bname, block, source_file):
                     'has_output': 'produced' in pm_block or 'output' in pm_block,
                     'no_upkeep': pm_block.get('no_upkeep') == 'yes',
                     'is_maintenance': pm_block.get('category') == 'building_maintenance',
+                    'produced_good': pm_block.get('produced'),
                 }
     return b
 
@@ -536,6 +539,7 @@ def _apply_inject(building, inject_block):
                         'has_output': 'produced' in pm_block or 'output' in pm_block,
                         'no_upkeep': pm_block.get('no_upkeep') == 'yes',
                         'is_maintenance': pm_block.get('category') == 'building_maintenance',
+                        'produced_good': pm_block.get('produced'),
                     }
         elif k == 'on_built':
             building['has_on_built'] = True
@@ -613,11 +617,18 @@ def parse_all_buildings(vanilla_dir, mod_dir=None):
 #      to the init dispatch. We don't pre-assign a single PM per building —
 #      runtime picks dynamically via ordered_production_method_of_building.
 #
-# A PM qualifies as maintenance when it has goods inputs, is not flagged
-# no_upkeep, and produces no output. Inline unique_production_methods must
-# additionally carry `category = building_maintenance` (external PMs from
-# unsorted_building_inputs.txt are assumed to be maintenance already).
+# A PM qualifies as maintenance when it has goods inputs and is not flagged
+# no_upkeep. External PMs from unsorted_building_inputs.txt are assumed to be
+# maintenance when they have no output. Inline unique_production_methods always
+# need `category = building_maintenance`. The only output-bearing upkeep PMs
+# cataloged here are maintenance PMs that produce credit, because those still
+# have chargeable inputs that EPBM must price.
 # ═════════════════════════════════════════════════════════════════════════
+
+def _output_is_compatible_with_epbm_upkeep(pm):
+    if not pm.get('has_output', False):
+        return True
+    return pm.get('is_maintenance', False) and pm.get('produced_good') == 'credit'
 
 def _grants_fort_level(obj):
     """Recursively scan a parsed building block for any `fort_level = X`
@@ -646,9 +657,11 @@ def classify(buildings, pms):
 
     # Pass 1a: catalog every external/shared maintenance PM
     for pm_name, pm in pms.items():
-        if pm['no_upkeep'] or pm['has_output']:
+        if pm['no_upkeep']:
             continue
         if not pm['goods']:
+            continue
+        if not _output_is_compatible_with_epbm_upkeep(pm):
             continue
         all_pm_goods[pm_name] = pm['goods']
 
@@ -659,7 +672,9 @@ def classify(buildings, pms):
         for pm_name, pm_data in b['unique_pms'].items():
             if not pm_data.get('is_maintenance', False):
                 continue
-            if pm_data.get('no_upkeep', False) or pm_data.get('has_output', False):
+            if pm_data.get('no_upkeep', False):
+                continue
+            if not _output_is_compatible_with_epbm_upkeep(pm_data):
                 continue
             if not pm_data['goods']:
                 continue
@@ -781,8 +796,12 @@ def _remove_empty_hook_blocks(text):
 
 def _find_building_bounds(text, building_name):
     """Find the (start, end) offsets of `building_name = { ... }` at the
-    top level of `text`. Returns None if not found."""
-    pattern = re.compile(r'^(' + re.escape(building_name) + r')\s*=\s*\{', re.MULTILINE)
+    top level of `text`. Also accepts top-level INJECT:/REPLACE: wrappers.
+    Returns None if not found."""
+    pattern = re.compile(
+        r'^((?:INJECT:|REPLACE:)?' + re.escape(building_name) + r')\s*=\s*\{',
+        re.MULTILINE,
+    )
     match = pattern.search(text)
     if not match:
         return None
@@ -964,7 +983,12 @@ def apply_in_place(qualifying, buildings, mod_dir):
             start, end = bounds
             building_text = text[start:end]
 
-            block = stripped_blocks.get(bname, {})
+            block = (
+                stripped_blocks.get(bname)
+                or stripped_blocks.get(f"REPLACE:{bname}")
+                or stripped_blocks.get(f"INJECT:{bname}")
+                or {}
+            )
             has_on_built = 'on_built' in block
             has_on_destroyed = 'on_destroyed' in block
 
@@ -1495,14 +1519,16 @@ def main():
 
     # ── Stage 1: Parse production methods ──
     # Scan vanilla + mod PM files, filter to qualifying (has goods, no
-    # no_upkeep, no output). Result: pm_name → { goods, no_upkeep, ... }
+    # no_upkeep, and no non-maintenance output). Result: pm_name → schema.
     print("")
     print("Parsing production methods...")
     pms = parse_production_methods(vanilla_dir, mod_dir)
     print(f"  found {len(pms)} production methods")
-    qualifying_pms = {k: v for k, v in pms.items()
-                      if not v['no_upkeep'] and not v['has_output'] and v['goods']}
-    print(f"  qualifying PMs (has goods, no no_upkeep, no output): {len(qualifying_pms)}")
+    qualifying_pms = {
+        k: v for k, v in pms.items()
+        if not v['no_upkeep'] and v['goods'] and _output_is_compatible_with_epbm_upkeep(v)
+    }
+    print(f"  qualifying PMs (has goods, no no_upkeep, no non-maintenance output): {len(qualifying_pms)}")
 
     # ── Stage 2: Parse all buildings ──
     # Merge vanilla + mod building_types. Mod files replace same-named

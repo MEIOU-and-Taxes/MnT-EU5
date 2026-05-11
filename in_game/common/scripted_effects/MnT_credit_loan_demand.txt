@@ -1,0 +1,83 @@
+﻿mnt_accumulate_credit_loan_demand_for_country = {
+	set_variable = {
+		name = total_credit_loan_debt
+		value = 0
+	}
+
+	every_loan = {
+		PREV = {
+			change_variable = {
+				name = total_credit_loan_debt
+				add = prev.remaining_debt
+			}
+		}
+	}
+
+	capital.market.location = {
+		if = {
+			limit = {
+				not = { has_variable = total_credit_loan_demand }
+			}
+			set_variable = {
+				name = total_credit_loan_demand
+				value = 0
+			}
+		}
+		change_variable = {
+			name = total_credit_loan_demand
+			add = {
+				value = root.var:total_credit_loan_debt
+				multiply = 0.01
+			}
+		}
+	}
+}
+
+mnt_aggregate_credit_loan_demand_markets = {
+	every_market_in_world = {
+		if = {
+			limit = { location = { has_variable = total_credit_loan_demand } }
+
+			if = {
+				limit = {
+					has_temporary_demand = demand:mnt_credit_loan_demand1
+				}
+				remove_temporary_demand = demand:mnt_credit_loan_demand1
+				add_temporary_demand = {
+					type = demand:mnt_credit_loan_demand2
+					months = -1
+					scale = {
+						value = "location.var:total_credit_loan_demand"
+						divide = "market_price(goods:credit)"
+					}
+				}
+			} else = {
+				remove_temporary_demand = demand:mnt_credit_loan_demand2
+				add_temporary_demand = {
+					type = demand:mnt_credit_loan_demand1
+					months = -1
+					scale = {
+						value = "location.var:total_credit_loan_demand"
+						divide = "market_price(goods:credit)"
+					}
+				}
+			}
+
+			location = {
+				set_variable = {
+					name = total_credit_loan_demand
+					value = 0
+				}
+			}
+		}
+	}
+}
+
+mnt_recompute_credit_after_loan_taken = {
+	if = {
+		limit = { num_loans > 0 }
+		mnt_accumulate_credit_loan_demand_for_country = yes
+		mnt_aggregate_credit_loan_demand_markets = yes
+	}
+	mnt_apply_yearly_credit_interest = yes
+}
