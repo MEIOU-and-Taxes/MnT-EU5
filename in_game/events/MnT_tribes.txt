@@ -65,13 +65,25 @@ mnt_tribes.2 = {
 				change_pop_type = pop_type:tribesmen
 			}
 		}
-		# The second pass converts all the Turkic and Mongolian tribesmen to peasants based on local development
+		# The second pass converts all the Turkic and Mongolian tribesmen to peasants based on local development and urbanization
 		every_owned_location = {
 			save_temporary_scope_value_as = {
 				name = location_development
 				value = {
 					value = development
 					multiply = 0.01 # development is 0-100, so we need to convert this into something 0-1
+					if = {
+						limit = {
+							rank_index <= 2 #town
+						}
+						add = 0.4
+					}
+					if = {
+						limit = {
+							rank_index <= 1 #city
+						}
+						add = 0.3
+					}
 				}
 			}
 			every_pop = {
