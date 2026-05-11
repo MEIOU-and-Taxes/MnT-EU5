@@ -208,5 +208,110 @@ template building_tooltip_detail {
 		blockoverride "text" {
 			text = "[Building.GetInputGoodsInformation]"
 		}
+		blockoverride "textblock_background_tint"  {
+			modify_texture = {
+				using = color_red_texture
+			}
+		}
+	}
+
+	TooltipTextBlock = {
+		visible = "[Not(GreaterThan_CFixedPoint(Building.GetLocation.GetMarketAccess,'(CFixedPoint)0'))]"
+		blockoverride "text" {
+			text = "BUILDING_LACK_MARKET_ACCESS"
+		}
+		blockoverride "textblock_background_tint"  {
+			modify_texture = {
+				using = color_red_texture
+			}
+		}
+	}
+
+	TooltipTextBlock = {
+		visible = "[Not(Building.IsOpen)]"
+		blockoverride "text" {
+			text = "[GetToggleBuildingInfo(Building.Self)]"
+		}
+		blockoverride "textblock_background_tint"  {
+			modify_texture = {
+				using = color_red_texture
+			}
+		}
+	}
+
+	TooltipStringPairList = {
+		visible = "[And3(Building.HasLocationModifiers, Building.IsOpen, Not(StringIsEmpty(Building.GetLocationModifiers)))]"
+		textcontext = "[Building.GetLocationModifiers]"
+	}
+	TooltipStringPairList = {
+		visible = "[And3(Building.HasCountryModifiers, Building.IsOpen, Not(StringIsEmpty(Building.GetCountryModifiers)))]"
+		textcontext = "[Building.GetCountryModifiers]"
+	}
+
+	TooltipTextBlock = {
+		visible = "[Building.IsSubsidized]"
+		blockoverride "text" {
+			text = "[Building.GetSubsidizeInfo]"
+		}
+	}
+
+	TooltipTextBlock = {
+		visible = "[Building.ShowHostileInfo]"
+		blockoverride "text" {
+			text = "[Building.GetSubsidizeInfo]"
+		}
+	}
+
+	TooltipListBase = {
+		visible = "[Not(Building.GetType.OnlyEstatesCanBuild)]"
+		TooltipStringPairList = {
+			textcontext = "[Building.GetMarketInfo]"
+		}
+		TooltipListRowContent = {
+			visible = "[Building.IsProducing]"
+			TooltipManualTableField = {
+				blockoverride "field_content" {
+					text_single = {
+						text = "TOTAL_POTENTIAL_PROFIT"
+						default_format = "#color_white"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "[Building.GetProfit|2+=L]@gold!"
+					}
+				}
+			}
+		}
+	}
+
+	TooltipStringPairList = {
+		visible = "[GreaterThan_CFixedPoint(Building.GetProfit, '(CFixedPoint)0')]"
+		textcontext = "BUILDING_TT_PROFIT_PER_LEVEL"
+	}
+
+	TooltipTextBlock = {
+		visible = "[And(LessThan_CFixedPoint(Building.GetProfit, '(CFixedPoint)0'), Not(Building.IsSubsidized))]"
+		blockoverride "text" {
+			text = "BUILDING_PROFIT_TT_TEXT_UNPROFITABLE"
+		}
+
+		blockoverride "textblock_background_tint"  {
+			modify_texture = {
+				using = color_red_texture
+			}
+		}
+	}
+
+	TooltipTextBlock = {
+		visible = "[And(LessThanOrEqualTo_CFixedPoint(Building.GetProfit, '(CFixedPoint)0'), Building.IsSubsidized)]"
+		blockoverride "text" {
+			text = "BUILDING_PROFIT_TT_TEXT_UNPROFITABLE_AND_SUBSIDIZED"
+		}
+
+		blockoverride "textblock_background_tint"  {
+			modify_texture = {
+				using = color_yellow_texture
+			}
+		}
 	}
 }
