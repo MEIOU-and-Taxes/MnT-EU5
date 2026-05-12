@@ -361,11 +361,9 @@ def parse_file(filepath):
 # ═════════════════════════════════════════════════════════════════════════
 # Production methods parser
 # ═════════════════════════════════════════════════════════════════════════
-# We read vanilla's `unsorted_building_inputs.txt` plus any overlay that
-# MnT might add under the same path. Inline `unique_production_methods`
-# defined inside building_type blocks are handled separately (see
-# `_parse_building_block`) so MnT's building files don't need a sibling
-# production_methods/ folder.
+# We read vanilla's `unsorted_building_inputs.txt` plus any MnT production
+# method files. Inline `unique_production_methods` defined inside building_type
+# blocks are handled separately (see `_parse_building_block`).
 # ═════════════════════════════════════════════════════════════════════════
 
 def parse_production_methods(vanilla_dir, mod_dir=None):
@@ -375,9 +373,10 @@ def parse_production_methods(vanilla_dir, mod_dir=None):
     if vanilla_pm.exists():
         pms.update(_parse_pm_file(vanilla_pm))
     if mod_dir:
-        mod_pm = mod_dir / "common" / "production_methods" / "unsorted_building_inputs.txt"
-        if mod_pm.exists():
-            pms.update(_parse_pm_file(mod_pm))
+        mod_pm_dir = mod_dir / "common" / "production_methods"
+        if mod_pm_dir.exists():
+            for mod_pm in sorted(mod_pm_dir.glob("*.txt")):
+                pms.update(_parse_pm_file(mod_pm))
     return pms
 
 
@@ -618,7 +617,7 @@ def parse_all_buildings(vanilla_dir, mod_dir=None):
 #      runtime picks dynamically via ordered_production_method_of_building.
 #
 # A PM qualifies as maintenance when it has goods inputs and is not flagged
-# no_upkeep. External PMs from unsorted_building_inputs.txt are assumed to be
+# no_upkeep. External PMs from production_methods/*.txt are assumed to be
 # maintenance when they have no output. Inline unique_production_methods always
 # need `category = building_maintenance`. The only output-bearing upkeep PMs
 # cataloged here are maintenance PMs that produce credit, because those still
