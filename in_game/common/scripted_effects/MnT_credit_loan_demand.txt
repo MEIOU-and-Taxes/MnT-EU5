@@ -13,22 +13,137 @@
 		}
 	}
 
+	set_variable = {
+		name = mnt_credit_loan_country_value
+		value = {
+			value = var:total_credit_loan_debt
+			multiply = mnt_credit_loan_demand_multiplier
+		}
+	}
+
 	capital.market.location = {
 		if = {
 			limit = {
-				not = { has_variable = total_credit_loan_demand }
+				not = { has_variable = mnt_credit_loan_work_debt }
 			}
 			set_variable = {
-				name = total_credit_loan_demand
+				name = mnt_credit_loan_work_debt
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_work_value
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_total_debt
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_value
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_effective_rate
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_effective_rate_percent
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_effective_divisor
+				value = 0
+			}
+			set_variable = {
+				name = mnt_credit_loan_market_price
+				value = 1
+			}
+			set_variable = {
+				name = mnt_credit_loan_final_scale
 				value = 0
 			}
 		}
 		change_variable = {
-			name = total_credit_loan_demand
-			add = {
-				value = root.var:total_credit_loan_debt
-				multiply = 0.01
+			name = mnt_credit_loan_work_debt
+			add = root.var:total_credit_loan_debt
+		}
+		change_variable = {
+			name = mnt_credit_loan_work_value
+			add = root.var:mnt_credit_loan_country_value
+		}
+		set_variable = {
+			name = mnt_credit_loan_market_price
+			value = "goods:credit.price_in_market(root.capital.market)"
+		}
+	}
+}
+
+mnt_prepare_credit_loan_demand_market_values = {
+	location = {
+		set_variable = {
+			name = mnt_credit_loan_total_debt
+			value = var:mnt_credit_loan_work_debt
+		}
+		set_variable = {
+			name = mnt_credit_loan_value
+			value = var:mnt_credit_loan_work_value
+		}
+		set_variable = {
+			name = mnt_credit_loan_effective_rate
+			value = {
+				value = var:mnt_credit_loan_value
+				divide = {
+					value = var:mnt_credit_loan_total_debt
+					min = 1
+				}
 			}
+		}
+		set_variable = {
+			name = mnt_credit_loan_effective_rate_percent
+			value = {
+				value = var:mnt_credit_loan_effective_rate
+				multiply = 100
+			}
+		}
+		set_variable = {
+			name = mnt_credit_loan_effective_divisor
+			value = 0
+		}
+		if = {
+			limit = { var:mnt_credit_loan_effective_rate > 0 }
+			set_variable = {
+				name = mnt_credit_loan_effective_divisor
+				value = {
+					value = 0.01
+					divide = {
+						value = var:mnt_credit_loan_effective_rate
+						min = 0.0001
+					}
+				}
+			}
+		}
+		set_variable = {
+			name = mnt_credit_loan_final_scale
+			value = {
+				value = var:mnt_credit_loan_value
+				divide = {
+					value = var:mnt_credit_loan_market_price
+					min = 0.01
+				}
+			}
+		}
+	}
+}
+
+mnt_clear_credit_loan_demand_market_work_values = {
+	location = {
+		set_variable = {
+			name = mnt_credit_loan_work_debt
+			value = 0
+		}
+		set_variable = {
+			name = mnt_credit_loan_work_value
+			value = 0
 		}
 	}
 }
@@ -36,7 +151,9 @@
 mnt_aggregate_credit_loan_demand_markets = {
 	every_market_in_world = {
 		if = {
-			limit = { location = { has_variable = total_credit_loan_demand } }
+			limit = { location = { has_variable = mnt_credit_loan_work_debt } }
+
+			mnt_prepare_credit_loan_demand_market_values = yes
 
 			if = {
 				limit = {
@@ -47,8 +164,7 @@ mnt_aggregate_credit_loan_demand_markets = {
 					type = demand:mnt_credit_loan_demand2
 					months = -1
 					scale = {
-						value = "location.var:total_credit_loan_demand"
-						divide = "market_price(goods:credit)"
+						value = "location.var:mnt_credit_loan_final_scale"
 					}
 				}
 			} else = {
@@ -57,18 +173,12 @@ mnt_aggregate_credit_loan_demand_markets = {
 					type = demand:mnt_credit_loan_demand1
 					months = -1
 					scale = {
-						value = "location.var:total_credit_loan_demand"
-						divide = "market_price(goods:credit)"
+						value = "location.var:mnt_credit_loan_final_scale"
 					}
 				}
 			}
 
-			location = {
-				set_variable = {
-					name = total_credit_loan_demand
-					value = 0
-				}
-			}
+			mnt_clear_credit_loan_demand_market_work_values = yes
 		}
 	}
 }
