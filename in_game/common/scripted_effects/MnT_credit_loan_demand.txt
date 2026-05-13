@@ -183,11 +183,18 @@ mnt_aggregate_credit_loan_demand_markets = {
 	}
 }
 
-mnt_recompute_credit_after_loan_taken = {
-	if = {
-		limit = { num_loans > 0 }
+mnt_recompute_credit_loan_demand_world = {
+	every_country = {
+		limit = {
+			num_loans > 0
+			exists = capital.market
+		}
 		mnt_accumulate_credit_loan_demand_for_country = yes
-		mnt_aggregate_credit_loan_demand_markets = yes
 	}
+	mnt_aggregate_credit_loan_demand_markets = yes
+}
+
+mnt_recompute_credit_after_loan_taken = {
+	mnt_recompute_credit_loan_demand_world = yes
 	mnt_apply_yearly_credit_interest = yes
 }
