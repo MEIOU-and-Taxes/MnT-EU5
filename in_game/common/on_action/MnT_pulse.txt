@@ -39,15 +39,29 @@ on_location_changed_owner = {
 
 weather_monthly_pulse = {
 	on_actions = {
-		MnT_credit_monthly_loan_demand
 		MnT_epbm_save_game_compat_init
 		MnT_epbm_monthly_cache_clear
 	}
 }
 
 on_loan_taken = {
-	effect = {
-		mnt_recompute_credit_after_loan_taken = yes
+	events = {
+		delay = { days = 1 }
+		mnt_credit_loan_demand.3
+	}
+}
+
+on_loan_renewed = {
+	events = {
+		delay = { days = 1 }
+		mnt_credit_loan_demand.3
+	}
+}
+
+on_loan_repaid = {
+	events = {
+		delay = { days = 1 }
+		mnt_credit_loan_demand.3
 	}
 }
 
@@ -87,6 +101,7 @@ on_game_start_MnT = {
 			trigger_event_silently = { id = mnt_food.1 }
 			trigger_event_silently = { id = mnt_tribes.1 }
 		}
+		mnt_recompute_credit_loan_demand_world = yes
 	}
 }
 
@@ -143,6 +158,10 @@ MnT_credit_yearly_interest = {
 }
 
 MnT_credit_monthly_loan_demand = {
+	trigger = {
+		great_power_ranking = 1
+	}
+
 	effect = {
 		mnt_recompute_credit_loan_demand_world = yes
 	}
