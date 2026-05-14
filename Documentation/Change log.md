@@ -162,6 +162,9 @@ Date: 2026-01-20
 - Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
 - Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
 - Reduced number of glass production buildings from 6 to 1 for indian town setup profile
+- Introducing new PM's for iron and bog iron RGO buildings to replace some large % output modifiers
+- Scales the construction cost of mining RGO's by 110% per level
+- Ups the base level of RGO possible, shift ideal multiplier to base dev scaling.
 	
 ##### Population
 
