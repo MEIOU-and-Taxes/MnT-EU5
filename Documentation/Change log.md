@@ -39,6 +39,7 @@ Date: 2026-01-20
 
 #### Bugfixes
 
+- Fix diplomatic spending not transferring gold to nobles estate
 - Stability map mode works
 - Backend error fixes
 
@@ -46,6 +47,9 @@ Date: 2026-01-20
 
 - Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
 - Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
+- Estates now pay their proportional share of inflation-driven maintenance costs on shared buildings.
+- Estate-assigned buildings have goods-based maintenance production methods and their full cost, including inflation, is paid entirely by the owning estate.
+- Estate building tooltips now show actual computed upkeep with a full goods breakdown.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
@@ -108,7 +112,8 @@ Date: 2026-01-20
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
     - Cost of the Court: furniture, tools, glass, fine cloth  
-    - Diplomatic expenses: paper, jewelry  
+    - Diplomatic expenses: paper, jewelry
+  - Can destroy markets even if there are temporary demands
 - RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
 - Massive rework of the food system, focused on tying up much more of the early game population in food production as peasants.
   - Farming villages  
@@ -150,20 +155,13 @@ Date: 2026-01-20
 - All good prices rebalanced to 50% of vanilla values, with a few exceptions.
 - 'Land' good added as a base resource created by development, consumed by basic buildings that require land development.
 - Halved ducat prices for army/navy and doubled their goods-demand
-- price impact from trade now 0.9 from vanilla 0.25/0.75 for burgher/state trade
+- price impact from trade now 0.8/0.75 from vanilla 0.25/0.75 for burgher/state trade
 - Require less profit for AI trade to happen per used merchant capacity, to compensate for lower price levels
 - Reworked how trade flows
-	- base transport cost lowered by 10x for all goods
-	- base travel cost increased by 40x
-	- rivers give 0.5x reduction in trade distance cost
-	- oceans give 0.25x reduction in trade distance cost.
+	-rivers equalized in direction
 - Moved 25% of the Age of Discovery Iron Output boost to Age of Renaissance Gunpowder advance
 - Removed sand prerequisite from most of industries, transformed sand to silica sand for glassmaking and metallurgy
 - Reduced number of glass production buildings from 6 to 1 for indian town setup profile
-- Add population demand for glass as in April 8 TT
-- Increase base max RGO level's of limited RGO's to 1 and for mining goods to 2
-- increase the cost of each next level of mining RGO by 1.1x
-- Move some of the iron output bonuses to better production methods
 	
 ##### Population
 
@@ -269,10 +267,6 @@ Date: 2026-01-20
 - Steppe hordes only make steppe cavalry out of tribesmen and nobles of Turkic and Mongolian cultures
 - Steppe cavalry levies for steppe hordes: 2% → 50%
 
-##### Setup
-- Allow tags on the Indian ocean to see each other for trade.
-- Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
-
 ##### Situations
 
 - Fixes to Colombian Exchange situation
@@ -289,6 +283,11 @@ Date: 2026-01-20
 - Reworked the goods-panel Production opener to set RGO visibility through a dedicated scripted GUI based on the selected good, and removed the unused old per-good force-show path.
 - Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
-
+- Added a row in the loading screen showing MnT version
+- Added M&T logo in the main menu
 ##### Modding
 - Added automated check for correct encodings and line endings via GitHub Actions
+
+##### Climates
+- replace all climates with the more varied koppen climates
+  - references to older climates point to multiple koppen climates  

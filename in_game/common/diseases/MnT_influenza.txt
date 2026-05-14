@@ -1,0 +1,161 @@
+﻿REPLACE:influenza = { #https://en.wikipedia.org/wiki/Influenza
+
+	#script value for how likely the disease is to spawn per month (0..1)
+	monthly_spawn_chance = {
+		value = 0.25
+	}
+
+	#effect to spawn the disease somewhere when we've decided it should spawn.
+	spawn = {
+		random_ownable_location = {
+			limit = {
+				#Not empty location
+				population > 1
+
+				OR = {
+					winter_level = normal
+					winter_level = severe
+				}
+
+
+				#If the great_pestilence has not happened yet, exclude America
+				trigger_if = {
+					limit = {
+						situation:great_pestilence = {
+							situation_is_active = no
+							situation_has_ended = no
+						}
+					}
+					#Endemic regions
+					OR = {
+						continent = continent:asia
+						continent = continent:europe
+						continent = continent:africa
+						continent = continent:oceania
+					}
+				}
+				#If we can't find an appropriate location we don't spawn
+			}
+
+			spawn_disease = {
+				disease = scope:disease
+				value = 0.5
+
+				#save the outbreak created for later
+				save_scope_as = outbreak_scope
+			}
+		}
+	}
+
+	#script value to get the R0 number of the disease, or
+	#how many people one person will spread the disease to per interval
+	#A variety of factors likely encourage influenza transmission, including lower temperature,
+	#lower absolute and relative humidity, less ultraviolet radiation from the Sun, and crowding
+	r0 = {
+		#base
+		value = { 1 2 }
+		if = {
+			limit = {
+				#Climate preferences
+				OR = {
+					continental_climate_trigger = yes
+					cold_arid_climate_trigger = yes
+				}
+			}
+			multiply = 1.2
+		}
+		#markets spread more person to person
+		if = {
+			limit = {
+				OR = {
+					has_building_with_at_least_one_level = market_village
+					has_building_with_at_least_one_level = marketplace
+					has_building_with_at_least_one_level = slave_market
+					has_building_with_at_least_one_level = entrepot
+					has_building_with_at_least_one_level = trading_hub
+					has_building_with_at_least_one_level = stock_exchange
+				}
+			}
+			multiply = 1.2
+		}
+		multiply = {
+			value = "disease_presence(scope:disease)"
+			multiply = 2
+			add = 1
+		}
+	}
+
+	#script value for how long between spread calculations.
+	#A lower number = possible faster spread, depending on the effect in spread.
+	#Nothing in the scope, this will usually just be a number, but could be a random range
+	#the incubation period) is one to four days,
+	#The standard influenza symptoms typically last for two to eight days
+	calc_interval_days = {4 12}
+
+	#script value for how much chance there is of the disease stagnating in a location,
+	#slowing its advance greatly. (0..1)
+	location_stagnation_chance = {
+		if = {
+			limit = {
+				"disease_presence(scope:disease)" > 0.05
+			}
+			value = "distance_to_squared(scope:disease.origin)"
+			multiply = 0.0006
+			multiply = 0.005
+		}
+		else = {
+			value = "distance_to_squared(scope:disease.origin)"
+			multiply = 0.00006
+		}
+	}
+
+	#script value for how many of the affected should have their fate decided (live and become resistant, or die)
+	#per calc interval (0..1)
+	percentage_to_meet_their_fate_on_calc = {
+		value = 0.25
+	}
+
+	#modifier applied to locations that have the disease (multiplied by the presence %age)
+	#general bad effects on locations that have this
+	location_modifier = {
+		#Nothing
+	}
+
+	#script value for mortality rate of the disease (0..1)
+	#the flu kills around 100 people per 100,000
+	mortality_rate = {
+		value = 0.001
+	}
+
+	#script value for how likely it is that a character will die per calc interval (0..1)
+	character_mortality_chance = {
+		value = 0.05
+		multiply = "disease_presence(scope:disease)"
+	}
+
+	#event sent when the disease spreads to a country
+	on_spread_to_country = {
+		trigger_event_non_silently = diseases.1
+	}
+
+	#map color for the disease
+	map_color = {
+		lerp = { #Blue
+			min_color = rgb { 150  177  188 }
+			max_color = rgb { 2 113 141 }
+			factor = "disease_presence(scope:disease)"
+		}
+	}
+
+	secondary_map_color = {
+		if = {
+			limit = {
+				disease_affects_pops_here = scope:disease
+			}
+			value = rgb { 100  120  188 }
+		}
+	}
+
+	#by default, diseases spread to all pop types equally. This can be adjusted here.
+	#    e.g. specific_pop_type_effect = { pop_type = nobles multiplier = 0 } if you want the disease to leave all nobles alone
+}

@@ -1,0 +1,505 @@
+types Frontend
+{
+	type ExtraContentTooltipHeader = widget {
+		layoutpolicy_horizontal = expanding
+		size = { @tooltip_title_wide -1 }
+
+		widget = {
+			size = { 100% 67}
+			ignore_layout = yes
+			alwaystransparent = yes
+			position = { 0 -1 }
+			
+			background = {
+				texture = "gfx/interface/component_tiles/tooltip_header_banner.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 75 0 }
+				margin_right = 20
+				margin_left = 5
+				margin_top = 1
+				modify_texture = {
+					using = color_light_red_texture
+					blend_mode = multiply
+				}
+				modify_texture = {
+					using = color_whiteish_texture
+					blend_mode = overlay
+				}
+				modify_texture = {
+					using = color_whiteish_texture
+					blend_mode = overlay
+					alpha = 0.2
+				}
+				modify_texture = {
+					texture = "[GetGraphicalCultureTexture('header_pattern')]"
+					texture_density = 2
+					spriteType = corneredtiled
+					# spriteBorder = {0 0}
+					blend_mode = overlay
+					alpha = 0.2
+				}
+
+				modify_texture = {
+					texture = "gfx/interface/component_overlay/cloth_texture.dds"
+					texture_density = 2
+					spriteType = Corneredtiled
+					spriteborder = { 0 0 }
+					blend_mode = overlay
+					alpha = 0.2
+				}
+			}
+		}
+
+		hbox = {
+			resizeparent = yes
+			layoutpolicy_horizontal = expanding
+			spacing = 10
+			margin = { 15 10 }
+
+			text_single = {
+				block "title_text" {
+					visible = no
+				}
+				default_format = "#yellow_titles"
+				using = Font_Size_Big
+			}
+
+			expand = {}
+		}
+	}
+
+	type ExtraContentTooltipType = tooltip_widget {
+		alwaystransparent = no
+		filter_mouse = all
+
+		using = bg_square_tile_shadow
+		using = bg_square_shadow
+		using = bg_paper_card
+		using = snd_UI_tooltip_handling
+
+		TooltipHotkeyHeader = {
+			blockoverride "hotkey_background" {
+				using = bg_contextual_hotkey
+			}
+		}
+
+		vbox = {
+			set_parent_size_to_minimum = yes
+			minimumsize = { -1 200 }
+
+			ExtraContentTooltipHeader = {}
+			TooltipLockProgress = {}
+
+			vbox = {
+				using = layoutpolicy_expanding
+				margin = { 10 10 }
+				margin_top = 0
+				spacing = 10
+
+				background = {
+					block "ExtraContentTooltipType_background_texture" {
+						#illustration needs to be picked by dlc name
+						texture = "gfx/interface/icons/dlcs/ancient_monuments_pack.dds"
+					}
+					texture_density = 2
+					alpha = 0.2
+					blend_mode = overlay
+					fittype = centercrop
+				}
+
+				expand = {}
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					using = bg_text_mask_container_dark_blue
+					margin = { 10 7 }
+
+					text_multi = {
+						layoutpolicy_horizontal = expanding
+						block "flavor_text" {
+							visible = no
+						}
+						align = left|nobaseline
+						default_format = "#color_light_gray"
+						fontsize = 14
+						autoresize = yes
+					}
+				}
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+
+					widget = {
+						size = { 100 30 }
+						using = bg_text_mask_container_brown
+						
+						text_single = {
+							margin = { 5 5 }
+							autoresize = yes
+							max_width = 100
+							parentanchor = center
+							block "owned_text" {
+								visible = no
+							}
+							align = center|nobaseline
+							default_format = "#color_white"
+							using = Font_Size_Small
+						}
+					}
+
+					expand = {}
+
+					widget = {
+						size = { 100 30 }
+						using = bg_text_mask_container_brown
+						
+						text_single = {
+							margin = { 5 5 }
+							autoresize = yes
+							max_width = 100
+							parentanchor = center
+							block "installed_text" {
+								visible = no
+							}
+							align = center|nobaseline
+							default_format = "#color_white"
+							using = Font_Size_Small
+						}
+					}
+
+					expand = {}
+
+					widget = {
+						size = { 100 30 }
+						using = bg_text_mask_container_brown
+						
+						text_single = {
+							margin = { 5 5 }
+							autoresize = yes
+							max_width = 100
+							parentanchor = center
+							block "mounted_text" {
+								visible = no
+							}
+							align = center|nobaseline
+							default_format = "#color_white"
+							using = Font_Size_Small
+						}
+					}
+
+					expand = {}
+
+					widget = {
+						size = { 100 30 }
+						using = bg_text_mask_container_dark_brown
+						
+						text_single = {
+							margin = { 5 5 }
+							autoresize = yes
+							max_width = 100
+							parentanchor = center
+							block "activated_text" {
+								visible = no
+							}
+							align = center|nobaseline
+							default_format = "#color_white"
+							using = Font_Size_Small
+						}
+					}
+				}
+
+				
+
+				vbox = {
+					background = {
+						using = color_black_texture
+						alpha = 0.3
+					}
+					layoutpolicy_horizontal = expanding
+					TooltipUIActionBlock = {
+						visible = "[ExtraTooltipInfo.HasUIAction]"
+						datacontext = "[ExtraTooltipInfo.GetUIAction]"
+					}
+				}
+			}
+		}
+	}
+
+	type FrontendPreloadingWidget = widget {
+		parentanchor = top|hcenter
+		position = { 0 10 }
+		name = "preloading_widget"
+
+		background = {
+			using = tile_background_squared_texture
+
+			modify_texture = {
+				using = color_dark_brown_texture
+			}
+			modify_texture = {
+				using = overlay_cloth_texture
+				blend_mode = overlay
+				alpha = 0.3
+			}
+			modify_texture = {
+				using = overlay_striped_texture
+				blend_mode = overlay
+				alpha = 0.1
+			}
+		}
+		using = Animation_ShowHide_Quick
+
+		state = {
+			trigger_on_create = yes
+			name = "no"
+			on_start = "[PdxGuiWidget.SetVisible(IsGamePreloading)]"
+		}
+
+		state = {
+			name = _show
+			on_start = "[PdxGuiWidget.SetVisible(IsGamePreloading)]"
+		}
+
+		hbox = {
+			resizeparent = yes
+			margin = { 20 20 }
+			spacing = 20
+			visible = "[IsGamePreloading]"
+			textbox = {
+				name = "loading_ingame_resources"
+				text = LOADING_INGAME_RESOURCES
+				margin = { 10 10 }
+				align = nobaseline
+				autoresize = yes
+
+				using = text_single_template
+				using = Font_Size_Medium
+				using = Font_Type_Headers
+			}
+
+			progressbar = {
+				size = { 44 44 }
+				using = loading_progress_texture
+			}
+		}
+
+		vbox = {
+			resizeparent = yes
+			margin = { 20 20 }
+			spacing = 20
+			visible = "[IsGamePreloadingComplete]"
+
+			state = {
+				name = _show
+				duration = 5
+				on_finish = "[PdxGuiWidget.AccessParent.Hide]"
+			}
+
+			textbox = {
+				name = "transition_ready_to_commit"
+				text = TRANSITION_READY_TO_COMMIT
+				margin = { 10 10 }
+				align = nobaseline
+				autoresize = yes
+
+				using = text_single_template
+				using = Font_Size_Medium
+				using = Font_Type_Headers
+			}
+		}
+	}
+
+	type FrontEndBackground = widget {
+		size = { 100% 100% }
+
+		background = {
+			name = "frontend_bg"
+			using = FrontEndBackgroundTexture
+			size = { 100% 100% }
+			fittype = centercrop
+		}
+
+		# ecs_scene_viewer_widget = {
+		# 	visible = "[ShouldFrontEndSceneBeVisible]"
+		# 	size = { 100% 100% }
+		# 	scene = "[GetFrontEndScene]"
+		# 	max_aspect_ratio = { 16 9 }
+		# }
+
+		widget = {
+			parentanchor = right
+			block "logo_container" {}
+
+			vbox = {
+				resizeparent = yes
+				margin = { 10 10 }
+				spacing = 10
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 10
+
+					expand = {}
+
+					icon = {
+						texture = "gfx/interface/logos/clausewitz_logo.dds"
+						size = { 100 100 }
+					}
+
+					icon = {
+						texture = "gfx/interface/logos/pdx_tinto_logo_white.dds"
+						size = { 100 100 }
+					}
+                    ### M&T Logo added
+                    icon = {
+                        texture = "gfx/interface/logos/mnt_logo_big.dds"
+                        size = { 100 100 }
+                    }
+				}
+
+				vbox = {
+					using = version_label
+					blockoverride "version_label_sizing" {}
+					blockoverride "version_label_background" { 
+						using = VersionLabelBackground
+					}
+				}
+			}
+		}
+	}
+
+	type FrontEndMenu = widget {
+		size = { 360 100% }
+		position = { 60 0 }
+		allow_outside = yes
+
+		widget = { #maybe
+			size = { 100% 100% }
+			position = { 0 140 }
+			background = {
+				texture = "gfx/interface/component_masks/patterns/land_pattern_01_vertical.dds"
+				texture_density = 2
+				spriteType = Corneredtiled
+				spriteborder = { 18 0 }
+				alpha = 1
+				margin = {-4 0}
+				modify_texture = {
+					using = color_bg_brown_texture
+					blend_mode = overlay
+				}
+			}
+		}
+		
+		vbox = {
+			margin = { 30 25 }
+			spacing = 10
+			position = { 0 140 }#maybe
+
+			using = bg_cabinet_card_frame
+			blockoverride "cabinet_card_frame_extra" {
+				margin = {0 10}
+			}
+		}
+		
+		widget = { ###FLAVOR
+			ignore_layout = yes
+			size = { 424 99% }
+			parentanchor = bottom
+			position = { -32 0 }
+			background = {
+				texture = "gfx/interface/component_decoration/main_menu/brown_bg.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 0 304 }
+				modify_texture = {
+					using = color_brown_leather_texture
+					alpha= 0.4
+				}
+				modify_texture = {
+					using = overlay_cloth_texture
+					blend_mode = multiply
+					alpha = 0.5
+				}
+			}
+			background = { #### BLUE BG???
+				texture = "gfx/interface/component_decoration/main_menu/blue_bg.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 0 304 }
+				modify_texture = {
+					using = color_intense_bg_blue_texture
+				}
+				modify_texture = {
+					using = overlay_cloth_texture
+					blend_mode = multiply
+					alpha = 0.5
+				}
+				margin_bottom = -5
+			}
+			background = {
+				texture = "gfx/interface/component_decoration/main_menu/brown_flavor.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 0 304 }
+				alpha = 0.5
+			}
+			background = {
+				texture = "gfx/interface/component_decoration/main_menu/gold_inner_shadow.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 0 304 }
+				margin_bottom = -5
+			}
+			background = {
+				texture = "gfx/interface/component_decoration/main_menu/gold_flavor.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 0 304 }
+				margin_bottom = -5
+			}
+		}
+		
+		vbox = {
+			margin = { 30 45 }
+			using = layoutpolicy_expanding
+
+			widget = {
+				layoutpolicy_horizontal = expanding
+				allow_outside = yes
+				size = {-1 250}
+				using = FrontEndGameTitle
+			}
+
+			widget = {
+				using = layoutpolicy_expanding
+				allow_outside = yes
+
+				block "frontend_menu_middle_section_layout" {
+					vbox = {
+						allow_outside = yes
+						scrollarea = {
+							using = layoutpolicy_expanding
+							scrollbarpolicy_horizontal = always_off
+							alwaystransparent = no
+							allow_outside = no
+
+							scrollwidget = {
+								vbox = {
+									margin = { 10 10 }	
+									block "frontend_menu_middle_section" { expand = {} }
+								}
+							}
+
+							scrollbar_vertical = {
+								using = Scrollbar_Vertical_Small
+							}
+						}
+					}
+				}
+			}
+
+			block "frontend_menu_bottom_layout" {}
+		}
+	}
+}
