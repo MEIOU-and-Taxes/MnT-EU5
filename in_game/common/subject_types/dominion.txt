@@ -33,6 +33,7 @@ dominion = { # like a personal union except the subject has much less power
 	
 	strength_vs_overlord = -0.50 #M&T from -0.25
 	diplomatic_capacity_cost_scale = 0.5
+	maritime_path_tolerance = -0.2
 
 	only_overlord_court_language = yes
 	only_overlord_or_kindred_culture = yes
@@ -42,6 +43,7 @@ dominion = { # like a personal union except the subject has much less power
 	
 	minimum_opinion_for_offer = 175
 	
+	fleet_basing_rights = yes
 	food_access = yes
 	
 	great_power_score_transfer = 0.5 # the amount of Great Power Score that is transferred from the Subject to the Overlord
@@ -54,6 +56,7 @@ dominion = { # like a personal union except the subject has much less power
 		monthly_prestige = 0.01
 	}
 	subject_modifier = {
+		country_cabinet_efficiency = -0.40
 		legislative_efficiency = 0.1
 		blocked_from_conversion = yes
 	}
@@ -63,6 +66,7 @@ dominion = { # like a personal union except the subject has much less power
 			has_or_had_tag = ENG
 			has_or_had_tag = GBR
 		}
+		country_rank_level >= scope:target.country_rank_level
 	}
 
 	subject_creation_enabled = {
@@ -73,15 +77,18 @@ dominion = { # like a personal union except the subject has much less power
 		government_type = government_type:monarchy
 	}
 
-	visible_through_diplomacy = {
+	visible = {
 		OR = {
-			in_union_with = scope:target
+			and = {
+				exists = ruler
+				exists = scope:target.ruler
+				ruler = scope:target.ruler
+			}
 			has_or_had_tag = ENG
 			has_or_had_tag = GBR
 		}
 		religion.group = scope:target.religion.group
 		government_type = government_type:monarchy
-		country_rank_level >= scope:target.country_rank_level
 		
 		#Japanese Imperial Courts Exception
 		trigger_if = {
@@ -100,34 +107,7 @@ dominion = { # like a personal union except the subject has much less power
 		}
 	}
 
-	visible_through_treaty = {
-		OR = {
-			in_union_with = scope:target
-			has_or_had_tag = ENG
-			has_or_had_tag = GBR
-		}
-		religion.group = scope:target.religion.group
-		government_type = government_type:monarchy
-		country_rank_level >= scope:target.country_rank_level
-		
-		#Japanese Imperial Courts Exception
-		trigger_if = {
-			limit = {
-				is_member_of_international_organization = international_organization:japanese_shogunate
-				is_situation_active = situation:nanbokuchou
-			}
-			NOT = {
-				scope:target = {
-					has_special_status_in_international_organization = {
-						type = special_status:japanese_emperor
-						international_organization = international_organization:japanese_shogunate
-					}
-				}
-			}
-		}
-	}
-
-	enabled_through_diplomacy = {
+	enabled = {
 		religion.group = scope:target.religion.group
 		trigger_if = {
 			limit = {
@@ -166,9 +146,6 @@ dominion = { # like a personal union except the subject has much less power
 			}
 			set_court_language = scope:future_overlord.court_dialect
 		}
-	}
-
-	on_disable = {
 	}
 	
 	diplo_chance_accept_subject = {

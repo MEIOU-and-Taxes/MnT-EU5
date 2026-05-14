@@ -1,0 +1,80 @@
+﻿REPLACE:destroy_market = {
+	type = owncountry
+
+	potential = {
+	}
+
+	allow = {
+	}
+
+	ai_tick = never
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	price = price:destroy_market
+
+	#market in scope:target
+	select_trigger = {
+		looking_for_a = market
+		source = actor
+		target_flag = target
+		source_flags = include_subjects
+		name = "destroy_market_select_market"
+		none_available_msg_key = "destroy_market_no_markets"
+		column = {
+			data = name
+		}
+		visible = {
+			location = {
+				OR = {
+					owner ?= scope:actor
+					AND = {
+						owner = {
+							is_subject_of = scope:actor
+						}
+						owner ?= {
+							subject_type ?= {
+								overlord_can_destroy_markets = yes
+							}
+						}
+					}
+				}
+			}
+		}
+		enabled = {
+			has_temporary_demands = no
+		}
+	}
+
+	effect = {
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			scope:target = {
+				location = {
+					save_scope_as = old_location
+				}
+				destroy_market = {}
+			}
+		}
+	}
+
+	ai_will_do = {
+		#this is actually handled in code to more precisely target exactly which locations we want to check,
+		#but included here for debugging purposes
+		if = {
+			limit = {
+				exists = scope:target
+			}
+			add = {
+				every_goods = {
+					value = "price_in_market(scope:target.location.second_best_market)"
+					subtract = "price_in_market(scope:target)"
+				}
+			}
+			add = "scope:actor.destroy_market_utility(scope:target)"
+		}
+	}
+}
