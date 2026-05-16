@@ -165,6 +165,8 @@ Date: 2026-01-20
 - Introducing new PM's for iron and bog iron RGO buildings to replace some large % output modifiers
 - Scales the construction cost of mining RGO's by 110% per level
 - Ups the base level of RGO possible, shift ideal multiplier to base dev scaling.
+- Remove the market attraction impact from prestige, trade income vs tax base and staffed building levels to stabalize market size
+- Reduced market attraction from trade attraction buildings by roughly half. Whilst increasing effects of same province/area so markets don't get too small and crowded out by others.
 	
 ##### Population
 
@@ -269,6 +271,11 @@ Date: 2026-01-20
 - Tribal levies for non-tribal non-steppe government: 2% → 15%
 - Steppe hordes only make steppe cavalry out of tribesmen and nobles of Turkic and Mongolian cultures
 - Steppe cavalry levies for steppe hordes: 2% → 50%
+
+##### Setup
+- Allow tags on the Indian ocean to see each other for trade.
+- Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
+- Remove al-hajr and urgench market as they were too small with viable nearby alternatives for its locations
 
 ##### Situations
 
