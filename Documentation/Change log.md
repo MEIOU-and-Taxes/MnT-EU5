@@ -190,6 +190,7 @@ Date: 2026-01-20
   - Base conversion speed is now relative instead of absolute  
     - It will require 200+ years to fully convert
 - Tribesmen pops now have same share of the tax base as peasants
+- Stop randomly spawning Eunuch children
 
 ##### Religion
 
