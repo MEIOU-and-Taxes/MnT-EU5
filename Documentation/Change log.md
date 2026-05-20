@@ -223,7 +223,7 @@ Date: 2026-01-20
     - Impact on Dhimmi estate power: +100% → +50%
 - Commoners estate privileges - reduction of impact on estate power to match increased power per pop:  
   - generic:
-    - peasants_free_peasantry: +50% → +25%
+    - peasants_free_peasantry: +50% → +10%
     - peasants_represented_in_parliament: +50% → +25%
     - peasant_owns_their_food: +20% → +10%
     - peasants_fewer_levies: +33% → +15%
