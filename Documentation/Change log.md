@@ -188,6 +188,7 @@ Date: 2026-01-20
   - Base conversion speed is now relative instead of absolute  
     - It will require 200+ years to fully convert
 - Tribesmen pops now have same share of the tax base as peasants
+- Stop randomly spawning Eunuch children
 
 ##### Religion
 
@@ -223,8 +224,8 @@ Date: 2026-01-20
     - Impact on Dhimmi estate power: +100% → +50%
 - Commoners estate privileges - reduction of impact on estate power to match increased power per pop:  
   - generic:
-    - peasants_free_peasantry: +50% → +25%
-    - peasants_represented_in_parliament: +20% → +10%
+    - peasants_free_peasantry: +50% → +10%
+    - peasants_represented_in_parliament: +50% → +25%
     - peasant_owns_their_food: +20% → +10%
     - peasants_fewer_levies: +33% → +15%
     - peasants_allowed_weapons_privilege: +50% → +25%
@@ -241,7 +242,6 @@ Date: 2026-01-20
     - cas_caballeros_villanos: +20% → +10%
 - Noble estate privileges - added impact on Commoners and Dhimmi estate power
   - noble_serfdom_rights: added -10% Commoners and Dhimmi estate power
-  - nobles_land_rights: added -15% Commoners and Dhimmi estate power
   - manorial_courts: added -25% Commoners and Dhimmi estate power
   - banal_lordship: added -25% Commoners and Dhimmi estate power
 - Added negative impact of Noble estate privileges targetting peasants (noble_serfdom_rights, nobles_land_rights, manorial_courts and banal_lordship) on Peasant and Dhimmi satisfaction
@@ -288,6 +288,7 @@ Date: 2026-01-20
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
 - Added a row in the loading screen showing MnT version
 - Added M&T logo in the main menu and remove PDX marketing
+
 ##### Modding
 - Added automated check for correct encodings and line endings via GitHub Actions
 
