@@ -41,7 +41,7 @@ Date: 2026-01-20
 
 - Fix diplomatic spending not transferring gold to nobles estate
 - Stability map mode works
-- Backend error fixes
+- Backend error fixes 
 
 #### Balancing
 
