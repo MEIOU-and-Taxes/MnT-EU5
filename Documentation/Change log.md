@@ -1,8 +1,8 @@
 ﻿# Release 
 
-### 0.0.1
+### Initial test-release v0.1
 
-Date: 2026-01-20
+Date: 21/05/2026
 
 #### Features
 
@@ -294,4 +294,13 @@ Date: 2026-01-20
 
 ##### Climates
 - replace all climates with the more varied koppen climates
-  - references to older climates point to multiple koppen climates  
+  - references to older climates point to multiple koppen climates 
+
+##### M&T v0.1.1
+
+### Balance
+- Make every level of RGO Building give 1 free building level in its location (so you can't effectively get less available building levels from building up rural resource extraction stuff)
+
+### Fixes
+- Fix Fish RGO Building not fulfilling upgrade potential if Location defined as fish RGO
+- Fix cost increase per level in RGO modifier (mostly increased cost for mines per level) showing extra cost in green -> make properly red
