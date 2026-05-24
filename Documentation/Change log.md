@@ -300,6 +300,7 @@ Date: 21/05/2026
 
 ### Balance
 - Make every level of RGO Building give 1 free building level in its location (so you can't effectively get less available building levels from building up rural resource extraction stuff)
+- Similarly for farming villages and tribal transhumant_wool_pasture buildings, give 1 free building level per level as we sort of force the player to have these buildings
 
 ### Fixes
 - Fix Fish RGO Building not fulfilling upgrade potential if Location defined as fish RGO
