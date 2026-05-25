@@ -307,3 +307,7 @@ Date: 21/05/2026
 - Fix Fish RGO Building not fulfilling upgrade potential if Location defined as fish RGO
 - Fix cost increase per level in RGO modifier (mostly increased cost for mines per level) showing extra cost in green -> make properly red
 - Fix possibility of subjects declaring war on Countries experiencing Decline of Empire disaster where they should not be able to declare wars in the first place
+
+### Localizaton
+- Localize raw_material_output as Resource Size bonus
+- Add rgo_building game concept
