@@ -1,0 +1,60 @@
+﻿REPLACE:steal_maps =  { 
+	type = diplomacy
+	category = CATEGORY_COVERT_ACTIONS
+
+	diplomatic_cost = steal_maps_cost
+
+	allow = {
+	}
+
+	block_when_at_war = no	
+	
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+		}
+        enabled = {
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = area
+		target_flag = target
+		name = "steal_maps_select_title"
+		none_available_msg_key = "steal_maps_no_areas"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:recipient = { has_discovered_area = prev }
+			NOT = { scope:actor = { has_discovered_area = prev } }
+		}
+		enabled = {
+			any_neighbor_area = {
+				scope:actor = { has_discovered_area = prev }
+			}
+		}
+	}
+	
+	effect = {
+		if = {
+			limit = { 
+				exists = scope:target
+			}
+			scope:actor = {
+				discover_area = scope:target
+			}
+			scope:recipient = {		#M&T changed from antagonism bomb. Only the nation stolen from will care. 
+				add_opinion = { 
+					target = scope:actor 
+					modifier = opinion_stole_our_maps
+				}
+			}
+		}
+	}
+}	

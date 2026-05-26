@@ -1,4 +1,8 @@
-﻿temple = {
+﻿# MnT EPBM: on_built / on_destroyed hooks in this file are maintained by
+# tools/MnT_epbm_generator/. After adding a building or a maintenance
+# production method, commit your changes and re-run:
+#   python3 tools/MnT_epbm_generator/MnT_generate_building_hooks.py
+temple = {
 	is_foreign = no
 	max_levels = 1
 	pop_type = clergy
@@ -9,6 +13,7 @@
 
 	town = yes
 	city = yes
+	megalopolis = yes
 
 
 	build_time = religious_building_time
@@ -25,56 +30,19 @@
 
 
 	modifier = {
-		local_clergy_max_literacy = 5
+		local_clergy_max_literacy = 10
 		local_unrest = -0.025
-		local_max_control = 0.05
+		local_clergy_pop_growth = 0.25
 	}
 
-}
-
-cathedral = {
-	is_foreign = no
-	max_levels = 1
-	pop_type = clergy
-
-
-	category = religious_category
-
-	employment_size = large_religious_building_employment
-
-	rural_settlement = yes
-	town = yes
-	city = yes
-
-	expensive = yes
-
-	build_time = large_religious_building_time
-
-	graphical_tags = { large_religious }
-
-
-	unique_production_methods = {
-		cathedral_maintenance = {
-			glass = 0.05
-			cloth = 0.05
-			fine_cloth = 0.025
-			paper = 0.1
-			copper = 0.05
-			tools = 0.05
-			category = building_maintenance
-		}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
 	}
-
-
-	construction_demand = cathedral_construction
-
-
-	modifier = {
-		local_clergy_max_literacy = 20
-		local_migration_attraction = 0.1
-		local_pop_conversion_speed_modifier = 0.2
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
 	}
-
 }
 
 construction_center = {
@@ -90,6 +58,7 @@ construction_center = {
 
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	
 	increase_per_level_cost = 0.5
@@ -113,6 +82,14 @@ construction_center = {
 		max_constructions_at_same_time = 1
 	}
 
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 counting_house = {
@@ -127,6 +104,7 @@ counting_house = {
 
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	expensive = yes
 
@@ -150,6 +128,14 @@ counting_house = {
 		local_crown_estate_power = 0.33
 	}
 
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 minting_office = {
@@ -164,6 +150,7 @@ minting_office = {
 
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	expensive = yes
 
@@ -181,6 +168,14 @@ minting_office = {
 		local_max_control = 0.05
 	}
 
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 granary = {
@@ -196,6 +191,7 @@ granary = {
 	rural_settlement = no
 	town = yes
 	city = yes
+	megalopolis = yes
 
 
 	build_time = government_build_time
@@ -215,9 +211,18 @@ granary = {
 
 	modifier = {
 		local_food_capacity = 200
+		local_food_decay_modifier = -0.05
 	}
 
 	ai_forbid_shutdown = yes
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
@@ -229,6 +234,7 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 	rural_settlement = no
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	employment_size = granary_employment
 	category = defense_category
@@ -248,15 +254,15 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 
 	modifier = {
 		local_garrison_size = 0.1
-		local_food_capacity = 500
+		local_food_capacity = 250
 		local_defensive = 0.25
 	}
 
 	unique_production_methods = {
 		fortress_granary_maintenance = {
 			wheat = 0.1
-			masonry = 0.1
-			weaponry = 0.02
+			masonry = 0.2
+			weaponry = 0.05
 			cloth = 0.05
 			copper = 0.025
 			tin = 0.01
@@ -350,6 +356,14 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 #			category = building_maintenance
 #		}
 	}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 wharf = {
@@ -357,12 +371,13 @@ wharf = {
 	max_levels = 1
 	pop_type = burghers
 
-	employment_size = small_burgher_employment
+	employment_size = generic_burgher_employment
 
 	category = naval_category
 
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	location_potential = {
 		is_coastal = yes
@@ -395,6 +410,14 @@ wharf = {
 		harbor_suitability = 0.1
 		local_repair_speed = 0.01
 	}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 medical_school = {
@@ -409,6 +432,7 @@ medical_school = {
 	rural_settlement = no
 	town = yes
 	city = yes
+	megalopolis = yes
 
 
 	build_time = huge_unique_build_time
@@ -427,6 +451,14 @@ medical_school = {
 
 
 	construction_demand = town_building_construction
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 lazaretto = {
@@ -437,6 +469,7 @@ lazaretto = {
 	category = infrastructure_category
 	town = yes
 	city = yes
+	megalopolis = yes
 	location_potential = {
 		is_coastal = yes
 	}
@@ -455,6 +488,14 @@ lazaretto = {
 	modifier = {
 		local_disease_resistance = 0.25
 	}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 pest_house = {
@@ -467,6 +508,7 @@ pest_house = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	build_time = super_fast_temporary_house
 
@@ -481,7 +523,17 @@ pest_house = {
 	remove_if = {
 		OR = {
 			NOT = { is_situation_active = situation:black_death }
-			owner = { modifier:enable_pest_house = no }
+			owner = {
+				AND = {
+					modifier:enable_pest_house = no
+					trigger_if = {
+						limit = {
+							is_subject = yes
+						}
+						overlord = { modifier:enable_pest_house = no }
+					}
+				}
+			}
 		}
 	}
 
@@ -497,6 +549,14 @@ pest_house = {
 		local_disease_resistance = 0.3
 		local_unrest = 0.1
 	}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 hospital = {
@@ -509,6 +569,7 @@ hospital = {
 
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	location_potential = {
 		development >= 20
@@ -531,6 +592,14 @@ hospital = {
 		local_disease_resistance = 0.1
 		local_life_expectancy = 5
 	}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }
 
 slave_market = {
@@ -547,6 +616,7 @@ slave_market = {
 	rural_settlement = no
 	town = yes
 	city = yes
+	megalopolis = yes
 
 
 	country_potential = {
@@ -573,11 +643,10 @@ slave_market = {
 	unique_production_methods = {
 
 		slave_market_maintenance = {
-			leather = 0.35
-			tools = 0.3
-			weaponry = 0.25
-			paper = 0.25
-			slaves_goods = 0.5
+			leather = 0.5
+			tools = 0.45
+			weaponry = 0.4
+			paper = 0.35
 
 			produced = slaves_goods
 			output = 2.0
@@ -597,4 +666,72 @@ slave_market = {
 
 	construction_demand = town_building_construction
 
+}
+
+
+#Aqueducts
+
+aqueduct_system = {
+	content_priority = 100
+	is_foreign = no
+	max_levels = aqueduct_system_max_level 
+	pop_type = laborers
+	forbidden_for_estates = yes
+
+	employment_size = aqueduct_system_employment
+	price = expand_aqueduct_system
+
+	category = infrastructure_category
+
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	build_time = infrastructure_build_time
+
+	country_potential = {
+		OR = {
+			tag = BYZ
+			tag = ROM
+
+			owns = location:constantinople
+			owns = location:rome
+			owns = location:avignon
+			owns = location:segovia
+		}
+	}
+
+	location_potential = {
+		OR = {
+			this = location:constantinople
+			this = location:rome
+			this = location:avignon
+			this = location:segovia
+		}
+	}
+
+	possible_production_methods = { aqueduct_system_maintenance }
+
+	construction_demand = aqueduct_system_construction
+
+	modifier = {
+		local_disease_resistance = 0.1
+		local_monthly_food_modifier = 0.15
+		local_monthly_prosperity = 0.001
+		local_monthly_development_modifier = 0.1
+	}
+
+	capital_country_modifier = {
+		monthly_legitimacy = 0.1
+		monthly_republican_tradition = 0.1
+		monthly_devotion = 0.1
+	}
+	on_built = {
+		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_built = yes
+	}
+	on_destroyed = {
+		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
+		MnT_epbm_on_building_destroyed = yes
+	}
 }

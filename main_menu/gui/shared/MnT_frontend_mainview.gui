@@ -1,0 +1,382 @@
+types Frontend
+{
+	type button_dlc_mods = header_button_left {
+		size = { 80 40 }
+		blockoverride "button_icon_stretch_sprite" {}
+		blockoverride "header_button_frame_inner" {visible = no}
+		blockoverride "header_button_icon_size" { size = { 30 30 } }
+		blockoverride "header_button_text_layout" {}
+
+		blockoverride "icon_texture" {
+			texture = "gfx/interface/icons/dlc/dlc_shield.dds"
+			# texture_density = 2
+		}
+
+		name = "mods_gui_button"
+
+		action_tooltip = {
+			title = "MAIN_MENU_MODS_AND_DLCS"
+			on_action = "[FrontEndMainView.ToggleOpenMods]"
+		}
+
+		tooltipwidget = { 
+			SimpleContextualTooltipType = {
+				lowpriotextcontext = "MAIN_MENU_MODS_AND_DLCS_TOOLTIP"
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "gfx/interface/icons/dlc/dlc_shield.dds"												
+					}
+				}
+			}
+		}
+
+		down = "[FrontEndMainView.IsModsOpen]"
+	}
+
+	type button_dlc = button {
+		size = { 64 64 }
+		texture = "[GameDLC.GetIcon]"
+		tooltip = "[GameDLC.GetTooltip]"
+		tooltip_type = widget
+		tooltip_parentanchor = vcenter|right
+		tooltip_widgetanchor = vcenter|left
+
+		action_tooltip = {
+			title = "[SelectLocalization(GameDLC.IsOwned, 'GAME_DLC_OWNED_CLICK', 'GAME_DLC_NOT_OWNED_CLICK')]"
+			on_action = "[GameDLC.OnClick]"
+		}
+
+		tooltipwidget = {
+			ExtraContentTooltipType = {
+				# blockoverride "title_header_color" { tintcolor = "[GetColorDLC(DlcEntry.Filename)]"}
+				blockoverride "title_text" { text = "[GameDLC.GetName]" }
+				blockoverride "owned_text" { text = "GAME_DLC_TOOLTIP_OWNED" }
+				blockoverride "installed_text" { text = "GAME_DLC_TOOLTIP_INSTALLED" }
+				blockoverride "mounted_text" { text = "GAME_DLC_TOOLTIP_MOUNTED" }
+				blockoverride "activated_text" { text = "GAME_DLC_TOOLTIP_ACTIVATED" }
+				blockoverride "ExtraContentTooltipType_background_texture" { texture = "[GameDLC.GetTooltipBackground]" }
+
+				blockoverride "flavor_text" {
+					text = "[GameDLC.GetTooltipDesc]"
+				}
+			}
+		}
+	}
+
+	type FrontEndDLCs = widget {
+		parentanchor = top|right
+		widgetanchor = top|right
+		size = { 80 100% }
+
+		background = {
+			texture = "gfx/interface/colors/black.dds"
+			texture_density = 2
+			# modify_texture = {
+			# 	using = color_brown_leather_texture
+			# }
+			modify_texture = {
+				using = color_intense_brown_texture
+			}
+			modify_texture = {
+				using = overlay_cloth_texture
+				blend_mode = multiply
+				alpha = 0.5
+			}
+		}
+
+		background = {
+			texture = "gfx/interface/component_decoration/loading_screen_illustration_frame.dds"
+			texture_density = 2
+			spriteType = corneredstretched
+			spriteBorder = {60 60}
+			frame_grid = { 2 1 }
+			margin_left = 3
+			margin_top = 2
+			frame = 1
+		}
+		
+		vbox = {
+			button_dlc_mods = {}
+
+			vbox = {
+				spacing = 5
+				datamodel = "[GetGameDLCs]"
+				item = {
+					button_dlc = { visible = "[GameDLC.IsActivated]" }
+				}
+			}
+
+			expand = {}
+
+			vbox = {
+				spacing = 5
+				datamodel = "[GetGameDLCs]"
+				item = {
+					button_dlc = { visible = "[And(Not(GameDLC.IsActivated), Not(GameDLC.IsOwned))]" }
+				}
+			}
+		}
+	}
+
+	type FrontEndNews = widget {
+		size = { 100% 100% }
+		flowcontainer = {
+			parentanchor = bottom|right
+			widgetanchor = bottom|right
+			position = { 42069 -20 }	#M&T moved out of sight: we already paid for the game, not to view adds
+			spacing = 10
+
+			alwaystransparent = yes
+			ignoreinvisible = yes
+			visible = yes
+			scissor = yes
+
+			newsfeed_carousel = {
+				name = "newsfeed_slot_main"
+				size = { 451 230 }
+				align = left
+				datacontext = "[FrontEndMainView.AccessMarketingContainer.AccessSlotByName('main')]"
+
+				tooltip_enabled = no
+			}
+
+			newsfeed_carousel = {
+				name = "newsfeed_slot_secondary_1"
+				size = { 245 230 }
+				align = left
+				datacontext = "[FrontEndMainView.AccessMarketingContainer.AccessSlotByName('secondary-1')]"
+
+				tooltip_enabled = no
+
+				blockoverride "offset_x" {
+					position_x = -245
+				}
+
+				blockoverride "current_button_pos" {
+					size = { 245 230 }
+				}
+				blockoverride "next_button_pos" {
+					size = { 245 230 }
+					position = { 245 0 }
+				}
+			}
+
+			newsfeed_carousel = {
+				name = "newsfeed_slot_secondary_2"
+				size = { 245 230 }
+				align = left
+				datacontext = "[FrontEndMainView.AccessMarketingContainer.AccessSlotByName('secondary-2')]"
+
+				tooltip_enabled = no
+
+				blockoverride "offset_x" {
+					position_x = -245
+				}
+				blockoverride "current_button_pos" {
+					size = { 245 230 }
+				}
+				blockoverride "next_button_pos" {
+					size = { 245 230 }
+					position = { 245 0 }
+				}
+
+			}
+		}
+	}
+
+	type steam_logo_button = button {
+		gfxtype = framedbuttongfx
+		effectname = "NoHighlight"
+		upframe = 1
+		overframe = 2
+		downframe = 3
+		disableframe = 4
+		texture = "gfx/interface/buttons/button_small_round.dds"
+		framesize = { 42 42 }
+
+		sdk_load_indicator = {}
+		size = {30 30}
+
+		icon = {
+			size = {20 20}
+			parentanchor = center
+			texture =  "gfx/interface/logos/steam_logo.dds"
+		}
+	}
+
+	type caesar_status_widget = widget {
+		name = "account_test"
+		using = SDKStatusWidgetWindowStyle
+		size = { 300 165 }
+
+		blockoverride "sdk_text_style" { using = sdk_text_style_template }
+		blockoverride "sdk_button_style" { using = sdk_button_style_template }
+		blockoverride "sdk_button_size" { using = sdk_button_size_template }
+		blockoverride "sdk_load_indicator" { using = sdk_load_indicator_template }
+
+		blockoverride "status_widget_background_style" {}
+
+		header_button_left = {
+			position = { 0 5 }
+			size = { 31 31 }
+			blockoverride "button_icon_stretch_sprite" {}
+			blockoverride "header_button_frame_inner" {visible = no}
+			blockoverride "header_button_icon_size" { size = { 30 30 } }
+			blockoverride "header_button_text_layout" {}
+			blockoverride "icon_overlay" {}
+
+			blockoverride "icon_texture" {
+				texture = "gfx/interface/icons/modifier_types/adm.dds"
+				texture_density = 2
+			}
+
+			tooltipwidget = { BasicFunctionalTooltip = {} }
+			action_tooltip = {
+				click_type = left
+				title = "SHOW_LEGAL_DOCUMENTS"
+				on_action = "[ShowJominiLegalDocuments]"
+			}
+		}
+
+		steam_logo_button = {
+			parentanchor = right|top
+			position = { 0 5 }
+			visible = "[And(Not(StatusWidget.IsAccountConnected), StatusWidget.SupportsConnectAccount)]"
+			tooltipwidget = {
+				LeftClickButtonTooltip = {
+					blockoverride "onclick_text" { text = "ACCOUNT_LINK" } 
+				}
+			}
+			
+			onclick = "[StatusWidget.ConnectAccount]"
+			enabled = "[And(Not(StatusWidget.IsBusy),And(And(StatusIsLoggedIn,Not(StatusWidget.IsAccountConnected)),StatusWidget.SupportsConnectAccount))]"
+
+			blockoverride "load_indicator" {
+				visible = "[And(StatusIsLoggedIn, Not(And(Not(StatusWidget.IsBusy),And(And(StatusIsLoggedIn,Not(StatusWidget.IsAccountConnected)),StatusWidget.SupportsConnectAccount))))]"
+			}
+		}
+		
+		steam_logo_button = {
+			parentanchor = right|top
+			position = { 0 5 }
+			visible = "[And(StatusWidget.IsAccountConnected, StatusWidget.SupportsConnectAccount)]"
+			tooltipwidget = {
+				LeftClickButtonTooltip = {
+					blockoverride "onclick_text" { text = "ACCOUNT_UNLINK" } 
+				}
+			}
+
+			onclick = "[StatusWidget.DisconnectAccount]"
+			enabled = "[And(Not(StatusWidget.IsBusy),And(And(StatusIsLoggedIn,StatusWidget.IsAccountConnected),StatusWidget.SupportsConnectAccount))]"
+
+			blockoverride "load_indicator" {
+				visible = "[Not(And(Not(StatusWidget.IsBusy),And(And(StatusIsLoggedIn, StatusWidget.IsAccountConnected), StatusWidget.SupportsConnectAccount)))]"
+			}
+		}
+		
+		vbox = {
+			ignoreinvisible = yes
+			margin_bottom = 40
+			spacing = 10
+
+			expand = {}
+			
+			hbox = {
+				spacing = 10
+				icon = {
+					texture = "gfx/interface/icons/flat_icons/account.dds"
+					size = { 40 40 }
+
+					modify_texture = {
+						using = color_gold_texture
+						blend_mode = add
+					}
+				}
+				
+				text_multi = {
+					name = "login_status"
+
+					autoresize = yes
+					maximumsize = { 125 40 }
+
+					using = Font_Type_Headers
+					default_format = "#high"
+					text = "[StatusGetLoginStatus]"
+					
+					sdk_load_indicator = {
+						position = { 10 0 }
+						parentanchor = right|vcenter
+						widgetanchor = left|vcenter
+						visible = "[StatusIsLoggingIn]"
+					}
+				}
+			}
+
+			hbox = {
+				spacing = 5
+				ignoreinvisible = yes
+				sdk_button = {
+					text = "CREATE_ACCOUNT"
+					visible = "[Not(StatusIsLoggedIn)]"
+					enabled = "[StatusCanLogin]"
+					onclick = "[StatusWidget.ToggleCreateAccountWindow]"
+					# block "create_account_button_size" {
+						using = button_resize_to_fit_text
+					# }
+				}
+				sdk_button = {
+					text = "LOGIN"
+					onclick = "[StatusWidget.ToggleLoginWindow]"
+					visible = "[Not(StatusIsLoggedIn)]"
+					enabled = "[StatusCanLogin]"
+					using = button_resize_to_fit_text
+				}
+				sdk_button = {
+					maximumsize = { 180 -1 }
+					text = "SOCIAL_PROFILE"
+					tooltip = "SOCIAL_PROFILE_DESC"
+					visible = "[StatusIsLoggedIn]"
+					onclick = "[StatusWidget.ToggleCreateProfileWindow]"
+					# block "social_profile_button_size" {
+						using = button_resize_to_fit_text
+						margin = { 10 5 }
+					# }
+				}
+				sdk_button = {
+					maximumsize = { 125 -1 }
+					text = "LOGOUT"
+					onclick = "[StatusWidget.Logout]"
+					visible = "[StatusIsLoggedIn]"
+					enabled = "[Not(StatusIsLoggingIn)]"
+					using = button_resize_to_fit_text
+					margin = { 10 5 }
+				}
+			}		
+		}
+
+		# blockoverride "load_indicator_container" {
+		# 	visible = no
+		# }
+
+		# blockoverride "login_status_text_size" {
+		# 	visible = no
+		# }
+
+		# blockoverride "create_account_button_size" {
+		# 	using = button_resize_to_fit_text
+		# }
+
+		# blockoverride "social_profile_button_size" {
+		# 	using = button_resize_to_fit_text
+		# }
+
+		# blockoverride "account_link_button_size" {
+		# 	using = button_resize_to_fit_text
+		# }
+
+		# blockoverride "account_unlink_button_size" {
+		# 	using = button_resize_to_fit_text
+		# }
+	}
+}

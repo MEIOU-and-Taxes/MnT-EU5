@@ -2,6 +2,7 @@
 	on_actions = {
 		on_game_start_MnT
 		hide_buildings_on_start
+		MnT_epbm_initialize_all
 	}
 }
 
@@ -9,6 +10,8 @@ yearly_country_pulse = {
 	on_actions = {
 		pulse_yearly_MnT
 		pulse_yearly_per_country_MnT
+		MnT_epbm_ai_yearly_recalc
+		MnT_epbm_decade_rebuild
 	}
 }
 
@@ -21,6 +24,21 @@ biyearly_country_pulse = {
 monthly_country_pulse = {
 	on_actions = {
 		monthly_country_pulse_MnT
+		MnT_epbm_player_monthly
+		MnT_epbm_ai_monthly_charge
+	}
+}
+
+on_location_changed_owner = {
+	on_actions = {
+		MnT_epbm_on_location_owner_changed
+	}
+}
+
+weather_monthly_pulse = {
+	on_actions = {
+		MnT_epbm_save_game_compat_init
+		MnT_epbm_monthly_cache_clear
 	}
 }
 
@@ -35,21 +53,31 @@ on_game_start_MnT = {
 			}
 		}
 
-		# Initialize GDP update frequency variable and trigger first update
+		# Initialize update frequencies and trigger first update
 		every_country = {
 			trigger_event_silently = { id = rgo_removal.01 }
 			if = {
 				limit = { is_ai = no }
 				if = {
 					limit = { NOT = { has_variable = mnt_goods_value_update_freq } }
-					set_variable = { name = mnt_goods_value_update_freq value = 1 }
+					set_variable = { name = mnt_goods_value_update_freq value = 0 }
 				}
+				if = {
+					limit = { NOT = { has_variable = mnt_income_graph_update_freq } }
+					set_variable = { name = mnt_income_graph_update_freq value = 0 }
+				}
+				mnt_update_income_graph_history = yes
 			}
 			trigger_event_silently = { id = mnt_goods_value.1 }
 		}
 		# Handle Pop and Food building startup
-		every_country = { limit = { num_locations > 0 }	trigger_event_silently = { id = mnt_food.1 } }
-		if = { limit = { always = no } random_country = { trigger_event_silently = { id = mnt_never_trigger_me.1 } } }
+		every_country = {
+			limit = {
+				num_locations > 0
+			}
+			trigger_event_silently = { id = mnt_food.1 }
+			trigger_event_silently = { id = mnt_tribes.1 }
+		}
 	}
 }
 
@@ -67,6 +95,7 @@ pulse_yearly_MnT = {
 
 pulse_yearly_per_country_MnT = {
 	events = {
+		mnt_tribes.1
 		mnt_food.2
 		mnt_goods_value.2
 	}
@@ -81,6 +110,7 @@ biyearly_country_pulse_MnT = {
 monthly_country_pulse_MnT = {
 	events = {
 		mnt_goods_value.1
+		mnt_income_graph.1
 
 		# Calculate demands of individual countries
 		cost_of_the_court.1
@@ -172,6 +202,153 @@ hide_buildings_on_start = {
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wild_game }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wine }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wool }
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════
+# MnT EPBM: Estates Pay Building Maintenance
+# ═══════════════════════════════════════════════
+# The EPBM subsystem hooks into on_game_start (once), monthly_country_pulse
+# (player recalc+charge, AI charge-only), yearly_country_pulse (AI recalc +
+# decade safety-net rebuild), on_location_changed_owner (move a location
+# between country lists, necessary because we cache a list of locations 
+# with relevant building_types so we don't waste iterations), 
+# and weather_monthly_pulse (clear the PM cost cache). 
+
+# Game start: one-time full initialization
+MnT_epbm_initialize_all = {
+	effect = {
+		MnT_epbm_full_rebuild = yes
+	}
+}
+
+# Monthly player: full recalc + charge
+MnT_epbm_player_monthly = {
+	trigger = {
+		is_ai = no
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		MnT_epbm_collect_maintenance = yes
+	}
+}
+
+# Monthly AI: snapshot + charge, reusing the rates cached by the yearly recalc
+MnT_epbm_ai_monthly_charge = {
+	trigger = {
+		is_ai = yes
+		is_real_country = yes
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		MnT_epbm_snapshot_for_display = yes # observer mode visibility
+		MnT_epbm_charge_estates = yes
+	}
+}
+
+# Yearly AI: recalc (expensive per-building iteration, so not monthly)
+MnT_epbm_ai_yearly_recalc = {
+	trigger = {
+		is_ai = yes
+		is_real_country = yes
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		MnT_epbm_calculate_maintenance = yes
+	}
+}
+
+# Every country yearly: rebuild per-location and per-country tracking lists
+# from scratch every ten years as a drift-correction safety net.
+MnT_epbm_decade_rebuild = {
+	trigger = {
+		is_real_country = yes
+		any_estate = { estate_type != estate_type:crown_estate }
+	}
+
+	effect = {
+		# Tenth tick: fire the rebuild and reset the counter
+		if = {
+			limit = { has_variable = MnT_epbm_rebuild_counter var:MnT_epbm_rebuild_counter >= 9 }
+			MnT_epbm_structural_rebuild = yes
+			set_variable = { name = MnT_epbm_rebuild_counter value = 0 }
+		}
+		# Ticks 1..9: just advance the counter
+		else_if = {
+			limit = { has_variable = MnT_epbm_rebuild_counter }
+			change_variable = { name = MnT_epbm_rebuild_counter add = 1 }
+		}
+	}
+}
+
+# Location ownership change: move the location between country lists.
+# Root = location, scope:loser = previous owner, scope:winner = new owner.
+MnT_epbm_on_location_owner_changed = {
+	effect = {
+		save_temporary_scope_as = MnT_epbm_loc
+
+		# Drop from the loser's list if they had it
+		scope:loser ?= {
+			if = {
+				limit = {
+					has_variable_list = MnT_epbm_locations
+					is_target_in_variable_list = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+				}
+
+				remove_list_variable = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+			}
+		}
+
+		# Add to the winner's list if the location still has tracked buildings
+		scope:winner ?= {
+			if = {
+				limit = {
+					has_variable_list = MnT_epbm_locations
+
+					scope:MnT_epbm_loc = { has_variable_list = MnT_epbm_buildings }
+					NOT = {
+						is_target_in_variable_list = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+					}
+				}
+
+				add_to_variable_list = { name = MnT_epbm_locations target = scope:MnT_epbm_loc }
+			}
+		}
+	}
+}
+
+# Global monthly pulse: clear cached PM costs so next month's prices refresh
+MnT_epbm_monthly_cache_clear = {
+	effect = {
+		every_in_global_list = {
+			variable = MnT_epbm_all_ios
+			clear_variable_map = MnT_epbm_costs
+		}
+	}
+}
+
+# Global monthly pulse: save-game compat init for EPBM.
+# weather_monthly_pulse appears to fire after (or at least not before)
+# monthly_country_pulse, so the full_rebuild also charges estates.
+MnT_epbm_save_game_compat_init = {
+	effect = {
+		if = {
+			limit = {
+				# Bump the value here to force a rebuild on version update
+				trigger_if = {
+					limit = { has_global_variable = MnT_EPBM_initialized }
+					NOT = { global_var:MnT_EPBM_initialized >= 1 }
+				}
+				trigger_else = {
+					always = yes
+				}
+			}
+			MnT_epbm_full_rebuild = yes
+			set_global_variable = { name = MnT_EPBM_initialized value = 1 }
 		}
 	}
 }

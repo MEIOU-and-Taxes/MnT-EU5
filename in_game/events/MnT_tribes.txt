@@ -1,0 +1,29 @@
+﻿namespace = mnt_tribes
+
+# Maintenance event for refreshing tribal pastures to always be at their building cap, whatever that may be
+mnt_tribes.1 = {
+    type = country_event
+    title = hidden_event.t
+    hidden = yes
+	
+	trigger = {
+		country_exists_and_can_own_locations = yes
+		num_pop_type_in_country:tribesmen > 0
+	}
+	
+	immediate = {
+		every_owned_location = {
+			limit = { 
+				num_pop_type:tribesmen > 0
+			}
+			change_building_level_in_location = {
+				building = building_type:transhumant_wool_pasture
+				value = {
+					value = transhumant_wool_pasture_cap # start at the cap
+					subtract = "location_building_level(building_type:transhumant_wool_pasture)" # Account for existing building levels
+					floor = yes	#round down to make sure we don't accidentally go over the cap
+				}
+			}
+		}
+	}
+}

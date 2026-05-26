@@ -3,6 +3,7 @@
 	trigger_if = {
 		limit = { 
 			country_exists = c:PAP
+			NOT = { tag = PAP }
 			religion = religion:catholic 
 		}
 		c:PAP = {
@@ -25,6 +26,21 @@ REPLACE:can_upgrade_country_rank_kingdom = {
 		total_population > 2000
 		total_true_faith_population > 1500
 		total_accepted_culture_population > 1000
+		AND = {
+			has_game_rule = rank_restriction_by_numbers
+			is_member_of_international_organization = international_organization:hre
+			OR = {
+				total_population > 2000
+				total_true_faith_population > 1500
+				total_accepted_culture_population > 1000
+			}
+			international_organization:hre = {
+				any_international_organization_member = {
+					country_rank_level = 3
+					count < 6
+				}
+			}
+		}
 	}
 	prestige > 0 #changed from prestige > 50
 	government_power > 60 # added by MnT
