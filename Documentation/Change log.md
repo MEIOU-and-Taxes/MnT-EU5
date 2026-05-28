@@ -270,7 +270,6 @@ Date: 2026-01-20
 - Tribal levies for non-tribal non-steppe government: 2% → 15%
 - Steppe hordes only make steppe cavalry out of tribesmen and nobles of Turkic and Mongolian cultures
 - Steppe cavalry levies for steppe hordes: 2% → 50%
-- All climates have a small amount of base attrition, attrition is negated at owned forts.
 
 ##### Situations
 
