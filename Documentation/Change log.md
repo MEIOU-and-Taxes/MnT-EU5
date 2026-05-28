@@ -311,3 +311,12 @@ Date: 21/05/2026
 ### Localizaton
 - Localize raw_material_output as Resource Size bonus
 - Add rgo_building game concept
+
+##### M&T v0.1.2
+
+### Fixes
+- Adds in all the goods transports costs from vanilla, as it defaults to 1. Also added them where it's 1 for clarity.
+- Restored some prices to exactly half vanilla price as production chains weren't changed with it.
+
+### Balance
+- Reduce the base power_per_pop for Peasants by 25%
