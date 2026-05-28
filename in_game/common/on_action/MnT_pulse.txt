@@ -3,6 +3,8 @@
 		on_game_start_MnT
 		hide_buildings_on_start
 		MnT_epbm_initialize_all
+		delay = { days = 1 }
+		on_game_has_started_MnT
 	}
 }
 
@@ -42,6 +44,7 @@ weather_monthly_pulse = {
 	}
 }
 
+# The below runs BEFORE country selection so is_ai and is_human checks will not work!
 on_game_start_MnT = {
 	effect = {
 		# Initialize center of importance systems on game start
@@ -56,18 +59,6 @@ on_game_start_MnT = {
 		# Initialize update frequencies and trigger first update
 		every_country = {
 			trigger_event_silently = { id = rgo_removal.01 }
-			if = {
-				limit = { is_ai = no }
-				if = {
-					limit = { NOT = { has_variable = mnt_goods_value_update_freq } }
-					set_variable = { name = mnt_goods_value_update_freq value = 0 }
-				}
-				if = {
-					limit = { NOT = { has_variable = mnt_income_graph_update_freq } }
-					set_variable = { name = mnt_income_graph_update_freq value = 0 }
-				}
-				mnt_update_income_graph_history = yes
-			}
 			trigger_event_silently = { id = mnt_goods_value.1 }
 		}
 		# Handle Pop and Food building startup
@@ -79,6 +70,34 @@ on_game_start_MnT = {
 			trigger_event_silently = { id = mnt_tribes.2 } # Has to be before mnt_food.1 because we're removing peasants
 			trigger_event_silently = { id = mnt_food.1 }
 			trigger_event_silently = { id = mnt_tribes.1 }
+		}
+	}
+}
+
+# If you need things to fire on the start of the game AFTER the player country is defined use this one
+# The delay of one day is real though, this will fire 2nd of April 1337
+# Ergo, firing things for the player on literally the first day of the game is just not possible
+on_game_has_started_MnT = {
+	effect = {
+		# Initialize the hidden buildings system
+		every_country = {
+			limit = {
+				is_human = yes
+			}
+			# Show RGO buildings in the UI for the player by default
+			set_variable = { name = mnt_show_rgo_buildings value = 1 }
+			# M&T Startup welcome event	
+			trigger_event_non_silently = { id = mnt_information.1 }
+			# Income graph for the player
+			if = {
+				limit = { NOT = { has_variable = mnt_goods_value_update_freq } }
+				set_variable = { name = mnt_goods_value_update_freq value = 0 }
+			}
+			if = {
+				limit = { NOT = { has_variable = mnt_income_graph_update_freq } }
+				set_variable = { name = mnt_income_graph_update_freq value = 0 }
+			}
+			mnt_update_income_graph_history = yes
 		}
 	}
 }
@@ -137,12 +156,6 @@ hide_buildings_on_start = {
 				NOT = { 
 					has_global_variable = mnt_hidden_buildings_initialized_v2 
 				} 
-			}
-			every_country = {
-				limit = {
-					is_ai = no
-				}
-				set_variable = { name = mnt_show_rgo_buildings value = 1 }
 			}
 			set_global_variable = { name = mnt_hidden_buildings_initialized_v2 value = 1 }
 			if = { 
