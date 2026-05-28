@@ -323,3 +323,4 @@ Date: 21/05/2026
 - Reduce the base power_per_pop for Peasants by 25%
 - Disable Peasants power from farming villages
 - Disable Settlements in town/city
+- Allow wool rgo_building where Vanilla would allow sheep_farms
