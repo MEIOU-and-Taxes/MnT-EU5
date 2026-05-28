@@ -316,8 +316,6 @@ Date: 21/05/2026
 ##### M&T v0.1.2
 
 ### Setup
-- Not new but explain: 
-  - Free all slaves at gamestart since Vanilla assumes mass enslavement, temporary bandaid until Vanilla addresses this or we fix it more elegantly
 - Rebalance the distribution of Tribal pops in the world based on historically tribal cultures
   - Split pops between peasants and tribes based on development numbers
   - Ensures somewhat normal distribution of peasants/tribes globally
