@@ -317,6 +317,9 @@ Date: 21/05/2026
 ### Fixes
 - Adds in all the goods transports costs from vanilla, as it defaults to 1. Also added them where it's 1 for clarity.
 - Restored some prices to exactly half vanilla price as production chains weren't changed with it.
+- Fix some buildings not buildable in Metropolis due to us forgetting to add Megalopolis = yes line with 1.2 update
 
 ### Balance
 - Reduce the base power_per_pop for Peasants by 25%
+- Disable Peasants power from farming villages
+- Disable Settlements in town/city
