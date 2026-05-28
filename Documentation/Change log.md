@@ -41,7 +41,7 @@ Date: 2026-01-20
 
 - Fix diplomatic spending not transferring gold to nobles estate
 - Stability map mode works
-- Backend error fixes
+- Backend error fixes 
 
 #### Balancing
 
@@ -188,6 +188,7 @@ Date: 2026-01-20
   - Base conversion speed is now relative instead of absolute  
     - It will require 200+ years to fully convert
 - Tribesmen pops now have same share of the tax base as peasants
+- Stop randomly spawning Eunuch children
 
 ##### Religion
 
@@ -286,7 +287,7 @@ Date: 2026-01-20
 - Reworked the location window RGO button to open Location Production filtered to the selected location's raw material building path.
 - Updated the location window RGO value readout to show current RGO building level versus location-specific maximum level.
 - Added a row in the loading screen showing MnT version
-- Added M&T logo in the main menu
+- Added M&T logo in the main menu and remove PDX marketing
 
 ##### Modding
 - Added automated check for correct encodings and line endings via GitHub Actions
