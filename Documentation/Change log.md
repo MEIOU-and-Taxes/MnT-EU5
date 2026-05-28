@@ -315,9 +315,22 @@ Date: 21/05/2026
 
 ##### M&T v0.1.2
 
+### Setup
+- Not new but explain: 
+  - Free all slaves at gamestart since Vanilla assumes mass enslavement, temporary bandaid until Vanilla addresses this or we fix it more elegantly
+- Rebalance the distribution of Tribal pops in the world based on historically tribal cultures
+  - Split pops between peasants and tribes based on development numbers
+  - Ensures somewhat normal distribution of peasants/tribes globally
+  - This increases the amount of tribes worldwide (no change to total pop number)
+
+### Military
+- Reduce the amount of tribal levies per tribal-population, and make it equal accross the board
+- No country restrictions on tribal levies; there's no reason why calling up the more remote people of your lands who for the most part don't really care about your laws should somehow change their composition based on laws or country type
+
 ### Fixes
 - Adds in all the goods transports costs from vanilla, as it defaults to 1. Also added them where it's 1 for clarity.
 - Restored some prices to exactly half vanilla price as production chains weren't changed with it.
+  - This should fix wool being too cheap and thus used too much to make cloth
 - Fix some buildings not buildable in Metropolis due to us forgetting to add Megalopolis = yes line with 1.2 update
 
 ### Balance
