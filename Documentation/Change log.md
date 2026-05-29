@@ -337,3 +337,12 @@ Date: 21/05/2026
 - Disable Peasants power from farming villages
 - Disable Settlements in town/city
 - Allow wool rgo_building where Vanilla would allow sheep_farms
+
+##### M&T v0.1.3
+
+### decline_of_empire disaster: fix epidemic of suicidal AIs
+- Disaster was making AIs insta-declare war, way too often
+  - Tune down frequency of this event
+  - Give CB to opportunistic neighbor instead of insta declare
+  - Add opinion/trust effects
+  - Add meaningful ai_chance modifiers
