@@ -1,0 +1,69 @@
+﻿mnt_clear_credit_interest_modifiers = {
+	if = {
+		limit = { has_country_modifier = mnt_credit_interest_market_price }
+		remove_country_modifier = mnt_credit_interest_market_price
+	}
+	if = {
+		limit = { has_country_modifier = mnt_debt_sustainability_interest }
+		remove_country_modifier = mnt_debt_sustainability_interest
+	}
+}
+
+mnt_apply_credit_interest_modifier = {
+	if = {
+		limit = {
+			exists = capital.market
+		}
+		add_country_modifier = {
+			modifier = mnt_credit_interest_market_price
+			months = 13
+			mode = replace
+			size = {
+				value = "goods:credit.price_in_market(root.capital.market)"
+				subtract = 1
+				multiply = 0.075
+			}
+		}
+	} else = {
+		add_country_modifier = {
+			modifier = mnt_credit_interest_market_price
+			months = 13
+			mode = replace
+			size = 0
+		}
+	}
+}
+
+mnt_apply_debt_sustainability_interest_modifier = {
+	if = {
+		limit = { total_debt > 0 }
+		add_country_modifier = {
+			modifier = mnt_debt_sustainability_interest
+			months = 13
+			mode = replace
+			size = {
+				value = total_debt
+				divide = {
+					value = monthly_income_total
+					multiply = 12
+					min = 1
+				}
+				multiply = 0.003
+				max = 0.02
+			}
+		}
+	} else = {
+		add_country_modifier = {
+			modifier = mnt_debt_sustainability_interest
+			months = 13
+			mode = replace
+			size = 0
+		}
+	}
+}
+
+mnt_apply_yearly_credit_interest = {
+	mnt_clear_credit_interest_modifiers = yes
+	mnt_apply_credit_interest_modifier = yes
+	mnt_apply_debt_sustainability_interest_modifier = yes
+}
