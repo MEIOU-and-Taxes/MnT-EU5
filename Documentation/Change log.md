@@ -1,8 +1,8 @@
 ﻿# Release 
 
-### 0.0.1
+### Initial test-release v0.1
 
-Date: 2026-01-20
+Date: 21/05/2026
 
 #### Features
 
@@ -301,5 +301,55 @@ Date: 2026-01-20
 - Added automated check for correct encodings and line endings via GitHub Actions
 
 ##### Climates
-- replace all climates with the more varied koppen climates 
-  - references to older climates point to multiple koppen climates  
+- replace all climates with the more varied koppen climates
+  - references to older climates point to multiple koppen climates 
+
+##### M&T v0.1.1
+
+### Balance
+- Make every level of RGO Building give 1 free building level in its location (so you can't effectively get less available building levels from building up rural resource extraction stuff)
+- Similarly for farming villages and tribal transhumant_wool_pasture buildings, give 1 free building level per level as we sort of force the player to have these buildings
+- Increased monthly disease resistance reduction for pops to the Bubonic Plague, Influenza and Smallpox
+
+### Fixes
+- Fix Fish RGO Building not fulfilling upgrade potential if Location defined as fish RGO
+- Fix cost increase per level in RGO modifier (mostly increased cost for mines per level) showing extra cost in green -> make properly red
+- Fix possibility of subjects declaring war on Countries experiencing Decline of Empire disaster where they should not be able to declare wars in the first place
+
+### Localizaton
+- Localize raw_material_output as Resource Size bonus
+- Add rgo_building game concept
+
+##### M&T v0.1.2
+
+### Setup
+- Rebalance the distribution of Tribal pops in the world based on historically tribal cultures
+  - Split pops between peasants and tribes based on development numbers
+  - Ensures somewhat normal distribution of peasants/tribes globally
+  - This increases the amount of tribes worldwide (no change to total pop number)
+
+### Military
+- Reduce the amount of tribal levies per tribal-population, and make it equal accross the board
+- No country restrictions on tribal levies; there's no reason why calling up the more remote people of your lands who for the most part don't really care about your laws should somehow change their composition based on laws or country type
+- Remove local_army_attrition from all climates where present. Army attrition blocks reinforcement and reduces morale. These 2 quirks make base attrition in some climates unfun and not feasible, despite being historically realistic. 
+
+### Fixes
+- Adds in all the goods transports costs from vanilla, as it defaults to 1. Also added them where it's 1 for clarity.
+- Restored some prices to exactly half vanilla price as production chains weren't changed with it.
+  - This should fix wool being too cheap and thus used too much to make cloth
+- Fix some buildings not buildable in Metropolis due to us forgetting to add Megalopolis = yes line with 1.2 update
+
+### Balance
+- Reduce the base power_per_pop for Peasants by 25%
+- Disable Peasants power from farming villages
+- Disable Settlements in town/city
+- Allow wool rgo_building where Vanilla would allow sheep_farms
+
+##### M&T v0.1.3
+
+### decline_of_empire disaster: fix epidemic of suicidal AIs
+- Disaster was making AIs insta-declare war, way too often
+  - Tune down frequency of this event
+  - Give CB to opportunistic neighbor instead of insta declare
+  - Add opinion/trust effects
+  - Add meaningful ai_chance modifiers

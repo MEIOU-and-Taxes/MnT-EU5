@@ -338,18 +338,76 @@ decline_of_empire.5 = {	#Relatively strong neighbor makes a move
 	}
 
 	option = {
+		# Start preparations for war!
 		name = decline_of_empire.5.a
 
-		declare_war_with_cb = {	
+		# Add CB instead of directly attacking to make AI normal calcs happen, try to avoid suicidal wars
+		add_casus_belli = {
+			type = casus_belli:cb_cut_down_in_size
 			target = scope:target_country
-			type = casus_belli:cb_cut_down_in_size 
+		}
+
+		# Create a real downside (big neighbour not happy)
+		scope:target_country = {
+			add_opinion = {
+				target = root
+				modifier = opinion_struggle_bad_neighbor
+			}
+			add_trust = {
+				target = root
+				value = -15
+			}
+		}
+
+		# Try to have meaningful ai_chance factors here (they barely exist in Vanilla so had to do quite some digging)
+		# Warlike AIs more interested, but wanting to attack in the first place more important 
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 4
+				OR = {
+					ai_personality = ai_personality:ai_aggressive
+					ai_personality = ai_personality:ai_expansionist
+				}
+			}
+			modifier = {
+				factor = 10				
+				wants_to_attack = scope:target_country
+			}
 		}
 	}
 
 	option = {
+		# Let us not betray our neighbours in their time of need.
 		name = decline_of_empire.5.b
 
-		add_government_power = government_power_weak_penalty
+		# The diplomatic move is rewarded too
+		scope:target_country = {
+			add_opinion = {
+				target = root
+				modifier = opinion_struggle_good_neighbor
+			}
+			add_trust = {
+				target = root
+				value = 10
+			}
+		}
+
+		# Friendly AI less likely, but less of a factor than it just not wanting to attack in the first place
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 4
+				OR = {
+					ai_personality = ai_personality:ai_friendly	# <3
+					ai_personality = ai_personality:ai_cautious
+				}
+			}
+			modifier = {
+				factor = 10				
+				NOT = { wants_to_attack = scope:target_country }
+			}
+		}
 	}
 }
 
