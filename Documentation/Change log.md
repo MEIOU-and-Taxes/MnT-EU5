@@ -111,7 +111,7 @@ Date: 21/05/2026
 - Market  
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
-    - Cost of the Court: furniture, tools, glass, fine cloth  
+    - Cost of the Court: furniture, jewelry, glass, fine cloth, cloth, leather, weaponry, books, paper
     - Diplomatic expenses: paper, jewelry
   - Can destroy markets even if there are temporary demands
 - RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
