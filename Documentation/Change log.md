@@ -1,4 +1,7 @@
-﻿# Release 
+﻿# Release
+
+#### Balancing
+- Remove location building limit
 
 ### Initial test-release v0.1
 
