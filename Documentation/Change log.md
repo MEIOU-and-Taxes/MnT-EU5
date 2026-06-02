@@ -2,6 +2,9 @@
 
 #### Balancing
 - Remove location building limit
+- Changes to industry-specialization urban rights
+  - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
+  - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
 
 ### Initial test-release v0.1
 
