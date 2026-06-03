@@ -353,3 +353,8 @@ Date: 21/05/2026
   - Give CB to opportunistic neighbor instead of insta declare
   - Add opinion/trust effects
   - Add meaningful ai_chance modifiers
+
+#### M&T v0.1.4
+
+### Mechanics
+- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
