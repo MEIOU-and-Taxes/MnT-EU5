@@ -1,4 +1,4 @@
-template Estate_tooltip {
+﻿template Estate_tooltip {
 	ContextualTooltipType = {
 		blockoverride "title_icon_texture" {
 			texture = "[GetEstateIcon(Estate.GetType)]"
@@ -26,9 +26,7 @@ template Estate_tooltip {
 			TooltipStringPairList = {
 				textcontext = "ESTATE_BREAKDOWN"
 			}
-
-			TooltipListBase = {
-
+			TooltipListBase = {			
 				TooltipManualTableField = {
 					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
 					text_single = {
@@ -39,7 +37,6 @@ template Estate_tooltip {
 						raw_text = "[Estate.GetGold|2]([Estate.GetBalance|+=2])@gold!"
 					}
 				}
-
 				TooltipManualTableField = {
 					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
 					text_single = {
@@ -49,20 +46,21 @@ template Estate_tooltip {
 					text_single = {
 						raw_text = "[Estate.GetLastMonthsIncomeAfterTaxWithTooltip]@gold!"
 					}
-
-					tooltipwidget = {
-						using = estate_expense_tooltip
-					}
+				}
+				
+				TooltipStringPairList = {
+					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
+					textcontext = "[Estate.GetEconomyInfo]"
 				}
 
 				TooltipManualTableField = {
-					visible = "[And(Not(Estate.GetType.IsAlwaysLoyal), ObjectsEqual(Player.GetGovernment.GetEstateFromKey('nobles_estate').GetType, Estate.GetType))]"
+					visible = "[And3(Not(Estate.GetType.IsAlwaysLoyal), ObjectsEqual(Player.GetGovernment.GetEstateFromKey('nobles_estate').GetType, Estate.GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('noble_diplomatic_spending_transfer_tooltip_display').GetValue, '(CFixedPoint)0'))]"
 					text_single = {
 						text = "ESTATE_DIPLOMATIC_SPENDING_INCOME"
 					}
 					expand = {}
 					text_single = {
-						raw_text = "[Estate.GetCountry.MakeScope.GetVariable('noble_diplomatic_spending_transfer').GetValue|+=2]@gold!"
+						raw_text = "[Estate.GetCountry.MakeScope.GetVariable('noble_diplomatic_spending_transfer_tooltip_display').GetValue|+=2]@gold!"
 					}
 				}
 
@@ -87,6 +85,82 @@ template Estate_tooltip {
 				# 		raw_text = "[Estate.GetTradeIncome|+=2]@gold!"
 				# 	}
 				# }
+
+				### MnT EPBM: Building maintenance line (one row per estate type).
+				### Visible only when the estate being tooltipped matches the estate
+				### whose MnT_epbm_show_* country variable is populated and > 0.
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('nobles_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_nobles').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_nobles').GetValue|2]@gold!#!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('clergy_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_clergy').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_clergy').GetValue|2]@gold!#!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('burghers_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_burghers').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_burghers').GetValue|2]@gold!#!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('peasants_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_peasants').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_peasants').GetValue|2]@gold!#!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('dhimmi_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_dhimmi').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_dhimmi').GetValue|2]@gold!#!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('tribes_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_tribes').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_tribes').GetValue|2]@gold!#!"
+					}
+				}
+				TooltipManualTableField = {
+					visible = "[And(ObjectsEqual(Estate.GetType, Estate.GetCountry.GetGovernment.GetEstateFromKey('cossacks_estate').GetType), GreaterThan_CFixedPoint(Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_cossacks').GetValue, '(CFixedPoint)0'))]"
+					text_single = {
+						text = "MNT_EPBM_ESTATE_MAINT_LABEL"
+					}
+					expand = {}
+					text_single = {
+						raw_text = "#R -[Estate.GetCountry.MakeScope.GetVariable('MnT_epbm_show_cossacks').GetValue|2]@gold!#!"
+					}
+				}
+				### End MnT EPBM
+
 				TooltipManualTableField = {
 					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
 					text_single = {
@@ -96,6 +170,11 @@ template Estate_tooltip {
 					text_single = {
 						raw_text = "#R -[Estate.GetLastMonthsExpense|2]@gold!#!"
 					}
+					
+					tooltipwidget = {
+						using = estate_expense_tooltip
+					}
+
 				}
 			}
 

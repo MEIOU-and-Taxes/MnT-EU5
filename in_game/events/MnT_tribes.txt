@@ -1,0 +1,138 @@
+﻿namespace = mnt_tribes
+
+# Maintenance event for refreshing tribal pastures to always be at their building cap, whatever that may be
+mnt_tribes.1 = {
+    type = country_event
+    title = hidden_event.t
+    hidden = yes
+	
+	trigger = {
+		country_exists_and_can_own_locations = yes
+		num_pop_type_in_country:tribesmen > 0
+	}
+	
+	immediate = {
+		every_owned_location = {
+			limit = { 
+				num_pop_type:tribesmen > 0
+			}
+			change_building_level_in_location = {
+				building = building_type:transhumant_wool_pasture
+				value = {
+					value = transhumant_wool_pasture_cap # start at the cap
+					subtract = "location_building_level(building_type:transhumant_wool_pasture)" # Account for existing building levels
+					floor = yes	#round down to make sure we don't accidentally go over the cap
+				}
+			}
+		}
+	}
+}
+
+# Our "steppe cultures" are specifically Turkic and Mongolian, excluding Turkoman (since that cuts along religious lines) and Turkish and Azeri (which represent settled people)
+scripted_trigger mnt_tribes_steppe_culture = {
+	OR = {
+		culture = {
+			OR = {
+				has_culture_group = culture_group:turkic_group
+				has_culture_group = culture_group:mongolian_group
+			}
+		}
+		# These cultures are Iranian, but closely associated with Turko-Mongolian
+		culture = culture:tajik_culture
+		culture = culture:afghan_culture
+		culture = culture:ormur_culture
+		culture = culture:hazara_culture
+	}
+	NOT = { culture = culture:turkish_culture }
+	NOT = { culture = culture:azeri_culture }
+	NOT = { culture = culture:turkoman_culture }
+}
+
+# Setup event for redoing the Turkic and Mongolian tribal distribution; our tribes produce food
+mnt_tribes.2 = {
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+
+    immediate = {
+		# We do this in two passes. The first pass converts all the Turkic and Mongolian peasants to tribesmen
+		every_owned_location = {
+			every_pop = {
+				limit = {
+					pop_type = pop_type:peasants
+					mnt_tribes_steppe_culture = yes
+				}
+				change_pop_type = pop_type:tribesmen
+			}
+		}
+		# The second pass converts all the Turkic and Mongolian tribesmen to peasants based on local development and urbanization
+		every_owned_location = {
+			save_temporary_scope_value_as = {
+				name = location_development
+				value = {
+					value = development
+					multiply = 0.01 # development is 0-100, so we need to convert this into something 0-1
+					if = {
+						limit = {
+							development > 0 # Raising 0 to the power of anything is a bad idea
+						}
+						pow = { # Take the nth root (for a value between 0 and 1 this increases, not decreases
+							value = 1
+							divide = {
+								value = 5 # rank index is 0-1-2-3 with 0 being highest, so we do this so that we end up with divisors of 2-3-4-5, with 5 being highest; we want a minimum of 2 to make the effects of development more dramatic
+								subtract = rank_index
+							}
+						}
+					}
+				}
+			}
+			every_pop = {
+				limit = {
+					pop_type = pop_type:tribesmen
+					mnt_tribes_steppe_culture = yes
+					NOT = { culture = culture:oirat_culture }
+					NOT = { culture = culture:mongolian_culture }
+				}
+				split_pop = {
+					fraction = scope:location_development
+					type = pop_type:peasants
+				}
+			}
+		} 
+		# The third pass fixes our Oirat and Mongol pops for the Oirat and Mongol contingents in the Middle East
+		every_owned_location = {
+			limit = {
+				NOR = {
+					sub_continent = sub_continent:eastern_europe
+					sub_continent = sub_continent:middle_east
+					area = area:western_khorasan_area
+					area = area:eastern_khorasan_area
+					area = area:khwarazm_area
+					area = area:transoxiana_area
+					area = area:badakhshan_area
+				}
+			}
+			save_temporary_scope_value_as = {
+				name = location_development
+				value = {
+					value = development
+					multiply = 0.01 # development is 0-100, so we need to convert this into something 0-1
+				}
+			}
+			every_pop = {
+				limit = {
+					pop_type = pop_type:tribesmen
+					OR = {
+						culture = culture:oirat_culture
+						culture = culture:mongolian_culture
+					}
+				}
+				split_pop = {
+					fraction = scope:location_development
+					type = pop_type:peasants
+				}
+			}
+		}
+    }
+	
+}

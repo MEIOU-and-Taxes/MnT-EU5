@@ -23,3 +23,97 @@
 		}
 	}
 }
+
+farming_village_cap = { #M&T created for special farming villages
+	add = {
+		desc = "BUILDING_LEVEL_BASE"
+		value = 4
+	}
+	add = {
+		desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.4
+	}
+	add = { #M&T changed from RGO
+		desc = "BUILDING_LEVEL_POPULATION"
+		value = population 
+		multiply = 0.2
+	}
+	if = {
+		limit = {
+			has_river = yes
+		}
+		add = {
+			desc = "BUILDING_LEVEL_HAS_RIVER"
+			value = 4
+		}
+	}
+}
+
+transhumant_wool_pasture_cap = { #M&T created for special pastoral flocks
+	add = { # Transhumance grows with how many tribesmen there are
+		desc = "BUILDING_LEVEL_TRIBESMEN"
+		value = num_pop_type:tribesmen
+	}
+	subtract = { # Transhumance is deterred by too many people
+		desc = "BUILDING_LEVEL_LAND"
+		add = num_pop_type:tribesmen
+		multiply = {
+			value = location_population_percentage
+		}
+	}
+	# No description for this condition since it will never be visible
+	if = {
+		limit = {			
+			# Limitations based on where wooly critters were herdered
+			MnT_can_have_nomadic_wool_pasture = no
+		}
+		multiply = 0
+	}
+}
+
+REPLACE:market_max_level = {
+	add = {
+		desc = "BUILDING_LEVEL_BASE"
+		value = 2 #M&T changed from 1 to 2
+	}
+	add = {
+		desc = "BUILDING_LEVEL_DEVELOPMENT"
+		value = development
+		multiply = 0.1
+	}
+	add = {
+		desc = "BUILDING_LEVEL_POPULATION"
+		value = population
+		multiply = 0.05
+	}
+	if = {
+		limit = {
+			location_rank ?= location_rank:city
+		}
+		add = {
+			desc = "BUILDING_LEVEL_IS_CITY"
+			value = 5
+		}
+	}
+	if = {
+		limit = {
+			location_rank ?= location_rank:megalopolis
+		}
+		add = {
+			desc = "BUILDING_LEVEL_IS_MEGAPOLIS"
+			value = 10
+		}
+	}
+	
+	if = {
+		limit = {
+			owner ?= { modifier:market_building_levels != 0 }
+		}
+		multiply = {
+			desc = "BUILDING_LEVEL_FROM_OWNER_MODIFIERS"
+			value = 1
+			add = owner.modifier:market_building_levels
+		}
+	}
+}

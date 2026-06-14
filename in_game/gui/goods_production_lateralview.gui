@@ -240,9 +240,16 @@ lateralview = {
 
 						sort_by_key_button = {
 							visible = "[GoodsProductionLateralView.IsMarketFilterEnabled]"
-							name = "price"
+							name = "market_price"
 							layoutpolicy_vertical = expanding
-							size = { 170 -1 }
+							size = { 60 -1 }
+						}
+
+						sort_by_key_button = {
+							visible = "[GoodsProductionLateralView.IsMarketFilterEnabled]"
+							name = "market_price_diff"
+							layoutpolicy_vertical = expanding
+							size = { 105 -1 }
 						}
 
 						# sort_by_key_button = {
@@ -259,12 +266,6 @@ lateralview = {
 
 						sort_by_key_button = {
 							name = "building_income"
-							layoutpolicy_vertical = expanding
-							size = { 95 -1 }
-						}
-
-						sort_by_key_button = {
-							name = "rgo_income"
 							layoutpolicy_vertical = expanding
 							size = { 115 -1 }
 						}
@@ -457,6 +458,10 @@ lateralview = {
 																	align = center|nobaseline
 																	using = Font_Size_Small
 																	text = "[GoodsMarketEntry.GetPrice|2]"
+
+																	sort_by_small_highlight = {
+																		name = "market_price"
+																	}
 																}
 									
 																text_single = {
@@ -464,12 +469,12 @@ lateralview = {
 																	align = center|nobaseline
 																	using = Font_Size_Small
 																	raw_text = "@[GoodItem.GetGoods.GetPriceDifferenceIconName(GoodsMarketEntry.GetPrice)]!"
+
+																	sort_by_small_highlight = {
+																		name = "market_price_diff"
+																	}
 																}
 															}
-														}
-
-														sort_by_small_highlight = {
-															name = "price"
 														}
 													}
 												}
@@ -757,26 +762,24 @@ lateralview = {
 												
 												# BUILDING GENERATING GOODS
 												button_regular = {
-													size = { 90 28 }
-													enabled = "[GoodItem.CanBuildBuildings]"
-													# onclick = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
+													size = { 115 28 }
 													tooltipwidget = {
 														ContextualTooltipType = {
 															blockoverride "title_text" {
 																text = "GOODS_EXPAND_BUILDING_TT_HEADER"
 															}
-													
+
 															blockoverride "title_icon" {
 																icon = {
 																	using = tooltip_title_icon_size
 																	texture = "[GetConceptTexture('building')]"
 																}
 															}
-													
+
 															blockoverride "concept_link" {
 																text = "[building|e]"
 															}
-													
+
 															blockoverride "tooltip_content" {
 																TooltipTextBlock = {
 																	visible = "[GoodItem.CanBuildBuildings]"
@@ -793,17 +796,14 @@ lateralview = {
 															}
 														}
 													}
-									action_tooltip = {
-										click_type = left
-										click_mode = single
-										enabled = "[GoodItem.CanBuildBuildings]"
-										conditions = "[MakeItFailIfLoc(Not(GoodItem.CanBuildBuildings), 'GOODS_EXPAND_BUILDING_REQUIREMENTS_NOT_MET')]"
-										title = "GOODS_EXPAND_BUILDING_TT"
-										# Left button mirrors Production's "hide RGO" state.
-										on_action = "[GetScriptedGui('mnt_set_rgo_buildings_visible_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
-										on_action = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
-										on_action = "[OpenLateralViewWithParams('production', 'display = lists')]"
-									}
+													action_tooltip = {
+														click_type = left
+														click_mode = single
+														title = "MNT_GOODS_OPEN_PRODUCTION_FILTER_TT"
+														on_action = "[GetScriptedGui('mnt_set_rgo_visibility_for_goods_filter').Execute(GuiScope.SetRoot(Player.MakeScope).AddScope('goods', GoodItem.GetGoods.MakeScope).End)]"
+														on_action = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
+														on_action = "[OpenLateralViewWithParams('production', 'display = lists')]"
+													}
 													hbox = {
 														margin = {10 0}
 														icon = {
@@ -818,7 +818,7 @@ lateralview = {
 															maximumsize = {55 -1}
 															align = nobaseline
 															fontsize = 14
-												raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
+															raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
 														}
 
 														text_single = {
@@ -832,132 +832,8 @@ lateralview = {
 													}
 
 													sort_by_small_highlight = {
-											name = "building_income"
+														name = "building_income"
 													}
-												}
-
-												# RAW GOODS BUILDER
-												button_regular = {
-													size = { 90 28 }
-													visible = "[GoodItem.GetGoods.IsRawMaterial]"
-													enabled = "[GoodItem.CanExpandRGO]"
-													onmousehierarchyenter = "[PdxGuiWidget.SetHighlightOwnGoods(GoodItem.GetGoods)]"
-
-													tooltipwidget = {
-														ContextualTooltipType = {
-															blockoverride "title_text" {
-																text = "GOODS_EXPAND_RGO_TT_HEADER"
-															}
-													
-															blockoverride "title_icon" {
-																icon = {
-																	using = tooltip_title_icon_size
-																	texture = "gfx/interface/icons/map_modes/raw_material.dds"
-																}
-															}
-													
-															blockoverride "concept_link" {
-																text = [resource_gathering_operations|e]
-															}
-													
-															blockoverride "tooltip_content" {
-																TooltipTextBlock = {
-																	visible = "[And(GoodItem.AreAllPossibleRGOAtMaxLvl, GoodItem.CanExpandRGO)]"
-																	blockoverride "text" {
-																		text = "GOODS_EXPAND_RGO_MAX_LVL_MARKET_TT_TEXT"
-																	}
-																}
-																TooltipTextBlock = {
-																	visible = "[GoodItem.CanExpandRGO]"
-																	blockoverride "text" {
-																		text = "GOODS_EXPAND_RGO_TT_TEXT"
-																	}
-																}
-																TooltipTextBlock = {
-																	visible = "[Not(GoodItem.CanExpandRGO)]"
-																	blockoverride "text" {
-																		text = "GOODS_EXPAND_RGO_TEXT_UNAVAILABLE"
-																	}
-																}
-															}
-														}
-													}
-									action_tooltip = {
-										click_type = left
-										click_mode = single
-										enabled = "[GoodItem.CanExpandRGO]"
-										title = "GOODS_EXPAND_RGO_TT"
-										conditions = "[MakeItFailIfLoc(Not(GoodItem.CanExpandRGO), 'GOODS_EXPAND_BUILDING_REQUIREMENTS_NOT_MET')]"
-										# Right button mirrors Production's "show RGO" state.
-										on_action = "[GetScriptedGui('mnt_set_rgo_buildings_visible_on').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
-										on_action = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
-									}
-
-													icon = {
-												visible = "[And(GoodItem.AreAllPossibleRGOAtMaxLvl, GreaterThan_CFixedPoint(GoodItem.GetMaxRGOIncome,'(CFixedPoint)0'))]"
-														size = { 100% 100% }
-														texture = "gfx/interface/buttons/card_header_button_01.dds"
-														frame_grid = {4 1}
-														frame = 2
-														spriteType = Corneredstretched
-														texture_density = 2
-													}
-								
-												hbox = {
-													margin = {10 0}
-													icon = {
-														size = {18 18}
-														texture = "gfx/interface/icons/map_modes/raw_material.dds"
-													}
-
-													expand = {}
-
-													text_single = {
-														visible = "[GoodItem.CanBuildBuildings]"
-														maximumsize = {55 -1}
-														align = nobaseline
-														fontsize = 14
-														raw_text = "[GoodItem.GetMaxBuildingIncome|+2]@income!"
-													}
-
-													text_single = {
-														layoutpolicy_horizontal = expanding
-														visible = "[Not(GoodItem.CanBuildBuildings)]"
-														maximumsize = {55 -1}
-														align = center|nobaseline
-														fontsize = 14
-														raw_text = "-"
-													}
-												}
-
-													sort_by_small_highlight = {
-											name = "rgo_income"
-													}
-												}
-
-												button_regular = {
-													size = { 90 28 }
-													enabled = no
-													visible = "[Not(GoodItem.GetGoods.IsRawMaterial)]"
-													tooltip = "[produced_good|e]"
-													tagtooltip_enabled = yes
-								
-													hbox = {
-														icon = {
-															size = {15 15}
-															texture = "gfx/interface/icons/flat_icons/produced_goods.dds"
-															glow = {
-																name = "drop_shadow"
-																glow_radius = 3
-																color = {0.0 0.0 0.0 1.0}
-																alpha = 0.5
-															}
-														}
-													}
-
-												sort_by_small_highlight = {
-													name = "rgo_income"
-												}
 												}
 												
 												# button_regular = {
