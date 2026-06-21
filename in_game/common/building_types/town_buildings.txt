@@ -3,6 +3,7 @@
 # production method, commit your changes and re-run:
 #   python3 tools/MnT_epbm_generator/MnT_generate_building_hooks.py
 temple = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = clergy
@@ -46,6 +47,7 @@ temple = {
 }
 
 construction_center = {
+	audio_tier = 2
 
 	is_foreign = no
 	max_levels = construction_center_max_level 
@@ -93,6 +95,7 @@ construction_center = {
 }
 
 counting_house = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = burghers
@@ -139,6 +142,7 @@ counting_house = {
 }
 
 minting_office = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = burghers
@@ -179,12 +183,14 @@ minting_office = {
 }
 
 granary = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = guild_max_level
 
 	pop_type = laborers
 
 	employment_size = granary_employment
+	### M&T Disabled: AI_ignore_available_worker_flag = yes # we want this for pop growth so build it anyway
 
 	category = infrastructure_category
 
@@ -226,6 +232,7 @@ granary = {
 }
 
 fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
+	audio_tier = 2
 	is_special = yes
 	is_foreign = no
 	max_levels = 1
@@ -242,7 +249,7 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 	build_time = medium_fort_building
 
 	country_potential = {
-		culture = { has_culture_group = culture_group:maghrebi_group }
+		culture ?= { has_culture_group = culture_group:maghrebi_group }
 	}
 
 	location_potential = {
@@ -365,7 +372,42 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 	}
 }
 
+grain_house = {
+	audio_tier = 1
+	is_foreign = no
+	max_levels = guild_max_level
+
+	pop_type = laborers
+
+	employment_size = granary_employment
+
+	category = infrastructure_category
+
+	rural_settlement = no
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	build_time = government_build_time
+
+	country_potential = {
+		has_reform = government_reform:everyone_serves_reform
+	}
+
+	possible_production_methods = {
+		granary_maintenance
+	}
+
+	construction_demand = granary_construction
+
+	modifier = {
+		local_food_capacity = 100
+		local_supply_limit_modifier = 0.01
+	}
+}
+
 wharf = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = 1
 	pop_type = burghers
@@ -420,6 +462,7 @@ wharf = {
 }
 
 medical_school = {
+	audio_tier = 2
 	is_foreign = no
 	pop_type = burghers
 
@@ -461,6 +504,7 @@ medical_school = {
 }
 
 lazaretto = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = clergy
 	max_levels = 1
@@ -498,6 +542,7 @@ lazaretto = {
 }
 
 pest_house = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = clergy
 	max_levels = 1
@@ -559,6 +604,7 @@ pest_house = {
 }
 
 hospital = {
+	audio_tier = 2
 	is_foreign = no
 	pop_type = clergy
 	max_levels = 1
@@ -602,8 +648,10 @@ hospital = {
 }
 
 slave_market = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = slave_market_max_level
+	startup_ramp_target = rural_startup_ramp_target
 	pop_type = burghers
 
 	category = government_category
@@ -619,7 +667,9 @@ slave_market = {
 
 
 	country_potential = {
-		religion.group != religion_group:christian
+		religion ?= {
+			group != religion_group:christian
+		}
 	}
 
 
@@ -657,7 +707,7 @@ slave_market = {
 	}
 
 	modifier = {
-		building_enslavement_power = 0.02
+		building_enslavement_power = 0.010
 		local_slave_pop_satisfaction = -0.025
 	}
 
@@ -671,6 +721,7 @@ slave_market = {
 #Aqueducts
 
 aqueduct_system = {
+	audio_tier = 5
 	content_priority = 100
 	is_foreign = no
 	max_levels = aqueduct_system_max_level 
@@ -733,4 +784,47 @@ aqueduct_system = {
 		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
 		MnT_epbm_on_building_destroyed = yes
 	}
+}
+
+provincial_chancery = {
+	audio_tier = 1
+	is_foreign = no
+	pop_type = burghers
+	max_levels = chancery_max_level
+	
+	category = government_category
+	
+	employment_size = generic_burgher_employment
+	
+	town = yes
+	city = yes
+	megalopolis = yes
+	
+	expensive = yes
+	build_time = generic_town_build_time
+
+
+	country_potential = {
+		has_reform = government_reform:provincial_consulates_reform
+	}
+	
+	remove_if = {
+		location.owner = {
+			NOT = {
+				has_reform = government_reform:provincial_consulates_reform
+			}
+		}
+	}
+
+	modifier = {
+		local_burghers_max_literacy = 2.5
+		local_nobles_max_literacy = 2.5
+		local_pop_join_rebel_threshold = 0.05
+	}
+	
+	
+	possible_production_methods = { chancery_maintenance }
+
+	
+	construction_demand = town_building_construction
 }
