@@ -1,0 +1,72 @@
+﻿REPLACE:increase_control_area = {
+	ability = adm
+
+	potential = {
+		num_locations > 0 
+		modifier:can_send_royal_inspectors = no
+		or = {		#MnT add the is_active thingy here too
+			scope:is_active ?= yes
+			exists = low_control_best_tax_base
+		}
+	}
+
+	allow = {
+		or = {
+			scope:is_active ?= yes
+			any_province = {
+				province_average_control < define:NCountry|LOW_CONTROL_THRESHOLD_FOR_BEST_TAX		#Mepper I set this Define to 1 to just allow it if control not perfect
+			}
+		}
+	}	
+	
+	select_trigger = {
+		looking_for_a = area
+		source = actor
+		source_flags = areas_with_owned_presence
+		target_flag = selected_area
+		
+		ai_interaction_source_list = {
+			scope:actor = {
+				low_control_best_tax_base.area = { 
+					add_to_list = source
+				}
+			}
+		}
+		
+		
+		name = "increase_control_area_select_area"
+		none_available_msg_key = "increase_control_no_provinces"
+		column = {
+			data = name
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			"area_average_control(scope:actor)" < 1  #MnT: allow as long as it isn't perfect
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = increase_control_area interaction_target = selected_area } }
+		}
+		map_color = {
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+				factor = local_control
+			}
+		}
+	}
+
+	location_modifier = {
+		local_max_control = 0.15
+		local_monthly_control = 0.005
+	}
+
+	progress = {
+		scope:selected_area = {
+			value = "area_average_control(scope:actor)"
+		}
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+}
