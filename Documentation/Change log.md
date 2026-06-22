@@ -345,3 +345,25 @@ Date: 21/05/2026
   - Give CB to opportunistic neighbor instead of insta declare
   - Add opinion/trust effects
   - Add meaningful ai_chance modifiers
+
+##### M&T v0.1.4
+
+### 1.3.4 Compatibility
+- Make mod native to EUV 1.3.4 Pavia
+- Estates Pay Building Maintenance system is not fully ready
+  - It needs significant updating to be fully restored
+  - It works but since building maintenance is now building upkeep efficiency we can't set building maint share to zero %
+
+### Miscellaneous
+- Fully comment out the Land good. 
+  - It was originally coded because the game did not accept Production Methods without input
+  - That is no longer the case so it doesn't fulfil a purpose atm
+  - May or may not be reworked into a proper system in the future
+
+### Localization
+- Improve localization around centers
+  - Added game concepts, removed mentions of specific values in thresholds (not up to date and tough to maintain) 
+- Tweaked map mode explanation
+- Added clarification to building upkeep efficiency description 
+  - To say that in MnT estates pay their proportional share of maintenance costs on shared building
+- Fix double blank-space in startup event
