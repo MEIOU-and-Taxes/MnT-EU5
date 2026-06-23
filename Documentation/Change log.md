@@ -384,3 +384,7 @@ Date: 21/05/2026
 - Update Goods
   - Wool no longer produces food and has a little bit of base production
   - All classes will now demand some potatoes instead of only lower classes
+- Update Location Ranks:
+  - Cities and Meglopoleis now grant Mills efficiency and some trade center power (Trade Center power less than Vanilla)
+- Trieste Location now starts with Friulian Culture
+- Very minor GUI button size update for Trade Advantage
