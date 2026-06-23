@@ -60,6 +60,7 @@ REPLACE:peasants_estate = {
     satisfaction = {
         stability_cost_efficiency = 0.4
         global_monthly_food_modifier = 0.25
+        levy_recovery_modifier = 0.5
     }
 	power = {
 		building_upkeep_efficiency = 2
@@ -70,12 +71,14 @@ REPLACE:peasants_estate = {
         food_purchase_efficiency = 1
         global_estate_target_satisfaction = medium_permanent_target_satisfaction
         monthly_towards_free_subjects = societal_value_significant_monthly_move
+        court_language_is_common_language_importance_modifier = 12
     }
 
 
     #multiplied with -(relative_power - LOW_POWER_THRESHOLD) if < LOW_POWER_THRESHOLD
     low_power = {
         peasants_estate_max_tax = 0.5
+        court_language_is_common_language_importance_modifier = -6
     }
 
     opinion = {
@@ -96,8 +99,12 @@ REPLACE:peasants_estate = {
 
         if = {
             limit = {
-                scope:target.religion != religion
-                scope:target.religion.group = religion.group
+                "estate(estate_type:peasants_estate)" = {
+                    dominant_religion ?= {
+                        this != scope:target.religion
+                        group = scope:target.religion.group
+                    }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_HERETIC"
@@ -108,7 +115,9 @@ REPLACE:peasants_estate = {
 
         if = {
             limit = {
-                scope:target.religion.group != religion.group
+                "estate(estate_type:peasants_estate)" = {
+                    dominant_religion ?= { group != scope:target.religion.group }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_HEATHEN"
@@ -128,25 +137,16 @@ REPLACE:peasants_estate = {
 
         if = {
             limit = {
-                exists = dominant_culture.language
-                scope:target.culture.language = dominant_culture.language
+                "estate(estate_type:peasants_estate)" = {
+                    exists = dominant_culture.language
+                    scope:target.culture.language = dominant_culture.language
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_SAME_COMMON_LANGUAGE"
                 value = 5
             }
         }
-
-        if = {
-            limit = {
-                is_rival_of = scope:target
-            }
-            add = {
-                desc = "ESTATE_OPINION_RIVAL"
-                value = -20
-            }
-        }
-
 
         if = {
             limit = {
@@ -159,6 +159,67 @@ REPLACE:peasants_estate = {
                 value = 10
             }
         }
+
+        add = {
+            desc = "capital_economy_vs_traditional_economy"
+            value = {
+                value = scope:target.societal_value:capital_economy_vs_traditional_economy
+                subtract = societal_value:capital_economy_vs_traditional_economy
+                divide = 10
+            }
+        }
+
+        add = {
+            desc = "spiritualist_vs_humanist"
+            value = {
+                value = scope:target.societal_value:spiritualist_vs_humanist
+                subtract = societal_value:spiritualist_vs_humanist
+                divide = 10
+            }
+        }
+
+        add = {
+            desc = "serfdom_vs_free_subjects"
+            value = {
+                value = scope:target.societal_value:serfdom_vs_free_subjects
+                subtract = societal_value:serfdom_vs_free_subjects
+                divide = 10
+            }
+        }
+
+        if = {
+            limit = {
+                "estate(estate_type:peasants_estate)" = {
+                    dominant_culture ?= { this = scope:target.culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_CULTURE" value = 20 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:peasants_estate)" = {
+                    scope:target = { has_accepted_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_ACCEPTED_ESTATE_CULTURE" value = 10 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:peasants_estate)" = {
+                    scope:target = { has_tolerated_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_TOLERATED_ESTATE_CULTURE" value = 5 }
+        }
+
+        if = {
+            limit = {
+                "estate(estate_type:peasants_estate)" = {
+                    dominant_religion ?= { this = scope:target.religion }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_RELIGION" value = 20 }
+        }
     }
 }
 
@@ -169,6 +230,8 @@ REPLACE:dhimmi_estate = {
     rival = -0.01
     alliance = 0.01
     can_generate_mercenary_leaders = no
+
+    disenfranchise_to = nobles_estate
 
     revolt_court_language = common_language
     characters_have_dynasty = never # new characters never spawn with a dynasty
@@ -204,7 +267,39 @@ REPLACE:dhimmi_estate = {
             multiply = 0.05
         }
 
+        if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    dominant_culture ?= { this = scope:target.culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_CULTURE" value = 20 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    scope:target = { has_accepted_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_ACCEPTED_ESTATE_CULTURE" value = 10 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    scope:target = { has_tolerated_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_TOLERATED_ESTATE_CULTURE" value = 5 }
+        }
 
+        if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    dominant_religion ?= { this = scope:target.religion }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_RELIGION" value = 20 }
+        }
     }
 }
 
@@ -248,6 +343,80 @@ REPLACE:tribes_estate = {
             multiply = 0.05
         }
 
+        if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    dominant_culture ?= { this = scope:target.culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_CULTURE" value = 20 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    scope:target = { has_accepted_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_ACCEPTED_ESTATE_CULTURE" value = 10 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    scope:target = { has_tolerated_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_TOLERATED_ESTATE_CULTURE" value = 5 }
+        }
+
+        if = {
+            limit = {
+                "estate(estate_type:dhimmi_estate)" = {
+                    dominant_religion ?= { this = scope:target.religion }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_RELIGION" value = 20 }
+        }
+
+    }
+}
+
+tribes_estate = {
+    color = pop_tribes
+    power_per_pop  = 0.01
+    tax_per_pop = 0.01
+    rival = -0.01
+    alliance = 0.01
+    can_generate_mercenary_leaders = yes
+
+    revolt_court_language = common_language
+    characters_have_dynasty = never # new characters never spawn with a dynasty
+    use_diminutive = yes
+
+    #multiplied with (satisfaction - LOW_SATISFACTION_THRESHOLD)
+    satisfaction = {
+        global_raw_material_output = 0.05
+        global_monthly_food_modifier = 0.10
+    }
+    #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
+    high_power = {
+        global_raw_material_output = 0.1
+        tribes_estate_max_tax = -0.3
+        monthly_towards_traditional_economy = societal_value_significant_monthly_move
+    }
+
+
+    #multiplied with -(relative_power - LOW_POWER_THRESHOLD) if < LOW_POWER_THRESHOLD
+    low_power = {
+        tribes_estate_max_tax = 0.5
+    }
+
+    opinion = {
+        add = {
+            desc = "ESTATE_OPINION_BASE"
+            value = "opinion(scope:target)"
+            multiply = 0.05
+        }
+
 
 
 
@@ -261,8 +430,13 @@ REPLACE:tribes_estate = {
 
         if = {
             limit = {
-                scope:target.religion != religion
-                scope:target.religion.group = religion.group
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_religion
+                    dominant_religion ?= {
+                        this != scope:target.religion
+                        group = scope:target.religion.group
+                    }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_HERETIC"
@@ -270,21 +444,12 @@ REPLACE:tribes_estate = {
             }
         }
 
-
         if = {
             limit = {
-                scope:target.religion.group != religion.group
-            }
-            add = {
-                desc = "ESTATE_OPINION_HEATHEN"
-                value = -10
-            }
-        }
-
-
-        if = {
-            limit = {
-                scope:target.religion.group != religion.group
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_religion
+                    dominant_religion ?= { group != scope:target.religion.group }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_HEATHEN"
@@ -294,7 +459,10 @@ REPLACE:tribes_estate = {
 
         if = {
             limit = {
-                NOT = { scope:target.culture = { has_shared_culture_group = root.dominant_culture } }
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_culture
+                    NOT = { scope:target.culture = { has_shared_culture_group = prev.dominant_culture } }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_DIFFERENT_CULTURE_GROUP"
@@ -304,7 +472,10 @@ REPLACE:tribes_estate = {
 
         if = {
             limit = {
-                scope:target.culture.language = dominant_culture.language
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_culture.language
+                    scope:target.culture.language = dominant_culture.language
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_SAME_COMMON_LANGUAGE"
@@ -333,6 +504,45 @@ REPLACE:tribes_estate = {
                 value = 10
             }
         }
+
+        if = {
+            limit = {
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_culture
+                    dominant_culture ?= { this = scope:target.culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_CULTURE" value = 20 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_culture
+                    scope:target = { has_accepted_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_ACCEPTED_ESTATE_CULTURE" value = 10 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_culture
+                    scope:target = { has_tolerated_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_TOLERATED_ESTATE_CULTURE" value = 5 }
+        }
+
+        if = {
+            limit = {
+                "estate(estate_type:tribes_estate)" = {
+                    exists = dominant_religion
+                    dominant_religion ?= { this = scope:target.religion }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_RELIGION" value = 20 }
+        }
+
     }
 
 }
@@ -381,8 +591,12 @@ REPLACE:cossacks_estate = {
 
         if = {
             limit = {
-                scope:target.religion != religion
-                scope:target.religion.group = religion.group
+                "estate(estate_type:cossacks_estate)" = {
+                    dominant_religion ?= {
+                        this != scope:target.religion
+                        group = scope:target.religion.group
+                    }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_HERETIC"
@@ -390,10 +604,11 @@ REPLACE:cossacks_estate = {
             }
         }
 
-
         if = {
             limit = {
-                scope:target.religion.group != religion.group
+                "estate(estate_type:cossacks_estate)" = {
+                    dominant_religion ?= { group != scope:target.religion.group }
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_HEATHEN"
@@ -403,7 +618,9 @@ REPLACE:cossacks_estate = {
 
         if = {
             limit = {
-                scope:target.culture.language = culture.language
+                "estate(estate_type:cossacks_estate)" = {
+                    scope:target.culture.language = dominant_culture.language
+                }
             }
             add = {
                 desc = "ESTATE_OPINION_SAME_COMMON_LANGUAGE"
@@ -421,6 +638,39 @@ REPLACE:cossacks_estate = {
             }
         }
 
+        if = {
+            limit = {
+                "estate(estate_type:cossacks_estate)" = {
+                    dominant_culture ?= { this = scope:target.culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_CULTURE" value = 20 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:cossacks_estate)" = {
+                    scope:target = { has_accepted_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_ACCEPTED_ESTATE_CULTURE" value = 10 }
+        }
+        else_if = {
+            limit = {
+                "estate(estate_type:cossacks_estate)" = {
+                    scope:target = { has_tolerated_culture = prev.dominant_culture }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_TOLERATED_ESTATE_CULTURE" value = 5 }
+        }
+
+        if = {
+            limit = {
+                "estate(estate_type:cossacks_estate)" = {
+                    dominant_religion ?= { this = scope:target.religion }
+                }
+            }
+            add = { desc = "ESTATE_OPINION_SAME_ESTATE_RELIGION" value = 20 }
+        }
 
     }
 }
