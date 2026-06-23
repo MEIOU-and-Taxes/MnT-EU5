@@ -367,3 +367,17 @@ Date: 21/05/2026
 - Added clarification to building upkeep efficiency description 
   - To say that in MnT estates pay their proportional share of maintenance costs on shared building
 - Fix double blank-space in startup event
+
+##### M&T v0.1.5
+
+### 1.3.6 compatibility
+- Buff serfdom societal value: fix fort maintenance reduction and buff RGO size buff
+- Update estates file: 
+  - Peasant estate satisfaction now helps with Levy Recovery
+  - All Estates' opinions of other countries should be more logical
+  - Dhimmi will disenfranchise to Nobles
+- Update estate privileges files:
+  - Allow Noble Villa to be built when Nobles have Land Rights
+  - Allow Peasant Hunting Grounds to be built when peasants have hunting permit priv
+- Update building files:
+  - Buff food capacity of food storage buildings
