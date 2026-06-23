@@ -381,3 +381,6 @@ Date: 21/05/2026
   - Allow Peasant Hunting Grounds to be built when peasants have hunting permit priv
 - Update building files:
   - Buff food capacity of food storage buildings
+- Update Goods
+  - Wool no longer produces food and has a little bit of base production
+  - All classes will now demand some potatoes instead of only lower classes
