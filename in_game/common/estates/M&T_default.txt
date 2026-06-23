@@ -150,6 +150,16 @@ REPLACE:peasants_estate = {
 
         if = {
             limit = {
+                is_rival_of = scope:target
+            }
+            add = {
+                desc = "ESTATE_OPINION_RIVAL"
+                value = -20
+            }
+        }
+
+        if = {
+            limit = {
                 scope:target = {
                     has_reform = government_reform:peasant_republic_reform
                 }
@@ -323,80 +333,6 @@ REPLACE:tribes_estate = {
 	power = {
 		building_upkeep_efficiency = 2
 	}
-    #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
-    high_power = {
-        global_raw_material_output = 0.1
-        tribes_estate_max_tax = -0.3
-        monthly_towards_traditional_economy = societal_value_significant_monthly_move
-    }
-
-
-    #multiplied with -(relative_power - LOW_POWER_THRESHOLD) if < LOW_POWER_THRESHOLD
-    low_power = {
-        tribes_estate_max_tax = 0.5
-    }
-
-    opinion = {
-        add = {
-            desc = "ESTATE_OPINION_BASE"
-            value = "opinion(scope:target)"
-            multiply = 0.05
-        }
-
-        if = {
-            limit = {
-                "estate(estate_type:dhimmi_estate)" = {
-                    dominant_culture ?= { this = scope:target.culture }
-                }
-            }
-            add = { desc = "ESTATE_OPINION_SAME_ESTATE_CULTURE" value = 20 }
-        }
-        else_if = {
-            limit = {
-                "estate(estate_type:dhimmi_estate)" = {
-                    scope:target = { has_accepted_culture = prev.dominant_culture }
-                }
-            }
-            add = { desc = "ESTATE_OPINION_ACCEPTED_ESTATE_CULTURE" value = 10 }
-        }
-        else_if = {
-            limit = {
-                "estate(estate_type:dhimmi_estate)" = {
-                    scope:target = { has_tolerated_culture = prev.dominant_culture }
-                }
-            }
-            add = { desc = "ESTATE_OPINION_TOLERATED_ESTATE_CULTURE" value = 5 }
-        }
-
-        if = {
-            limit = {
-                "estate(estate_type:dhimmi_estate)" = {
-                    dominant_religion ?= { this = scope:target.religion }
-                }
-            }
-            add = { desc = "ESTATE_OPINION_SAME_ESTATE_RELIGION" value = 20 }
-        }
-
-    }
-}
-
-tribes_estate = {
-    color = pop_tribes
-    power_per_pop  = 0.01
-    tax_per_pop = 0.01
-    rival = -0.01
-    alliance = 0.01
-    can_generate_mercenary_leaders = yes
-
-    revolt_court_language = common_language
-    characters_have_dynasty = never # new characters never spawn with a dynasty
-    use_diminutive = yes
-
-    #multiplied with (satisfaction - LOW_SATISFACTION_THRESHOLD)
-    satisfaction = {
-        global_raw_material_output = 0.05
-        global_monthly_food_modifier = 0.10
-    }
     #multiplied with (relative_power - LOW_POWER_THRESHOLD) if > LOW_POWER_THRESHOLD
     high_power = {
         global_raw_material_output = 0.1
