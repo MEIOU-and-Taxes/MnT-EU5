@@ -388,3 +388,5 @@ Date: 21/05/2026
   - Cities and Meglopoleis now grant Mills efficiency and some trade center power (Trade Center power less than Vanilla)
 - Trieste Location now starts with Friulian Culture
 - Very minor GUI button size update for Trade Advantage
+- AI will build max 2 colonial charters at the time (Vanilla change we carry over, unsure why I but I assume they have their reasons)
+- Smallpox tweaks, unsure what they do but seems like the disease will be a bit stronger
