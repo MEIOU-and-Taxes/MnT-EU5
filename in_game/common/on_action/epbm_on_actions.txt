@@ -1,0 +1,31 @@
+﻿@epbm_rebuild_version = 410
+
+epbm_on_initialize = {
+	effect = {
+		epbm_initialize = yes
+	}
+}
+
+epbm_on_global_monthly = {
+	trigger = { has_global_variable = epbm_version }
+
+	effect = {
+		epbm_global_monthly = yes
+	}
+}
+
+epbm_on_country_monthly = {
+	trigger = { has_global_variable = epbm_version any_active_estate = { exists = yes } }
+
+	events = { epbm.1 epbm.3 }
+}
+
+epbm_on_country_yearly = {
+	trigger = {
+		has_global_variable = epbm_version
+		global_var:epbm_version >= @epbm_rebuild_version
+		any_active_estate = { exists = yes }
+	}
+
+	events = { epbm.2 }
+}
