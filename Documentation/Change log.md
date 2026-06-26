@@ -390,3 +390,13 @@ Date: 21/05/2026
 - Very minor GUI button size update for Trade Advantage
 - AI will build max 2 colonial charters at the time (Vanilla change we carry over, unsure why I but I assume they have their reasons)
 - Smallpox tweaks, unsure what they do but seems like the disease will be a bit stronger
+
+##### M&T v0.1.6
+
+### Major Estates Pay Building Maintenance update
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
+- Savegame compatible but requires 3 to 4 months to fully adjust
