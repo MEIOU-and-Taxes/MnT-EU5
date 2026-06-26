@@ -37,11 +37,11 @@ Date: 21/05/2026
 
 #### Balancing
 
-- Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
-- Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
-- Estates now pay their proportional share of inflation-driven maintenance costs on shared buildings.
-- Estate-assigned buildings have goods-based maintenance production methods and their full cost, including inflation, is paid entirely by the owning estate.
-- Estate building tooltips now show actual computed upkeep with a full goods breakdown.
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
