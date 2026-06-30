@@ -404,6 +404,7 @@ Date: 21/05/2026
 ##### M&T v0.1.7
 
 ### 1.3.8 Compatibility - Fully compatible now with 1.3.8 Pavia
+- Fix error on refresh of GDP mapmodes
 - Update economy GUI file
 - Add some cotton modifier to Khambat
 - Should fix the Bubonic Plague
