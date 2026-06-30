@@ -400,3 +400,12 @@ Date: 21/05/2026
 - All sources of building_upkeep_efficiency removed and rebalanced.
 - Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
 - Savegame compatible but requires 3 to 4 months to fully adjust
+
+##### M&T v0.1.7
+
+### Misc
+- Add Modcon loading screen
+  - Adds 1 static loading screen
+  - Notifying players of the upcoming modcon
+  - M&T will have both a presentation and an interview
+  - To be removed after modcon
