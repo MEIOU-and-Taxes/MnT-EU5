@@ -403,6 +403,12 @@ Date: 21/05/2026
 
 ##### M&T v0.1.7
 
+### 1.3.8 Compatibility - Fully compatible now with 1.3.8 Pavia
+- Update economy GUI file
+- Add some cotton modifier to Khambat
+- Should fix the Bubonic Plague
+- Some minor changes too small to note
+
 ### Misc
 - Add Modcon loading screen
   - Adds 1 static loading screen
