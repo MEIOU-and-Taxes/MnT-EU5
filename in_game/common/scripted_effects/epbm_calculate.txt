@@ -1,0 +1,214 @@
+﻿# Three loops: the engine exposes estate, domestic, and foreign buildings
+# through separate iterators that don't overlap. Estate buildings route
+# costs to their owning estate; the other two route to crown or shared pool.
+
+epbm_calculate_maintenance = {
+	set_local_variable = { name = epbm_total_cost value = 0 }
+	set_local_variable = { name = epbm_crown_total_cost value = 0 }
+
+	epbm_for_each_estate = { effect = epbm_init_estate_var }
+
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_temporary_scope_as = epbm_cur_estate
+
+		every_building_owned_by_estate = {
+			save_temporary_scope_as = epbm_bldg
+			building_type ?= { save_temporary_scope_as = epbm_bt }
+			location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
+
+			epbm_price_building = yes
+
+			if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_estate_building_cost = yes }
+		}
+	}
+
+	every_owned_building = {
+		limit = {
+			is_opened = yes
+			NOT = {
+				building_type = { is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
+			}
+			NOT = { building_category = estate_category }
+		}
+
+		save_temporary_scope_as = epbm_bldg
+		building_type ?= { save_temporary_scope_as = epbm_bt }
+		location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
+
+		epbm_price_building = yes
+
+		if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_building_cost = yes }
+	}
+
+	every_owned_foreign_building = {
+		limit = {
+			is_opened = yes
+			NOT = {
+				building_type = { is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
+			}
+			NOT = { building_category = estate_category }
+		}
+
+		save_temporary_scope_as = epbm_bldg
+		building_type ?= { save_temporary_scope_as = epbm_bt }
+		location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
+
+		epbm_price_building = yes
+
+		if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_building_cost = yes }
+	}
+
+	if = {
+		limit = { local_var:epbm_total_cost > 0 }
+		set_local_variable = {
+			name = epbm_shared_fraction
+			value = {
+				value = local_var:epbm_total_cost
+				divide = { value = local_var:epbm_total_cost add = local_var:epbm_crown_total_cost }
+			}
+		}
+	}
+	else = { set_local_variable = { name = epbm_shared_fraction value = 0 } }
+
+	epbm_for_each_estate = { effect = epbm_compute_modifier_scale }
+
+	set_variable = { name = epbm_charge_factor value = { value = epbm_cost_share multiply = epbm_inflation_factor } }
+
+	change_local_variable = { name = epbm_total_cost multiply = var:epbm_charge_factor }
+
+	epbm_split_by_estate_power = yes
+	epbm_add_estate_building_costs = yes
+
+	set_variable = {
+		name = epbm_crown_pool_cost
+		value = { value = local_var:epbm_total_cost multiply = "estate_power(estate_type:crown_estate)" }
+	}
+	set_variable = {
+		name = epbm_crown_bldg_cost
+		value = { value = local_var:epbm_crown_total_cost multiply = var:epbm_charge_factor }
+	}
+}
+epbm_price_building = {
+	set_local_variable = { name = epbm_bldg_cost value = 0 }
+
+	random_production_method_of_building = {
+		limit = {
+			any_required_goods = { count >= 1 }
+			NOT = { exists = produced_goods }
+			is_available_for = scope:epbm_bldg.owner
+			is_allowed_for = scope:epbm_bldg.owner
+			is_visible_for = scope:epbm_bldg.owner
+		}
+
+		save_temporary_scope_as = epbm_pm
+
+		prev = {
+			set_local_variable = { name = epbm_per_level value = 0 }
+
+			# Check cache on market center
+			scope:epbm_mkt = {
+				location = {
+					if = {
+						limit = { has_variable_map = epbm_pm_cache is_key_in_variable_map = { name = epbm_pm_cache target = scope:epbm_pm } }
+						set_local_variable = { name = epbm_per_level value = "variable_map(epbm_pm_cache|scope:epbm_pm)" }
+					}
+				}
+			}
+
+			# Cache miss: compute from building_goods_input
+			if = {
+				limit = { local_var:epbm_per_level <= 0 }
+
+				scope:epbm_pm = {
+					every_required_goods = {
+						save_temporary_scope_as = epbm_cur_good
+						set_local_variable = { name = epbm_price value = "price_in_market(scope:epbm_mkt)" }
+						scope:epbm_bldg = { set_local_variable = { name = epbm_qty value = "building_goods_input(scope:epbm_cur_good)" } }
+						change_local_variable = { name = epbm_bldg_cost add = { value = local_var:epbm_price multiply = local_var:epbm_qty } }
+					}
+				}
+
+				# building_goods_input returns market_access * efficiency scaled values;
+				# divide both out to recover the base per-level cost for caching
+				set_local_variable = { name = epbm_loc_access value = "location.market_access" }
+				set_local_variable = { name = epbm_bldg_eff value = "location.building_efficiency(scope:epbm_bt)" }
+
+				if = {
+					limit = { local_var:epbm_loc_access > 0 }
+					change_local_variable = { name = epbm_bldg_cost divide = local_var:epbm_loc_access }
+				}
+
+				if = {
+					limit = { local_var:epbm_bldg_eff > 0 }
+					change_local_variable = { name = epbm_bldg_cost divide = local_var:epbm_bldg_eff }
+				}
+
+				set_local_variable = { name = epbm_per_level value = { value = local_var:epbm_bldg_cost divide = building_level } }
+
+				# Cache the per-level base cost
+				scope:epbm_mkt = {
+					location = {
+						add_to_variable_map = {
+							name = epbm_pm_cache
+							key = scope:epbm_pm
+							value = local_var:epbm_per_level
+						}
+						add_to_variable_map = {
+							name = epbm_bt_costs
+							key = scope:epbm_bt
+							value = local_var:epbm_per_level
+						}
+
+						# variable maps don't overwrite; must remove before re-adding
+						if = {
+							limit = { is_key_in_variable_map = { name = epbm_bt_display target = scope:epbm_bt } }
+							remove_from_variable_map = { name = epbm_bt_display key = scope:epbm_bt }
+						}
+
+						add_to_variable_map = {
+							name = epbm_bt_display
+							key = scope:epbm_bt
+							value = local_var:epbm_per_level
+						}
+					}
+				}
+			}
+
+			# Apply level and efficiency to get actual cost
+			set_local_variable = { name = epbm_bldg_eff value = "location.building_efficiency(scope:epbm_bt)" }
+			set_local_variable = {
+				name = epbm_bldg_cost
+				value = {
+					value = local_var:epbm_per_level
+					multiply = building_level
+					multiply = local_var:epbm_bldg_eff
+				}
+			}
+		}
+	}
+}
+epbm_route_building_cost = {
+	if = {
+		limit = { building_category = government_category }
+		change_local_variable = { name = epbm_crown_total_cost add = local_var:epbm_bldg_cost }
+	}
+	else = { change_local_variable = { name = epbm_total_cost add = local_var:epbm_bldg_cost } }
+}
+epbm_route_estate_building_cost = {
+	epbm_for_each_estate = { effect = epbm_route_to_cur_estate }
+}
+
+epbm_route_to_cur_estate = {
+	if = {
+		limit = { scope:epbm_cur_estate = { estate_type = estate_type:$estate$_estate } }
+		change_local_variable = { name = epbm_estate_$estate$ add = local_var:epbm_bldg_cost }
+	}
+}
+epbm_split_by_estate_power = {
+	if = { limit = { local_var:epbm_total_cost > 0 } epbm_for_each_estate = { effect = epbm_set_pay_from_power } }
+	else = { epbm_for_each_estate = { effect = epbm_zero_pay } }
+}
+epbm_add_estate_building_costs = {
+	epbm_for_each_estate = { effect = epbm_add_estate_cost }
+}
