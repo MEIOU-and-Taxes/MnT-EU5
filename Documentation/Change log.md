@@ -19,14 +19,6 @@ Date: 21/05/2026
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
   - Add new naval levies for later ages  
-- Map modes:  
-  - Market access (besides Markets map mode), where it is red at \<50% and green at 100%  
-  - Missing control (difference between location control & max control)  
-  - Max control  
-  - Max control with location rank (can distinguish locations having towns & cities)  
-  - Noble %, Burgher %, Laborer %, Peasant %  
-  - Market food balance  
-  - Market food stockpile
 - Centers of Importance:
   - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
   - Each type has an associated score dependent on multiple factors and an absolute minimum threshold per tier.
@@ -52,11 +44,11 @@ Date: 21/05/2026
 
 #### Balancing
 
-- Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
-- Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
-- Estates now pay their proportional share of inflation-driven maintenance costs on shared buildings.
-- Estate-assigned buildings have goods-based maintenance production methods and their full cost, including inflation, is paid entirely by the owning estate.
-- Estate building tooltips now show actual computed upkeep with a full goods breakdown.
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
@@ -153,7 +145,7 @@ Date: 21/05/2026
   - Building representing nomadic husbandry
   - Produces wool while also boosting tribe estate power and reducing tribe promotion
   - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
-- Sand added to several production methods, including masonry, weapons, and tools.
+- Sand input added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 - Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement)
 - Spawn 1 more Marketplace per town/city to facilitate early-game trade
@@ -360,3 +352,74 @@ Date: 21/05/2026
   - Give CB to opportunistic neighbor instead of insta declare
   - Add opinion/trust effects
   - Add meaningful ai_chance modifiers
+
+##### M&T v0.1.4
+
+### 1.3.4 Compatibility
+- Make mod native to EUV 1.3.4 Pavia
+- Estates Pay Building Maintenance system is not fully ready
+  - It needs significant updating to be fully restored
+  - It works but since building maintenance is now building upkeep efficiency we can't set building maint share to zero %
+
+### Miscellaneous
+- Fully comment out the Land good. 
+  - It was originally coded because the game did not accept Production Methods without input
+  - That is no longer the case so it doesn't fulfil a purpose atm
+  - May or may not be reworked into a proper system in the future
+
+### Localization
+- Improve localization around centers
+  - Added game concepts, removed mentions of specific values in thresholds (not up to date and tough to maintain) 
+- Tweaked map mode explanation
+- Added clarification to building upkeep efficiency description 
+  - To say that in MnT estates pay their proportional share of maintenance costs on shared building
+- Fix double blank-space in startup event
+
+##### M&T v0.1.5
+
+### 1.3.6 compatibility
+- Buff serfdom societal value: fix fort maintenance reduction and buff RGO size buff
+- Update estates file: 
+  - Peasant estate satisfaction now helps with Levy Recovery
+  - All Estates' opinions of other countries should be more logical
+  - Dhimmi will disenfranchise to Nobles
+- Update estate privileges files:
+  - Allow Noble Villa to be built when Nobles have Land Rights
+  - Allow Peasant Hunting Grounds to be built when peasants have hunting permit priv
+- Update building files:
+  - Buff food capacity of food storage buildings
+- Update Goods
+  - Wool no longer produces food and has a little bit of base production
+  - All classes will now demand some potatoes instead of only lower classes
+- Update Location Ranks:
+  - Cities and Meglopoleis now grant Mills efficiency and some trade center power (Trade Center power less than Vanilla)
+- Trieste Location now starts with Friulian Culture
+- Very minor GUI button size update for Trade Advantage
+- AI will build max 2 colonial charters at the time (Vanilla change we carry over, unsure why I but I assume they have their reasons)
+- Smallpox tweaks, unsure what they do but seems like the disease will be a bit stronger
+
+##### M&T v0.1.6
+
+### Major Estates Pay Building Maintenance update
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
+- Savegame compatible but requires 3 to 4 months to fully adjust
+
+##### M&T v0.1.7
+
+### 1.3.8 Compatibility - Fully compatible now with 1.3.8 Pavia
+- Fix error on refresh of GDP mapmodes
+- Update economy GUI file
+- Add some cotton modifier to Khambat
+- Should fix the Bubonic Plague
+- Some minor changes too small to note
+
+### Misc
+- Add Modcon loading screen
+  - Adds 1 static loading screen
+  - Notifying players of the upcoming modcon
+  - M&T will have both a presentation and an interview
+  - To be removed after modcon

@@ -1,0 +1,387 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# BUILDING MAINTENANCE TOOLTIP OVERRIDE
+# ═══════════════════════════════════════════════════════════════════════════════
+# Replaces ExpenseSettingTooltip to append an estate maintenance breakdown
+# to the building upkeep slider tooltip.
+#
+# File prefixed aaa_ to win first-definition-wins template precedence.
+#
+# MAINTENANCE NOTE: This is a FULL COPY of the base game ExpenseSettingTooltip.
+# When the base game updates that template, this file must be re-synced.
+# Mod additions are marked with "EPBM ADDITION" comment blocks.
+
+template ExpenseSettingTooltip {
+	ContextualTooltipType = {
+		tooltipmeta = {
+			texture = "[MaintenanceSetting.GetIcon]"
+			game_concept = "[MaintenanceSetting.GetName]"
+		}
+
+		blockoverride "title_text" {
+			text = "EXPENSE_MAINT_TOOLTIP_T"
+		}
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[MaintenanceSetting.GetIcon]"
+			}
+		}
+
+		blockoverride "concept_link" {
+			text = "[MaintenanceSetting.GetName]"
+		}
+		blockoverride "tooltip_content" {
+
+			# ─── BEGIN BASE GAME CONTENT (unchanged) ─────────────────────────
+
+			TooltipStringPairList = {
+				name = "GetFortsLimitInfo"
+				visible = "[And(MaintenanceSetting.ShowModifier, EqualTo_string( Localize('[fort_maintenance|e]'), MaintenanceSetting.GetName))]"
+				textcontext = "[MaintenanceSetting.GetSettingOwner.GetFortsLimitInfo]"
+			}
+
+			TooltipTextBlock = {
+				name = "EXPENSE_MAINT_TT_TEXT_LONG"
+				visible = "[And(MaintenanceSetting.ShowSlider, Or(MaintenanceSetting.IsIO, Or(EqualTo_string( Localize('[diplomatic_maintenance|e]'), MaintenanceSetting.GetName), Or( EqualTo_string( Localize('[court_maintenance|e]'), MaintenanceSetting.GetName), EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName) ))))]"
+				blockoverride "text" {
+					text = "EXPENSE_MAINT_TT_TEXT_LONG"
+				}
+			}
+			TooltipTextBlock = {
+				name = "EXPENSE_MAINT_TT_TEXT_LONG_ALT"
+				visible = "[And(MaintenanceSetting.ShowSlider,Not(Or(MaintenanceSetting.IsIO, Or(EqualTo_string( Localize('[diplomatic_maintenance|e]'), MaintenanceSetting.GetName), Or( EqualTo_string( Localize('[court_maintenance|e]'), MaintenanceSetting.GetName), EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName) )))))]"
+				blockoverride "text" {
+					text = "EXPENSE_MAINT_TT_TEXT_LONG_ALT"
+				}
+			}
+			TooltipStringPairList = {
+				visible = "[MaintenanceSetting.HasExpenseBenfitAsStringPair]"
+				textcontext = "[MaintenanceSetting.GetExpenseBenefitTooltip]"
+			}
+			TooltipTextBlock = {
+				visible = "[And(MaintenanceSetting.HasExpenseBenfitAsText, Not(MaintenanceSetting.IsBureaucracy))]"
+				textcontext = "[MaintenanceSetting.GetExpenseBenefitTooltip]"
+			}
+
+			TooltipStringPairList = {
+				visible = "[MaintenanceSetting.IsArmy]"
+				textcontext = "[MaintenanceSetting.GetArmyMaintenanceInfo]"
+			}
+			TooltipStringPairList = {
+				visible = "[MaintenanceSetting.IsNavy]"
+				textcontext = "[MaintenanceSetting.GetNavyMaintenanceInfo]"
+			}
+
+			TooltipStringPairList = {
+				name = "GetModifierDesc with title"
+				visible = "[MaintenanceSetting.ShowModifierWithTitle]"
+				blockoverride "block_title" {
+					text = "EXPENSE_MAINT_MAX_INVESTMENT_T"
+				}
+				textcontext = "[MaintenanceSetting.GetModifierDesc]"
+			}
+
+			TooltipStringPairList = {
+				name = "GetModifierDesc"
+				visible = "[MaintenanceSetting.ShowModifier]"
+				textcontext = "[MaintenanceSetting.GetModifierDesc]"
+			}
+
+			TooltipStringPairList = {
+				name = "BureaucracyMaintenanceCostScale"
+				visible = "[MaintenanceSetting.IsBureaucracy]"
+				blockoverride "block_title" {
+					text = "BUREAUCRACY_MAINTENANCE_COST_SCALE_T"
+				}
+				textcontext = "[MaintenanceSetting.GetMaintenancePriceModifierDesc]"
+			}
+
+			TooltipTextBlock = {
+				name = "BureaucracyInvestmentHeader"
+				visible = "[MaintenanceSetting.IsBureaucracy]"
+				textcontext = "[MaintenanceSetting.GetBureaucracyInvestmentHeader]"
+			}
+
+			TooltipStringPairList = {
+				name = "MAINTENANCE_INVESTMENT_MIN_MAX"
+				visible = "[Or3(MaintenanceSetting.IsArmy, MaintenanceSetting.IsNavy, MaintenanceSetting.IsFort)]"
+				textcontext = "MAINTENANCE_INVESTMENT_MIN_MAX"
+			}
+
+			TooltipScrolledStringPairList = {
+				name = "GetExpenseBreakdown with title"
+				visible = "[And3(MaintenanceSetting.ShowBreakdown, Not(EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName)), Not(MaintenanceSetting.IsBureaucracy))]"
+				blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
+				blockoverride "block_title" { text = "LIST_TITLE_SOURCES" }
+				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
+			}
+
+			TooltipScrolledStringPairList = {
+				name = "GetExpenseBreakdown bureaucracy"
+				visible = "[And(MaintenanceSetting.ShowBreakdown, MaintenanceSetting.IsBureaucracy)]"
+				blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
+				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
+			}
+
+			TooltipScrolledStringPairList = {
+				visible = "[And(MaintenanceSetting.ShowBreakdown, EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName))]"
+				blockoverride "block_scrollarea" { maximumsize = { -1 600 }}
+				blockoverride "block_title" { text = "LIST_TITLE_SOURCES_CULT" }
+				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
+			}
+
+			TooltipStringPairList = {
+				visible = "[MaintenanceSetting.IsCourt]"
+				textcontext = "[GetPlayer.GetCourtSpendingCostDetails]"
+			}
+
+			TooltipScrolledStringPairList = {
+				name = "GetExpenseBreakdown"
+				visible = "[MaintenanceSetting.IsIO]"
+				blockoverride "block_scrollarea" { maximumsize = { -1 400 } }
+				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
+			}
+
+			TooltipScrolledStringPairList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 200 }}
+				name = "GetArmyCostsByDefinition"
+				visible = "[MaintenanceSetting.IsArmy]"
+				blockoverride "block_title" {
+					text = "ARMY_COSTS_GROUPED_BY_SUBUNITDEFINITION_HEADER"
+				}
+				textcontext = "[GetPlayer.GetArmyCostsByDefinition]"
+			}
+
+			TooltipScrolledStringPairList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 200 }}
+				name = "GetArmyCostsByGoods"
+				visible = "[MaintenanceSetting.IsArmy]"
+				blockoverride "block_title" {
+					text = "GOODS_COST_UNIT_MARKET_PRICE"
+				}
+				textcontext = "[GetPlayer.GetArmyGoodsCostImpact]"
+			}
+
+			TooltipScrolledStringPairList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 200 }}
+				name = "GetNavyCostsByDefinition"
+				visible = "[MaintenanceSetting.IsNavy]"
+				blockoverride "block_title" {
+					text = "NAVY_COSTS_GROUPED_BY_SUBUNITDEFINITION_HEADER"
+				}
+				textcontext = "[GetPlayer.GetNavyCostsByDefinition]"
+			}
+
+			TooltipScrolledStringPairList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 200 }}
+				name = "GetNavyCostsByGoods"
+				visible = "[MaintenanceSetting.IsNavy]"
+				blockoverride "block_title" {
+					text = "GOODS_COST_UNIT_MARKET_PRICE"
+				}
+				textcontext = "[GetPlayer.GetNavyGoodsCostImpact]"
+			}
+
+			TooltipScrolledStringPairList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 200 }}
+				name = "GetBuildingUpkeepCostsByGoods"
+				visible = "[MaintenanceSetting.IsUpkeep]"
+				blockoverride "block_title" {
+					text = "BUILDING_GOODS_UPKEEP_TOTAL_HEADER"
+				}
+				textcontext = "[GetPlayer.GetBuildingUpkeepGoodsCostInfo]"
+			}
+
+			TooltipScrolledStringPairList = {
+				visible = "[MaintenanceSetting.IsBureaucracy]"
+				blockoverride "block_scrollarea" { maximumsize = { -1 240 } }
+				blockoverride "block_title" {
+					text = "BUREAUCRACY_AVAILABLE_ALTERNATIVES_TITLE"
+				}
+				textcontext = "[GetPlayer.GetAvailableBureaucraciesDesc]"
+			}
+
+			# ─── END BASE GAME CONTENT ───────────────────────────────────────
+
+			# ═════════════════════════════════════════════════════════════════
+			# EPBM ADDITION: Estate maintenance breakdown
+			# ═════════════════════════════════════════════════════════════════
+
+			TooltipListBase = {
+				visible = "[MaintenanceSetting.IsUpkeep]"
+				blockoverride "block_title" { raw_text = "#T Building Maintenance Breakdown#!" }
+
+				using = epbm_estate_row_crown
+				using = epbm_estate_row_nobles
+				using = epbm_estate_row_clergy
+				using = epbm_estate_row_burghers
+				using = epbm_estate_row_peasants
+				using = epbm_estate_row_tribes
+				using = epbm_estate_row_dhimmi
+				using = epbm_estate_row_cossacks
+			}
+
+			# ═════════════════════════════════════════════════════════════════
+			# END EPBM ADDITION
+			# ═════════════════════════════════════════════════════════════════
+
+		}
+	}
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Estate row templates with inlined sub-tooltip breakdown
+# ═══════════════════════════════════════════════════════════════════════════════
+
+template epbm_estate_row_crown {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('epbm_crown_total_display'), '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/crown_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Crown" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.ScriptValue('epbm_crown_total_display')|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Crown Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_crown_pool_cost').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Government Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_crown_bldg_cost').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_nobles {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_nobles').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/nobles_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Nobility" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_nobles').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Nobility Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_nobles').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Nobility Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_nobles').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_clergy {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_clergy').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/clergy_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Clergy" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_clergy').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Clergy Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_clergy').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Clergy Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_clergy').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_burghers {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_burghers').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/burghers_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Burghers" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_burghers').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Burghers Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_burghers').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Burghers Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_burghers').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_peasants {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_peasants').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/peasants_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Peasants" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_peasants').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Peasants Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_peasants').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Peasants Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_peasants').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_tribes {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_tribes').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/tribes_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Tribes" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_tribes').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Tribes Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_tribes').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Tribes Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_tribes').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_dhimmi {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_dhimmi').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/dhimmi_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Dhimmi" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_dhimmi').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Dhimmi Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_dhimmi').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Dhimmi Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_dhimmi').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
+
+template epbm_estate_row_cossacks {
+	TooltipManualTableField = {
+		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.GetVariable('epbm_pay_cossacks').GetValue, '(CFixedPoint)0.01'))]"
+		blockoverride "field_content" {
+			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/cossacks_estate.dds" }
+			text_single = { layoutpolicy_horizontal = expanding margin_left = 3 raw_text = "Cossacks" }
+			expand = {}
+			text_single = {
+				min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pay_cossacks').GetValue|2]#!@gold!"
+				tooltipwidget = { ContextualTooltipType = { blockoverride "tooltip_title" {} blockoverride "tooltip_content" { TooltipListBase = {
+					blockoverride "block_title" { raw_text = "#T Cossacks Maintenance Sources#!" }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_pool_cossacks').GetValue|2]#!@gold!" } } }
+					TooltipManualTableField = { blockoverride "field_content" { text_single = { layoutpolicy_horizontal = expanding raw_text = "Cossacks Buildings" } expand = {} text_single = { min_width = 60 align = right raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_assigned_cossacks').GetValue|2]#!@gold!" } } }
+				} } } }
+			}
+		}
+	}
+}
