@@ -423,3 +423,22 @@ Date: 21/05/2026
   - Notifying players of the upcoming modcon
   - M&T will have both a presentation and an interview
   - To be removed after modcon
+
+##### M&T v0.1.8
+
+### Amenities
+- Added urban amenities building to the game 
+  - Adds more building slots (location rank bonuses reduced, but net adds more slots) 
+  - Substantially escalating price,
+  - Can only build 1 at a time
+  - Requirement for upgrading Rank of locations.
+
+### Urban concentration
+- Urban Rights from the Boroughs Privileges unlock earlier and double building slots for related industries
+- We hope to encourage both players and AI to specialize cities more
+
+##### M&T v0.1.9
+
+### Misc 
+- Allow the destruction of markets again (hope this doesn't break anything, but a complete impossibility was never intended)
+
