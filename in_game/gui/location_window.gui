@@ -1026,65 +1026,44 @@ types LocationWindowTypes
 							visible = "[Location.HasOwner]"
 
 							# NOT INTEGRATED
-							header_button_left = {
-								visible = "[And(Not(Location.IsOccupied), Not(Location.IsIntegrated))]"
-								size = { 31 31 }
-								blockoverride "button_icon_stretch_sprite" {}
-								blockoverride "header_button_frame_inner" {visible = no}
-								blockoverride "header_button_icon_size" { size = { 31 31 } }
-								blockoverride "header_button_text_layout" {}
-								
-								blockoverride "icon_texture" {
-									texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
-									size = {55% 55%}
-								}
-								action_tooltip = {
-									click_type = left
-									click_mode = single
-									title = "AUTOMATED_SYSTEM_CABINETMEMBERS_CLICK"
-									on_action = "[OpenLateralViewWithParams('government', 'tabcontent = cabinet')]"
-								}
+							piechart = {
+								using = bg_circle
+								using = bg_circle_piechart
+								using = piechart_angles
+								size = { 25 25 }
+								parentanchor = center
+								visible = "[And(Not(Location.IsOccupied), And(Location.HasOwner, Not(Location.IsIntegrated)))]"
+
 								tooltipwidget = {
 									using = location_core_tooltip
 								}
-								
-								# BEING INTEGRATED
-								onclick = "[OpenLateralViewWithParams('government', 'tabcontent = cabinet')]"
-								piechart = {
-									using = bg_circle
-									using = bg_circle_piechart
-									using = piechart_angles
-									size = { 20 20 }
-									parentanchor = center
-									visible = "[And(Not(Location.IsOccupied), And(Location.HasOwner, And(Location.IsCurrentlyBeingIntegrated, HasIntegrationIntelOn(Location.Self))))]"
-	
-									pieslice = {
-										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
-										value = "[Location.GetIntegrationProgressFloat]"
-										color = { 1 1 1 1 }
-										alwaystransparent = yes
-									}
-	
-									pieslice = {
-										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
-										value = "[Subtract_float('(float)100.0', Location.GetIntegrationProgressFloat)]"
-										color = { 1 1 1 1 }
-										alwaystransparent = yes
-									}
-	
-									icon = {
-										size = { 58% 58% }
-										parentanchor = center
-										texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
-										alwaystransparent = yes
-									}								
+
+								pieslice = {
+									texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+									value = "[Location.GetIntegrationProgressFloat]"
+									color = { 1 1 1 1 }
+									alwaystransparent = yes
 								}
+
+								pieslice = {
+									texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+									value = "[Subtract_float('(float)100.0', Location.GetIntegrationProgressFloat)]"
+									color = { 1 1 1 1 }
+									alwaystransparent = yes
+								}
+
+								icon = {
+									size = { 58% 58% }
+									parentanchor = center
+									texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
+									alwaystransparent = yes
+								}								
 							}
 							
 
 							# INTEGRATED
 							icon = {
-								visible = "[Or(Location.IsIntegrated, And(Not(Location.GetOwner.IsPlayer), Not(Location.IsCurrentlyBeingIntegrated)))]"
+								visible = "[Location.IsIntegrated]"
 								size = { 25 25 }
 								parentanchor = center
 								texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
