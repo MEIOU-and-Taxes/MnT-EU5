@@ -1,4 +1,11 @@
-﻿# Release 
+﻿# Release
+
+#### Balancing
+- Remove location building limit
+- Changes to industry-specialization urban rights
+  - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
+  - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
+- Change scaling production efficiency to 1% per additional building level, not modified by current age
 
 ### Initial test-release v0.1
 
@@ -416,3 +423,22 @@ Date: 21/05/2026
   - Notifying players of the upcoming modcon
   - M&T will have both a presentation and an interview
   - To be removed after modcon
+
+##### M&T v0.1.8
+
+### Amenities
+- Added urban amenities building to the game 
+  - Adds more building slots (location rank bonuses reduced, but net adds more slots) 
+  - Substantially escalating price,
+  - Can only build 1 at a time
+  - Requirement for upgrading Rank of locations.
+
+### Urban concentration
+- Urban Rights from the Boroughs Privileges unlock earlier and double building slots for related industries
+- We hope to encourage both players and AI to specialize cities more
+
+##### M&T v0.1.9
+
+### Misc 
+- Allow the destruction of markets again (hope this doesn't break anything, but a complete impossibility was never intended)
+
