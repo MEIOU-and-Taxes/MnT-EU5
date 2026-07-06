@@ -400,3 +400,19 @@ Date: 21/05/2026
 - All sources of building_upkeep_efficiency removed and rebalanced.
 - Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
 - Savegame compatible but requires 3 to 4 months to fully adjust
+
+##### M&T v0.1.7
+
+### 1.3.8 Compatibility - Fully compatible now with 1.3.8 Pavia
+- Fix error on refresh of GDP mapmodes
+- Update economy GUI file
+- Add some cotton modifier to Khambat
+- Should fix the Bubonic Plague
+- Some minor changes too small to note
+
+### Misc
+- Add Modcon loading screen
+  - Adds 1 static loading screen
+  - Notifying players of the upcoming modcon
+  - M&T will have both a presentation and an interview
+  - To be removed after modcon
