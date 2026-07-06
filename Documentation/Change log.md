@@ -1,4 +1,4 @@
-﻿# Release
+# Release
 
 #### Balancing
 - Remove location building limit
@@ -441,4 +441,19 @@ Date: 21/05/2026
 
 ### Misc 
 - Allow the destruction of markets again (hope this doesn't break anything, but a complete impossibility was never intended)
+
+
+### Autonomous integration
+- Every province, depending on various factors, integrates autonomously.
+  - Cabinet action has been removed, parliament issue for integration has been kept
+  - Final monthly integration progress is determined by multiplying several factors together:
+    - Base: If next to integrated/core (or in a province with 1 seazone difference)
+    - Proximity
+    - Cultural Opinion
+    - Religious Tolerance
+    - Global Integration speed modifier
+    - Area Integration tech grant a 3x multiplier
+  - Integration can be slow but is hardcapped at taking 100 years
+  - Capitals are always instantly and fully integrated
+
 
