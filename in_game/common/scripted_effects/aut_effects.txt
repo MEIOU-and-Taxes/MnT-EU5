@@ -91,14 +91,14 @@ aut_apply_integration_script = {
 				}
 				else_if = {
 					limit = { dominant_culture ?= { cultural_view = { target = scope:culture_scope value >= neutral } } }
-					add = -2
+					add = -1
 				}
 				else_if = {
 					limit = { dominant_culture ?= { cultural_view = { target = scope:culture_scope value >= negative } } }
-					add = -4
+					add = -2
 				}
-				else = {
-					add = -6
+				else = {		#Means the cultural view is 'Enemy'
+					add = -3
 				}
 				
 				if = {
@@ -110,8 +110,9 @@ aut_apply_integration_script = {
 				else = {
 					multiply = 0.025
 				}
-
+				#Cap to max 15% bonus or penalty
 				max = 0.15
+				min = -0.15
 			}
 		}
 	}
@@ -121,7 +122,7 @@ aut_apply_integration_script = {
 		value = {
 			add = 1.0
 			add = {
-				if = {
+				if = {		#In the Age of Revolutions we care less about religion
 					limit = {
 						current_age = age_6_revolutions
 					}
@@ -146,7 +147,9 @@ aut_apply_integration_script = {
 				else = {
 					multiply = scope:owner_scope.modifier:tolerance_heathen
 				}
-				max = 0.15
+				#Cap to max 25% bonus or penalty
+				max = 0.25
+				min = -0.25
 			}
 		}
 	}
@@ -155,7 +158,7 @@ aut_apply_integration_script = {
 		name = location_integration_gain_modifiers
 		value = {
 			add = 1.0
-			add = scope:owner_scope.modifier:global_integration_speed_modifier
+			add = this.modifier:local_integration_speed_modifier		#Use Local Integration speed modifier. Should take country_wide modifier into account by default
 		}
 	}
 
@@ -174,21 +177,6 @@ aut_apply_integration_script = {
 	#}
 
 	set_variable = {
-		name = location_integration_gain_tech
-		value = {
-			value = 1
-			if = {
-				limit = {
-					scope:owner_scope = {
-						has_advance = integrate_area_advance
-					}
-				}
-				add = 2
-			}
-		}
-	}
-
-	set_variable = {
 		name = location_integration_gain
 		value = {
 			value = var:location_integration_gain_base
@@ -197,7 +185,6 @@ aut_apply_integration_script = {
 			multiply = var:location_integration_gain_religion
 			multiply = var:location_integration_gain_modifiers
 			#multiply = var:location_integration_gain_pop_scaling
-			multiply = var:location_integration_gain_tech
 			min = 0.083
 			if = {
 				limit = {
@@ -246,7 +233,6 @@ aut_track_location = {
 # Called on first game load and when mod version changes.
 
 aut_initialize = {
-	set_global_variable = aut_rebuilding
 	clear_global_variable_list = aut_conquered_locations
 
 	every_country = {
@@ -261,6 +247,4 @@ aut_initialize = {
 	location:bouvet_island = {
 		set_variable = { name = aut_version value = @aut_version }
 	}
-
-	remove_global_variable = aut_rebuilding
 }

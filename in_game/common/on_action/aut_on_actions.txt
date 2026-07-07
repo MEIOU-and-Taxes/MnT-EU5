@@ -18,10 +18,6 @@ aut_on_game_start = {
 
 aut_init_check = {
 	trigger = {
-		NOT = {
-			has_global_variable = aut_rebuilding
-		}
-
 		location:bouvet_island = {
 			OR = {
 				AND = {
@@ -72,13 +68,13 @@ aut_monthly_update = {
 						integration_level = conquered
 					}
 				}
-				add_to_global_variable_list = { name = aut_remove_queue target = this }
+				add_to_local_variable_list = { name = aut_remove_queue target = this }
 			}
 			else = { aut_apply_integration_script = yes }
 		}
 
 		# Pass 2: drain the removal queue.
-		every_in_global_list = {
+		every_in_local_list = {
 			variable = aut_remove_queue
 
 			remove_variable = location_integration_gain
@@ -88,11 +84,10 @@ aut_monthly_update = {
 			remove_variable = location_integration_gain_culture
 			remove_variable = location_integration_gain_religion
 			remove_variable = location_integration_gain_modifiers
-			remove_variable = location_integration_gain_tech
 
 			remove_list_global_variable = { name = aut_conquered_locations target = this }
 		}
 
-		clear_global_variable_list = aut_remove_queue
+		clear_local_variable_list = aut_remove_queue
 	}
 }
