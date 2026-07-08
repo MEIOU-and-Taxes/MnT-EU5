@@ -416,3 +416,6 @@ Date: 21/05/2026
   - Notifying players of the upcoming modcon
   - M&T will have both a presentation and an interview
   - To be removed after modcon
+
+- Add support_sieges_priority to 'normal' AI military stance
+  - Hopefully this helps AIs abandon sieges less
