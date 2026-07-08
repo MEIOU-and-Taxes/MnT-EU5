@@ -456,4 +456,5 @@ Date: 21/05/2026
   - Integration can be slow but is hardcapped at taking 100 years
   - Capitals are always instantly and fully integrated
 
-
+- Add support_sieges_priority to 'normal' AI military stance
+  - Hopefully this helps AIs abandon sieges less
