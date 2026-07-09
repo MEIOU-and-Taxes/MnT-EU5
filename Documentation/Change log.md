@@ -456,5 +456,12 @@ Date: 21/05/2026
   - Integration can be slow but is hardcapped at taking 100 years
   - Capitals are always instantly and fully integrated
 
+
+##### M&T v0.2.0
+### Pavia 1.3 full-release patch
+- NOT savegame compatible for those coming from EUV 1.2
+
+### Misc
 - Add support_sieges_priority to 'normal' AI military stance
   - Hopefully this helps AIs abandon sieges less
+- Reduce market stockpile size to Vanilla level (25) 
