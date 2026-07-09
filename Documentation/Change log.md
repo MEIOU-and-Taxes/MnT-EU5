@@ -1,4 +1,4 @@
-﻿# Release 
+# Release 
 
 ### Initial test-release v0.1
 
@@ -417,5 +417,44 @@ Date: 21/05/2026
   - M&T will have both a presentation and an interview
   - To be removed after modcon
 
+##### M&T v0.1.8
+
+### Amenities
+- Added urban amenities building to the game 
+  - Adds more building slots (location rank bonuses reduced, but net adds more slots) 
+  - Substantially escalating price,
+  - Can only build 1 at a time
+  - Requirement for upgrading Rank of locations.
+
+### Urban concentration
+- Urban Rights from the Boroughs Privileges unlock earlier and double building slots for related industries
+- We hope to encourage both players and AI to specialize cities more
+
+##### M&T v0.1.9
+
+### Misc 
+- Allow the destruction of markets again (hope this doesn't break anything, but a complete impossibility was never intended)
+
+
+### Autonomous integration
+- Every province, depending on various factors, integrates autonomously.
+  - Cabinet action has been removed, parliament issue for integration has been kept
+  - Final monthly integration progress is determined by multiplying several factors together:
+    - Base: If next to integrated/core (or in a province with 1 seazone difference)
+    - Proximity
+    - Cultural Opinion
+    - Religious Tolerance
+    - Global Integration speed modifier
+    - Area Integration tech grant a 3x multiplier
+  - Integration can be slow but is hardcapped at taking 100 years
+  - Capitals are always instantly and fully integrated
+
+
+##### M&T v0.2.0
+### Pavia 1.3 full-release patch
+- NOT savegame compatible for those coming from EUV 1.2
+
+### Misc
 - Add support_sieges_priority to 'normal' AI military stance
   - Hopefully this helps AIs abandon sieges less
+- Reduce market stockpile size to Vanilla level (25) 
