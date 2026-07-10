@@ -458,3 +458,14 @@ Date: 21/05/2026
 - Add support_sieges_priority to 'normal' AI military stance
   - Hopefully this helps AIs abandon sieges less
 - Reduce market stockpile size to Vanilla level (25) 
+
+##### M&T v0.2.1
+
+### Balance
+- RGO price per level increase
+  - Mines 50% more expensive per levels instead of 10%
+  - Other RGOs 10% per level more expensive
+
+### Misc
+- Limit goods demand from Court and Diplo spending to Location based Countries
+  - Was causing too much demand in places with too many BBCs like Japan
