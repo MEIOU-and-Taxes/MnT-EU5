@@ -469,3 +469,7 @@ Date: 21/05/2026
 ### Misc
 - Limit goods demand from Court and Diplo spending to Location based Countries
   - Was causing too much demand in places with too many BBCs like Japan
+- Remove all edits to setup events
+  - This should make the mod much more easily compatible with mods altering the setup
+- Remove dependency of the court and diplo sliders maintenance events on the existence of France
+  - Fire the maintence in great power score no. 1 tag instead
