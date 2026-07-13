@@ -465,6 +465,9 @@ Date: 21/05/2026
 - RGO price per level increase
   - Mines 50% more expensive per levels instead of 10%
   - Other RGOs 10% per level more expensive
+- Lock bribe estate during 1337
+  - Income is almost nothing during the first months, so bribing estates is then way too cheap
+  - Prevent cheesing players 
 
 ### Misc
 - Limit goods demand from Court and Diplo spending to Location based Countries
