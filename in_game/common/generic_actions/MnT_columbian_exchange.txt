@@ -49,19 +49,25 @@ REPLACE:move_nw_good_to_new_location = {
 				limit = {
 					has_origin_in_new_world = yes
 				}
-				#MnT: bypass the whole commented section below: after changes to good demand, it does not exist when it is not available in the market
+				save_temporary_scope_as = temp_good
 
-				#save_temporary_scope_as = temp_goods
-
-				#scope:actor = { 
-				#	random_market_present_in_country = {
-				#		limit = {
-				#			"goods_demand_in_market(scope:temp_goods)" > "goods_supply_in_market(scope:temp_goods)"
-				#		}
-				#		scope:temp_goods = { add_to_list = source }
-				#	}
-				#}
-				add_to_list = source 
+				scope:actor = {
+					random_market_present_in_country = {
+						limit = {
+							"goods_demand_in_market(scope:temp_good)" > "goods_supply_in_market(scope:temp_good)"
+						}
+						scope:temp_good = {
+							add_to_list = source
+							#If the good is food, double the chances of it being chosen
+							if = {
+								limit = {
+									is_food = yes
+								}
+								add_to_list = source
+							}
+						}
+					}
+				}
 			}
 		}
 		name = "spread_select_goods"
@@ -69,19 +75,17 @@ REPLACE:move_nw_good_to_new_location = {
 		column = { data = name }
 		visible = {
 			has_origin_in_new_world = yes
-			#MnT: bypass the whole commented section below
-			
-			#scope:actor ?= {
-			#	any_market_present_in_country = {
-			#		OR = {
-			#			is_produced_in_market = root
-			#			is_traded_in_market = root
-			#		}
-			#	}
-			#}
+			scope:actor ?= {
+				any_market_present_in_country = {
+					OR = {
+						is_produced_in_market = root
+						is_traded_in_market = root
+					}
+				}
+			}
 		}
 	}
-	
+
 	#Select Region
 	select_trigger = {
 		looking_for_a = region
@@ -91,14 +95,8 @@ REPLACE:move_nw_good_to_new_location = {
 		none_available_msg_key = "no_regions_available"
 		column = { data = name }
 		visible = {
-			any_area_in_region = {
-				scope:actor = { has_discovered_area = prev }
-				any_location_in_area = {
-					OR = {
-						owner ?= scope:actor
-						top_owner ?= scope:actor
-					}
-				}
+			scope:actor = {
+				owns_or_has_subject_in = prev
 			}
 		}
 	}
@@ -110,20 +108,28 @@ REPLACE:move_nw_good_to_new_location = {
 		source_flags = only_actual_locations
 		target_flag = target_location
 		ai_interaction_source_list = {
-			scope:actor ?= {
-				every_subject_or_below = {
-					every_owned_location = {
-						limit = {
-							is_candidate_for_NW_good = yes
-						}
-						add_to_list = source
-					}
-				}
-				every_owned_location = {
+			scope:target_region = {
+				every_area_in_region = {
 					limit = {
-						is_candidate_for_NW_good = yes
+						scope:actor = { owns_or_has_subject_in = prev }
 					}
-					add_to_list = source
+					every_province_definition_in_area = {
+						limit = {
+							scope:actor = { owns_or_has_subject_in = prev }
+							#Maximum of 2 of the same resource per Province
+							"raw_material_amount(scope:target_good)" < 2
+						}
+						every_ownable_location_in_province_definition = {
+							limit = {
+								owner ?= {
+									is_subject_or_below_of = scope:actor
+								}
+								is_candidate_for_NW_good = yes
+								NOT = {raw_material ?= scope:target_good}
+							}
+							add_to_list = source
+						}
+					}
 				}
 			}
 		}
@@ -427,18 +433,24 @@ REPLACE:move_ow_good_to_new_location = {
 				limit = {
 					has_origin_in_old_world = yes
 				}
-				#MnT: bypass the whole commented section below: after changes to good demand, it does not exist when it is not available in the market
-
-				# save_temporary_scope_as = temp_goods
-				# scope:actor = { 
-				# 	random_market_present_in_country = {
-				# 		limit = {
-				# 			"goods_demand_in_market(scope:temp_goods)" > "goods_supply_in_market(scope:temp_goods)"
-				# 		}
-				# 		scope:temp_goods = { add_to_list = source }
-				# 	}
-				# }
-				add_to_list = source
+				save_temporary_scope_as = temp_good
+				scope:actor = {
+					random_market_present_in_country = {
+						limit = {
+							"goods_demand_in_market(scope:temp_good)" > "goods_supply_in_market(scope:temp_good)"
+						}
+						scope:temp_good = {
+							add_to_list = source
+							#If the good is food, double the chances of it being chosen
+							if = {
+								limit = {
+									is_food = yes
+								}
+								add_to_list = source
+							}
+						}
+					}
+				}
 			}
 		}
 		name = "spread_select_goods"
@@ -446,18 +458,9 @@ REPLACE:move_ow_good_to_new_location = {
 		column = { data = name }
 		visible = {
 			has_origin_in_old_world = yes
-			#MnT: bypass the whole commented section below
-			#scope:actor ?= {
-			#	any_market_present_in_country = {
-			#		OR = {
-			#			is_produced_in_market = root
-			#			is_traded_in_market = root
-			#		}
-			#	}
-			#}
 		}
 	}
-	
+
 	#Select Region
 	select_trigger = {
 		looking_for_a = region
@@ -484,20 +487,28 @@ REPLACE:move_ow_good_to_new_location = {
 		source_flags = only_actual_locations
 		target_flag = target_location
 		ai_interaction_source_list = {
-			scope:actor ?= {
-				every_subject_or_below = {
-					every_owned_location = {
-						limit = {
-							is_candidate_for_OW_good = yes
-						}
-						add_to_list = source
-					}
-				}
-				every_owned_location = {
+			scope:target_region = {
+				every_area_in_region = {
 					limit = {
-						is_candidate_for_OW_good = yes
+						scope:actor = { owns_or_has_subject_in = prev }
 					}
-					add_to_list = source
+					every_province_definition_in_area = {
+						limit = {
+							scope:actor = { owns_or_has_subject_in = prev }
+							#Maximum of 2 of the same resource per Province
+							"raw_material_amount(scope:target_good)" < 2
+						}
+						every_ownable_location_in_province_definition = {
+							limit = {
+								owner ?= {
+									is_subject_or_below_of = scope:actor
+								}
+								is_candidate_for_OW_good = yes
+								NOT = {raw_material ?= scope:target_good}
+							}
+							add_to_list = source
+						}
+					}
 				}
 			}
 		}
@@ -718,7 +729,6 @@ REPLACE:move_ow_good_to_new_location = {
 				NOR = {
 					vegetation = jungle
 					vegetation = forest
-					vegetation = woods
 				}
 				OR = {
 					topography = plateau
@@ -726,11 +736,41 @@ REPLACE:move_ow_good_to_new_location = {
 					topography = hills
 				}
 				OR = {
+					
 					cold_arid_climate_trigger = yes
 					arid_climate_trigger = yes
 					mediterranean_climate_trigger = yes
 					oceanic_climate_trigger = yes
 					continental_climate_trigger = yes
+					subtropic_climate_trigger = yes
+				}
+			}
+			#wool https://www.fao.org/3/t0756e/t0756e04.htm
+			trigger_if = {
+				limit = {
+					scope:target_good = goods:wool
+				}
+				NOT = { raw_material ?= goods:wool }
+				NOR = {
+					vegetation = jungle
+					vegetation = desert
+				}
+				OR = {
+					topography = flatland
+					topography = hills
+					topography = plateau
+				}
+				OR = {
+					cold_arid_climate_trigger = yes
+					arid_climate_trigger = yes
+					mediterranean_climate_trigger = yes
+					oceanic_climate_trigger = yes
+					continental_climate_trigger = yes
+					subtropic_climate_trigger = yes
+				}
+				NOR = {
+					arctic_climate_trigger = yes
+					tropical_climate_trigger = yes
 				}
 			}
 			#livestock https://platform.vox.com/wp-content/uploads/sites/2/chorus/assets/4643285/cattle_distribution.png
@@ -835,250 +875,10 @@ REPLACE:move_ow_good_to_new_location = {
 			change_raw_material = scope:target_good
 		}
 	}
-	
+
 	ai_will_do = {
-		#If the action is doable by the AI, 
+		#If the action is doable by the AI,
 		#meaning there is a combination of target good and target location where it can replace the RGO it should do it
 		add = 200
-	}
-}
-
-#Only for natives
-
-REPLACE:learn_from_foreigners = {
-	type = situation
-
-	ai_tick = daily
-	ai_tick_frequency = 40
-	automation_tick = daily
-	automation_tick_frequency = 7
-
-	
-	potential = {
-		scope:actor ?= {
-			country_type = location		
-			culture = { is_culture_native_american =yes }
-		}
-	}
-
-	allow = {
-	}
-
-	ai_tick = monthly
-	ai_tick_frequency = 12
-
-	automation_tick = never
-	automation_tick_frequency = 12
-
-	price = price:learn_from_foreigners
-	
-	cooldown = {
-		type = learn_from_foreigners
-		years = 1
-	}
-
-	#Select our Situation
-	select_trigger = {
-		looking_for_a = situation
-		target_flag = recipient
-		name = "choose_situation"
-		column = { data = name }
-		visible = {
-			situation:columbian_exchange = this
-			situation_is_active = yes
-		}
-	}
-	
-	select_trigger = {
-		looking_for_a = country
-		source = actor
-		source_flags = diplomatic_range
-		target_flag = target
-		name = "choose_country"
-		none_available_msg_key = "no_valid_countries"
-		column = { data = name }
-		visible = {
-			country_type = location
-		}
-		enabled = {
-			NOT = { is_at_war_with = scope:actor }
-			culture ?= {
-				NOT = {
-					is_culture_native_american =yes
-				}
-			}
-			num_of_advances_researched > scope:actor.num_of_advances_researched
-			is_discovered_by = scope:actor
-		}
-	}
-
-	#Get Research
-	effect = {
-		if = {
-			limit = {exists = scope:target}
-			scope:actor ?= { 
-				add_research_progress = {				
-					if = {
-						limit = { research_delta > 20  }
-						value = research_progress_ultimate_bonus
-					}
-					else_if = {
-						limit = { research_delta > 15  }
-						value = research_progress_extreme_bonus
-					}
-					else_if = {
-						limit = { research_delta > 10  }
-						value = research_progress_severe_bonus
-					}
-					else_if = {
-						limit = { research_delta > 5  }
-						value = research_progress_mild_bonus
-					}
-					else = {
-						value = research_progress_weak_bonus
-					}
-				}
-				add_trust_equilibrium = {
-					modifier = trust_learn_from_foreigners
-					target = scope:target
-				}
-			}
-		}
-	}
-
-	ai_will_do = {
-		add = 5
-	}
-}
-
-REPLACE:absorb_institutions = {
-	type = situation
-	
-	potential = {
-		scope:actor ?= {
-			country_type = location		
-			culture = { is_culture_native_american =yes }
-		}
-	}
-
-	allow = {
-	}
-
-	ai_tick = monthly
-	ai_tick_frequency = 12
-	automation_tick = monthly
-	automation_tick_frequency = 3
-
-	price = price:absorb_institutions
-	
-	cooldown = {
-		type = absorb_institutions
-		years = 1
-	}
-
-	#Select our Situation
-	select_trigger = {
-		looking_for_a = situation
-		target_flag = recipient
-		name = "choose_situation"
-		column = { data = name }
-		visible = {
-			situation:columbian_exchange = this
-			situation_is_active = yes
-		}
-	}
-	
-	select_trigger = {
-		looking_for_a = country
-		source = actor
-		source_flags = diplomatic_range
-		target_flag = target
-		name = "choose_country"
-		none_available_msg_key = "no_valid_countries"
-		column = { data = name }
-		visible = {
-			NOT = { is_at_war_with = scope:actor }
-			culture ?= {
-				NOT = {
-					is_culture_native_american =yes
-				}
-			}
-			num_embraced_institutions > scope:actor.num_embraced_institutions
-			OR = {
-				is_discovered_by = scope:actor
-				is_neighbor_of = scope:actor
-			}
-		}
-	}
-
-	select_trigger = {
-		looking_for_a = institution
-		source = target
-		target_flag = target_institution
-		name = "choose_institution"
-		none_available_msg_key = "no_valid_institution"
-		column = { data = name }
-		visible = {
-			scope:target = { has_embraced_institution = root }
-		}
-	}
-
-	#Get Institution Progress
-	effect = {
-		scope:target ?= {
-			random_institutions_embraced = {
-				limit = {
-					NOT = { scope:actor = { has_embraced_institution = prev } }
-				}				
-				save_scope_as = institution_scope
-			}
-		}
-		if = {
-			limit = { 
-				exists = scope:target 
-				exists = scope:target_institution
-			}
-			scope:actor ?= {
-				every_owned_location = {				
-					limit = { is_province_capital = yes }
-									
-					if = {
-						limit = { scope:actor.institutions_delta > 3  }
-						change_institution_progress = { 
-							type = scope:target_institution
-							value = institution_progress_extreme_bonus
-						}
-					}
-					else_if = {
-						limit = { scope:actor.institutions_delta > 2  }
-						change_institution_progress = { 
-							type = scope:target_institution
-							value = institution_progress_severe_bonus
-						}
-					}
-					else_if = {
-						limit = { scope:actor.institutions_delta > 1  }
-						change_institution_progress = { 
-							type = scope:target_institution
-							value = institution_progress_mild_bonus
-						}
-					}
-					else = {
-						change_institution_progress = { 
-							type = scope:target_institution
-							value = institution_progress_weak_bonus
-						}
-					}
-				}
-				add_trust_equilibrium = {
-					modifier = trust_absorb_institutions
-					target = scope:target
-				}
-			}
-		}
-	}
-
-	ai_will_do = {
-		add = 5
 	}
 }

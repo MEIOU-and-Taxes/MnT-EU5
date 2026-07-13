@@ -467,7 +467,7 @@ Date: 21/05/2026
   - Other RGOs 10% per level more expensive
 - Lock bribe estate during 1337
   - Income is almost nothing during the first months, so bribing estates is then way too cheap
-  - Prevent cheesing players 
+  - Prevent cheesing players
 
 ### Misc
 - Limit goods demand from Court and Diplo spending to Location based Countries
@@ -476,3 +476,6 @@ Date: 21/05/2026
   - This should make the mod much more easily compatible with mods altering the setup
 - Remove dependency of the court and diplo sliders maintenance events on the existence of France
   - Fire the maintence in great power score no. 1 tag instead
+- Remove M&T edits to Columbian Exchange other than the Climate triggers (as we have Koppen climates)
+  - This should prevent weirdness with too much chili provs in Europe, older M&T versions made tweaks but those haven't been updated in a while
+  - Vanilla has fixed most issues with the Situation now, so we are resetting our changes to theirs
