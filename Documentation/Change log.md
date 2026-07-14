@@ -479,10 +479,11 @@ Date: 21/05/2026
 ### Misc
 - Limit goods demand from Court and Diplo spending to Location based Countries
   - Was causing too much demand in places with too many BBCs like Japan
-- Remove all edits to setup events
+- Remove all edits to setup files
   - This should make the mod much more easily compatible with mods altering the setup
+  - Make startup building edits via on_startup on_actions instead
 - Remove dependency of the court and diplo sliders maintenance events on the existence of France
-  - Fire the maintence in great power score no. 1 tag instead
+  - Fire the maintenance in great power score no. 1 tag instead
 - Remove M&T edits to Columbian Exchange other than the Climate triggers (as we have Koppen climates)
-  - This should prevent weirdness with too much chili provs in Europe, older M&T versions made tweaks but those haven't been updated in a while
+  - This should prevent weirdness with too much chili Locations in Europe, older M&T versions made tweaks but those haven't been updated in a while
   - Vanilla has fixed most issues with the Situation now, so we are resetting our changes to theirs
