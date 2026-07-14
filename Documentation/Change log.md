@@ -480,3 +480,11 @@ Date: 21/05/2026
 - Remove M&T edits to Columbian Exchange other than the Climate triggers (as we have Koppen climates)
   - This should prevent weirdness with too much chili Locations in Europe, older M&T versions made tweaks but those haven't been updated in a while
   - Vanilla has fixed most issues with the Situation now, so we are resetting our changes to theirs
+
+  
+##### M&T v0.2.1
+
+### Balance
+- Reduce the amount of cavalry that Tribal Pops can field as levies from 15% of pop to 5% of pop.
+  - Tribal infantry from 15% to 10%. 
+  - Tribes can still field big armies, but should be less OP now
