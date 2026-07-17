@@ -489,7 +489,12 @@ Date: 21/05/2026
   - Vanilla has fixed most issues with the Situation now, so we are resetting our changes to theirs
 
   
-##### M&T v0.2.1
+##### M&T v0.2.2
+
+### 1.3.11 Pavia Vanilla patch compatibility
+- Don't carry over free Trade Income for all nations
+- Reduce merchant maintenance further to stay at half of Vanilla
+- Trade range buffed just like Vanilla
 
 ### Balance
 - Reduce the amount of cavalry that Tribal Pops can field as levies from 15% of pop to 5% of pop.
