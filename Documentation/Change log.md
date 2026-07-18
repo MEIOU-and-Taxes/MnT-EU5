@@ -12,14 +12,6 @@ Date: 21/05/2026
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
   - Add new naval levies for later ages  
-- Map modes:  
-  - Market access (besides Markets map mode), where it is red at \<50% and green at 100%  
-  - Missing control (difference between location control & max control)  
-  - Max control  
-  - Max control with location rank (can distinguish locations having towns & cities)  
-  - Noble %, Burgher %, Laborer %, Peasant %  
-  - Market food balance  
-  - Market food stockpile
 - Centers of Importance:
   - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
   - Each type has an associated score dependent on multiple factors and an absolute minimum threshold per tier.
@@ -146,7 +138,7 @@ Date: 21/05/2026
   - Building representing nomadic husbandry
   - Produces wool while also boosting tribe estate power and reducing tribe promotion
   - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
-- Sand added to several production methods, including masonry, weapons, and tools.
+- Sand input added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 - Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement)
 - Spawn 1 more Marketplace per town/city to facilitate early-game trade
