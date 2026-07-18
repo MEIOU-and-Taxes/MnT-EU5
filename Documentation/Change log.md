@@ -1,4 +1,4 @@
-# Release 
+﻿# Release 
 
 ### Initial test-release v0.1
 
@@ -346,7 +346,10 @@ Date: 21/05/2026
   - Add opinion/trust effects
   - Add meaningful ai_chance modifiers
 
-##### M&T v0.1.4
+#### M&T v0.1.4
+
+### Mechanics
+- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
 
 ### 1.3.4 Compatibility
 - Make mod native to EUV 1.3.4 Pavia
