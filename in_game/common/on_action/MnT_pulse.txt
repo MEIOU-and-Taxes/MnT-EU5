@@ -3,6 +3,7 @@
 		on_game_start_MnT
 		hide_buildings_on_start
 		epbm_on_initialize
+		aut_on_game_start
 		delay = { days = 1 }
 		on_game_has_started_MnT
 	}
@@ -11,6 +12,8 @@
 weather_monthly_pulse = {
 	on_actions = {
 		epbm_on_global_monthly
+		aut_init_check 
+		aut_monthly_update
 	}
 }
 
@@ -40,6 +43,8 @@ on_game_start_MnT = {
 	effect = {
 		# Initialize center of importance systems on game start
 		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
+		location:al_hajr.market = { destroy_market = { } }
+		location:urgench.market = { destroy_market = { } }
 		every_market_in_world = {	#Helicopter-tools to make the world go vroom
 			add_goods_supply = {
 				goods = goods:tools
@@ -50,6 +55,7 @@ on_game_start_MnT = {
 		# Initialize update frequencies and trigger first update
 		every_country = {
 			trigger_event_silently = { id = rgo_removal.01 }
+			trigger_event_silently = { id = destroy_invalid_buildings.1 }
 			trigger_event_silently = { id = mnt_goods_value.1 }
 		}
 		# Handle Pop and Food building startup
@@ -211,4 +217,8 @@ hide_buildings_on_start = {
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_wool }
 		}
 	}
+}
+
+on_location_changed_owner = {
+	on_actions = { aut_on_location_conquered }
 }
