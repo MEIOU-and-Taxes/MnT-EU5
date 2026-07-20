@@ -2,8 +2,8 @@
 
 	#script value for how likely the disease is to spawn per month (0..1)
 	monthly_spawn_chance = {
-		#Around 1 outbreaks around the world
-		value = 0.1
+		#Around 1 outbreak every year globally
+		value = 0.08
 	}
 
 	#effect to spawn the disease somewhere when we've decided it should spawn.
@@ -20,6 +20,7 @@
 					oceanic_climate_trigger = yes
 					cold_arid_climate_trigger = yes
 					tropical_climate_trigger = yes
+					subtropic_climate_trigger = yes
 				}
 				#If the great_pestilence has not happened yet, exclude America
 				trigger_if = {
@@ -96,7 +97,7 @@
 	#A lower number = possible faster spread, depending on the effect in spread.
 	#Nothing in the scope, this will usually just be a number, but could be a random range
 	#Smallpox was highly contagious, but generally spread more slowly and less widely than some other viral diseases
-	calc_interval_days = {2 8}
+	calc_interval_days = {4 12}
 
 	#script value for how much chance there is of the disease stagnating in a location,
 	#slowing its advance greatly. (0..1)
@@ -107,11 +108,11 @@
 			}
 			value = "distance_to_squared(scope:disease.origin)"
 			multiply = 0.0006
-			multiply = 0.005
+			multiply = 0.0035
 		}
 		else = {
 			value = "distance_to_squared(scope:disease.origin)"
-			multiply = 0.00006
+			multiply = 0.00004
 		}
 	}
 
@@ -121,6 +122,12 @@
 		value = 0.25
 	}
 
+	#minimum presence in a location before it will seed new locations.
+	#Without this, lightly-infected edges keep creeping into neighbors forever.
+	location_spread_threshold = {
+		value = 0.15
+	}
+
 	#modifier applied to locations that have the disease (multiplied by the presence %age)
 	#general bad effects on locations that have this
 	location_modifier = {
@@ -128,7 +135,7 @@
 	}
 
 	# Smallpox immunity is durable but population turnover creates new susceptible cohorts every 20-30 years
-	monthly_resistance_reduction = 0.001
+	monthly_resistance_reduction = 0.0007
 
 	#script value for mortality rate of the disease (0..1)
 	#By the 16th century, smallpox had become entrenched across most of Europe,[3] where it had a mortality rate as high as 30 percent

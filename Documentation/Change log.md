@@ -37,11 +37,11 @@ Date: 21/05/2026
 
 #### Balancing
 
-- Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
-- Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
-- Estates now pay their proportional share of inflation-driven maintenance costs on shared buildings.
-- Estate-assigned buildings have goods-based maintenance production methods and their full cost, including inflation, is paid entirely by the owning estate.
-- Estate building tooltips now show actual computed upkeep with a full goods breakdown.
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
@@ -350,3 +350,150 @@ Date: 21/05/2026
 
 ### Mechanics
 - Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
+
+### 1.3.4 Compatibility
+- Make mod native to EUV 1.3.4 Pavia
+- Estates Pay Building Maintenance system is not fully ready
+  - It needs significant updating to be fully restored
+  - It works but since building maintenance is now building upkeep efficiency we can't set building maint share to zero %
+
+### Miscellaneous
+- Fully comment out the Land good. 
+  - It was originally coded because the game did not accept Production Methods without input
+  - That is no longer the case so it doesn't fulfil a purpose atm
+  - May or may not be reworked into a proper system in the future
+
+### Localization
+- Improve localization around centers
+  - Added game concepts, removed mentions of specific values in thresholds (not up to date and tough to maintain) 
+- Tweaked map mode explanation
+- Added clarification to building upkeep efficiency description 
+  - To say that in MnT estates pay their proportional share of maintenance costs on shared building
+- Fix double blank-space in startup event
+
+##### M&T v0.1.5
+
+### 1.3.6 compatibility
+- Buff serfdom societal value: fix fort maintenance reduction and buff RGO size buff
+- Update estates file: 
+  - Peasant estate satisfaction now helps with Levy Recovery
+  - All Estates' opinions of other countries should be more logical
+  - Dhimmi will disenfranchise to Nobles
+- Update estate privileges files:
+  - Allow Noble Villa to be built when Nobles have Land Rights
+  - Allow Peasant Hunting Grounds to be built when peasants have hunting permit priv
+- Update building files:
+  - Buff food capacity of food storage buildings
+- Update Goods
+  - Wool no longer produces food and has a little bit of base production
+  - All classes will now demand some potatoes instead of only lower classes
+- Update Location Ranks:
+  - Cities and Meglopoleis now grant Mills efficiency and some trade center power (Trade Center power less than Vanilla)
+- Trieste Location now starts with Friulian Culture
+- Very minor GUI button size update for Trade Advantage
+- AI will build max 2 colonial charters at the time (Vanilla change we carry over, unsure why I but I assume they have their reasons)
+- Smallpox tweaks, unsure what they do but seems like the disease will be a bit stronger
+
+##### M&T v0.1.6
+
+### Major Estates Pay Building Maintenance update
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
+- Savegame compatible but requires 3 to 4 months to fully adjust
+
+##### M&T v0.1.7
+
+### 1.3.8 Compatibility - Fully compatible now with 1.3.8 Pavia
+- Fix error on refresh of GDP mapmodes
+- Update economy GUI file
+- Add some cotton modifier to Khambat
+- Should fix the Bubonic Plague
+- Some minor changes too small to note
+
+### Misc
+- Add Modcon loading screen
+  - Adds 1 static loading screen
+  - Notifying players of the upcoming modcon
+  - M&T will have both a presentation and an interview
+  - To be removed after modcon
+
+##### M&T v0.1.8
+
+### Amenities
+- Added urban amenities building to the game 
+  - Adds more building slots (location rank bonuses reduced, but net adds more slots) 
+  - Substantially escalating price,
+  - Can only build 1 at a time
+  - Requirement for upgrading Rank of locations.
+
+### Urban concentration
+- Urban Rights from the Boroughs Privileges unlock earlier and double building slots for related industries
+- We hope to encourage both players and AI to specialize cities more
+
+##### M&T v0.1.9
+
+### Misc 
+- Allow the destruction of markets again (hope this doesn't break anything, but a complete impossibility was never intended)
+
+
+### Autonomous integration
+- Every province, depending on various factors, integrates autonomously.
+  - Cabinet action has been removed, parliament issue for integration has been kept
+  - Final monthly integration progress is determined by multiplying several factors together:
+    - Base: If next to integrated/core (or in a province with 1 seazone difference)
+    - Proximity
+    - Cultural Opinion
+    - Religious Tolerance
+    - Global Integration speed modifier
+    - Area Integration tech grant a 3x multiplier
+  - Integration can be slow but is hardcapped at taking 100 years
+  - Capitals are always instantly and fully integrated
+
+
+##### M&T v0.2.0
+### Pavia 1.3 full-release patch
+- NOT savegame compatible for those coming from EUV 1.2
+
+### Misc
+- Add support_sieges_priority to 'normal' AI military stance
+  - Hopefully this helps AIs abandon sieges less
+- Reduce market stockpile size to Vanilla level (25) 
+
+##### M&T v0.2.1
+
+### Balance
+- RGO price per level increase
+  - Mines 50% more expensive per levels instead of 10%
+  - Other RGOs 10% per level more expensive
+- Lock bribe estate during 1337
+  - Income is almost nothing during the first months, so bribing estates is then way too cheap
+  - Prevent cheesing players
+
+### Misc
+- Limit goods demand from Court and Diplo spending to Location based Countries
+  - Was causing too much demand in places with too many BBCs like Japan
+- Remove all edits to setup files
+  - This should make the mod much more easily compatible with mods altering the setup
+  - Make startup building edits via on_startup on_actions instead
+- Remove dependency of the court and diplo sliders maintenance events on the existence of France
+  - Fire the maintenance in great power score no. 1 tag instead
+- Remove M&T edits to Columbian Exchange other than the Climate triggers (as we have Koppen climates)
+  - This should prevent weirdness with too much chili Locations in Europe, older M&T versions made tweaks but those haven't been updated in a while
+  - Vanilla has fixed most issues with the Situation now, so we are resetting our changes to theirs
+
+  
+##### M&T v0.2.2
+
+### 1.3.11 Pavia Vanilla patch compatibility
+- Don't carry over free Trade Income for all nations
+- Reduce merchant maintenance further to stay at half of Vanilla
+- Trade range buffed just like Vanilla
+
+### Balance
+- Reduce the amount of cavalry that Tribal Pops can field as levies from 15% of pop to 5% of pop.
+  - Tribal infantry from 15% to 10%. 
+  - Tribes can still field big armies, but should be less OP now
+- Added Rus bog iron advance, giving bonus bog iron building slot and offering a moderately improved iron production for the first and second age (50% more output, equal to bog blast furnace)

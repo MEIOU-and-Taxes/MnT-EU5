@@ -1,8 +1,5 @@
-﻿# MnT EPBM: on_built / on_destroyed hooks in this file are maintained by
-# tools/MnT_epbm_generator/. After adding a building or a maintenance
-# production method, commit your changes and re-run:
-#   python3 tools/MnT_epbm_generator/MnT_generate_building_hooks.py
-temple = {
+﻿temple = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = clergy
@@ -35,17 +32,10 @@ temple = {
 		local_clergy_pop_growth = 0.25
 	}
 
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 construction_center = {
+	audio_tier = 2
 
 	is_foreign = no
 	max_levels = construction_center_max_level 
@@ -82,17 +72,10 @@ construction_center = {
 		max_constructions_at_same_time = 1
 	}
 
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 counting_house = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = burghers
@@ -128,17 +111,10 @@ counting_house = {
 		local_crown_estate_power = 0.33
 	}
 
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 minting_office = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = burghers
@@ -168,23 +144,17 @@ minting_office = {
 		local_max_control = 0.05
 	}
 
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 granary = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = guild_max_level
 
 	pop_type = laborers
 
 	employment_size = granary_employment
+	### M&T Disabled: AI_ignore_available_worker_flag = yes # we want this for pop growth so build it anyway
 
 	category = infrastructure_category
 
@@ -210,22 +180,15 @@ granary = {
 
 
 	modifier = {
-		local_food_capacity = 200
+		local_food_capacity = 500
 		local_food_decay_modifier = -0.05
 	}
 
 	ai_forbid_shutdown = yes
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
+	audio_tier = 2
 	is_special = yes
 	is_foreign = no
 	max_levels = 1
@@ -242,7 +205,7 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 	build_time = medium_fort_building
 
 	country_potential = {
-		culture = { has_culture_group = culture_group:maghrebi_group }
+		culture ?= { has_culture_group = culture_group:maghrebi_group }
 	}
 
 	location_potential = {
@@ -254,7 +217,7 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 
 	modifier = {
 		local_garrison_size = 0.1
-		local_food_capacity = 250
+		local_food_capacity = 500
 		local_defensive = 0.25
 	}
 
@@ -355,17 +318,44 @@ fortress_granary = { #https://en.wikipedia.org/wiki/Agadir_(granary)
 			category = building_maintenance
 		}
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
+}
+
+grain_house = {
+	audio_tier = 1
+	is_foreign = no
+	max_levels = guild_max_level
+
+	pop_type = laborers
+
+	employment_size = granary_employment
+
+	category = infrastructure_category
+
+	rural_settlement = no
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	build_time = government_build_time
+
+	country_potential = {
+		has_reform = government_reform:everyone_serves_reform
 	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
+
+	possible_production_methods = {
+		granary_maintenance
+	}
+
+	construction_demand = granary_construction
+
+	modifier = {
+		local_food_capacity = 100
+		local_supply_limit_modifier = 0.01
 	}
 }
 
 wharf = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = 1
 	pop_type = burghers
@@ -409,17 +399,10 @@ wharf = {
 		harbor_suitability = 0.1
 		local_repair_speed = 0.01
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 medical_school = {
+	audio_tier = 2
 	is_foreign = no
 	pop_type = burghers
 
@@ -450,17 +433,10 @@ medical_school = {
 
 
 	construction_demand = town_building_construction
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 lazaretto = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = clergy
 	max_levels = 1
@@ -487,17 +463,10 @@ lazaretto = {
 	modifier = {
 		local_disease_resistance = 0.25
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 pest_house = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = clergy
 	max_levels = 1
@@ -548,17 +517,10 @@ pest_house = {
 		local_disease_resistance = 0.3
 		local_unrest = 0.1
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 hospital = {
+	audio_tier = 2
 	is_foreign = no
 	pop_type = clergy
 	max_levels = 1
@@ -591,19 +553,13 @@ hospital = {
 		local_disease_resistance = 0.1
 		local_life_expectancy = 5
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 slave_market = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = slave_market_max_level
+	startup_ramp_target = rural_startup_ramp_target
 	pop_type = burghers
 
 	category = government_category
@@ -619,7 +575,9 @@ slave_market = {
 
 
 	country_potential = {
-		religion.group != religion_group:christian
+		religion ?= {
+			group != religion_group:christian
+		}
 	}
 
 
@@ -657,7 +615,7 @@ slave_market = {
 	}
 
 	modifier = {
-		building_enslavement_power = 0.02
+		building_enslavement_power = 0.010
 		local_slave_pop_satisfaction = -0.025
 	}
 
@@ -671,6 +629,7 @@ slave_market = {
 #Aqueducts
 
 aqueduct_system = {
+	audio_tier = 5
 	content_priority = 100
 	is_foreign = no
 	max_levels = aqueduct_system_max_level 
@@ -725,12 +684,47 @@ aqueduct_system = {
 		monthly_republican_tradition = 0.1
 		monthly_devotion = 0.1
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
+}
+
+provincial_chancery = {
+	audio_tier = 1
+	is_foreign = no
+	pop_type = burghers
+	max_levels = chancery_max_level
+	
+	category = government_category
+	
+	employment_size = generic_burgher_employment
+	
+	town = yes
+	city = yes
+	megalopolis = yes
+	
+	expensive = yes
+	build_time = generic_town_build_time
+
+
+	country_potential = {
+		has_reform = government_reform:provincial_consulates_reform
 	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
+	
+	remove_if = {
+		location.owner = {
+			NOT = {
+				has_reform = government_reform:provincial_consulates_reform
+			}
+		}
 	}
+
+	modifier = {
+		local_burghers_max_literacy = 2.5
+		local_nobles_max_literacy = 2.5
+		local_pop_join_rebel_threshold = -0.05
+	}
+	
+	
+	possible_production_methods = { chancery_maintenance }
+
+	
+	construction_demand = town_building_construction
 }

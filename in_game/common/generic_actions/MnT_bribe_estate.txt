@@ -1,0 +1,148 @@
+﻿REPLACE:bribe_estate = {
+	type = owncountry
+	sound = BRIBE_ESTATE
+	potential = {
+	}
+
+	allow = {
+		current_year > 1337		#M&T Added. At game start income too low so price too cheap. Gate after 1337 has passed to prevent exploit
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 180
+	automation_tick = monthly
+	automation_tick_frequency = 6
+	player_automated_category = estates
+
+	ai_prerequisite = {
+		any_estate = {
+			satisfaction < 0.3
+			monthly_satisfaction_change < {
+				value = target_satisfaction
+				subtract = satisfaction
+				divide = 12
+			}
+			estate_tax_base > 0.01
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = estate
+		source = actor
+		target_flag = target
+		name = "mission_select_estate"
+		column = {
+			data = name
+		}
+		enabled = {
+			estate_tax_base > 0.01
+
+			scope:actor = {
+				gold >= {
+					value = root.estate_tax_base
+					multiply = 12
+				}
+			}
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_gold = {
+				value = scope:target.estate_tax_base
+				multiply = -12
+			}
+
+			add_gold_to_estate = {
+				estate_type = scope:target.estate_type
+				value = {
+					value = scope:target.estate_tax_base
+					multiply = 12
+				}
+			}
+			add_estate_satisfaction = {
+				type = scope:target.estate_type
+				value = estate_satisfaction_mild_bonus
+			}
+			hidden_effect = {
+
+				if = {
+					limit = {
+						active_mission ?= { this = mission:estate_cooperation }
+						var:target_estate_var_bribery ?= scope:target.estate_type
+					}
+					set_variable = {
+						name = recently_bribed_estate_variable
+						years = 5
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		if = {
+			limit = {
+				exists = scope:target
+				scope:target = {
+					target_satisfaction > satisfaction
+				}
+				save_temporary_scope_value_as = {
+					name = cost
+					value = {
+						value = scope:target.estate_tax_base
+						multiply = -12
+					}
+				}
+			}
+
+			# Add negative score based on the cost relative to treasury
+			subtract = {
+				desc = "Gold Cost"
+				value = scope:target.estate_tax_base
+				divide = scope:actor.gold
+				multiply = 30
+			}
+
+			#Calculation on the basis of Estate Power 0 - 100
+			#If it's too low, the AI will look to bribe
+
+			add = {
+				desc = "Willingness based on Estate Power"
+				value = scope:target.power
+				multiply = 90
+			}
+
+			#Bit less weight on the current satisfaction
+			subtract = {
+				desc = "Target Satisfaction"
+				value = scope:target.satisfaction
+				multiply = 100
+			}
+
+			#If Satisfaction is too low, add some weight just in case...
+			if = {	#Failsafe!
+				limit = { scope:target.satisfaction < 0.25 }
+				add = {
+					desc = "Low Satisfaction Failsafe"
+					value = 10
+				}
+			}
+			if = {	#Failsafe!
+				limit = { scope:target.satisfaction > 0.6 }
+				subtract = {
+					desc = "High Satisfaction Failsafe"
+					value = 100
+				}
+			}
+
+			#Let's check we are not far below the target_satisfaction
+			add = {
+				desc = "Satisfaction - Target satisfaction"
+				value = scope:target.satisfaction
+				subtract = scope:target.target_satisfaction
+				multiply = 20
+			}
+		}
+	}
+}

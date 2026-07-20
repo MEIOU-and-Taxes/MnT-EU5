@@ -255,6 +255,12 @@
 		}
 		else = {
 			value = 0.02
+			if = { #It can easily die out in low density areas
+				limit = {
+					location_population_percentage < 0.1
+				}
+				add = 0.1
+			}
 		}
 
 		if = { #It can easily die out in difficult terrain
@@ -270,12 +276,6 @@
 			}
 			add = 0.2
 		}
-		if = { #It can easily die out in low density areas
-			limit = {
-				location_population_percentage < 0.1
-			}
-			add = 0.2
-		}
 
 		#if we've got a bit of resistance then stagnation chance will go up
 		if = {
@@ -284,20 +284,21 @@
 			}
 			add = {
 				value = "disease_resistance(scope:disease)"
-				subtract = 0.4
+				subtract = 0.5
+				multiply = 0.25
 			}
 		}
 		if = {
 			limit = {
 				"disease_resistance(scope:disease)" > 0.95
 			}
-			add = 0.1
+			add = 0.05
 		}
 		if = {
 			limit = {
 				"disease_resistance(scope:disease)" > 0.98
 			}
-			add = 0.2
+			add = 0.1
 		}
 
 		#We need a minimum spread for the black death to work, we make it immune for a small radius so it can move outside of the Golden horde
@@ -305,7 +306,7 @@
 			limit = {
 				distance_to_squared = {
 					location = scope:disease.origin
-					value < 15000
+					value < 150000
 				}
 			}
 			value = 0
@@ -318,13 +319,6 @@
 
 	#general bad effects on locations that have this
 	location_modifier = {
-		potential_trigger = {
-			disease_presence = {
-				disease = scope:disease
-				value >= 0.2
-			}
-			NOT = {	disease_has_stagnated = scope:disease }
-		}
 		local_forced_attrition = 5
 		max_attrition = 10
 
