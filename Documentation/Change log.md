@@ -348,9 +348,6 @@ Date: 21/05/2026
 
 #### M&T v0.1.4
 
-### Mechanics
-- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
-
 ### 1.3.4 Compatibility
 - Make mod native to EUV 1.3.4 Pavia
 - Estates Pay Building Maintenance system is not fully ready
@@ -491,8 +488,7 @@ Date: 21/05/2026
 - Don't carry over free Trade Income for all nations
 - Reduce merchant maintenance further to stay at half of Vanilla
 - Trade range buffed just like Vanilla
-- Fix location and economy GUI issues, including zero-level RGO cards, environment icons, indicator alignment, and income graph controls
-- Silence income graph helper-variable warnings during startup
+
 
 ### Balance
 - Reduce the amount of cavalry that Tribal Pops can field as levies from 15% of pop to 5% of pop.
@@ -504,3 +500,8 @@ Date: 21/05/2026
 
 ### Balance
 - Don't allow Estates to upgrade Urban Amenities
+- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
+
+### GUI
+- Fix location and economy GUI issues, including zero-level RGO cards, environment icons, indicator alignment, and income graph controls
+- Silence income graph helper-variable warnings during startup
