@@ -5281,28 +5281,30 @@ lateralview = {
 													}
 
 													# BUILDINGS BREAKDOWN
-														vbox = {
-															name = "location_buildings_laborers"
-															layoutpolicy_horizontal = fixed
-															size = { 100 42 }
+													vbox = {
+														name = "location_buildings_laborers"
+														ignoreinvisible = yes
+														layoutpolicy_horizontal = fixed
+														size = { 100 42 }
 															maximumsize = { 100 42 }
 															spacing = 3
 															datamodel = "[LocationView.GetPopTypes]"
 														# visible = "[GreaterThan_int32(LocationView.GetNumPopBuildings, '(int32)0')]"
 
-															item = {
-																vbox = {
-																	visible = "[ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self)]"
-																	layoutpolicy_horizontal = fixed
+														item = {
+															vbox = {
+																visible = "[ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self)]"
+																ignoreinvisible = yes
+																layoutpolicy_horizontal = fixed
 																	size = { 100 42 }
 																	maximumsize = { 100 42 }
 																	spacing = 3
 
 
-																	location_conditions_item = {
-																		blockoverride "location_conditions_card_visible" {
-																			visible = "[And(ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self), ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self))]"
-																		}
+																location_conditions_item = {
+																	blockoverride "location_conditions_card_visible" {
+																		visible = "[And3(ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self), ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self), GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0'))]"
+																	}
 
 																	blockoverride "location_conditions_item_size" {
 																		size = { 100 42 }
@@ -5453,11 +5455,10 @@ lateralview = {
 																		# At level zero there is no Building instance in GetLocationBuildings.
 																		# Use the raw good's potential LocationBuildingItem instead, which
 																		# provides the correct RGO BuildingType and location-build action.
-																		vbox = {
-																			ignore_layout = yes
-																			ignoreinvisible = yes
+																vbox = {
+																	ignoreinvisible = yes
 																			size = { 100 42 }
-																			visible = "[Not(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0'))]"
+																			visible = "[And(Not(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0')), LocationView.GetLocation.GetOwner.IsPlayer)]"
 																			datamodel = "[LocationView.GetLocationGoodsItems]"
 
 																			item = {
@@ -5467,10 +5468,10 @@ lateralview = {
 																					visible = "[ObjectsEqual(LocationGoodItem.GetGoods, LocationView.GetLocation.GetRawMaterial)]"
 																					datamodel = "[LocationGoodItem.GetBuildings]"
 
-																					item = {
-																						widget = {
-																							size = { 100 42 }
-																							visible = "[And(LocationBuildingItem.IsPotentialBuilding, GetScriptedGui('mnt_is_location_raw_material_rgo').IsShown(GuiScope.SetRoot(LocationBuildingItem.GetBuildingType.MakeScope).AddScope('location', LocationView.GetLocation.MakeScope).End))]"
+																	item = {
+																		widget = {
+																			size = { 100 42 }
+																			visible = "[And(LocationBuildingItem.IsPotentialBuilding, GetScriptedGui('mnt_is_location_raw_material_rgo').IsShown(GuiScope.SetRoot(LocationBuildingItem.GetBuildingType.MakeScope).AddScope('location', LocationView.GetLocation.MakeScope).End))]"
 
 																							header_button_left = {
 																								name = "location_laborer_potential_rgo_button"
@@ -5544,10 +5545,78 @@ lateralview = {
 																				}
 																			}
 																		}
+
 																	}
 																}
 															}
 														}
+
+																# Foreign locations have no player-potential building item. Show the
+																# raw-material card directly, without exposing a build action.
+																widget = {
+																	size = { 100 42 }
+																	visible = "[And(Not(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0')), Not(LocationView.GetLocation.GetOwner.IsPlayer))]"
+
+																	header_button_left = {
+																		name = "location_laborer_foreign_zero_rgo_card"
+																		size = { 100 42 }
+																		enabled = no
+
+																		blockoverride "bg_color" {
+																			modify_texture = {
+																				using = color_dark_brown_texture
+																				blend_mode = multiply
+																			}
+																		}
+
+																		blockoverride "header_button_frame_inner" {
+																			visible = no
+																		}
+
+																		blockoverride "header_button_icon_obj" {
+																			widget = {
+																				size = { 30 30 }
+																				parentanchor = center
+																				using = bg_circle_piechart
+
+																				icon = {
+																					alwaystransparent = yes
+																					size = { 18 18 }
+																					parentanchor = center
+																					texture = "[GetGoodsIcon(LocationView.GetLocation.GetRawMaterial)]"
+																				}
+																			}
+																		}
+
+																		blockoverride "header_button_text_layout" {
+																			hbox = {
+																				using = layoutpolicy_expanding
+																				margin_left = 5
+																				margin_right = 2
+
+																				vbox = {
+																					layoutpolicy_horizontal = expanding
+																					layoutpolicy_vertical = expanding
+
+																					text_single = {
+																						maximumsize = { 50 17 }
+																						align = left|nobaseline
+																						autoresize = yes
+																						fontsize = 13
+																						text = "[LocationView.GetLocation.GetRawMaterial.GetNameWithNoTooltip|L]"
+																					}
+
+																					text_single = {
+																						maximumsize = { 50 17 }
+																						align = left|nobaseline
+																						fontsize = 14
+																						raw_text = "0/[LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded')|0]"
+																					}
+																				}
+																			}
+																		}
+																	}
+																}
 															}
 														}
 													}
