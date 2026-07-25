@@ -512,3 +512,9 @@ Date: 21/05/2026
 ### GUI
 - Fix location and economy GUI issues, including zero-level RGO cards, environment icons, indicator alignment, and income graph controls
 - Silence income graph helper-variable warnings during startup
+
+### Mechanics
+- Cap Court demand of goods at 3x max at 1/3 min depending on court_maintenance efficiency (prevent edge-cases where either almost nothing or a boatload are demanded)
+- Broaden the basket for Diplomatic Spending to include more types of goods, but less of them
+- Instead of transferring always 50% of Diplomatic spending to Nobles, give their power plus if you have elaborate_court_ceremonies Privilege
+- Make sure this transfer does not error if there are no Nobles in a given nation
