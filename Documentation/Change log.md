@@ -499,3 +499,11 @@ Date: 21/05/2026
   - Tribal infantry from 15% to 10%. 
   - Tribes can still field big armies, but should be less OP now
 - Added Rus bog iron advance, giving bonus bog iron building slot and offering a moderately improved iron production for the first and second age (50% more output, equal to bog blast furnace)
+
+##### M&T v0.2.3
+
+### Mechanics
+- Cap Court demand of goods at 3x max at 1/3 min depending on court_maintenance efficiency (prevent edge-cases where either almost nothing or a boatload are demanded)
+- Broaden the basket for Diplomatic Spending to include more types of goods, but less of them
+- Instead of transferring always 50% of Diplomatic spending to Nobles, give their power plus if you have elaborate_court_ceremonies Privilege
+- Make sure this transfer does not error if there are no Nobles in a given nation
