@@ -504,3 +504,4 @@ Date: 21/05/2026
 
 ### Fixes
 - Fix max level for sugar/cotton/tobacco Plantation building being zero globally
+- Fix missing keys in RGO buildings max level
