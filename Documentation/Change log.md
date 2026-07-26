@@ -523,3 +523,8 @@ Date: 21/05/2026
 - Allow Beeswax RGO building to be built more broadly
   - Try to combat shortage of Beeswax without buffing output
   - Allow in seemingly reasonable places
+##### M&T v0.2.4
+
+### Fixes
+- Fix max level for sugar/cotton/tobacco Plantation building being zero globally
+- Fix missing keys in RGO buildings max level
