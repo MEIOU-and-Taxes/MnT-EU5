@@ -499,3 +499,8 @@ Date: 21/05/2026
   - Tribal infantry from 15% to 10%. 
   - Tribes can still field big armies, but should be less OP now
 - Added Rus bog iron advance, giving bonus bog iron building slot and offering a moderately improved iron production for the first and second age (50% more output, equal to bog blast furnace)
+
+##### M&T v0.2.4
+
+### Fixes
+- Fix max level for sugar/cotton/tobacco Plantation building being zero globally
