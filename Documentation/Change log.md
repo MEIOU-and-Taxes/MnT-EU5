@@ -518,3 +518,8 @@ Date: 21/05/2026
 - Broaden the basket for Diplomatic Spending to include more types of goods, but less of them
 - Instead of transferring always 50% of Diplomatic spending to Nobles, give their power plus if you have elaborate_court_ceremonies Privilege
 - Make sure this transfer does not error if there are no Nobles in a given nation
+
+### Balance
+- Allow Beeswax RGO building to be built more broadly
+  - Try to combat shortage of Beeswax without buffing output
+  - Allow in seemingly reasonable places
