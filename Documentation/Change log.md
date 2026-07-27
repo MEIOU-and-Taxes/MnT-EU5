@@ -528,3 +528,5 @@ Date: 21/05/2026
 ### Fixes
 - Fix max level for sugar/cotton/tobacco Plantation building being zero globally
 - Fix missing keys in RGO buildings max level
+- Replace backend check for Milanese and Florentine cloth producing Burgher privs
+  - Due to how they were scripted they would often randomly be auto-revoked, this fix prevents that from happening
