@@ -1,0 +1,93 @@
+﻿@aut_version = 100 # Must match aut_effects.txt
+
+### Bootstrap
+
+# New game: run full initialization immediately.
+
+aut_on_game_start = {
+	effect = {
+		aut_initialize = yes
+	}
+}
+
+### Save Game Detection
+# Bouvet Island version check — runs in weather_monthly_pulse (location-scoped).
+# Bouvet Island is unownable, so its modifiers vanish when the mod is removed
+# and reappear stale when re-added. Version mismatch catches mod updates.
+# Fires once, then the version stamp prevents repeat runs.
+
+aut_init_check = {
+	trigger = {
+		location:bouvet_island = {
+			OR = {
+				AND = {
+					has_variable = aut_version
+					var:aut_version < @aut_version
+				}
+				NOT = { has_variable = aut_version }
+			}
+		}
+	}
+
+	effect = {
+		aut_initialize = yes
+	}
+}
+
+### Location Conquered
+
+# Fires when any location changes owner (conquest, peace deal, etc.).
+# Only acts on locations that enter conquered status.
+
+aut_on_location_conquered = {
+	trigger = { integration_level = conquered }
+
+	effect = {
+		aut_track_location = yes
+		aut_apply_integration_script = yes
+	}
+}
+
+### Monthly Update
+
+# Iterate only tracked conquered locations, not all owned locations.
+# Locations that advanced past conquered get untracked and cleaned up.
+# Locations still conquered get their modifier size refreshed
+# (population and capacity may have shifted since last month).
+
+aut_monthly_update = {
+	effect = {
+		# Pass 1: update or tag for removal.
+		# Avoids mutating the conquered list during iteration.
+		every_in_global_list = {
+			variable = aut_conquered_locations
+
+			if = {
+				limit = {
+					NOT = {
+						integration_level = conquered
+					}
+				}
+				add_to_local_variable_list = { name = aut_remove_queue target = this }
+			}
+			else = { aut_apply_integration_script = yes }
+		}
+
+		# Pass 2: drain the removal queue.
+		every_in_local_list = {
+			variable = aut_remove_queue
+
+			remove_variable = location_integration_gain
+			remove_variable = location_integration_gain_estimate
+			remove_variable = location_integration_gain_base
+			remove_variable = location_integration_gain_proximity
+			remove_variable = location_integration_gain_culture
+			remove_variable = location_integration_gain_religion
+			remove_variable = location_integration_gain_modifiers
+
+			remove_list_global_variable = { name = aut_conquered_locations target = this }
+		}
+
+		clear_local_variable_list = aut_remove_queue
+	}
+}

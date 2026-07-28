@@ -1026,65 +1026,44 @@ types LocationWindowTypes
 							visible = "[Location.HasOwner]"
 
 							# NOT INTEGRATED
-							header_button_left = {
-								visible = "[And(Not(Location.IsOccupied), Not(Location.IsIntegrated))]"
-								size = { 31 31 }
-								blockoverride "button_icon_stretch_sprite" {}
-								blockoverride "header_button_frame_inner" {visible = no}
-								blockoverride "header_button_icon_size" { size = { 31 31 } }
-								blockoverride "header_button_text_layout" {}
-								
-								blockoverride "icon_texture" {
-									texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
-									size = {55% 55%}
-								}
-								action_tooltip = {
-									click_type = left
-									click_mode = single
-									title = "AUTOMATED_SYSTEM_CABINETMEMBERS_CLICK"
-									on_action = "[OpenLateralViewWithParams('government', 'tabcontent = cabinet')]"
-								}
+							piechart = {
+								using = bg_circle
+								using = bg_circle_piechart
+								using = piechart_angles
+								size = { 25 25 }
+								parentanchor = center
+								visible = "[And(Not(Location.IsOccupied), And(Location.HasOwner, Not(Location.IsIntegrated)))]"
+
 								tooltipwidget = {
 									using = location_core_tooltip
 								}
-								
-								# BEING INTEGRATED
-								onclick = "[OpenLateralViewWithParams('government', 'tabcontent = cabinet')]"
-								piechart = {
-									using = bg_circle
-									using = bg_circle_piechart
-									using = piechart_angles
-									size = { 20 20 }
-									parentanchor = center
-									visible = "[And(Not(Location.IsOccupied), And(Location.HasOwner, And(Location.IsCurrentlyBeingIntegrated, HasIntegrationIntelOn(Location.Self))))]"
-	
-									pieslice = {
-										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
-										value = "[Location.GetIntegrationProgressFloat]"
-										color = { 1 1 1 1 }
-										alwaystransparent = yes
-									}
-	
-									pieslice = {
-										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
-										value = "[Subtract_float('(float)100.0', Location.GetIntegrationProgressFloat)]"
-										color = { 1 1 1 1 }
-										alwaystransparent = yes
-									}
-	
-									icon = {
-										size = { 58% 58% }
-										parentanchor = center
-										texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
-										alwaystransparent = yes
-									}								
+
+								pieslice = {
+									texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+									value = "[Location.GetIntegrationProgressFloat]"
+									color = { 1 1 1 1 }
+									alwaystransparent = yes
 								}
+
+								pieslice = {
+									texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+									value = "[Subtract_float('(float)100.0', Location.GetIntegrationProgressFloat)]"
+									color = { 1 1 1 1 }
+									alwaystransparent = yes
+								}
+
+								icon = {
+									size = { 58% 58% }
+									parentanchor = center
+									texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
+									alwaystransparent = yes
+								}								
 							}
 							
 
 							# INTEGRATED
 							icon = {
-								visible = "[Or(Location.IsIntegrated, And(Not(Location.GetOwner.IsPlayer), Not(Location.IsCurrentlyBeingIntegrated)))]"
+								visible = "[Location.IsIntegrated]"
 								size = { 25 25 }
 								parentanchor = center
 								texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
@@ -4108,26 +4087,21 @@ lateralview = {
 								alpha = 1
 							}
 						}
-						hbox = {
-							margin = {10 8}
-
-							using = bg_paper_card
-							using = bg_cabinet_card_frame
-
 							hbox = {
-								spacing = 5
+								margin = { 8 4 }
 
-								widget = {
-									size = { 30 30 }
-									datacontext = "[LocationView.GetLocation.GetTopography]"
+								hbox = {
+									spacing = 3
+
+									widget = {
+										size = { 32 32 }
+										datacontext = "[LocationView.GetLocation.GetTopography]"
 									tooltipwidget = {
 										using = Topography_tooltip
 									}
-									background =  {
-										texture = "[GetClimateFrame(LocationView.GetLocation.GetClimate)]"
-									}
-									icon = {
-										size = { 30 30 }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "[GetTopographyIcon(LocationView.GetLocation.GetTopography)]"
 										glow = {
 											name = "drop_shadow"
@@ -4138,17 +4112,15 @@ lateralview = {
 									}
 								}
 
-								widget = {
-									size = { 30 30 }
-									datacontext = "[LocationView.GetLocation.GetClimate]"
+									widget = {
+										size = { 32 32 }
+										datacontext = "[LocationView.GetLocation.GetClimate]"
 									tooltipwidget = {
 										using = Climate_tooltip
 									}
-									background =  {
-										texture = "[GetClimateFrame(LocationView.GetLocation.GetClimate)]"
-									}
-									icon = {
-										size = { 30 30 }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "[GetClimateIcon(LocationView.GetLocation.GetClimate)]"
 										glow = {
 											name = "drop_shadow"
@@ -4159,17 +4131,15 @@ lateralview = {
 									}
 								}
 
-								widget = {
-									size = { 30 30 }
-									datacontext = "[LocationView.GetLocation.GetVegetation]"
+									widget = {
+										size = { 32 32 }
+										datacontext = "[LocationView.GetLocation.GetVegetation]"
 									tooltipwidget = {
 										using = Vegetation_tooltip
 									}
-									background =  {
-										texture = "[GetClimateFrame(LocationView.GetLocation.GetClimate)]"
-									}
-									icon = {
-										size = { 30 30 }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "[GetVegetationIcon(LocationView.GetLocation.GetVegetation)]"
 										glow = {
 											name = "drop_shadow"
@@ -4180,9 +4150,9 @@ lateralview = {
 									}
 								}
 
-								### NOT COASTAL
-								widget = {
-									size = { 30 30 }
+									### NOT COASTAL
+									widget = {
+										size = { 32 32 }
 									visible = "[Not(LocationView.GetLocation.IsCoastal)]"
 									datacontext = "[LocationView.GetLocation]"
 
@@ -4190,11 +4160,9 @@ lateralview = {
 										using = Inland_tooltip
 									}
 
-									background =  {
-										texture = "[GetClimateFrame(LocationView.GetLocation.GetClimate)]"
-									}
-									icon = {
-										size = { 30 30 }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "gfx/interface/icons/location_icons/inland.dds"
 										glow = {
 											name = "drop_shadow"
@@ -4205,9 +4173,9 @@ lateralview = {
 									}
 								}
 
-								### COASTAL
-								widget = {
-									size = { 30 30 }
+									### COASTAL
+									widget = {
+										size = { 32 32 }
 									visible = "[LocationView.GetLocation.IsCoastal]"
 
 									tooltipwidget = {
@@ -4274,11 +4242,9 @@ lateralview = {
 										}
 									}
 
-									background =  {
-										texture = "[GetClimateFrame(LocationView.GetLocation.GetClimate)]"
-									}
-									icon = {
-										size = { 100% 100% }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "gfx/interface/icons/location_icons/coastal.dds"
 										visible = "[Not(LocationView.GetLocation.IsBlockadedByEnemies)]"
 										glow = {
@@ -4289,8 +4255,9 @@ lateralview = {
 										}
 									}
 
-									icon = {
-										size = { 100% 100% }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "gfx/interface/icons/location_icons/coastal_blockade.dds"
 										visible = "[LocationView.GetLocation.IsBlockadedByEnemies]"
 										glow = {
@@ -4302,9 +4269,9 @@ lateralview = {
 									}
 								}
 
-								### IS BLOCKADED by ice
-								widget = {
-									size = { 30 30 }
+									### IS BLOCKADED by ice
+									widget = {
+										size = { 32 32 }
 									visible = "[LocationView.GetLocation.IsBlockadedByIce]"
 									tooltipwidget = {
 
@@ -4329,11 +4296,9 @@ lateralview = {
 											}
 										}
 									}
-									background =  {
-										texture = "[GetClimateFrame(LocationView.GetLocation.GetClimate)]"
-									}
-									icon = {
-										size = { 30 30 }
+										icon = {
+											size = { 30 30 }
+											parentanchor = center
 										texture = "gfx/interface/icons/location_icons/blockade_byice.dds"
 										using = overlay_color_light_blue
 										glow = {
@@ -5316,19 +5281,21 @@ lateralview = {
 													}
 
 													# BUILDINGS BREAKDOWN
-														vbox = {
-															name = "location_buildings_laborers"
-															layoutpolicy_horizontal = fixed
-															size = { 100 42 }
+													vbox = {
+														name = "location_buildings_laborers"
+														ignoreinvisible = yes
+														layoutpolicy_horizontal = fixed
+														size = { 100 42 }
 															maximumsize = { 100 42 }
 															spacing = 3
 															datamodel = "[LocationView.GetPopTypes]"
 														# visible = "[GreaterThan_int32(LocationView.GetNumPopBuildings, '(int32)0')]"
 
-															item = {
-																vbox = {
-																	visible = "[ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self)]"
-																	layoutpolicy_horizontal = fixed
+														item = {
+															vbox = {
+																visible = "[ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self)]"
+																ignoreinvisible = yes
+																layoutpolicy_horizontal = fixed
 																	size = { 100 42 }
 																	maximumsize = { 100 42 }
 																	spacing = 3
@@ -5336,7 +5303,7 @@ lateralview = {
 
 																location_conditions_item = {
 																	blockoverride "location_conditions_card_visible" {
-																		visible = "[And(ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self), ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self))]"
+																		visible = "[And3(ShowBuildingCardForLocation(LocationView.GetLocation, PopType.Self), ObjectsEqual(GetPopTypeByName('laborers'), PopType.Self), GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0'))]"
 																	}
 
 																	blockoverride "location_conditions_item_size" {
@@ -5483,6 +5450,172 @@ lateralview = {
 																	}
 
 																	blockoverride "location_conditions_card_extra_text" {}
+																}
+
+																		# At level zero there is no Building instance in GetLocationBuildings.
+																		# Use the raw good's potential LocationBuildingItem instead, which
+																		# provides the correct RGO BuildingType and location-build action.
+																vbox = {
+																	ignoreinvisible = yes
+																			size = { 100 42 }
+																			visible = "[And(Not(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0')), LocationView.GetLocation.GetOwner.IsPlayer)]"
+																			datamodel = "[LocationView.GetLocationGoodsItems]"
+
+																			item = {
+																				vbox = {
+																					ignoreinvisible = yes
+																					size = { 100 42 }
+																					visible = "[ObjectsEqual(LocationGoodItem.GetGoods, LocationView.GetLocation.GetRawMaterial)]"
+																					datamodel = "[LocationGoodItem.GetBuildings]"
+
+																	item = {
+																		widget = {
+																			size = { 100 42 }
+																			visible = "[And(LocationBuildingItem.IsPotentialBuilding, GetScriptedGui('mnt_is_location_raw_material_rgo').IsShown(GuiScope.SetRoot(LocationBuildingItem.GetBuildingType.MakeScope).AddScope('location', LocationView.GetLocation.MakeScope).End))]"
+
+																							header_button_left = {
+																								name = "location_laborer_potential_rgo_button"
+																								size = { 100 42 }
+																								enabled = "[LocationView.GetLocation.GetOwner.IsPlayer]"
+
+																								datacontext = "[LocationBuildingItem.GetBuildingType]"
+																								tooltipwidget = {
+																									using = BuildingType_tooltip
+																								}
+
+																								action_tooltip = {
+																									click_type = left
+																									click_mode = single
+																									title = "BUILD_BUILDING_FROM_LOCATION"
+																									on_action = "[SelectLocationToBuildWithLocation(LocationBuildingItem.GetBuildingType, LocationView.GetLocation.GetId, '(bool)no')]"
+																								}
+
+																								blockoverride "bg_color" {
+																									modify_texture = {
+																										using = color_dark_brown_texture
+																										blend_mode = multiply
+																									}
+																								}
+
+																								blockoverride "header_button_frame_inner" {
+																									visible = no
+																								}
+
+																								blockoverride "header_button_icon_obj" {
+																									widget = {
+																										size = { 30 30 }
+																										parentanchor = center
+																										using = bg_circle_piechart
+
+																										icon = {
+																											alwaystransparent = yes
+																											size = { 18 18 }
+																											parentanchor = center
+																											texture = "[GetGoodsIcon(LocationView.GetLocation.GetRawMaterial)]"
+																										}
+																									}
+																								}
+
+																								blockoverride "header_button_text_layout" {
+																									hbox = {
+																										using = layoutpolicy_expanding
+																										margin_left = 5
+																										margin_right = 2
+
+																										vbox = {
+																											layoutpolicy_horizontal = expanding
+																											layoutpolicy_vertical = expanding
+
+																											text_single = {
+																												maximumsize = { 50 17 }
+																												align = left|nobaseline
+																												autoresize = yes
+																												fontsize = 13
+																												text = "[LocationView.GetLocation.GetRawMaterial.GetNameWithNoTooltip|L]"
+																											}
+
+																											text_single = {
+																												maximumsize = { 50 17 }
+																												align = left|nobaseline
+																												fontsize = 14
+																								raw_text = "0/[LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded')|0]"
+																							}
+																						}
+																					}
+																				}
+																			}
+																		}
+
+																	}
+																}
+															}
+														}
+
+																# Foreign locations have no player-potential building item. Show the
+																# raw-material card directly, without exposing a build action.
+																widget = {
+																	size = { 100 42 }
+																	visible = "[And(Not(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_current_rgo_building_level'), '(CFixedPoint)0')), Not(LocationView.GetLocation.GetOwner.IsPlayer))]"
+
+																	header_button_left = {
+																		name = "location_laborer_foreign_zero_rgo_card"
+																		size = { 100 42 }
+																		enabled = no
+
+																		blockoverride "bg_color" {
+																			modify_texture = {
+																				using = color_dark_brown_texture
+																				blend_mode = multiply
+																			}
+																		}
+
+																		blockoverride "header_button_frame_inner" {
+																			visible = no
+																		}
+
+																		blockoverride "header_button_icon_obj" {
+																			widget = {
+																				size = { 30 30 }
+																				parentanchor = center
+																				using = bg_circle_piechart
+
+																				icon = {
+																					alwaystransparent = yes
+																					size = { 18 18 }
+																					parentanchor = center
+																					texture = "[GetGoodsIcon(LocationView.GetLocation.GetRawMaterial)]"
+																				}
+																			}
+																		}
+
+																		blockoverride "header_button_text_layout" {
+																			hbox = {
+																				using = layoutpolicy_expanding
+																				margin_left = 5
+																				margin_right = 2
+
+																				vbox = {
+																					layoutpolicy_horizontal = expanding
+																					layoutpolicy_vertical = expanding
+
+																					text_single = {
+																						maximumsize = { 50 17 }
+																						align = left|nobaseline
+																						autoresize = yes
+																						fontsize = 13
+																						text = "[LocationView.GetLocation.GetRawMaterial.GetNameWithNoTooltip|L]"
+																					}
+
+																					text_single = {
+																						maximumsize = { 50 17 }
+																						align = left|nobaseline
+																						fontsize = 14
+																						raw_text = "0/[LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded')|0]"
+																					}
+																				}
+																			}
+																		}
+																	}
 																}
 															}
 														}
@@ -7591,7 +7724,7 @@ lateralview = {
 
 													# NOT INTEGRATED
 													navigational_button_alt = {
-														visible = "[And(And(Not(Location.IsOccupied), And(Location.GetOwner.IsPlayer, Not(Location.IsCurrentlyBeingIntegrated))), Not(Location.IsIntegrated))]"
+														visible = "[And(Not(Location.IsOccupied), Not(Location.IsIntegrated))]"
 														size = { 100% 100% }
 														parentanchor = center
 														using = bg_circle_alt_purple_02
@@ -7624,7 +7757,7 @@ lateralview = {
 
 													# INTEGRATED
 													icon = {
-														visible = "[Or(Location.IsIntegrated, And(Not(Location.GetOwner.IsPlayer), Not(Location.IsCurrentlyBeingIntegrated)))]"
+														visible = "[Location.IsIntegrated]"
 														size = { 100% 100% }
 														parentanchor = center
 														texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
@@ -7652,7 +7785,7 @@ lateralview = {
 														tooltipwidget = {
 															using = location_core_tooltip
 														}
-														visible = "[And(Not(Location.IsOccupied), And(Location.HasOwner, Location.IsCurrentlyBeingIntegrated))]"
+														visible = "[And(Not(Location.IsOccupied), Location.HasOwner)]"
 
 														pieslice = {
 															texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"

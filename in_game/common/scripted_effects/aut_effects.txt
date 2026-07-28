@@ -1,0 +1,251 @@
+﻿@aut_version = 100 # 1.0.0
+
+aut_apply_integration_script = {
+	owner = {
+		save_temporary_scope_as = owner_scope
+		culture = {
+			save_temporary_scope_as = culture_scope
+		}
+	}
+
+	set_variable = {
+		name = location_integration_gain_base
+		value = {
+			value = 0.1
+			if = {
+				limit = {
+					OR = {
+						any_neighbor_location = {
+							is_ownable = yes
+							has_owner = yes
+							owner ?= scope:owner_scope
+							NOT = { integration_level = conquered }
+						}
+						AND = {
+							is_port = yes
+							any_coast_border_location = {
+								is_ownable = yes
+								has_owner = yes
+								owner ?= scope:owner_scope
+								NOT = { integration_level = conquered }
+							}
+						}
+					}
+				}
+				add = 0.20
+				if = {
+					limit = {
+						OR = {
+							any_neighbor_location = {
+								is_ownable = yes
+								has_owner = yes
+								owner ?= scope:owner_scope
+								integration_level = core
+							}
+							AND = {
+								is_port = yes
+								any_coast_border_location = {
+									is_ownable = yes
+									has_owner = yes
+									owner ?= scope:owner_scope
+									integration_level = core
+								}
+							}
+						}
+					}
+					add = 0.10
+				}
+			}
+		}
+	}
+
+	set_variable = {
+		name = location_integration_gain_proximity
+		value = {
+			add = proximity
+			multiply = 0.0025
+			add = 0.85
+		}
+	}
+
+	set_variable = {
+		name = location_integration_gain_culture
+		value = {
+			value = 1.0
+			add = {
+				if = {
+					limit = {
+						dominant_culture = {
+							is_primary_in = scope:owner_scope
+						}
+					}
+					add = 3
+				}
+				else_if = {
+					limit = { dominant_culture ?= { cultural_view = { target = scope:culture_scope value >= kindred } } }
+					add = 2
+				}
+				else_if = {
+					limit = { dominant_culture ?= { cultural_view = { target = scope:culture_scope value >= positive } } }
+					add = 1
+				}
+				else_if = {
+					limit = { dominant_culture ?= { cultural_view = { target = scope:culture_scope value >= neutral } } }
+					add = -1
+				}
+				else_if = {
+					limit = { dominant_culture ?= { cultural_view = { target = scope:culture_scope value >= negative } } }
+					add = -2
+				}
+				else = {		#Means the cultural view is 'Enemy'
+					add = -3
+				}
+				
+				if = {
+					limit = {
+						current_age = age_6_revolutions
+					}
+					multiply = 0.05
+				} 
+				else = {
+					multiply = 0.025
+				}
+				#Cap to max 15% bonus or penalty
+				max = 0.15
+				min = -0.15
+			}
+		}
+	}
+	
+	set_variable = {
+		name = location_integration_gain_religion
+		value = {
+			add = 1.0
+			add = {
+				if = {		#In the Age of Revolutions we care less about religion
+					limit = {
+						current_age = age_6_revolutions
+					}
+					add = 0.025
+				} 
+				else = {
+					add = 0.05
+				}
+
+				if = {
+					limit = {
+						dominant_religion = owner.religion
+					} 
+					multiply = scope:owner_scope.modifier:tolerance_own
+				} 
+				else_if = {
+					limit = {
+						dominant_religion.group = owner.religion.group
+					}
+					multiply = scope:owner_scope.modifier:tolerance_heretic
+				}
+				else = {
+					multiply = scope:owner_scope.modifier:tolerance_heathen
+				}
+				#Cap to max 25% bonus or penalty
+				max = 0.25
+				min = -0.25
+			}
+		}
+	}
+
+	set_variable = {
+		name = location_integration_gain_modifiers
+		value = {
+			add = 1.0
+			add = this.modifier:local_integration_speed_modifier		#Use Local Integration speed modifier. Should take country_wide modifier into account by default
+			add = scope:owner_scope.modifier:global_integration_speed_modifier #Seems local was really only grabbing local and ignoring global, so just throw global in the mix as well.
+		}
+	}
+
+	#set_variable = {
+	#	name = location_integration_gain_pop_scaling
+	#	value = {
+	#		# baseline 20k population, 40k takes double time (50% speed), 60k takes triple time (33% speed) 80k which maxs out at 25% speed -75%
+	#		add = 20
+	#		divide = {
+	#			value = population
+	#			min = 2
+	#			max = 80
+	#		}
+	#		min = 0.25 
+	#	}
+	#}
+
+	set_variable = {
+		name = location_integration_gain
+		value = {
+			value = var:location_integration_gain_base
+			multiply = var:location_integration_gain_proximity
+			multiply = var:location_integration_gain_culture
+			multiply = var:location_integration_gain_religion
+			multiply = var:location_integration_gain_modifiers
+			#multiply = var:location_integration_gain_pop_scaling
+			min = 0.083
+			if = {
+				limit = {
+					is_capital = yes
+				}
+				min = 100
+			}
+		}
+	}
+	
+	change_integration_progress = {
+		value = var:location_integration_gain
+	}
+
+	set_variable = {
+		name = location_integration_gain_estimate
+		value = {
+			value = 100
+			subtract = integration_progress
+			divide = var:location_integration_gain
+			divide = 12
+			min = 0
+		}
+	}
+}
+
+# Add a conquered location to the global tracking list.
+# Guards against duplicates so on_actions can call this freely.
+
+aut_track_location = {
+	if = {
+		limit = {
+			NOT = {
+				is_target_in_global_variable_list = {
+					name = aut_conquered_locations
+					target = this
+				}
+			}
+		}
+
+		add_to_global_variable_list = { name = aut_conquered_locations target = this }
+	}
+}
+
+# Full initialization: scan every location in the world for conquered status.
+# Called on first game load and when mod version changes.
+
+aut_initialize = {
+	clear_global_variable_list = aut_conquered_locations
+
+	every_country = {
+		every_owned_location = {
+			limit = { integration_level = conquered }
+			aut_track_location = yes
+			aut_apply_integration_script = yes
+		}
+	}
+
+	# Stamp version on Bouvet Island so we detect mod updates on next load
+	location:bouvet_island = {
+		set_variable = { name = aut_version value = @aut_version }
+	}
+}
