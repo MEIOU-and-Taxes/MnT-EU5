@@ -536,3 +536,4 @@ Date: 21/05/2026
 
 ### Balance
 - Increased Levy Cost to a relevant value (75% compared to normal units) compared to vanillas 1%. This is meant to make war actually costly for Feudal nations.
+- Remove local_access_to_raw_materials from raised_levies Location modifier, as cost is now handled by making Levies actually cost upkeep
