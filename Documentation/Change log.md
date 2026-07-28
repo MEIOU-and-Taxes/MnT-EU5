@@ -498,6 +498,16 @@ Date: 21/05/2026
 
 ##### M&T v0.2.3
 
+### Balance
+- Don't allow Estates to upgrade Urban Amenities
+- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
+
+### GUI
+- Fix location and economy GUI issues, including zero-level RGO cards, environment icons, indicator alignment, and income graph controls
+- Silence income graph helper-variable warnings during startup
+
+##### M&T v0.2.4
+
 ### Mechanics
 - Cap Court demand of goods at 3x max at 1/3 min depending on court_maintenance efficiency (prevent edge-cases where either almost nothing or a boatload are demanded)
 - Broaden the basket for Diplomatic Spending to include more types of goods, but less of them
@@ -508,9 +518,9 @@ Date: 21/05/2026
 - Allow Beeswax RGO building to be built more broadly
   - Try to combat shortage of Beeswax without buffing output
   - Allow in seemingly reasonable places
-- Don't allow Estates to upgrade Urban Amenities
-- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
 
-### GUI
-- Fix location and economy GUI issues, including zero-level RGO cards, environment icons, indicator alignment, and income graph controls
-- Silence income graph helper-variable warnings during startup
+### Fixes
+- Fix max level for sugar/cotton/tobacco Plantation building being zero globally
+- Fix missing keys in RGO buildings max level
+- Replace backend check for Milanese and Florentine cloth producing Burgher privs
+  - Due to how they were scripted they would often randomly be auto-revoked, this fix prevents that from happening
