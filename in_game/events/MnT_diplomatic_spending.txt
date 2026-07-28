@@ -32,23 +32,38 @@ diplomatic_spending.1 = {
                 value = var:noble_diplomatic_spending_transfer
             }
         }
-        
-        # For now, 50% of the spending goes to the nobility
-        # We can discuss the proportion or whether this should be spread to other estates as well
-        set_variable = {
-            name = noble_diplomatic_spending_transfer
-            value = {
-                value = 0
-                add = {
-                    value = local_var:country_diplomatic_spending
-                    multiply = 0.5
+
+        if = {      #Failsafe: Don't do this in the odd case that there isn't a nobility
+            limit = {
+                country_has_estate = estate_type:nobles_estate
+            }
+            # Give nobility a share based on their power
+            # Give 10% extra with elaborate_court_ceremonies privilege
+            set_variable = {
+                name = noble_diplomatic_spending_transfer
+                value = {
+                    value = 0
+                    add = {
+                        value = local_var:country_diplomatic_spending
+                        multiply = "estate_power(estate_type:nobles_estate)"
+                    }
                 }
             }
-        }
 
-        "estate(estate_type:nobles_estate)" = {
-            estate_add_gold = {
-                value = root.var:noble_diplomatic_spending_transfer
+            if = {
+                limit = {
+                    has_estate_privilege = estate_privilege:elaborate_court_ceremonies
+                }
+                change_variable = {
+                    name = noble_diplomatic_spending_transfer
+                    multiply = 1.1
+                }
+            }
+
+            "estate(estate_type:nobles_estate)" = {
+                estate_add_gold = {
+                    value = root.var:noble_diplomatic_spending_transfer
+                }
             }
         }
 
@@ -63,11 +78,29 @@ diplomatic_spending.1 = {
                     value = 0
                 }
             }
-            change_variable = {
-                name = total_diplomatic_spending
-                add = {
-                    value = local_var:country_diplomatic_spending
-                    multiply = 0.5
+            if = {
+                limit = {
+                    root = {
+                        country_has_estate = estate_type:nobles_estate
+                    }
+                }
+                change_variable = {
+                    name = total_diplomatic_spending
+                    add = {
+                        value = local_var:country_diplomatic_spending
+                    }
+                    subtract = {
+                        value = root.var:noble_diplomatic_spending_transfer
+                    }
+                }
+            }
+            else = {
+                change_variable = {
+                    name = total_diplomatic_spending
+                    add = {
+                        value = local_var:country_diplomatic_spending
+                        multiply = 0.5  #Balance here how much is spent in case Nobles don't exist. Extremely unlikely to be ever the case.
+                    }
                 }
             }
         }
@@ -85,18 +118,33 @@ diplomatic_spending.2 = {
     immediate = { 
         every_market_in_world = {
             set_local_variable = {
-                name = demand_basket_price
+                name = diplo_demand_basket_price
                 value = {
                     value = 0
                     add = {
-                        # 2 paper
-                        value = 2
-                        multiply = "market_price(goods:paper)"
+                        # 0.5 jewelry
+                        value = 0.5
+                        multiply = "market_price(goods:jewelry)"
                     }
                     add = {
-                        # 1 jewelry
+                        # 1 Fine CLoth
                         value = 1
-                        multiply = "market_price(goods:jewelry)"
+                        multiply = "market_price(goods:fine_cloth)"
+                    }
+                    add = {
+                        # 1 Books
+                        value = 1
+                        multiply = "market_price(goods:books)"
+                    }
+                    add = {
+                        # 0.5 Furniture
+                        value = 0.5
+                        multiply = "market_price(goods:furniture)"
+                    }
+                    add = {
+                        # 0.5 paper
+                        value = 0.5
+                        multiply = "market_price(goods:paper)"
                     }
                 }
             }
@@ -117,7 +165,7 @@ diplomatic_spending.2 = {
                         months = -1
                         scale = {
                             value = "location.var:total_diplomatic_spending"
-                            divide = "local_var:demand_basket_price"
+                            divide = "local_var:diplo_demand_basket_price"
                         }
                     }
                 } else = {
@@ -127,7 +175,7 @@ diplomatic_spending.2 = {
                         months = -1
                         scale = {
                             value = "location.var:total_diplomatic_spending"
-                            divide = "local_var:demand_basket_price"
+                            divide = "local_var:diplo_demand_basket_price"
                         }
                     }
                 }

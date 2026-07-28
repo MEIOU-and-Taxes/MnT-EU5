@@ -23,14 +23,22 @@ cost_of_the_court.1 = {
 			change_variable = {
 				name = total_cost_of_the_court
 				add = {
+					# Base, court maintenance slider 0 to 1
 					value = "root.court_maintenance"
-                    multiply = 0.1      #Mepper: Old value broke the economy, demand for 10% of slider
+					# Multiply by economic base
+					multiply = "root.country_economical_base"
+					#Mepper: Old value broke the economy, demand for 10% of slider
+                    multiply = 0.1
+					# Court Spending Effiency:
+					# The more efficient your court spending, the less goods you demand.
+					# Cap to always demand at least 1/3 of original demand, and max 3x original demand to prevent weirdness.
 					divide = {
 						value = 1
 						add = "root.modifier:court_spending_efficiency"
-						min = 0.01		#DBZ prevention
+						min = 0.33		# So effectively multiply demand by 3x worst-case
+						max = 3			# So effectively divide demand by 3x best-case
 					}
-					multiply = "root.country_economical_base"
+
 				}
 			}
 		}
@@ -49,7 +57,7 @@ cost_of_the_court.2 = {
 		every_market_in_world = {
 			# Calculate current price corresponding to 1 unit of the demand basket
 			set_local_variable = {
-				name = demand_basket_price
+				name = court_demand_basket_price
 				value = {
 					value = 0
 					add = {
@@ -116,7 +124,7 @@ cost_of_the_court.2 = {
 						months = -1
 						scale = {
 							value = "location.var:total_cost_of_the_court"
-							divide = "local_var:demand_basket_price"
+							divide = "local_var:court_demand_basket_price"
 						}
 					}
 				}
@@ -127,7 +135,7 @@ cost_of_the_court.2 = {
 						months = -1
 						scale = {
 							value = "location.var:total_cost_of_the_court"
-							divide = "local_var:demand_basket_price"
+							divide = "local_var:court_demand_basket_price"
 						}
 					}
 				}
