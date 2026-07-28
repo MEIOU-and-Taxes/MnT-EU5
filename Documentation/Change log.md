@@ -531,3 +531,9 @@ Date: 21/05/2026
 - Fix missing keys in RGO buildings max level
 - Replace backend check for Milanese and Florentine cloth producing Burgher privs
   - Due to how they were scripted they would often randomly be auto-revoked, this fix prevents that from happening
+
+##### M&T v0.2.5
+
+### Balance
+- Increased Levy Cost to a relevant value (75% compared to normal units) compared to vanillas 1%. This is meant to make war actually costly for Feudal nations.
+- Remove local_access_to_raw_materials from raised_levies Location modifier, as cost is now handled by making Levies actually cost upkeep
