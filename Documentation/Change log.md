@@ -6,6 +6,7 @@
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
   - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
+- Reduced AI willingness to join the War of Religions for non-HRE, non-Catholic, and non-Protestant countries, especially Orthodox countries, and added distance from the selected league leader as a negative factor
 
 ### Initial test-release v0.1
 
