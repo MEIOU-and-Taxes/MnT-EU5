@@ -6,7 +6,6 @@
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
   - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
-- Reduced AI willingness to join the War of Religions for non-HRE, non-Catholic, and non-Protestant countries, especially Orthodox countries, and added distance from the selected league leader as a negative factor
 
 ### Initial test-release v0.1
 
@@ -538,3 +537,4 @@ Date: 21/05/2026
 ### Balance
 - Increased Levy Cost to a relevant value (75% compared to normal units) compared to vanillas 1%. This is meant to make war actually costly for Feudal nations.
 - Remove local_access_to_raw_materials from raised_levies Location modifier, as cost is now handled by making Levies actually cost upkeep
+- Reduced AI willingness to join the War of Religions for non-HRE, non-Catholic, and non-Protestant countries, especially Orthodox countries, and added distance from the selected league leader as a negative factor. Truces prevent nations from joining again...
