@@ -540,6 +540,7 @@ Date: 21/05/2026
 - Don't allow building Amenities in Rural
 - Require less Amenities for City (4) and Megalopolis (8)
 - Require 200k instead of 400k pops for Megalopolis and no longer restrict to Capital + Market Capital + not a subject
+- Nerf bailiffs to only Rural and 20% control
 
 ### Fixes
 - Fix errors from Dominion subject type
