@@ -537,3 +537,12 @@ Date: 21/05/2026
 ### Balance
 - Increased Levy Cost to a relevant value (75% compared to normal units) compared to vanillas 1%. This is meant to make war actually costly for Feudal nations.
 - Remove local_access_to_raw_materials from raised_levies Location modifier, as cost is now handled by making Levies actually cost upkeep
+- Don't allow building Amenities in Rural
+- Require less Amenities for City (4) and Megalopolis (8)
+- Require 200k instead of 400k pops for Megalopolis and no longer restrict to Capital + Market Capital + not a subject
+
+### Fixes
+- Fix errors from Dominion subject type
+
+### Misc changes
+- Remove modcon loading screen again
