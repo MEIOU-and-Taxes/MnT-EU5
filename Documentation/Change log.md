@@ -552,7 +552,7 @@ Date: 21/05/2026
 ##### M&T v0.2.6
 
 ### Balance
-- Up Amenities required for City (4 -> 5) and Megalopolis (8 -> 10)
+- Up Amenities required for City (4 -> 5) and Megalopolis (8 -> 11)
 - Set important_for_AI flag to Amenities building_type
 - Require 20k Burghers for a Location to be valid to become a Megalopolis (in addition to total pop being 200k)
 
