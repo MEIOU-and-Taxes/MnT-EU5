@@ -1,0 +1,244 @@
+﻿epbm_for_each_estate = {
+	$effect$ = { estate = nobles }
+	$effect$ = { estate = clergy }
+	$effect$ = { estate = burghers }
+	$effect$ = { estate = peasants }
+	$effect$ = { estate = tribes }
+	$effect$ = { estate = dhimmi }
+	$effect$ = { estate = cossacks }
+}
+epbm_init_estate_var = {
+	set_local_variable = { name = epbm_estate_$estate$ value = 0 }
+}
+
+epbm_set_pay_from_power = {
+	set_local_variable = { name = est value = estate_type:$estate$_estate }
+
+	if = {
+		limit = { country_has_estate = local_var:est }
+
+		set_variable = {
+			name = epbm_pay_$estate$
+			value = { value = local_var:epbm_total_cost multiply = "estate_power(local_var:est)" }
+		}
+		set_variable = { name = epbm_pool_$estate$ value = var:epbm_pay_$estate$ }
+	}
+}
+
+epbm_zero_pay = {
+	if = {
+		limit = { country_has_estate = estate_type:$estate$_estate }
+		set_variable = { name = epbm_pay_$estate$ value = 0 }
+		set_variable = { name = epbm_pool_$estate$ value = 0 }
+		set_variable = { name = epbm_assigned_$estate$ value = 0 }
+	}
+}
+
+epbm_add_estate_cost = {
+	if = {
+		limit = { local_var:epbm_estate_$estate$ > 0 }
+
+		if = {
+			limit = { NOT = { has_variable = epbm_pay_$estate$ } }
+			set_variable = { name = epbm_pay_$estate$ value = 0 }
+		}
+
+		set_variable = {
+			name = epbm_assigned_$estate$
+			value = { value = local_var:epbm_estate_$estate$ multiply = var:epbm_charge_factor }
+		}
+
+		change_variable = { name = epbm_pay_$estate$ add = var:epbm_assigned_$estate$ }
+	}
+}
+
+epbm_init_modifier_scale = {
+	set_variable = { name = epbm_mod_$estate$ value = 0 }
+}
+
+epbm_snapshot_mod = {
+	if = {
+		limit = { has_variable = epbm_mod_$estate$ }
+		set_variable = { name = epbm_show_mod_$estate$ value = var:epbm_mod_$estate$ }
+	}
+}
+
+# Sets the auto_modifier scale for each estate's building_upkeep_multiplier reduction
+epbm_compute_modifier_scale = {
+	set_local_variable = { name = est value = estate_type:$estate$_estate }
+
+	if = {
+		limit = { country_has_estate = local_var:est }
+		set_variable = {
+			name = epbm_mod_$estate$
+			value = {
+				value = "estate_power(local_var:est)"
+				multiply = local_var:epbm_shared_fraction
+				multiply = epbm_cost_share
+				multiply = epbm_inflation_factor
+			}
+		}
+	}
+	else = { set_variable = { name = epbm_mod_$estate$ value = 0 } }
+}
+
+epbm_charge_estate_pay = {
+	if = {
+		limit = {
+			any_estate = { estate_type = estate_type:$estate$_estate }
+			has_variable = epbm_pay_$estate$
+			var:epbm_pay_$estate$ > 0
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:$estate$_estate
+			value = { value = var:epbm_pay_$estate$ multiply = -1 }
+		}
+	}
+}
+
+epbm_snapshot_estate = {
+	if = {
+		limit = { country_has_estate = estate_type:$estate$_estate }
+
+		if = {
+			limit = { has_variable = epbm_show_$estate$ }
+			set_variable = { name = epbm_prev_$estate$ value = var:epbm_show_$estate$ }
+		}
+
+		if = {
+			limit = { has_variable = epbm_show_pool_$estate$ }
+			set_variable = { name = epbm_prev_pool_$estate$ value = var:epbm_show_pool_$estate$ }
+		}
+
+		if = {
+			limit = { has_variable = epbm_show_assigned_$estate$ }
+			set_variable = { name = epbm_prev_assigned_$estate$ value = var:epbm_show_assigned_$estate$ }
+		}
+
+		set_variable = { name = epbm_show_$estate$ value = var:epbm_pay_$estate$ }
+
+		if = {
+			limit = { has_variable = epbm_pool_$estate$ }
+			set_variable = { name = epbm_show_pool_$estate$ value = var:epbm_pool_$estate$ }
+		}
+
+		if = {
+			limit = { has_variable = epbm_assigned_$estate$ }
+			set_variable = { name = epbm_show_assigned_$estate$ value = var:epbm_assigned_$estate$ }
+		}
+	}
+}
+
+@epbm_rebuild_version = 410
+epbm_initialize = {
+	epbm_init_blacklist = yes
+	epbm_full_rebuild = yes
+
+	# 32-day TTL: expires if the mod is removed, triggering rebuild on re-add
+	set_global_variable = {
+		name = epbm_version
+		value = @epbm_rebuild_version
+		days = 32
+	}
+}
+
+# No way to identify fort-maintenance buildings at runtime; blacklist them
+epbm_init_blacklist = {
+	clear_global_variable_map = epbm_blacklist
+
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:stockade
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:castle
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:bastion
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:star_fort
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:fortress
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:city_walls
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:hexamilion_wall
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:walls_of_lucca
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:ruined_great_wall_of_china
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:repaired_great_wall_of_china
+		value = yes
+	}
+	add_to_global_variable_map = {
+		name = epbm_blacklist
+		key = building_type:theodosian_walls
+		value = yes
+	}
+}
+epbm_global_monthly = {
+	if = {
+		limit = {
+			OR = { NOT = { has_global_variable = epbm_version } global_var:epbm_version < @epbm_rebuild_version }
+		}
+		epbm_full_rebuild = yes
+	}
+
+	set_global_variable = {
+		name = epbm_version
+		value = @epbm_rebuild_version
+		days = 32
+	}
+
+	every_market_in_world = {
+		location = {
+			if = { limit = { has_variable_map = epbm_pm_cache } clear_variable_map = epbm_pm_cache }
+			if = { limit = { has_variable_map = epbm_bt_costs } clear_variable_map = epbm_bt_costs }
+		}
+	}
+}
+epbm_full_rebuild = {
+	epbm_init_blacklist = yes
+	every_country = { limit = { is_real_country = yes } epbm_for_each_estate = { effect = epbm_init_modifier_scale } }
+
+	every_country = {
+		limit = { is_real_country = yes any_active_estate = { exists = yes } }
+
+		epbm_calculate_maintenance = yes
+		epbm_charge_estates = yes
+
+		if = { limit = { is_ai = no } epbm_for_each_estate = { effect = epbm_zero_pay } }
+	}
+}
+# snapshot first: prev vars must capture last month before recalc overwrites them
+epbm_collect_maintenance = {
+	epbm_snapshot_for_display = yes
+	epbm_charge_estates = yes
+	epbm_calculate_maintenance = yes
+}

@@ -2,6 +2,23 @@ lateralview = {
 	name = "goods_production_lateralview"
 	widgetid = "goods_production_lateralview"
 
+	blockoverride "lateralview_topbuttons_extra" {
+		widget = {
+			parentanchor = vcenter
+			size = { 40 40 }
+			position = { 30 0 }
+			button_automation_shortcut = {
+				parentanchor = vcenter
+				size = { 25 25 }
+				action_tooltip = {
+					title = "OPEN_AUTOMATION_PANEL_FILTER"
+					on_action = "[OpenLateralViewWithFilter('automation', 'automation_filter_production')]"
+				}
+				tooltipwidget = { BasicFunctionalTooltip = {} }
+			}
+		}
+	}
+
 	blockoverride "panel_content" {
 		window_header_alt = {
 			blockoverride "header_text" {
@@ -266,6 +283,12 @@ lateralview = {
 
 						sort_by_key_button = {
 							name = "building_income"
+							layoutpolicy_vertical = expanding
+							size = { 95 -1 }
+						}
+
+						sort_by_key_button = {
+							name = "rgo_income"
 							layoutpolicy_vertical = expanding
 							size = { 115 -1 }
 						}
@@ -762,24 +785,26 @@ lateralview = {
 												
 												# BUILDING GENERATING GOODS
 												button_regular = {
-													size = { 115 28 }
+													size = { 90 28 }
+													enabled = "[GoodItem.CanBuildBuildings]"
+													# onclick = "[OpenLateralViewWithFilter('production', GoodItem.GetGoods.GetKey)]"
 													tooltipwidget = {
 														ContextualTooltipType = {
 															blockoverride "title_text" {
 																text = "GOODS_EXPAND_BUILDING_TT_HEADER"
 															}
-
+													
 															blockoverride "title_icon" {
 																icon = {
 																	using = tooltip_title_icon_size
 																	texture = "[GetConceptTexture('building')]"
 																}
 															}
-
+													
 															blockoverride "concept_link" {
 																text = "[building|e]"
 															}
-
+													
 															blockoverride "tooltip_content" {
 																TooltipTextBlock = {
 																	visible = "[GoodItem.CanBuildBuildings]"
@@ -956,22 +981,18 @@ select_menu_left = {
 		name = "goods_production_select_market"
 	}
 
-	blockoverride "close_button" {
-		onclick = "[GoodsProductionSelectMarket.OnClose]"
-	}
-
+	blockoverride "close_on_action" { on_action = "[GoodsProductionSelectMarket.OnClose]" }
 	blockoverride "select_content" {
 		select_menu_header = {
 			blockoverride "select_menu_header_extra" {
 				button_checkbox_visibility = {
 					size = { 32 32 }
-					tooltipwidget = { 
-						LeftClickButtonTooltip = {
-							blockoverride "onclick_text" { text = "TOGGLE_INRANGE_MARKETS" }
-						}
+					action_tooltip = {
+						title = "TOGGLE_INRANGE_MARKETS"
+						on_action = "[GoodsProductionSelectMarket.Parent.Vars.Toggle( 'inrange_markets')]"
 					}
-					checked = "[GoodsProductionSelectMarket.Parent.Vars.Exists( 'inrange_markets')]"
-					onclick = "[GoodsProductionSelectMarket.Parent.Vars.Toggle( 'inrange_markets')]"
+					tooltipwidget = { BasicFunctionalTooltip = {} }
+					down = "[GoodsProductionSelectMarket.Parent.Vars.Exists( 'inrange_markets')]"
 				}
 
 				text_single = {

@@ -1,8 +1,15 @@
-﻿# Release 
+﻿# Release
 
-### 0.0.1
+#### Balancing
+- Remove location building limit
+- Changes to industry-specialization urban rights
+  - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
+  - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
+- Change scaling production efficiency to 1% per additional building level, not modified by current age
 
-Date: 2026-01-20
+### Initial test-release v0.1
+
+Date: 21/05/2026
 
 #### Features
 
@@ -12,14 +19,6 @@ Date: 2026-01-20
   - Ship Building advance in age of traditions also unlocks Levy cog  
   - Levy cog, burgher levy appearing in locations having a wharf, scales with 0.2% of burghers  
   - Add new naval levies for later ages  
-- Map modes:  
-  - Market access (besides Markets map mode), where it is red at \<50% and green at 100%  
-  - Missing control (difference between location control & max control)  
-  - Max control  
-  - Max control with location rank (can distinguish locations having towns & cities)  
-  - Noble %, Burgher %, Laborer %, Peasant %  
-  - Market food balance  
-  - Market food stockpile
 - Centers of Importance:
   - Added back the feature from older M&T version in a refactored version, 4 center tiers (local, regional, continental, world) for the 4 categories (trade, production, culture, education)
   - Each type has an associated score dependent on multiple factors and an absolute minimum threshold per tier.
@@ -45,11 +44,11 @@ Date: 2026-01-20
 
 #### Balancing
 
-- Crown power now increases percent of building upkeep paid by the state from a base of 0%: +1% CP = +1% Upkeep.
-- Estates pay the share of building maintenance the crown does not, split across estates by estate power. Fortifications remain fully crown-paid.
-- Estates now pay their proportional share of inflation-driven maintenance costs on shared buildings.
-- Estate-assigned buildings have goods-based maintenance production methods and their full cost, including inflation, is paid entirely by the owning estate.
-- Estate building tooltips now show actual computed upkeep with a full goods breakdown.
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
 - Reduced use of masonry by granaries.
 - Reduced use of tools by lumber mills.
 - Higher literacy lowers stability.
@@ -111,7 +110,7 @@ Date: 2026-01-20
 - Market  
   - Market access cost of rivers equalized up and downstream from 0.9 → 0.7
   - Sliders generate market demand:  
-    - Cost of the Court: furniture, tools, glass, fine cloth  
+    - Cost of the Court: furniture, jewelry, glass, fine cloth, cloth, leather, weaponry, books, paper
     - Diplomatic expenses: paper, jewelry
   - Can destroy markets even if there are temporary demands
 - RGO maximums significantly reduced in early game, with amount rising up closer to vanilla levels lategame.
@@ -147,7 +146,7 @@ Date: 2026-01-20
   - Building representing nomadic husbandry
   - Produces wool while also boosting tribe estate power and reducing tribe promotion
   - Restricted to only areas where these made sense (South America, Africa outside of tsetse fly areas, Europe, Asia outside of Indonesia and Japan)
-- Sand added to several production methods, including masonry, weapons, and tools.
+- Sand input added to several production methods, including masonry, weapons, and tools.
 - Estate built buildings do not consume goods directly, now add pop to consume goods for them.
 - Added new PMs to charcoal allowing it to be built in woods/jungles and forests without requiring lumber, and to naval supplies allowing you to build without tin (and removed the copper requirement)
 - Spawn 1 more Marketplace per town/city to facilitate early-game trade
@@ -167,6 +166,8 @@ Date: 2026-01-20
 - Scales the construction cost of mining RGO's by 110% per level
 - Ups the base level of RGO possible, shift ideal multiplier to base dev scaling.
 - now farm based RGOs use peasants as their workforce, while other RGOs use laborers.
+- Remove the market attraction impact from prestige, trade income vs tax base and staffed building levels to stabalize market size
+- Reduced market attraction from trade attraction buildings by roughly half. Whilst increasing effects of same province/area so markets don't get too small and crowded out by others.
 
 ##### Population
 
@@ -191,6 +192,7 @@ Date: 2026-01-20
     - It will require 200+ years to fully convert
 - Tribesmen pops now have same share of the tax base as peasants
 - Stop randomly spawning Eunuch children
+- Added tribes to the Steppe
 
 ##### Religion
 
@@ -272,6 +274,11 @@ Date: 2026-01-20
 - Steppe hordes only make steppe cavalry out of tribesmen and nobles of Turkic and Mongolian cultures
 - Steppe cavalry levies for steppe hordes: 2% → 50%
 
+##### Setup
+- Allow tags on the Indian ocean to see each other for trade.
+- Give Indian ocean tags a +250 trade range tech at gamestart to they can reach across the Indian Ocean
+- Remove al-hajr and urgench market as they were too small with viable nearby alternatives for its locations
+
 ##### Situations
 
 - Fixes to Colombian Exchange situation
@@ -297,4 +304,265 @@ Date: 2026-01-20
 
 ##### Climates
 - replace all climates with the more varied koppen climates
-  - references to older climates point to multiple koppen climates  
+  - references to older climates point to multiple koppen climates 
+
+##### M&T v0.1.1
+
+### Balance
+- Make every level of RGO Building give 1 free building level in its location (so you can't effectively get less available building levels from building up rural resource extraction stuff)
+- Similarly for farming villages and tribal transhumant_wool_pasture buildings, give 1 free building level per level as we sort of force the player to have these buildings
+- Increased monthly disease resistance reduction for pops to the Bubonic Plague, Influenza and Smallpox
+
+### Fixes
+- Fix Fish RGO Building not fulfilling upgrade potential if Location defined as fish RGO
+- Fix cost increase per level in RGO modifier (mostly increased cost for mines per level) showing extra cost in green -> make properly red
+- Fix possibility of subjects declaring war on Countries experiencing Decline of Empire disaster where they should not be able to declare wars in the first place
+
+### Localizaton
+- Localize raw_material_output as Resource Size bonus
+- Add rgo_building game concept
+
+##### M&T v0.1.2
+
+### Setup
+- Rebalance the distribution of Tribal pops in the world based on historically tribal cultures
+  - Split pops between peasants and tribes based on development numbers
+  - Ensures somewhat normal distribution of peasants/tribes globally
+  - This increases the amount of tribes worldwide (no change to total pop number)
+
+### Military
+- Reduce the amount of tribal levies per tribal-population, and make it equal accross the board
+- No country restrictions on tribal levies; there's no reason why calling up the more remote people of your lands who for the most part don't really care about your laws should somehow change their composition based on laws or country type
+- Remove local_army_attrition from all climates where present. Army attrition blocks reinforcement and reduces morale. These 2 quirks make base attrition in some climates unfun and not feasible, despite being historically realistic. 
+
+### Fixes
+- Adds in all the goods transports costs from vanilla, as it defaults to 1. Also added them where it's 1 for clarity.
+- Restored some prices to exactly half vanilla price as production chains weren't changed with it.
+  - This should fix wool being too cheap and thus used too much to make cloth
+- Fix some buildings not buildable in Metropolis due to us forgetting to add Megalopolis = yes line with 1.2 update
+
+### Balance
+- Reduce the base power_per_pop for Peasants by 25%
+- Disable Peasants power from farming villages
+- Disable Settlements in town/city
+- Allow wool rgo_building where Vanilla would allow sheep_farms
+
+##### M&T v0.1.3
+
+### decline_of_empire disaster: fix epidemic of suicidal AIs
+- Disaster was making AIs insta-declare war, way too often
+  - Tune down frequency of this event
+  - Give CB to opportunistic neighbor instead of insta declare
+  - Add opinion/trust effects
+  - Add meaningful ai_chance modifiers
+
+#### M&T v0.1.4
+
+### 1.3.4 Compatibility
+- Make mod native to EUV 1.3.4 Pavia
+- Estates Pay Building Maintenance system is not fully ready
+  - It needs significant updating to be fully restored
+  - It works but since building maintenance is now building upkeep efficiency we can't set building maint share to zero %
+
+### Miscellaneous
+- Fully comment out the Land good. 
+  - It was originally coded because the game did not accept Production Methods without input
+  - That is no longer the case so it doesn't fulfil a purpose atm
+  - May or may not be reworked into a proper system in the future
+
+### Localization
+- Improve localization around centers
+  - Added game concepts, removed mentions of specific values in thresholds (not up to date and tough to maintain) 
+- Tweaked map mode explanation
+- Added clarification to building upkeep efficiency description 
+  - To say that in MnT estates pay their proportional share of maintenance costs on shared building
+- Fix double blank-space in startup event
+
+##### M&T v0.1.5
+
+### 1.3.6 compatibility
+- Buff serfdom societal value: fix fort maintenance reduction and buff RGO size buff
+- Update estates file: 
+  - Peasant estate satisfaction now helps with Levy Recovery
+  - All Estates' opinions of other countries should be more logical
+  - Dhimmi will disenfranchise to Nobles
+- Update estate privileges files:
+  - Allow Noble Villa to be built when Nobles have Land Rights
+  - Allow Peasant Hunting Grounds to be built when peasants have hunting permit priv
+- Update building files:
+  - Buff food capacity of food storage buildings
+- Update Goods
+  - Wool no longer produces food and has a little bit of base production
+  - All classes will now demand some potatoes instead of only lower classes
+- Update Location Ranks:
+  - Cities and Meglopoleis now grant Mills efficiency and some trade center power (Trade Center power less than Vanilla)
+- Trieste Location now starts with Friulian Culture
+- Very minor GUI button size update for Trade Advantage
+- AI will build max 2 colonial charters at the time (Vanilla change we carry over, unsure why I but I assume they have their reasons)
+- Smallpox tweaks, unsure what they do but seems like the disease will be a bit stronger
+
+##### M&T v0.1.6
+
+### Major Estates Pay Building Maintenance update
+- Estates pay building maintenance split by estate power; estate-assigned buildings are charged in full to the owning estate.
+- Inflation now affects building maintenance through building_upkeep_multiplier instead of building_upkeep_efficiency.
+- Vanilla yearly building maintenance increase (years_since_game_start) removed.
+- All sources of building_upkeep_efficiency removed and rebalanced.
+- Building maintenance tooltip now shows the distribution paid by each estate, with hover breakdowns for shared pool vs estate-specific costs.
+- Savegame compatible but requires 3 to 4 months to fully adjust
+
+##### M&T v0.1.7
+
+### 1.3.8 Compatibility - Fully compatible now with 1.3.8 Pavia
+- Fix error on refresh of GDP mapmodes
+- Update economy GUI file
+- Add some cotton modifier to Khambat
+- Should fix the Bubonic Plague
+- Some minor changes too small to note
+
+### Misc
+- Add Modcon loading screen
+  - Adds 1 static loading screen
+  - Notifying players of the upcoming modcon
+  - M&T will have both a presentation and an interview
+  - To be removed after modcon
+
+##### M&T v0.1.8
+
+### Amenities
+- Added urban amenities building to the game 
+  - Adds more building slots (location rank bonuses reduced, but net adds more slots) 
+  - Substantially escalating price,
+  - Can only build 1 at a time
+  - Requirement for upgrading Rank of locations.
+
+### Urban concentration
+- Urban Rights from the Boroughs Privileges unlock earlier and double building slots for related industries
+- We hope to encourage both players and AI to specialize cities more
+
+##### M&T v0.1.9
+
+### Misc 
+- Allow the destruction of markets again (hope this doesn't break anything, but a complete impossibility was never intended)
+
+
+### Autonomous integration
+- Every province, depending on various factors, integrates autonomously.
+  - Cabinet action has been removed, parliament issue for integration has been kept
+  - Final monthly integration progress is determined by multiplying several factors together:
+    - Base: If next to integrated/core (or in a province with 1 seazone difference)
+    - Proximity
+    - Cultural Opinion
+    - Religious Tolerance
+    - Global Integration speed modifier
+    - Area Integration tech grant a 3x multiplier
+  - Integration can be slow but is hardcapped at taking 100 years
+  - Capitals are always instantly and fully integrated
+
+
+##### M&T v0.2.0
+### Pavia 1.3 full-release patch
+- NOT savegame compatible for those coming from EUV 1.2
+
+### Misc
+- Add support_sieges_priority to 'normal' AI military stance
+  - Hopefully this helps AIs abandon sieges less
+- Reduce market stockpile size to Vanilla level (25) 
+
+##### M&T v0.2.1
+
+### Balance
+- RGO price per level increase
+  - Mines 50% more expensive per levels instead of 10%
+  - Other RGOs 10% per level more expensive
+- Lock bribe estate during 1337
+  - Income is almost nothing during the first months, so bribing estates is then way too cheap
+  - Prevent cheesing players
+
+### Misc
+- Limit goods demand from Court and Diplo spending to Location based Countries
+  - Was causing too much demand in places with too many BBCs like Japan
+- Remove all edits to setup files
+  - This should make the mod much more easily compatible with mods altering the setup
+  - Make startup building edits via on_startup on_actions instead
+- Remove dependency of the court and diplo sliders maintenance events on the existence of France
+  - Fire the maintenance in great power score no. 1 tag instead
+- Remove M&T edits to Columbian Exchange other than the Climate triggers (as we have Koppen climates)
+  - This should prevent weirdness with too much chili Locations in Europe, older M&T versions made tweaks but those haven't been updated in a while
+  - Vanilla has fixed most issues with the Situation now, so we are resetting our changes to theirs
+
+  
+##### M&T v0.2.2
+
+### 1.3.11 Pavia Vanilla patch compatibility
+- Don't carry over free Trade Income for all nations
+- Reduce merchant maintenance further to stay at half of Vanilla
+- Trade range buffed just like Vanilla
+
+
+### Balance
+- Reduce the amount of cavalry that Tribal Pops can field as levies from 15% of pop to 5% of pop.
+  - Tribal infantry from 15% to 10%. 
+  - Tribes can still field big armies, but should be less OP now
+- Added Rus bog iron advance, giving bonus bog iron building slot and offering a moderately improved iron production for the first and second age (50% more output, equal to bog blast furnace)
+
+##### M&T v0.2.3
+
+### Balance
+- Don't allow Estates to upgrade Urban Amenities
+- Allow increase control cabinet actions as long as control wasn't perfect in the target province/area. Also always allow the action to continue (so you can have your target be locked at 100% control)
+
+### GUI
+- Fix location and economy GUI issues, including zero-level RGO cards, environment icons, indicator alignment, and income graph controls
+- Silence income graph helper-variable warnings during startup
+
+##### M&T v0.2.4
+
+### Mechanics
+- Cap Court demand of goods at 3x max at 1/3 min depending on court_maintenance efficiency (prevent edge-cases where either almost nothing or a boatload are demanded)
+- Broaden the basket for Diplomatic Spending to include more types of goods, but less of them
+- Instead of transferring always 50% of Diplomatic spending to Nobles, give their power plus if you have elaborate_court_ceremonies Privilege
+- Make sure this transfer does not error if there are no Nobles in a given nation
+
+### Balance
+- Allow Beeswax RGO building to be built more broadly
+  - Try to combat shortage of Beeswax without buffing output
+  - Allow in seemingly reasonable places
+
+### Fixes
+- Fix max level for sugar/cotton/tobacco Plantation building being zero globally
+- Fix missing keys in RGO buildings max level
+- Replace backend check for Milanese and Florentine cloth producing Burgher privs
+  - Due to how they were scripted they would often randomly be auto-revoked, this fix prevents that from happening
+
+##### M&T v0.2.5
+
+### Balance
+- Increased Levy Cost to a relevant value (75% compared to normal units) compared to vanillas 1%. This is meant to make war actually costly for Feudal nations.
+- Remove local_access_to_raw_materials from raised_levies Location modifier, as cost is now handled by making Levies actually cost upkeep
+- Reduced AI willingness to join the War of Religions for non-HRE, non-Catholic, and non-Protestant countries, especially Orthodox countries, and added distance from the selected league leader as a negative factor. Truces prevent nations from joining again...
+- Don't allow building Amenities in Rural
+- Require less Amenities for City (4) and Megalopolis (8)
+- Require 200k instead of 400k pops for Megalopolis and no longer restrict to Capital + Market Capital + not a subject
+- Nerf bailiffs to only Rural and 20% control
+
+### Fixes
+- Fix errors from Dominion subject type
+
+### Misc changes
+- Remove modcon loading screen again
+
+##### M&T v0.2.6
+
+### Balance
+- Up Amenities required for City (4 -> 5) and Megalopolis (8 -> 11)
+- Set important_for_AI flag to Amenities building_type
+- Require 20k Burghers for a Location to be valid to become a Megalopolis (in addition to total pop being 200k)
+- Make Levies cost only 35% of 'real' cost instead of 75%
+  - Was bankrupting too many AIs
+  - AI too dumb to not fully mobilize
+  - Reduce Tribal Levy cost even more as their goods demand for horses was very harsh on the Tribal nations with poor eco's
+
+# Mechanics
+- Don't let nations and estates build farming villages
+  - There is a scripted system that handles that and should be the only thing handling it

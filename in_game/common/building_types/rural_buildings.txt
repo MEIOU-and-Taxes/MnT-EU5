@@ -1,8 +1,5 @@
-﻿# MnT EPBM: on_built / on_destroyed hooks in this file are maintained by
-# tools/MnT_epbm_generator/. After adding a building or a maintenance
-# production method, commit your changes and re-run:
-#   python3 tools/MnT_epbm_generator/MnT_generate_building_hooks.py
-bailiff = {
+﻿bailiff = {
+	audio_tier = 2
 	is_foreign = no
 	max_levels = 1
 	pop_type = soldiers
@@ -11,9 +8,11 @@ bailiff = {
 	category = government_category
 	
 	rural_settlement = yes
-	town = yes
-	city = yes
-	expensive = yes
+	town = yes #changed by M&T
+	city = yes #changed by M&T
+	megalopolis = yes #changed by M&T
+	
+	expensive = yes #changed by M&T
 	build_time = rural_build_time
 	
 	forbidden_for_estates = yes
@@ -23,9 +22,24 @@ bailiff = {
 	}
 	
 	allow = {
-		custom_tooltip = {
-			text = local_bailiff_tt
-			scope:actor = {	total_building_levels_including_construction:bailiff < modifier:num_bailiffs }
+		trigger_if = {
+			limit = {
+				scope:actor = {
+					modifier:num_bailiffs <= 0
+				}
+			}
+			custom_tooltip = {
+				text = no_local_bailiff_tt
+				always = no
+			}
+		}
+		trigger_else = {
+			custom_tooltip = {
+				text = local_bailiff_tt
+				scope:actor = {
+					total_building_levels_including_construction:bailiff < modifier:num_bailiffs
+				}
+			}
 		}
 		owner = scope:actor #not in subjects
 	}
@@ -42,26 +56,20 @@ bailiff = {
 	}
 
 	modifier = {
-		local_max_control = 0.25 #M&T from 0.2
+		local_max_control = 0.2	#M&T back to 0.2
 		local_nobles_estate_power = 1.0
 		local_peasant_enfranchisment = -0.1
 	}
 	
 	
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 fishing_village = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = rural_building_cap
 	pop_type = peasants
+	startup_ramp_target = rural_startup_ramp_target
 	
 	is_village = yes
 
@@ -79,32 +87,11 @@ fishing_village = {
 	
 	build_time = village_build_time
 
-	unique_production_methods = {
-	
-		fishing_village_maintenance = {
-			produced = fish
-			output = 0.5
-			
-			salt = 0.08
-			tools = 0.02
-			
-			debug_max_profit = 0.6
-
-	
-			category = building_maintenance
-		}
-		
-		arctic_fishing_village_maintenance = {
-			produced = fish
-			output = 0.5
-			
-			salt = 0.08
-			ivory = 0.01
-			
-			debug_max_profit = 0.6
-	
-			category = building_maintenance
-		}
+	possible_production_methods = {
+		fishing_village_maintenance
+		arctic_fishing_village_maintenance
+		coastal_boatyard
+		rural_pottery_maker
 	}
 	construction_demand = village_construction
 
@@ -131,15 +118,20 @@ fishing_village = {
 
 #special building to occupy peasants making food
 farming_village = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = farming_village_cap
+	startup_ramp_target = rural_startup_ramp_target
+
 	pop_type = peasants
 	
 	is_village = yes
 	
 	category = village_category
 	employment_size = 1
-	
+
+	forbidden_for_estates = yes
+
 	rural_settlement = yes
 	
 	price = build_price_farming_village
@@ -151,7 +143,11 @@ farming_village = {
 			arctic_climate_trigger = yes
 		}
 	}
-	
+
+	country_potential = {
+		always = no
+	}
+
 	can_destroy = {
 		scope:building.owner = { is_ai = no }
 	}
@@ -165,14 +161,17 @@ farming_village = {
 	modifier = {
 		local_food_capacity = 20
 		local_monthly_food = 2.0	
-		local_peasants_estate_power = 0.02
+		#local_peasants_estate_power = 0.02
+		free_building_levels = 1
 	}
 }
 
 forest_village = {
+	audio_tier = 1
 	is_foreign = no
 	is_village = yes
 	max_levels = rural_building_cap
+	startup_ramp_target = rural_startup_ramp_target
 	pop_type = peasants
 	
 	category = village_category
@@ -196,31 +195,11 @@ forest_village = {
 	build_time = village_build_time
 
 
-	unique_production_methods = {
-		forest_tannery = {
-			produced = leather
-			
-			output = 0.2
-			
-#			sand = 0.1
-			tar = 0.03
-			wild_game = 0.4
-			
-			
-			category = building_maintenance
-		}
-		hunting_lodges = {
-			produced = wild_game
-			
-			output = 0.20
-			
-			weaponry = 0.05
-
-			
-			debug_max_profit = 0.4
-
-			category = building_maintenance
-		}
+	possible_production_methods = {
+		forest_tannery
+		hunting_lodges
+		rural_weaponmaker
+		rural_blacksmith
 	}
 
 
@@ -240,8 +219,10 @@ forest_village = {
 }
 
 market_village = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = rural_building_cap
+	startup_ramp_target = rural_startup_ramp_target
 	pop_type = peasants
 	
 	is_village = yes
@@ -258,57 +239,12 @@ market_village = {
 
 	construction_demand = village_construction
 
-
-	unique_production_methods = {
-		rural_blacksmith = {
-			produced = tools
-			output = 0.5
-		
-			iron = 0.4
-			category = guild_input
-		}
-		
-		rural_glassmaker = {
-			produced = glass
-			output = 0.2
-			sand = 1.0
-
-			category = guild_input
-		}
-
-		rural_millet_brewery = {
-			wheat = 0.5 #millet_staple
-			lumber = 0.1
-			tools = 0.07
-			
-			produced = beer
-			output = 0.5
-
-			
-			category = guild_input
-		}
-		rural_weaponmaker = {
-			produced = weaponry
-			output = 0.2
-		
-			lumber = 0.32
-			category = guild_input
-		}
-		rural_jewelry_carver = {
-			produced = jewelry
-			output = 0.1
-		
-			stone = 0.4
-			category = guild_input
-		}
-		
-		rural_pottery_maker = {
-			produced = pottery
-			output = 0.2
-		
-			clay = 0.33
-			category = guild_input
-		}
+	possible_production_methods = {
+		rural_blacksmith
+		rural_millet_brewery
+		rural_weaponmaker
+		rural_jewelry_carver
+		rural_pottery_maker
 	}
 
 	modifier = {
@@ -328,10 +264,54 @@ market_village = {
 	}
 }
 
-rural_clothmaker = {
+rural_glassmaker = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = laborers
 	max_levels = guild_max_level
+	startup_ramp_target = rural_startup_ramp_target
+
+	forbidden_for_estates = yes
+
+	category = basic_industry_category
+
+	employment_size = rural_peasant_produce_employment
+
+	rural_settlement = yes
+
+	town = no
+	city = no
+
+	location_potential = {
+		is_produced_in_location_market = goods:sand
+	}
+
+	build_time = rural_build_time
+
+	unique_production_methods = {
+		rural_glassmaker_maintenance = {
+			sand = 1.0
+
+			produced = glass
+			output = 0.2
+
+			debug_max_profit = rural_profit_margin
+			category = guild_input
+		}
+	}
+
+	construction_demand = village_construction
+
+	modifier = {
+	}
+}
+
+rural_clothmaker = {
+	audio_tier = 1
+	is_foreign = no
+	pop_type = laborers
+	max_levels = guild_max_level
+	startup_ramp_target = rural_startup_ramp_target
 
 	forbidden_for_estates = yes
 	
@@ -392,9 +372,11 @@ rural_clothmaker = {
 }
 
 charcoal_maker = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = laborers
 	max_levels = rural_building_cap
+	startup_ramp_target = rural_startup_ramp_target
 	
 	employment_size = rural_peasant_produce_employment
 	
@@ -404,6 +386,7 @@ charcoal_maker = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+  megalopolis = yes
 	
 	location_potential = {
 		OR = {
@@ -433,6 +416,7 @@ charcoal_maker = {
 }
 
 improved_charcoal_maker = {
+	audio_tier = 2
 	is_foreign = no
 	pop_type = laborers
 	max_levels = rural_building_cap
@@ -476,6 +460,7 @@ improved_charcoal_maker = {
 }
 
 elephant_hunting_grounds = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = {
 		value = rural_building_cap
@@ -491,6 +476,7 @@ elephant_hunting_grounds = {
 			}
 		}
 	}
+	startup_ramp_target = rural_startup_ramp_target
 	pop_type = peasants
 	
 	category = rgo_building_category
@@ -499,6 +485,7 @@ elephant_hunting_grounds = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+	megalopolis = yes
 	
 	country_potential = {
 		produced_in_country:elephants > 0
@@ -537,6 +524,7 @@ elephant_hunting_grounds = {
 }
 
 windmill = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = laborers
 	max_levels = 1
@@ -549,6 +537,7 @@ windmill = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	location_potential = {
 		OR = {
@@ -562,7 +551,7 @@ windmill = {
 	unique_production_methods = {
 		
 		windmill_maintenance = {
-			tools  = 0.025
+			tools = 0.025
 			lumber = 0.05
 			cloth = 0.05
 			category = building_maintenance
@@ -581,17 +570,10 @@ windmill = {
 
 
 	construction_demand = farm_constructions
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 local_smelters = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = laborers
 	max_levels = 1
@@ -604,6 +586,7 @@ local_smelters = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	location_potential = {
 		OR = {
@@ -638,17 +621,10 @@ local_smelters = {
 
 
 	construction_demand = farm_constructions
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 sawmill = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = laborers
 	max_levels = 1
@@ -661,6 +637,7 @@ sawmill = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+	megalopolis = yes
 
 	location_potential = {
 		can_build_lumber_RGO = yes
@@ -688,17 +665,10 @@ sawmill = {
 
 
 	construction_demand = farm_constructions
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 sheep_farms = {
+	audio_tier = 1
 	is_foreign = no
 	pop_type = laborers
 	max_levels = rural_building_cap
@@ -711,6 +681,7 @@ sheep_farms = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+    megalopolis = yes
 
 	location_potential = {
 		always = no #M&T disabled
@@ -740,6 +711,7 @@ sheep_farms = {
 }
 
 settlement_building = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = 1
 	pop_type = peasants
@@ -751,8 +723,8 @@ settlement_building = {
 	
 	
 	rural_settlement = yes
-	town = yes
-	city = yes
+	# town = yes
+	# city = yes
 
 
 	location_potential = {
@@ -778,17 +750,10 @@ settlement_building = {
 		#local_population_growth = 0.01 #removed by M&T
 	}
 	
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 kilwan_shipwrights = {
+	audio_tier = 1
 	is_special = yes
 	is_foreign = no
 	max_levels = 1
@@ -800,6 +765,7 @@ kilwan_shipwrights = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+    megalopolis = yes
 	
 	location_potential = {
 		is_port = yes
@@ -820,18 +786,11 @@ kilwan_shipwrights = {
 		local_sailors = 0.01
 		harbor_suitability = 0.05
 	}
-	on_built = {
-		location = { add_to_variable_list = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_built = yes
-	}
-	on_destroyed = {
-		location = { remove_list_variable = { name = MnT_epbm_buildings target = prev } }
-		MnT_epbm_on_building_destroyed = yes
-	}
 }
 
 #special building to occupy tribes herding sheep
 transhumant_wool_pasture = {
+	audio_tier = 1
 	is_foreign = no
 	max_levels = transhumant_wool_pasture_cap
 	pop_type = tribesmen
@@ -842,6 +801,7 @@ transhumant_wool_pasture = {
 	rural_settlement = yes
 	town = yes
 	city = yes
+	megalopolis = yes
 	
 	can_close = no
 	
@@ -858,7 +818,7 @@ transhumant_wool_pasture = {
 			produced = wool
 			output = 0.02
 
-			land = 0.005
+			# land = 0.005
 
 			category = building_maintenance 
 		}
@@ -871,5 +831,6 @@ transhumant_wool_pasture = {
 	modifier = {	
 		local_tribes_estate_power = 0.05
 		local_tribal_promotion = -0.05
+		free_building_levels = 1
 	}
 }
