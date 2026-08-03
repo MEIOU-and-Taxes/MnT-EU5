@@ -555,6 +555,10 @@ Date: 21/05/2026
 - Up Amenities required for City (4 -> 5) and Megalopolis (8 -> 11)
 - Set important_for_AI flag to Amenities building_type
 - Require 20k Burghers for a Location to be valid to become a Megalopolis (in addition to total pop being 200k)
+- Make Levies cost only 35% of 'real' cost instead of 75%
+  - Was bankrupting too many AIs
+  - AI too dumb to not fully mobilize
+  - Reduce Tribal Levy cost even more as their goods demand for horses was very harsh on the Tribal nations with poor eco's
 
 # Mechanics
 - Don't let nations and estates build farming villages
