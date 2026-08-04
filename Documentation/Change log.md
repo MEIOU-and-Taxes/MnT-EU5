@@ -562,6 +562,11 @@ Date: 21/05/2026
   - Was bankrupting too many AIs
   - AI too dumb to not fully mobilize
   - Reduce Tribal Levy cost even more as their goods demand for horses was very harsh on the Tribal nations with poor eco's
+- Bailiff tweak:
+  - Re-enable Bailiffs for Urban Locations
+  - Let them be a source of local Proximity (25) instead of giving maximum Control
+  - Building a Local Governor will destroy any Bailiff in the Location (and make Bailiff not buildable)
+  - Add this extra info to the in-game description
 
 # Mechanics
 - Don't let nations and estates build farming villages
