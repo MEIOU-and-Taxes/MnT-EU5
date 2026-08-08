@@ -57,6 +57,16 @@
 	}
 
 	on_monthly = {
+		every_ownable_location = {
+			limit = {
+				continent = continent:america
+				NOT = {
+					has_variable = had_great_pestilence_in_location
+				}
+				location_has_pestilence_trigger = yes
+			}
+			set_variable = had_great_pestilence_in_location
+		}
 		every_country = {
 			limit = {
 				country_has_pestilence_trigger = yes
@@ -150,22 +160,42 @@
 			remove_temporary_demand = demand:procure_remedies
 			remove_temporary_demand = demand:procure_remedies_no_liquor
 		}
+		every_ownable_location = {
+			limit = {
+				continent = continent:america
+				has_variable = had_great_pestilence_in_location
+			}
+			remove_variable = had_great_pestilence_in_location
+		}
 	}
 
 	is_data_map = yes
 	map_color = {
 		if = {
 			limit = {
-				disease_presence = { disease = disease:great_pestilence value > 0 }
+				location_has_pestilence_trigger = yes
 			}
 			lerp = {
 				min_color = rgb { 248  180  194 }
 				max_color = rgb { 61 0 0 }
-				factor = "disease_presence(disease:great_pestilence)"
+				factor = {
+					value = "disease_presence(disease:smallpox)"
+					add = "disease_presence(disease:measles)"
+					add = "disease_presence(disease:influenza)"
+					max = 1
+				}
 			}
 		}
 		else = {
 			value = define:NMapColors|DEFAULT_COLOR
+		}
+	}
+	secondary_map_color = {
+		if = {
+			limit = {
+				has_variable = had_great_pestilence_in_location
+			}
+			value = define:NMapColors|QUEUED_MAP_COLOR
 		}
 	}
 	
