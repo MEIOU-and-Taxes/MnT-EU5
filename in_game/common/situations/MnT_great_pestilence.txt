@@ -1,0 +1,165 @@
+﻿REPLACE:great_pestilence = {
+	#https://en.wikipedia.org/wiki/Cocoliztli_epidemics
+	#https://en.wikipedia.org/wiki/Columbian_exchange#Of_diseases
+	#https://en.wikipedia.org/wiki/Native_American_disease_and_epidemics
+	monthly_spawn_chance = monthly_spawn_chance_unique
+	hint_tag = hint_great_pestilence
+	can_start = {
+		disease_is_active = disease:great_pestilence
+	}
+
+	can_end = {
+		#We make sure that all important regions have been infected before ending the situation
+		custom_tooltip = {
+			text = great_pestilence_regions_infected_tt
+			var:var_carib_was_infected = yes
+			var:var_mesoamerica_was_infected = yes
+			var:var_andes_was_infected = yes
+		}
+
+		#The situation can only end if the disease has exhausted itself
+		NOT = {
+			disease_is_active = disease:great_pestilence
+		}
+		#The Situation ends if no settled country in America has not been through it already
+		continent:america = {
+			any_country_with_capital_in_geography = {
+				count <= 30
+				country_type = location
+				custom_tooltip = {
+					text = great_pestilence_americas_spread_tt
+					NOT = { has_variable = had_great_pestilence }
+				}
+			}
+		}
+	}
+
+	visible = {
+		OR = {
+			country_has_disease = disease:great_pestilence
+			#If you have a modifier you keep seeing the Situation
+			has_country_modifier = no_contact_with_outsiders
+			has_country_modifier = procure_remedies
+			has_country_modifier = procure_remedies_cost
+			has_country_modifier = segregate_the_infected
+			has_country_modifier = blame_the_minorities
+			has_country_modifier = sponsor_spiritual_protection_bonus
+			has_country_modifier = sponsor_spiritual_protection_cost
+		}
+	}
+
+	on_start = {
+		#Keep track of the most important regions
+		set_variable = { name = var_carib_was_infected value = no }
+		set_variable = { name = var_mesoamerica_was_infected value = no }
+		set_variable = { name = var_andes_was_infected value = no }
+	}
+
+	on_monthly = {
+		every_country = {
+			limit = {
+				country_has_disease = disease:great_pestilence
+			}
+			set_variable = { name = had_great_pestilence value = yes }
+			random_list = {
+				1 = { trigger_event_non_silently = great_pestilence.3 }
+				1 = { trigger_event_non_silently = great_pestilence.4 }
+				1 = { trigger_event_non_silently = great_pestilence.5 }
+				1 = { trigger_event_non_silently = great_pestilence.6 }
+				1 = { trigger_event_non_silently = great_pestilence.7 }
+				50 = { }
+			}
+		}
+		#Check if the disease has reached the important regions
+		if = {
+			limit = {
+				var:var_carib_was_infected = no
+				region:caribbean_region = {
+					any_ownable_location_in_region = {
+						disease_presence = { disease = disease:great_pestilence value > 0 }
+					}
+				}
+			}
+			set_variable = { name = var_carib_was_infected value = yes }
+		}
+		if = {
+			limit = {
+				var:var_mesoamerica_was_infected = no
+				region:mesoamerica_region = {
+					any_ownable_location_in_region = {
+						disease_presence = { disease = disease:great_pestilence value > 0 }
+					}
+				}
+			}
+			set_variable = { name = var_mesoamerica_was_infected value = yes }
+		}
+		if = {
+			limit = {
+				var:var_andes_was_infected = no
+				region:andes_region = {
+					any_ownable_location_in_region = {
+						disease_presence = { disease = disease:great_pestilence value > 0 }
+					}
+				}
+			}
+			set_variable = { name = var_andes_was_infected value = yes }
+		}
+	}
+
+	tooltip = {
+		if = {
+			limit = {
+				disease_presence = { disease = disease:great_pestilence value > 0 }
+			}
+			custom_tooltip = "GREAT_PESTILENCE_PRESENT_IN_LOCATION"
+		}
+	}
+
+	on_ended = {
+		every_country = {
+			limit = {
+				has_variable = had_great_pestilence
+			}
+			remove_country_modifier = no_contact_with_outsiders
+			remove_country_modifier = procure_remedies
+			remove_country_modifier = procure_remedies_cost
+			remove_country_modifier = segregate_the_infected
+			remove_country_modifier = blame_the_minorities
+			remove_country_modifier = sponsor_spiritual_protection_bonus
+			remove_country_modifier = sponsor_spiritual_protection_cost
+
+			trigger_event_non_silently = great_pestilence.2
+		}
+		every_market_in_world = {
+			limit = {
+				location.continent = continent:america
+				has_temporary_demand = demand:procure_remedies 
+				has_temporary_demand = demand:procure_remedies_no_liquor 
+			}
+			remove_temporary_demand = demand:procure_remedies
+			remove_temporary_demand = demand:procure_remedies_no_liquor
+		}
+	}
+
+	is_data_map = yes
+	map_color = {
+		if = {
+			limit = {
+				disease_presence = { disease = disease:great_pestilence value > 0 }
+			}
+			lerp = {
+				min_color = rgb { 248  180  194 }
+				max_color = rgb { 61 0 0 }
+				factor = "disease_presence(disease:great_pestilence)"
+			}
+		}
+		else = {
+			value = define:NMapColors|DEFAULT_COLOR
+		}
+	}
+	
+	legend_key = { 
+		desc = "great_pestilence"
+		color = rgb { 61 0 0 }
+	}
+}

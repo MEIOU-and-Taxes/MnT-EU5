@@ -1,0 +1,566 @@
+﻿namespace = great_pestilence
+
+#Country gets infected
+great_pestilence.1 = {
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.1.title
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					culture = { is_culture_native_american =yes }
+				}
+				desc = great_pestilence.1.desc
+			}
+			triggered_desc = {
+				desc = great_pestilence.1.descB
+			}
+		}
+	}
+	outcome = neutral
+	historical_info = columbian_exchange.1.historical_info
+
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	immediate = {
+		if = {
+			limit = {
+				country_type = pop
+			}
+			random_owned_nomad_pop = {
+				limit = {
+					location = {
+						disease_presence = { disease = disease:great_pestilence value > 0 }
+					}
+				}
+				location = {
+					save_scope_as = diseased_location_scope
+				}
+			}
+		}
+		else = {
+			random_owned_location = {
+				limit = {
+					disease_presence = { disease = disease:great_pestilence value > 0 }
+				}
+				save_scope_as = diseased_location_scope
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.1.a
+		trigger = {
+			culture = { is_culture_native_american =yes }
+		}
+		change_societal_value = { type = spiritualist_vs_humanist value = societal_value_minor_move_to_left }
+		add_stability = stability_extreme_penalty
+	}
+	option = {
+		name = great_pestilence.1.a2
+		trigger = {
+			NOT = {culture = { is_culture_native_american =yes }}
+		}
+		change_societal_value = { type = spiritualist_vs_humanist value = societal_value_tiny_move_to_left }
+		add_stability = stability_weak_penalty
+	}
+}
+
+#Situation ends event, every country that was infected gets this
+great_pestilence.2 = {
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.2.title
+	desc = great_pestilence.2.desc
+	outcome = neutral
+
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	immediate = {
+	}
+
+	option = {
+		name = great_pestilence.2.a
+		change_societal_value = { type = spiritualist_vs_humanist value = societal_value_minor_move_to_left }
+
+	}
+
+}
+
+#Somebody is to blame
+great_pestilence.3 = {
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.3.title
+	desc = great_pestilence.3.desc
+	outcome = neutral
+
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+	
+	trigger = {
+		culture = { is_culture_native_american =yes }
+		is_country_religion_folk_american = yes
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				country_type = pop
+			}
+			random_owned_nomad_pop = {
+				location = {
+					save_scope_as = location_scope
+					province = {
+						save_scope_as = province_scope
+					}
+				}
+			}
+		}
+		else = {
+			random_owned_location = {
+				limit = {
+					is_capital = no
+				}
+				save_scope_as = location_scope
+				province = {
+					save_scope_as = province_scope
+				}
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.3.a
+		if = { 
+			limit = { manpower > 0 }
+			add_stability = stability_mild_penalty
+			add_manpower = { value = root.monthly_manpower multiply = -2 }
+			change_gold_effect = { scale = -5 }
+		}
+		else = {
+			add_stability = stability_severe_penalty
+			change_gold_effect = { scale = -5.5 }
+		}
+		scope:location_scope = {
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.3.b
+		add_stability = stability_severe_penalty
+		scope:province_scope = {
+			every_location_in_province = {
+				every_pop = {
+					limit = {
+						owner = root
+						pop_type = pop_type:peasants
+					}
+					add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+				}
+			}
+		}
+	}
+}
+
+#Crumbling Unity
+great_pestilence.4 = {
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.4.title
+	desc = great_pestilence.4.desc
+	outcome = neutral
+
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	trigger = {
+		country_has_disease = disease:great_pestilence
+		culture = { is_culture_native_american =yes }
+		is_country_religion_folk_american = yes
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				country_type = pop
+			}
+			set_variable = pop_event_version_variable	#This changes the effects to make them relevant to pop_based_countries
+			random_owned_nomad_pop = {
+				location = {
+					save_scope_as = location_scope
+					province = {
+						save_scope_as = province_scope
+					}
+				}
+			}
+			ordered_pop = {
+				limit = {
+					OR = {
+						pop_type = pop_type:peasants
+						pop_type = pop_type:laborers
+					}
+					location = { 
+						disease_presence = { disease = disease:great_pestilence value > 0 }
+					}
+				}
+				order_by = pop_size
+				check_range_bounds = no
+				max = 5
+				add_to_list = gp4_pop_list
+			}
+		}
+		ordered_owned_rural_location = {
+			order_by = {
+				value = proximity 
+				multiply = -1
+			}
+			max = 5
+			check_range_bounds = no
+			
+			add_to_list = gp4_list
+		}
+		ordered_in_list = {
+			list = gp4_list
+			order_by = population
+			save_scope_as = infected_location
+			save_scope_as = location_scope
+			province = { save_scope_as = province_scope }
+		}
+	}
+
+	option = {
+		name = great_pestilence.4.a
+		add_stability = stability_severe_penalty
+		change_gold_effect = { scale = -2 }
+
+		if = {
+			limit = { 
+				NOT = { has_variable = pop_event_version_variable }
+			}
+			every_in_list = {
+				list = gp4_list
+				add_location_modifier = {
+					modifier = forced_back_to_work_modifier
+					years = modifier_duration_years_short
+					mode = replace
+				}
+			}
+		}
+		else = {
+			every_in_list = {
+				list = gp4_pop_list
+				add_pop_satisfaction = pop_satisfaction_mild_penalty
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.4.b
+		add_stability = stability_severe_penalty
+		add_government_power = government_power_mild_penalty
+		change_societal_value = { type = serfdom_vs_free_subjects value = societal_value_move_to_right }
+		if = {
+			limit = { 
+				NOT = { has_variable = pop_event_version_variable }
+			}
+			every_in_list = {
+				list = gp4_list
+				ordered_pop = {
+					limit = {
+						OR = { 
+							pop_type = pop_type:peasants
+							pop_type = pop_type:laborers
+						}
+					}
+					order_by = pop_size
+					max = 1
+					check_range_bounds = no
+					add_pop_satisfaction = pop_satisfaction_weak_bonus
+					split_pop = {
+						fraction = { 0.1 0.2 }
+						type = pop_type:tribesmen
+					}
+				}
+			}
+		}
+		else = {
+			every_in_list = {
+				list = gp4_pop_list
+				split_pop = {
+					fraction = { 0.1 0.2 }
+					type = pop_type:tribesmen
+				}
+			}
+		}
+	}
+
+	after = {
+		if = {
+			limit = { has_variable = pop_event_version_variable }
+			remove_variable = pop_event_version_variable
+		}
+	}
+}
+
+# Similar to Hunt for the cause
+great_pestilence.5= {
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.5.t
+	desc = great_pestilence.5.desc
+	outcome = neutral
+
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	trigger = {
+		NOT = {country_type = pop}
+		any_owned_location = {
+			disease_presence = { disease = disease:great_pestilence value > 0 }
+			is_capital = no
+			any_pop = {
+				OR = {
+					NOT = { religion = root.religion }
+					NOT = { culture = root.culture }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				disease_presence = { disease = disease:great_pestilence value > 0 }
+				is_capital = no
+				any_pop = {
+					OR = {
+						NOT = { religion = root.religion }
+						NOT = { culture = root.culture }
+					}
+				}
+			}
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = great_pestilence.5.a
+
+		add_government_power = government_power_extreme_penalty
+		custom_tooltip = plague_masses_appeased_tt
+		random_owned_location = {
+			limit = {
+				disease_presence = { disease = disease:great_pestilence value > 0 }
+				is_capital = no
+				any_pop = {
+					OR = {
+						NOT = { religion = root.religion }
+						NOT = { culture = root.culture }
+					}
+				}
+			}
+			random_pop = {
+				limit = {
+					owner = root
+					OR = {
+						NOT = { religion = root.religion }
+						NOT = { culture = root.culture }
+					}
+				}
+				destroy_pop = this
+			}
+
+		}
+	}
+
+	option = {
+		name = great_pestilence.5.b
+		add_stability = stability_severe_penalty
+		add_government_power = government_power_weak_bonus
+		ordered_province = {
+			order_by = {
+				value = province_satisfaction
+				multiply = -1
+			}
+			limit = {
+				region = root.capital.region
+				NOT = {
+					any_location_in_province = {
+						is_capital = yes
+					}
+				}
+				any_location_in_province = {
+					disease_presence = { disease = disease:bubonic_plague value > 0 }
+				}
+			}
+			max = 5
+			check_range_bounds = no
+			every_location_in_province = {
+				every_pop = {
+					limit = {
+						owner = root
+						pop_type = pop_type:peasants
+						culture = root.culture
+					}
+					add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+				}
+			}
+		}
+	}
+}
+
+great_pestilence.6 = { # The Need for Coin
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.6.t
+	desc = great_pestilence.6.desc
+	outcome = neutral
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	trigger = {
+		trigger_if = {
+			limit = {
+				country_type = pop
+			}
+			any_owned_nomad_pop = {
+				location = {
+					location_rank = location_rank:rural_settlement
+					disease_presence = { disease = disease:great_pestilence value > 0.25 }
+					NOT = { has_country_modifier = peasants_estate_less_tax_burden }
+				}
+			}
+		}
+		trigger_else = {
+			any_owned_rural_location = { disease_presence = { disease = disease:great_pestilence value > 0.25 } }
+			NOT = { has_country_modifier = peasants_estate_less_tax_burden }
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				country_type = pop
+			}
+			random_owned_nomad_pop = {
+				limit = {
+					location = {
+						disease_presence = { disease = disease:great_pestilence value > 0.25 }
+					}
+				}
+				location = {
+					save_scope_as = target_location
+				}
+			}
+		}
+		else = {
+			random_owned_rural_location = {
+				limit = { disease_presence = { disease = disease:great_pestilence value > 0.25 } }
+				save_scope_as = target_location
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.6.a
+		add_stability = stability_severe_penalty
+		scope:target_location = {
+			change_control = control_mild_bonus
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				add_pop_satisfaction = pop_satisfaction_ultimate_penalty
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.6.b
+		add_stability = stability_weak_bonus
+		scope:target_location = {
+			change_control = control_mild_penalty
+			every_pop = {
+				limit = {
+					owner = root
+					pop_type = pop_type:peasants
+				}
+				add_pop_satisfaction = pop_satisfaction_extreme_bonus
+			}
+		}
+	}
+
+	option = {
+		name = great_pestilence.6.c
+
+		add_stability = stability_mild_bonus
+		add_country_modifier = {
+			modifier = peasants_estate_less_tax_burden
+			years = 5
+			mode = add_and_extend
+		}
+	}
+}
+
+great_pestilence.7 = { # Forever Lost
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.7.t
+	desc = great_pestilence.7.desc
+	outcome = neutral
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	trigger = {		
+		culture = { is_culture_native_american = yes }
+		is_country_religion_folk_american = yes
+		any_owned_location = {
+			disease_presence = { disease = disease:great_pestilence value > 0.25 }
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = { disease_presence = { disease = disease:great_pestilence value > 0.25 } }
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = great_pestilence.7.a
+		add_stability = stability_weak_bonus
+
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_extreme_bonus
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:clergy_estate
+			value = { value = root.monthly_income_trade_and_tax multiply = 3 }
+		}
+		change_gold_effect = { scale = -3 }
+	}
+
+	option = {
+		name = great_pestilence.7.b
+		add_stability = stability_severe_penalty
+		add_estate_satisfaction = { type = estate_type:clergy_estate
+			value = estate_satisfaction_severe_penalty
+		}
+		add_estate_satisfaction = { type = estate_type:peasants_estate
+			value = estate_satisfaction_severe_penalty
+		}
+	}
+
+}
