@@ -5,7 +5,12 @@
 	monthly_spawn_chance = monthly_spawn_chance_unique
 	hint_tag = hint_great_pestilence
 	can_start = {
-		disease_is_active = disease:great_pestilence
+		continent:america = {
+			any_location_in_continent = {
+				population > 0
+				owner_from_old_world = yes
+			}
+		}
 	}
 
 	can_end = {
@@ -17,10 +22,6 @@
 			var:var_andes_was_infected = yes
 		}
 
-		#The situation can only end if the disease has exhausted itself
-		NOT = {
-			disease_is_active = disease:great_pestilence
-		}
 		#The Situation ends if no settled country in America has not been through it already
 		continent:america = {
 			any_country_with_capital_in_geography = {
@@ -58,9 +59,19 @@
 	on_monthly = {
 		every_country = {
 			limit = {
-				country_has_disease = disease:great_pestilence
+				country_has_pestilence_trigger = yes
+				capital = {
+					continent:america
+				}
 			}
-			set_variable = { name = had_great_pestilence value = yes }
+			if = {
+				limit = {
+					NOT = {
+						has_variable = had_great_pestilence
+					}
+				}
+				set_variable = { name = had_great_pestilence value = yes }
+			}
 			random_list = {
 				1 = { trigger_event_non_silently = great_pestilence.3 }
 				1 = { trigger_event_non_silently = great_pestilence.4 }
@@ -76,7 +87,7 @@
 				var:var_carib_was_infected = no
 				region:caribbean_region = {
 					any_ownable_location_in_region = {
-						disease_presence = { disease = disease:great_pestilence value > 0 }
+						location_has_pestilence_trigger = yes
 					}
 				}
 			}
@@ -87,7 +98,7 @@
 				var:var_mesoamerica_was_infected = no
 				region:mesoamerica_region = {
 					any_ownable_location_in_region = {
-						disease_presence = { disease = disease:great_pestilence value > 0 }
+						location_has_pestilence_trigger = yes
 					}
 				}
 			}
@@ -98,7 +109,7 @@
 				var:var_andes_was_infected = no
 				region:andes_region = {
 					any_ownable_location_in_region = {
-						disease_presence = { disease = disease:great_pestilence value > 0 }
+						location_has_pestilence_trigger = yes
 					}
 				}
 			}
@@ -109,7 +120,7 @@
 	tooltip = {
 		if = {
 			limit = {
-				disease_presence = { disease = disease:great_pestilence value > 0 }
+				location_has_pestilence_trigger = yes
 			}
 			custom_tooltip = "GREAT_PESTILENCE_PRESENT_IN_LOCATION"
 		}

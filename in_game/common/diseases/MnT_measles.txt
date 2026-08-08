@@ -1,8 +1,9 @@
-﻿REPLACE:influenza = { #https://en.wikipedia.org/wiki/Influenza
+﻿REPLACE:measles = { #https://en.wikipedia.org/wiki/Measles
 
 	#script value for how likely the disease is to spawn per month (0..1)
 	monthly_spawn_chance = {
-		value = 0.25
+		#Around 1 outbreaks around the world
+		value = 0.1
 	}
 
 	#effect to spawn the disease somewhere when we've decided it should spawn.
@@ -11,13 +12,6 @@
 			limit = {
 				#Not empty location
 				population > 1
-
-				OR = {
-					winter_level = normal
-					winter_level = severe
-				}
-
-
 				#If the great_pestilence has not happened yet, exclude America
 				trigger_if = {
 					limit = {
@@ -51,35 +45,38 @@
 						}
 					}
 				}
-				#If we can't find an appropriate location we don't spawn
+				#If we can't find an appropiate location we don't spawn
 			}
-
+		
 			spawn_disease = {
 				disease = scope:disease
 				value = 0.5
-
+		
 				#save the outbreak created for later
 				save_scope_as = outbreak_scope
 			}
 		}
 	}
 
-	#script value to get the R0 number of the disease, or
+	#script value to get the R0 number of the disease, or 
 	#how many people one person will spread the disease to per interval
-	#A variety of factors likely encourage influenza transmission, including lower temperature,
-	#lower absolute and relative humidity, less ultraviolet radiation from the Sun, and crowding
-	r0 = {
+	#Measles is the most contagious viral disease, with a basic reproduction number (R0) of 12–18.
+	r0 = { 
 		#base
-		value = { 1 2 }
 		if = {
 			limit = {
-				#Climate preferences
-				OR = {
-					continental_climate_trigger = yes
-					cold_arid_climate_trigger = yes
-				}
+				location_rank ?= location_rank:rural_settlement
 			}
-			multiply = 1.2
+			value = { 10 15 }
+		}
+		else_if = {
+			limit = {
+				location_rank ?= location_rank:town
+			}
+			value = {12 18 }
+		}
+		else = {
+			value = { 18 20 }
 		}
 		#markets spread more person to person
 		if = {
@@ -102,15 +99,15 @@
 		}
 	}
 
-	#script value for how long between spread calculations.
-	#A lower number = possible faster spread, depending on the effect in spread.
+	#script value for how long between spread calculations. 
+	#A lower number = possible faster spread, depending on the effect in spread. 
 	#Nothing in the scope, this will usually just be a number, but could be a random range
-	#the incubation period) is one to four days,
-	#The standard influenza symptoms typically last for two to eight days
-	calc_interval_days = {4 12}
+	#Symptoms usually develop 10–12 days after exposure to an infected person and last 7–10 days
+	calc_interval_days = {20 24}
 
-	#script value for how much chance there is of the disease stagnating in a location,
+	#script value for how much chance there is of the disease stagnating in a location, 
 	#slowing its advance greatly. (0..1)
+	#Most people do not get the disease more than once.So we should double the stagnation chance
 	location_stagnation_chance = {
 		if = {
 			limit = {
@@ -126,7 +123,7 @@
 		}
 	}
 
-	#script value for how many of the affected should have their fate decided (live and become resistant, or die)
+	#script value for how many of the affected should have their fate decided (live and become resistant, or die) 
 	#per calc interval (0..1)
 	percentage_to_meet_their_fate_on_calc = {
 		value = 0.25
@@ -138,13 +135,13 @@
 		#Nothing
 	}
 
-	# Influenza immunity wanes over a few years; major flu outbreaks recur roughly every decade
+	# Measles burns through susceptibles fast; new unimmunized generations make it endemic every ~15 years
 	monthly_resistance_reduction = 0.002
 
 	#script value for mortality rate of the disease (0..1)
-	#the flu kills around 100 people per 100,000
+	# 1–2 in 1,000 will die
 	mortality_rate = {
-		value = 0.001
+		0.001 0.002
 	}
 
 	#script value for how likely it is that a character will die per calc interval (0..1)
@@ -172,13 +169,13 @@
 
 	#map color for the disease
 	map_color = {
-		lerp = { #Blue
-			min_color = rgb { 150  177  188 }
-			max_color = rgb { 2 113 141 }
+		lerp = { #Orange
+			min_color = rgb { 244  187  119 }
+			max_color = rgb { 252 136 0 }
 			factor = "disease_presence(scope:disease)"
 		}
 	}
-
+	
 	secondary_map_color = {
 		if = {
 			limit = {
@@ -187,7 +184,4 @@
 			value = rgb { 100  120  188 }
 		}
 	}
-
-	#by default, diseases spread to all pop types equally. This can be adjusted here.
-	#    e.g. specific_pop_type_effect = { pop_type = nobles multiplier = 0 } if you want the disease to leave all nobles alone
 }
