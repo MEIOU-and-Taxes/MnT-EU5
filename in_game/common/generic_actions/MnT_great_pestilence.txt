@@ -1,0 +1,693 @@
+﻿REPLACE:great_pestilence_procure_remedies = { #Only for Colonizers
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 40
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	exclusive_group = bd_disease_control_actions
+
+	potential = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = procure_remedies }
+			culture = { is_culture_native_american = no }
+		}
+	}
+
+	allow = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = segregate_the_infected }
+			NOT = { has_country_modifier = strict_quarantines }
+		}
+	}
+
+	price = price:procure_remedies
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			add_country_modifier = { modifier = procure_remedies years = -1	mode = add_and_extend }
+			if = {
+				limit = {
+					#If any of the selected goods are expensive
+					OR = {
+						goods:fiber_crops = { price_in_market = { market = scope:actor.capital.market value > 2.5 } }
+						goods:gems = { price_in_market = { market = scope:actor.capital.market value > 5.5 } }
+						goods:lumber = { price_in_market = { market = scope:actor.capital.market value > 1.5 } }
+						goods:mercury = { price_in_market = { market = scope:actor.capital.market value > 3.5 } }
+						goods:medicaments = { price_in_market = { market = scope:actor.capital.market value > 1.5 } }
+						goods:liquor = { price_in_market = { market = scope:actor.capital.market value > 3.5 } }
+						goods:incense = { price_in_market = { market = scope:actor.capital.market value > 4 } }
+					}
+				}
+				add_country_modifier = {
+					modifier = procure_remedies_cost
+					years = -1
+					mode = add_and_extend
+					size = {
+						add = {
+							desc = "[income|e] factor"
+							value = scope:actor.monthly_income_total
+							multiply = 0.10
+							min = 1
+						}
+					}
+				}
+			}
+			else = {
+				add_country_modifier = {
+					modifier = procure_remedies_cost
+					years = -1
+					mode = add_and_extend
+					size = {
+						add = {
+							desc = "[income|e] factor"
+							value = scope:actor.monthly_income_total
+							multiply = 0.05
+							min = 1
+						}
+					}
+				}
+			}
+
+			#Only added by the owners of the market
+			if = {
+				limit = {
+					NOT = { religion.group = religion_group:muslim }
+				}
+				every_market_present_in_country = {
+					limit = {
+						location.continent = continent:america
+					}
+					add_temporary_demand = {
+						type = demand:procure_remedies
+						scale_with_pop = 0.002
+						years = -1
+					}
+				}
+			}
+			else = {
+				every_market_present_in_country = {
+					limit = {
+						location.continent = continent:america
+					}
+					add_temporary_demand = {
+						type = demand:procure_remedies_no_liquor
+						scale_with_pop = 0.002
+						years = -1
+					}
+				}
+			}
+			add_stability = stability_mild_bonus
+			add_government_power = government_power_weak_bonus
+		}
+	}
+
+	ai_will_do = {
+		#this will be too positive as it does not take into account the increase in demands
+		add = "scope:actor.add_static_modifier_utility(procure_remedies)"
+		add = "scope:actor.add_static_modifier_utility(procure_remedies_cost)"
+		#add if there are affected locations
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						OR = {
+							country_has_disease = disease:bubonic_plague
+							country_has_pestilence_trigger = yes
+						}
+					}
+				}
+				value = 50
+			}
+		}
+		add = {
+			desc = "increased demands"
+			value = -10
+		}
+		#bias against doing anything
+		subtract = {
+			desc = "bias against doing stuff"
+			value = 1
+		}
+	}
+}
+
+REPLACE:great_pestilence_stop_procure_remedies = {
+	icon = great_pestilence_blame_the_minorities #Only for Colonizers
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 120
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	exclusive_group = bd_disease_control_actions
+
+	potential = {
+		scope:actor ?= {
+			has_country_modifier = procure_remedies
+		}
+	}
+
+	price = price:stop_procure_remedies
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			remove_country_modifier = procure_remedies
+			remove_country_modifier = procure_remedies_cost
+			every_market_present_in_country = {
+				limit = {
+					location.continent = continent:america
+					has_temporary_demand = demand:procure_remedies 
+					has_temporary_demand = demand:procure_remedies_no_liquor 
+				}
+				remove_temporary_demand = demand:procure_remedies
+				remove_temporary_demand = demand:procure_remedies_no_liquor
+			}
+		}
+	}
+
+	ai_will_do = {
+		subtract = 1000 # dont remove it as it causes cycles of buying and removing
+	}
+}
+
+REPLACE:great_pestilence_segregate_the_infected = {
+	icon = great_pestilence_blame_the_minorities #Only for Colonizers
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 40
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	exclusive_group = bd_disease_control_actions
+
+	potential = {
+		scope:actor ?= {
+			country_has_pestilence_trigger = yes
+			NOT = { has_country_modifier = segregate_the_infected }
+			culture = { is_culture_native_american = no }
+		}
+	}
+
+	allow = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = strict_quarantines }
+			NOT = { has_country_modifier = procure_remedies }
+		}
+	}
+
+	price = price:segregate_the_infected
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			add_country_modifier = { modifier = segregate_the_infected years = -1	mode = add_and_extend }
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(segregate_the_infected)"
+		#add if there are affected locations
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						country_has_pestilence_trigger = yes
+					}
+				}
+				value = 50
+			}
+		}
+		#bias against doing anything
+		subtract = {
+			desc = "bias against doing stuff"
+			value = 1
+		}
+	}
+}
+
+REPLACE:great_pestilence_stop_segregate_the_infected = {
+	icon = great_pestilence_blame_the_minorities #Only for Colonizers
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 120
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	exclusive_group = bd_disease_control_actions
+	potential = {
+		scope:actor ?= {
+			has_country_modifier = segregate_the_infected
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			remove_country_modifier = segregate_the_infected
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(segregate_the_infected)"
+		#add if there are affected locations
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						country_has_pestilence_trigger = yes
+					}
+				}
+				value = 50
+			}
+		}
+		multiply = -1
+		#bias against doing anything
+		subtract = 1
+	}
+}
+
+REPLACE:great_pestilence_blame_the_minorities = { #Only for Colonizers
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 40
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	exclusive_group = bd_social_actions
+
+	potential = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = blame_the_minorities }
+			culture = { is_culture_native_american = no }
+		}
+	}
+
+	allow = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = sponsor_sin_forgiveness_bonus }
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+			scope:actor = {
+				country_has_disease_outbreak = root.var:original_outbreak
+			}
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			add_country_modifier = { modifier = blame_the_minorities years = -1	mode = add_and_extend }
+			add_stability = stability_mild_bonus
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(blame_the_minorities)"
+		#add if there are affected locations
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						country_has_pestilence_trigger = yes
+					}
+				}
+				value = 50
+			}
+		}
+		#bias against doing anything
+		subtract = {
+			desc = "bias against doing stuff"
+			value = 1
+		}
+	}
+}
+
+REPLACE:great_pestilence_stop_blame_the_minorities = {
+	icon = great_pestilence_blame_the_minorities #Only for Colonizers
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 120
+	automation_tick = daily
+	automation_tick_frequency = 7
+
+	exclusive_group = bd_social_actions
+
+	potential = {
+		scope:actor ?= {
+			has_country_modifier = blame_the_minorities
+		}
+	}
+
+	price = price:stop_blame_the_minorities
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			remove_country_modifier = blame_the_minorities
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(blame_the_minorities)"
+		#add if there are affected locations
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						country_has_pestilence_trigger = yes
+					}
+				}
+				value = 50
+			}
+		}
+		multiply = -1
+		#bias against doing anything
+		subtract = 1
+	}
+}
+
+REPLACE:sponsor_spiritual_protection = {
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 80
+	exclusive_group = bd_social_actions
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = sponsor_spiritual_protection_bonus }
+			culture = { is_culture_native_american = yes }
+		}
+	}
+
+	allow = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = blame_the_minorities }
+		}
+	}
+
+	price = price:sponsor_sin_forgiveness
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			add_country_modifier = { modifier = sponsor_spiritual_protection_bonus years = -1	mode = add_and_extend }
+			add_country_modifier = {
+				modifier = sponsor_spiritual_protection_cost
+				years = -1
+				mode = add_and_extend
+				size = {
+					value = 1
+					multiply = {
+						desc = "[income|e] factor"
+						value = this.monthly_income_total
+					}
+					multiply = 0.1
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(sponsor_spiritual_protection_bonus)"
+		add = "scope:actor.add_static_modifier_utility(sponsor_spiritual_protection_cost)"
+		#add if there are affected locations
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						country_has_pestilence_trigger = yes
+					}
+				}
+				value = 50
+			}
+		}
+		add = "scope:actor.add_static_modifier_utility(sponsor_spiritual_protection_cost)"
+		#bias against doing anything
+		subtract = {
+			desc = "bias against doing stuff"
+			value = 1
+		}
+	}
+}
+
+REPLACE:stop_sponsor_spiritual_protection = {
+	type = situation
+
+	ai_tick = daily
+	ai_tick_frequency = 80
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+		scope:actor ?= {
+			has_country_modifier = sponsor_spiritual_protection_bonus
+		}
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			remove_country_modifier = sponsor_spiritual_protection_bonus
+			remove_country_modifier = sponsor_spiritual_protection_cost
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(sponsor_spiritual_protection_bonus)"
+		add = "scope:actor.add_static_modifier_utility(sponsor_spiritual_protection_cost)"
+		multiply = -1
+		#subtract if there are affected locations
+		subtract = {
+			if = {
+				limit = {
+					scope:actor = {
+						country_has_pestilence_trigger = yes
+					}
+				}
+				value = 50
+			}
+		}
+		#bias against doing anything
+		subtract = 1
+	}
+}
+
+REPLACE:no_contact_with_outsiders = {
+	icon = close_the_borders#Similar to close_the_borders
+	type = situation
+	exclusive_group = food_and_trade_actions
+	ai_tick = daily
+	ai_tick_frequency = 80
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+		scope:actor ?= {
+			NOT = { has_country_modifier = no_contact_with_outsiders }
+			culture = { is_culture_native_american = yes }
+		}
+	}
+
+	allow = {
+	}
+
+	price = price:no_contact_with_outsiders
+
+	#Select our Situation
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			add_country_modifier = { modifier = no_contact_with_outsiders years = -1	mode = add_and_extend }
+		}
+	}
+
+	ai_will_do = {
+		#this will be negative as it basically annoys your estates, so we need to bias against the advantage of removing trade happening
+		#which will in turn reduce the speed of contagion
+		add = "scope:actor.add_static_modifier_utility(no_contact_with_outsiders)"
+		add = {
+			desc = "reduce the amount of trade happening"
+			value = 10
+		}
+		#bias against doing anything
+		subtract = {
+			desc = "bias against doing stuff"
+			value = 1
+		}
+		if = {
+			limit = {
+				scope:actor = {
+					at_war = yes
+				}
+			}
+			subtract = {
+				desc = "needs diplomats"
+				value = 100
+			}
+		}
+	}
+}
+
+REPLACE:stop_no_contact_with_outsiders = {
+	icon = close_the_borders
+	type = situation
+	exclusive_group = food_and_trade_actions
+	ai_tick = daily
+	ai_tick_frequency = 80
+
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	potential = {
+		scope:actor ?= {
+			has_country_modifier = no_contact_with_outsiders
+		}
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:great_pestilence = this
+			situation_is_active = yes
+		}
+	}
+
+	effect = {
+		scope:actor ?= {
+			remove_country_modifier = no_contact_with_outsiders
+		}
+	}
+
+	ai_will_do = {
+		add = "scope:actor.add_static_modifier_utility(no_contact_with_outsiders)"
+		add = 10
+		multiply = -1
+		#bias against doing anything
+		subtract = 1
+
+		if = {
+			limit = {
+				scope:actor = {
+					at_war = yes
+				}
+			}
+			add = {
+				desc = "needs diplomats"
+				value = 1000
+			}
+		}
+
+	}
+}
