@@ -1,117 +1,17 @@
 ﻿REPLACE:great_pestilence = {
 	monthly_spawn_chance = {
-		if = {
-			limit = {
-				#Any location in america has an owner of the old world
-				continent:america = {
-					any_location_in_continent = {
-						population > 0
-						owner_from_old_world = yes
-					}
-				}
-			}
-			#Has the situation spawned already?
-			if = {
-				#It has happened already
-				limit = {
-					situation:great_pestilence = {
-						situation_is_active = no
-						situation_has_ended = yes
-					}
-				}
-				#It does not repeat anymore
-				value = 0
-			}
-			else = {
-				#It has not started or it is ongoing
-				#If we can spawn we do
-				value = 0.1
-			}
-		}
-		else = {
-			value = 0
-		}
+		value = 0
 	}
 
 	spawn = {
-		#Has the Situation spawned already?
 		if = {
-			#It has ended already
 			limit = {
-				situation:great_pestilence = {
-					situation_is_active = no
-					situation_has_ended = yes
-				}
+				always = no
 			}
-			#We never spawn again
-			#Might be worth reviewing this for Oceania
-		}
-		else_if = {
-			#It is ongoing
-			limit = {
-				situation:great_pestilence = {
-					situation_is_active = yes
-					situation_has_ended = no
-				}
-			}
-			#We can spawn again in new colonies
-			continent:america = {
-				random_location_in_continent = {
-					limit = {
-						population > 0
-						owner_from_old_world = yes
-						"disease_resistance(scope:disease)" < 0.5
-						any_pop = {
-							culture = { is_culture_native_american = yes }
-						}
-						#If we can't find an appropriate location we don't spawn
-					}
-					spawn_disease = {
-						disease = scope:disease
-						value = 1
-						#save the outbreak created for later
-						save_scope_as = outbreak
-					}
-				}
-			}
-		}
-		#The situation has not started yet
-		else = {
-			continent:america = {
-				random_location_in_continent = {
-					limit = {
-						population > 0
-						owner_from_old_world = yes
-						"disease_resistance(scope:disease)" < 0.5
-						any_pop = {
-							culture = { is_culture_native_american = yes }
-						}
-						#If we can't find an appropriate location we don't spawn
-					}
-					spawn_disease = {
-						disease = scope:disease
-						value = 1
-						#save the outbreak created for later
-						save_scope_as = outbreak
-					}
-
-					if = {
-						limit = {
-							situation:great_pestilence = {
-								situation_is_active = no
-								situation_has_ended = no
-							}
-						}
-						activate_situation = situation:great_pestilence
-						#Add the outbreak to the situation to track it
-						situation:great_pestilence = {
-							set_variable = {
-								name = original_outbreak
-								value = scope:outbreak
-							}
-						}
-					}
-				}
+			spawn_disease = {
+				disease = scope:disease
+				value = 1
+				save_scope_as = outbreak
 			}
 		}
 	}
