@@ -9,7 +9,7 @@
 
 ### Initial test-release v0.1
 
-Date: 21/05/2026
+Date: 21/05/2026 
 
 #### Features
 
@@ -66,6 +66,8 @@ Date: 21/05/2026
 - Block tribal governments (tribes and steppe hordes) from settling their tribes
 - Tribal strongholds privilege now improves rural control instead of making it worse
 - AI now has better non-royal marriage logic so that dynasties don't die out nearly as often due to refusal to wed
+- Development now directly reduced by looting and sieges.
+- Development will now decay at low enough prosperity levels.
 
 ##### Diplomacy
 
