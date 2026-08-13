@@ -581,6 +581,7 @@ Date: 21/05/2026
   - First they can only spawn in Locations with top-overlord in the Old World, but everywhere any of the 3 diseases spread will become a valid location for its start
   - Situation-linked events are all reworked to be working off these diseases instead of a 'Great Pestilence' disease
   - Situation mapmode will display with stripes any locations that have already been affected
+  - At start 1 smallpox is release on the New World to have something happen for sure
   - Situation otherwise functions pretty much the same
 
 ### Fixes
