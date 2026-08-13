@@ -570,3 +570,8 @@ Date: 21/05/2026
 # Mechanics
 - Don't let nations and estates build farming villages
   - There is a scripted system that handles that and should be the only thing handling it
+
+##### M&T v0.2.7
+
+### Fixes
+- Fix local RGO size modifier not being applied (we coded global but forgot local D: )
