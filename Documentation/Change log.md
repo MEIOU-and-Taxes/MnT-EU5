@@ -582,3 +582,6 @@ Date: 21/05/2026
   - Situation-linked events are all reworked to be working off these diseases instead of a 'Great Pestilence' disease
   - Situation mapmode will display with stripes any locations that have already been affected
   - Situation otherwise functions pretty much the same
+
+### Fixes
+- Fix local RGO size modifier not being applied (we coded global but forgot local D: )
