@@ -586,3 +586,13 @@ Date: 21/05/2026
 
 ### Fixes
 - Fix local RGO size modifier not being applied (we coded global but forgot local D: )
+
+##### M&T v0.2.8
+
+### Faster Universalis integrated
+- To be specific, the 24h tick versions, aka, 1 tick = 1 day now
+- Ported over performance Defines
+- Ported over map market optimizations (actually cache map markers)
+- Remove all Societies of Pops at game initialization (as they don't do anything atm)
+- NOT (yet) ported: character culling, region removal
+- All Credits for these changes should go the authors of Faster Universalis, with a specific mention to Conner, its lead developer
