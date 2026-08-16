@@ -1,0 +1,2458 @@
+﻿window = {
+	name = "map_marker_layer" # Referenced from code
+	size = { 100% 100% }
+	layer = map_marker
+
+	alwaystransparent = yes
+	filter_mouse = none
+
+	using = Animation_Show_Hide_UI
+}
+
+window = {
+	name = "inactive_widgets_storage" # Referenced from code
+	size = { 100% 100% }
+	layer = map_marker
+
+	alwaystransparent = yes
+	visible = no
+	max_update_rate = -2 # Don't update data properties.
+}
+
+### PARLIAMENT
+widget = {
+	name = "parliament_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	using = bg_circle_piechart
+
+	size = { 50 50 }
+	position = { 0 2 }
+
+	visible = "[ParliamentMarker.IsVisible]"
+
+	piechart = {
+		parentanchor = center
+		block "piechart_size" {
+			size = { 90% 90% }
+		}
+		using = piechart_angles
+
+		pieslice_no_highlight = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[ParliamentMarker.GetCountry.GetGovernment.GetParliament.GetParliamentDurationProgress]"
+			color = { 0.01 0.6 0.9 1 }
+			alwaystransparent = yes
+		}
+
+		pieslice_no_highlight = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)1.0', FixedPointToFloat(ParliamentMarker.GetCountry.GetGovernment.GetParliament.GetParliamentDurationProgress))]"
+			color = { 0.0 0.1 0.1 1 }
+			alwaystransparent = yes
+		}
+	}
+
+	button = {
+		visible = "[ParliamentMarker.IsPlayerParliament]"
+		parentanchor = center
+		allow_outside = yes
+		block "button_size" {
+			size = { 55% 55% }
+		}
+		texture = "gfx/interface/icons/flat_icons/parliament.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			using = ParliamentInSession_tooltip
+		}
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "AUTOMATED_SYSTEM_PARLIAMENT_CLICK"
+			on_action = "[OpenLateralViewWithParams('government', 'tabcontent = parliament')]"
+		}
+	}
+
+	button = {
+		visible = "[Not(ParliamentMarker.IsPlayerParliament)]"
+		parentanchor = center
+		allow_outside = yes
+		block "button_size" {
+			size = { 55% 55% }
+		}
+		texture = "gfx/interface/icons/flat_icons/parliament.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			using = HostileParliamentInSession_tooltip
+			# using = ParliamentInSession_tooltipdd
+		}
+	}
+}
+
+### Holy Site
+widget = {
+	name = "holy_site_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+	size = { 40 40 }
+	position = { 0 0 }
+
+	icon = {
+		parentanchor = center
+		size = { 40 40 }
+		texture = "gfx/interface/icons/location_icons/holy_sites.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			container = {
+				alwaystransparent = no
+				datacontext = "[HolySiteMarker.GetLocation]"
+				using = HolySitesLocation_Tooltip
+			}
+		}
+	}
+
+	text_single = {
+		datacontext = "[HolySiteMarker.GetLocation]"
+		visible = "[LessThanOrEqualTo_int32(GetZoomStep, '(int32)7')]"
+		parentanchor = right|vcenter
+		position = { 4 0 }
+		snap_to_pixels = no
+		default_format = "#high"
+		text = "[GetDataModelSize(Location.GetHolySites)]"
+		using = Font_Size_Medium
+	}
+}
+
+### Market
+widget = {
+	name = "market_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+
+	icon = {
+		allow_outside = yes
+		size = { 20 20 }
+		texture = "[MarketMarker.GetLocation.GetRankIcon]"
+
+		widgetanchor = center
+		parentanchor = center
+
+		tooltip = "[MarketMarker.GetTooltip]"
+
+		flowcontainer = {
+			widgetanchor = right
+			country_flag = {
+				name = "country_flag"
+				parentanchor = top|hcenter
+				size = { 24 16 }
+				tooltip_enabled = no
+				datacontext = "[MarketMarker.GetLocation.GetOwner]"
+
+				blockoverride "flag" {
+					datacontext = "[GetCountryCoatOfArms(MarketMarker.GetLocation.GetOwner.Self)]"
+					texture = "[CoatOfArmsWrapper.GetTexture('(int32)56','(int32)56')]"
+					frame = "[CoatOfArmsWrapper.GetFrame('(int32)56','(int32)56')]"
+					framesize = "[CoatOfArmsWrapper.GetFrameSizeOrFallback('(int32)56','(int32)56','(float)1.0')]"
+				}
+
+				blockoverride "click" {}
+				blockoverride "double_click" {}
+			}
+		}
+
+		flowcontainer = {
+			widgetanchor = right
+
+			country_flag = {
+				size = { 24 16 }
+				name = "country_flag"
+				parentanchor = top|hcenter
+				tooltip_enabled = no
+				datacontext = "[MarketMarker.GetLocation.GetOwner]"
+
+				blockoverride "flag" {
+					datacontext = "[GetCountryCoatOfArms(MarketMarker.GetLocation.GetOwner.Self)]"
+					texture = "[CoatOfArmsWrapper.GetTexture('(int32)56','(int32)56')]"
+					frame = "[CoatOfArmsWrapper.GetFrame('(int32)56','(int32)56')]"
+					framesize = "[CoatOfArmsWrapper.GetFrameSizeOrFallback('(int32)56','(int32)56','(float)1.0')]"
+				}
+
+				blockoverride "click" {}
+				blockoverride "double_click" {}
+			}
+		}
+
+		flowcontainer = {
+			position = { 22 0 }
+			ignoreinvisible = yes
+			text_single = {
+				text = "[MarketMarker.GetLocation.GetNameWithNoTooltip|U]"
+				snap_to_pixels = no
+				default_format = "#map_city_label_capital"
+				tooltip = "[MarketMarker.GetTooltip]"
+
+			}
+		}
+	}
+}
+
+### UNIT
+@unit_marker_frame_height = 30
+@unit_marker_frame_text_margin = 12
+@unit_marker_item_total_units_width = 60
+@unit_marker_morale_progressbar_size = 35
+@unit_marker_item_width = 115
+@unit_marker_item_height = 71
+@unit_marker_item_short_factor = 0.8
+@unit_marker_item_verysmall_factor = 0.55
+
+@unit_marker_item_short_factor_inv = @[1.0 - unit_marker_item_short_factor]
+@unit_marker_siege_banner_short_offset = @[unit_marker_item_width * unit_marker_item_short_factor_inv]
+
+widget = {
+	name = "unit_marker"
+	allow_outside = yes
+	position = { 0 -2 }
+
+	widget = {
+		allow_outside = yes
+		parentanchor = center
+		visible = "[Not(TutorialHasVar('intro_hide_ui_7'))]"
+
+		# Siege banner
+		widget = {
+			visible = "[UnitMarker.HasSiege]"
+			datacontext = "[UnitMarker.GetLeadingUnit]"
+			datacontext = "[UnitMarker.GetSiege]"
+
+			parentanchor = right|vcenter
+			widgetanchor = left|vcenter
+			allow_outside = yes
+
+			unit_maker_siege_banner = {
+				visible = "[UnitMarker.ShouldBeShownFullWidth]"
+				widgetanchor = vcenter|left
+				parentanchor = center
+			}
+
+			unit_maker_siege_banner = {
+				position = { @[20 - unit_marker_siege_banner_short_offset] 0 }
+				visible = "[And(UnitMarker.ShouldBeShownShortWidth, Not(UnitMarker.ShouldBeShownSmallSize))]"
+				widgetanchor = vcenter|left
+				parentanchor = center
+			}
+		}
+
+		# Units list
+		fixedgridbox = {
+			name = "unit_items_grid"
+			addcolumn = @unit_marker_item_width
+			addrow = @unit_marker_item_height
+			datamodel_reuse_widgets = yes
+			allow_outside = yes
+
+			parentanchor = center
+			resizeparent = yes
+
+			datamodel = "[UnitMarker.GetUnits]"
+			item = {
+				widget = {
+					size = { @unit_marker_item_width @unit_marker_item_height }
+					datacontext = "[UnitMarkerItem.GetUnit]"
+					visible = "[Not(And(UnitMarkerItem.GetUnit.IsInTransport,Not(UnitMarkerItem.GetUnit.IsMoving)))]"
+					allow_outside = yes
+
+					#Army Marker
+					vbox = {
+						using = layoutpolicy_expanding
+						visible = "[UnitMarkerItem.GetUnit.IsArmy]"
+						allow_outside = yes
+
+						# Full width
+						unit_marker_item_layout = {
+							using = layoutpolicy_expanding
+							# spacing = -3
+							visible = "[UnitMarker.ShouldBeShownFullWidth]"
+							allow_outside = yes
+
+							widget = {
+								ignore_layout = yes
+								size = { 70 40 }
+								parentanchor = vcenter|left
+								widgetanchor = vcenter|right
+								position = { 12 5 }
+								allow_outside = yes
+								hbox = {
+									allow_outside = yes
+									spacing = 2
+
+									expand = {}
+
+									unit_marker_compass = {}
+
+									widget = {
+										allow_outside = yes
+										using = unit_marker_item_commander
+										blockoverride "item_unit_commander_text_object" {
+											hbox = {
+												widget = {
+													size = { 26 26 }
+
+													# Has General
+													button = {
+														visible = "[UnitMarkerItem.HasLeaderFrame]"
+
+														size = { 26 26 }
+
+														framesize = { 32 32 }
+														frame = "[UnitMarkerItem.GetLeaderFrame]"
+
+														texture = "gfx/interface/mapitems/commander_rank.dds"
+														texture_density = 2
+
+														action_tooltip = {
+															title = "SHOW_CHARACTER"
+															on_action = "[UnitMarkerItem.OnLeaderClick]"
+														}
+
+														datacontext = "[UnitMarkerItem.GetUnit.GetCommander]"
+														tooltipwidget = {
+															using = Character_tooltip
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_modifiers_size" {
+								size = { 28 28 }
+							}
+
+							blockoverride "item_unit_text_object" {
+								hbox = {
+									# margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+									margin = {8 0}
+									margin_right = 7
+									hbox = {
+										spacing = -2
+										country_flag_small = {
+											datacontext = "[Unit.GetCountry]"
+											size = { 40 28 }
+
+											blockoverride "click" {
+												onclick = "[UnitMarkerItem.OnFlagClick]"
+											}
+
+											blockoverride "double_click" {
+												ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+											}
+										}
+
+										widget = {
+											size = { 8 26 }
+											allow_outside = yes
+
+											unit_composition_bar = {
+												size = { 6 24 }
+											}
+
+											icon = {
+												size = { 100% 100% }
+												texture = "gfx/interface/component_tiles/square_outline_alt.dds"
+												texture_density = 2
+												spriteType = corneredstretched
+												spriteBorder = { 20 20 }
+												modify_texture = {
+													using = color_super_dark_brown_texture
+													blend_mode = multiply
+												}
+											}
+										}
+									}
+
+									vbox = {
+										using = layoutpolicy_expanding
+										margin_bottom = 4
+
+										expand = {}
+
+										text_single = {
+											layoutpolicy_horizontal = expanding
+											autoresize = no
+											size = {-1 20}
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetLabel]"
+										}
+
+										widget = {
+											layoutpolicy_horizontal = expanding
+											size = { -1 5 }
+											progressbar = {
+												visible = "[Unit.HasMaximumMaintenance]"
+												size = { 100% 5 }
+												using = progress_bar_green_alt
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+											progressbar = {
+												visible = "[Not(Unit.HasMaximumMaintenance)]"
+												size = { 100% 5 }
+												progresstexture = "gfx/interface/progressbars/progress_bar_yellow.dds"
+												noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+												texture_density = 2
+												spriteType = Corneredstretched
+												spriteborder = { 12 0 }
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_unit_transport_text_object" {
+								text_single = {
+									size = { 100% 100% }
+									autoresize = no
+									align = center|nobaseline
+									text = "[UnitMarkerItem.GetTransportedTroops]"
+								}
+							}
+						}
+
+						# Short width
+						widget = {
+							visible = "[And(UnitMarker.ShouldBeShownShortWidth, Not(UnitMarker.ShouldBeShownVerySmallSize))]"
+							size = { @[unit_marker_item_width * unit_marker_item_short_factor] @unit_marker_item_height }
+
+							vbox = {
+								# hbox = {
+								# 	layoutpolicy_horizontal = expanding
+								# 	spacing = 2
+								# 	using = unit_marker_item_modifiers_small_zoom
+								# 	expand = {}
+								# }
+
+								unit_marker_item_unit_info = {
+									unit_marker_compass = {
+										size = { 18 18 }
+										position = { -8 4 }
+									}
+
+									blockoverride "unit_marker_item_unit_info_size"{
+										layoutpolicy_horizontal = expanding
+										size = {-1 @unit_marker_frame_height}
+									}
+									blockoverride "item_modifiers_size" {
+										size = { 22 22 }
+										position = { 0 2 }
+									}
+									blockoverride "unit_transport_size" {
+										size = { 28 28 }
+									}
+
+									blockoverride "item_unit_text_object" {
+										hbox = {
+											margin_left = 10
+											margin_right = 7
+
+											country_flag_small = {
+												datacontext = "[Unit.GetCountry]"
+												size = { 38 26 }
+
+												blockoverride "click" {
+													onclick = "[UnitMarkerItem.OnFlagClick]"
+												}
+
+												blockoverride "double_click" {
+													ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+												}
+											}
+
+											vbox = {
+												using = layoutpolicy_expanding
+												minimumsize = {12 -1}
+												margin_bottom = 4
+
+												expand = {}
+
+												text_single = {
+													layoutpolicy_horizontal = expanding
+													autoresize = yes
+													fontsize = 12
+													maximumsize = {-1 20}
+													align = center|nobaseline
+													text = "[UnitMarkerItem.GetLabel]"
+												}
+												widget = {
+													layoutpolicy_horizontal = expanding
+													size = { -1 5 }
+													progressbar = {
+														visible = "[Unit.HasMaximumMaintenance]"
+														size = { 100% 5 }
+														using = progress_bar_green_alt
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+													progressbar = {
+														visible = "[Not(Unit.HasMaximumMaintenance)]"
+														size = { 100% 5 }
+														using = progress_bar_goldish
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+												}
+											}
+										}
+									}
+
+									blockoverride "item_unit_transport_text_object" {
+										text_single = {
+											size = { 100% 100% }
+											autoresize = no
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetTransportedTroops]"
+										}
+									}
+								}
+
+								expand = {}
+							}
+						}
+					}
+
+					#Navy Marker
+					vbox = {
+						using = layoutpolicy_expanding
+						visible = "[Not(UnitMarkerItem.GetUnit.IsArmy)]"
+						allow_outside = yes
+						margin_right = 5
+
+						# Full width
+						unit_marker_item_layout = {
+							using = layoutpolicy_expanding
+							spacing = -3
+							visible = "[UnitMarker.ShouldBeShownFullWidth]"
+							allow_outside = yes
+
+							widget = {
+								ignore_layout = yes
+								size = { 70 40 }
+								parentanchor = vcenter|left
+								widgetanchor = vcenter|right
+								position = { 4 5 }
+								allow_outside = yes
+								hbox = {
+									allow_outside = yes
+									spacing = 2
+
+									expand = {}
+
+									unit_marker_compass = {}
+
+									widget = {
+										allow_outside = yes
+										using = unit_marker_item_commander
+										blockoverride "item_unit_commander_text_object" {
+											hbox = {
+												widget = {
+													size = { 26 26 }
+
+													# Has General
+													button = {
+														visible = "[UnitMarkerItem.HasLeaderFrame]"
+
+														size = { 26 26 }
+
+														framesize = { 32 32 }
+														frame = "[UnitMarkerItem.GetLeaderFrame]"
+
+														texture = "gfx/interface/mapitems/commander_rank.dds"
+														texture_density = 2
+
+														action_tooltip = {
+															title = "SHOW_CHARACTER"
+															on_action = "[UnitMarkerItem.OnLeaderClick]"
+														}
+
+														datacontext = "[UnitMarkerItem.GetUnit.GetCommander]"
+														tooltipwidget = {
+															using = Character_tooltip
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_modifiers_size" {
+								size = { 28 28 }
+							}
+
+							blockoverride "item_unit_text_object" {
+								hbox = {
+									# margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+									margin = {4 0}
+									margin_right = 8
+									margin_bottom = 2
+									vbox = {
+										using = layoutpolicy_expanding
+										margin_bottom = 2
+
+										expand = {}
+
+										text_single = {
+											layoutpolicy_horizontal = expanding
+											autoresize = no
+											size = {-1 20}
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetLabel]"
+										}
+										widget = {
+											layoutpolicy_horizontal = expanding
+											size = { -1 5 }
+											progressbar = {
+												parentanchor = right
+												visible = "[Unit.HasMaximumMaintenance]"
+												size = { 100% 5 }
+												using = progress_bar_green_alt
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+											progressbar = {
+												parentanchor = right
+												visible = "[Not(Unit.HasMaximumMaintenance)]"
+												size = { 100% 5 }
+												using = progress_bar_goldish
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+										}
+									}
+
+									hbox = {
+										spacing = -2
+
+										widget = {
+											size = { 8 26 }
+											allow_outside = yes
+
+											unit_composition_bar = {
+												size = { 6 26 }
+											}
+
+											icon = {
+												size = { 100% 100% }
+												texture = "gfx/interface/component_tiles/square_outline_alt.dds"
+												texture_density = 2
+												spriteType = corneredstretched
+												spriteBorder = { 20 20 }
+												modify_texture = {
+													using = color_super_dark_brown_texture
+													blend_mode = multiply
+												}
+											}
+										}
+
+										country_flag_small = {
+											datacontext = "[Unit.GetCountry]"
+											size = { 42 29 }
+
+											blockoverride "click" {
+												onclick = "[UnitMarkerItem.OnFlagClick]"
+											}
+
+											blockoverride "double_click" {
+												ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_unit_transport_text_object" {
+								text_single = {
+									size = { 100% 100% }
+									autoresize = no
+									align = center|nobaseline
+									text = "[UnitMarkerItem.GetTransportedTroops]"
+								}
+							}
+						}
+
+						# Short width
+						widget = {
+							visible = "[And(UnitMarker.ShouldBeShownShortWidth, Not(UnitMarker.ShouldBeShownVerySmallSize))]"
+							size = { @[unit_marker_item_width * unit_marker_item_short_factor] @unit_marker_item_height }
+
+							vbox = {
+								# hbox = {
+								# 	layoutpolicy_horizontal = expanding
+								# 	spacing = 2
+								# 	using = unit_marker_item_modifiers_small_zoom
+								# 	expand = {}
+								# }
+
+								unit_marker_item_unit_info = {
+									unit_marker_compass = {
+										size = { 18 18 }
+										position = { -8 4 }
+									}
+
+									blockoverride "unit_marker_item_unit_info_size"{
+										layoutpolicy_horizontal = expanding
+										size = {-1 @unit_marker_frame_height}
+									}
+									blockoverride "item_modifiers_size" {
+										size = { 22 22 }
+										position = { 0 2 }
+									}
+									blockoverride "unit_transport_size" {
+										size = { 28 28 }
+									}
+
+									blockoverride "item_unit_text_object" {
+										hbox = {
+											margin_left = 4
+											margin_right = 7
+
+											vbox = {
+												using = layoutpolicy_expanding
+												minimumsize = {12 -1}
+												margin_bottom = 4
+
+												expand = {}
+
+												text_single = {
+													layoutpolicy_horizontal = expanding
+													autoresize = yes
+													fontsize = 12
+													maximumsize = {-1 20}
+													align = center|nobaseline
+													text = "[UnitMarkerItem.GetLabel]"
+												}
+												widget = {
+													layoutpolicy_horizontal = expanding
+													size = { -1 5 }
+													progressbar = {
+														visible = "[Unit.HasMaximumMaintenance]"
+														parentanchor = right
+														size = { 100% 5 }
+														using = progress_bar_green_alt
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+													progressbar = {
+														visible = "[Not(Unit.HasMaximumMaintenance)]"
+														parentanchor = right
+														size = { 100% 5 }
+														using = progress_bar_goldish
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+												}
+											}
+
+											country_flag_small = {
+												datacontext = "[Unit.GetCountry]"
+												size = { 38 26 }
+
+												blockoverride "click" {
+													onclick = "[UnitMarkerItem.OnFlagClick]"
+												}
+
+												blockoverride "double_click" {
+													ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+												}
+											}
+										}
+									}
+
+									blockoverride "item_unit_transport_text_object" {
+										text_single = {
+											size = { 100% 100% }
+											autoresize = no
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetTransportedTroops]"
+										}
+									}
+								}
+
+								expand = {}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### COMBAT
+widget = {
+	name = "combat_marker"
+	allow_outside = yes
+	position = { 0 -3 }
+
+	button = {
+		visible = "[Or(CombatMarker.ShouldBeShownFullWidth, And(CombatMarker.ShouldBeShownShortWidth, Not(CombatMarker.ShouldBeShownVerySmallSize)))]"
+		datacontext = "[CombatMarker.GetCombat]"
+		tooltipwidget = {
+			using = Combat_tooltip
+		}
+		parentanchor = center
+		allow_outside = yes
+		onclick = "[CombatMarker.OnClick]"
+		onrightclick = "[CombatMarker.OnRightClick]"
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			visible = "[HasAnyUnitsSelected]"
+			title = "CLICK_ACTION_UNIT_MOVE_TO_BATTLE"
+			on_action = "[CombatMarker.OnRightClick]"
+		}
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(CombatMarker.GetLocation)]"
+
+		background = {
+			texture = "gfx/interface/component_tiles/map_markers/map_marker_glow.dds"
+			texture_density = 2
+			spriteType = corneredstretched
+			spriteBorder = {65 65}
+			margin_bottom = 45
+
+			modify_texture = {
+				using = color_red_texture
+			}
+		}
+		background = {
+			texture = "gfx/interface/component_tiles/map_markers/map_marker_shadow.dds"
+			texture_density = 2
+			spriteType = corneredstretched
+			spriteBorder = {35 35}
+			margin_bottom = 15
+			blend_mode = multiply
+			alpha = 0.5
+		}
+
+		hbox = {
+			resizeparent = yes
+			hbox = {
+				datacontext = "[CombatMarker.GetCombat.GetAttacker]"
+				allow_outside = yes
+
+				using = combat_side_marker
+				blockoverride "combat_side_marker_params" { righttoleft = yes }
+				blockoverride "combat_side_marker_mirror" {mirror = horizontal}
+				blockoverride "combat_side_marker_army_margin" {
+					margin_left = -3
+					margin_right = -11
+				}
+				blockoverride "combat_side_marker_navy_margin" {
+					margin_left = -8
+					margin_right = -4
+				}
+				# blockoverride "combatside_banner_params" {
+				# 	modify_texture = {
+				# 		using = color_red_texture
+				# 		alpha = 0.9
+				# 		blend_mode = multiply
+				# 	}
+				# }
+
+				# blockoverride "combatside_banner_icon" {
+				# 	texture = "gfx/interface/icons/flat_icons/power_projection.dds"
+				# 	texture_density = 2
+
+				# 	modify_texture = {
+				# 		using = color_white_texture
+				# 		alpha = 0.2
+				# 	}
+
+				# 	modify_texture = {
+				# 		using = color_red_texture
+				# 		alpha = 1
+				# 	}
+				# }
+			}
+
+			hbox = {
+				datacontext = "[CombatMarker.GetCombat.GetDefender]"
+				allow_outside = yes
+
+				using = combat_side_marker
+				blockoverride "combat_side_marker_orientation" {
+					righttoleft = yes
+					margin_left = 28
+				}
+				blockoverride "combat_side_penalty_anchor"{
+					parentanchor = right|vcenter
+				}
+				# blockoverride "combat_side_bg_orientation" {mirror = horizontal}
+				blockoverride "combat_side_marker_params" { righttoleft = no }
+				blockoverride "combat_side_marker_morale_mirror" {}
+				# blockoverride "combatside_banner_params" {
+				# 	modify_texture = {
+				# 		texture = "gfx/interface/colors/progress_blue.dds"
+				# 		alpha = 0.9
+				# 		blend_mode = multiply
+				# 	}
+				# }
+
+				# blockoverride "combatside_banner_icon" {
+				# 	texture = "gfx/interface/icons/flat_icons/military_flat_icon.dds"
+				# 	texture_density = 2
+
+				# 	modify_texture = {
+				# 		using = color_white_texture
+				# 		alpha = 0.2
+				# 	}
+
+				# 	modify_texture = {
+				# 		texture = "gfx/interface/colors/progress_blue.dds"
+				# 		alpha = 1
+				# 	}
+				# }
+			}
+		}
+
+		widget = {
+			size = { 58 48 }
+			position = {0 16}
+			parentanchor = center
+
+			using = bg_card_header_01_military
+			blockoverride "header_military_extra" {
+				alpha = 1
+				margin = { -1 -3 }
+			}
+
+			battle_center_button = {
+				size = { 68 66 }
+				parentanchor = center
+				using = goto_battle_action
+				onrightclick = "[CombatMarker.OnRightClick]"
+
+				action_tooltip = {
+					click_type = right
+					click_mode = single
+					visible = "[HasAnyUnitsSelected]"
+					title = "CLICK_ACTION_UNIT_MOVE_TO_BATTLE"
+					on_action = "[CombatMarker.OnRightClick]"
+				}
+
+				hbox = {
+					margin = { 5 0 }
+					spacing = 2
+
+					vbox = {
+						spacing = 2
+						datacontext = "[Combat.GetAttacker]"
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetLeft]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetCenter]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetRight]"
+						}
+					}
+
+					widget = {
+						size = { 20 20 }
+
+						icon = {
+							size = { 100% 100% }
+							parentanchor = center
+							texture = "[GetConceptTexture('battle')]"
+							glow = {
+								name = "drop_shadow"
+								glow_radius = 3
+								color = {0.0 0.0 0.0 1.0}
+								alpha = 0.3
+							}
+						}
+					}
+
+					vbox = {
+						spacing = 2
+						datacontext = "[Combat.GetDefender]"
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetRight]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetCenter]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetLeft]"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### Combat Imminent Marker
+widget = {
+	name = "combat_imminent_marker"
+	allow_outside = yes
+	widget = {
+		size = { 40 40 }
+		parentanchor = center
+
+		tooltip_offset = { 10 0 }
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "[CombatImminentMarker.GetIconTexture]"
+
+						glow = {
+							name = "drop_shadow"
+							glow_radius = 3
+							color = {0.0 0.0 0.0 1.0}
+							alpha = 0.3
+						}
+					}
+				}
+
+				blockoverride "title_button" {
+					hint_button = {
+						action_tooltip = {
+							title = "OPEN_HINT"
+							on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_battle')]"
+						}
+					}
+				}
+
+				blockoverride "title_text" {
+					text = "COMBAT_IMMINENT_TITLE"
+				}
+
+				blockoverride "concept_link" {
+					text = "[combat|e]"
+				}
+
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "[CombatImminentMarker.GetTooltipHeader]"
+						}
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_OUTCOME_TITLE"
+						}
+						textcontext = "[CombatImminentMarker.GetTooltipOutcome]"
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_BOTH_SIDES_TITLE"
+						}
+						textcontext = "COMBAT_IMMINENT_BOTH_SIDES"
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_OUR_BENEFITS"
+						}
+						textcontext = "COMBAT_IMMINENT_OUR_BENEFITS_TEXT"
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_THEIR_BENEFITS"
+						}
+						textcontext = "COMBAT_IMMINENT_THEIR_BENEFITS_TEXT"
+					}
+				}
+			}
+		}
+
+		button = {
+			parentanchor = center
+			allow_outside = yes
+
+			block "button_size" {
+				size = { 100% 100% }
+			}
+
+			tooltip_enabled = no
+			texture = "[CombatImminentMarker.GetIconTexture]"
+
+			onclick = "[SelectLocation(CombatImminentMarker.GetLocation)]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(CombatImminentMarker.GetLocation)]"
+		}
+	}
+}
+
+### FORT ICON (and province capitals) in tactical map mode
+container = {
+	name = "fort_marker"
+	allow_outside = yes
+
+	datacontext = "[FortMarker.GetLocation]"
+	widget = {
+		hbox = {
+			set_parent_size_to_minimum = yes
+			widget = {
+				size =  { 20 30 }
+				location_rank_icon = {
+					visible = "[Or3(Location.IsProvinceCapital, Location.IsCapital, Location.HasAnyFort)]"
+					parentanchor = center
+					position = { 0 2 }
+					blockoverride "icon_size" {
+						size =  { 20 20 }
+						parentanchor = hcenter|bottom
+					}
+				}
+			}
+			icon = {
+				alwaystransparent = no
+				visible = "[Location.HasAnyFort]"
+				texture = "[GetBuildingIcon(Location.GetBestFortBuilding.GetType)]"
+				size = { 30 30 }
+				onmousehierarchyenter = "[PdxGuiWidget.SetHighlightFort(Location.Self)]"
+
+				glow = {
+					glow_radius = 2
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.5
+				}
+
+				tooltipwidget = {
+					using = Garrison_tooltip
+				}
+			}
+		}
+	}
+}
+
+### TOLL MARKER
+container = {
+	name = "toll_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+
+	datacontext = "[TollMarker.GetLocation]"
+	button = {
+		parentanchor = center
+		texture = "[GetConceptTexture('sound_toll')]"
+		size = { 30 30 }
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(Location.GetSoundTollController)]"
+
+		glow = {
+			glow_radius = 2
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+
+		tooltipwidget = {
+			using = SoundTollLocationTooltip
+		}
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "GO_TO_LOCATION"
+			on_action = "[ShowLocation(Location.GetSoundTollController)]"
+		}
+	}
+}
+
+### Port Marker
+widget = {
+	name = "port_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+
+	button = {
+		widgetanchor = center
+		size = { 30 30 }
+		visible = "[PortMarker.ShouldBeShown]"
+		# down = "[PortMarker.HasVisibleShips]"
+		datacontext = "[PortMarker]"
+
+		icon = { # FUM: Both port icons and their drop shadow pre-composited into one
+			parentanchor = center
+			size = { 120% 120% }
+			texture = "gfx/interface/buttons/flats/fum_port_marker.dds"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			cursor = "unit_movement"
+
+			visible = "[PortMarker.CanMoveNavyHere]"
+			title = "PORT_CLICK_ACTION_UNIT_TRANSPORT"
+			on_action = "[PortMarker.MoveNavyHere]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "gfx/interface/icons/flat_icons/geopolitics/maritime_presence.dds"
+
+						glow = {
+							name = "drop_shadow"
+							glow_radius = 3
+							color = {0.0 0.0 0.0 1.0}
+							alpha = 0.3
+						}
+					}
+				}
+
+				blockoverride "title_text" {
+					text = "PORT_TOOLTIP_NEW"
+				}
+
+				blockoverride "concept_link" {
+					text = "[port|e]"
+				}
+
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "PORT_TOOLTIP_TEXT"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### Raw Goods Marker
+widget = {
+	name = "raw_goods_marker"
+	# max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+	size = "[Min_CVector2f(Multiply_CVector2f(GetInverseZoom2, '(CVector2f)9333, 9333'), '(CVector2f)85, 85')]"
+
+	datacontext = "[RawGoodsMarker]"
+	datacontext = "[RawGoodsMarker.GetLocation]"
+	datacontext = "[RawGoodsMarker.GetLocation.GetRawMaterial]"
+	datacontext = "[RawGoodsMarker.GetLocation.GetMarket]"
+
+	button = {
+		size = { 75% 75% }
+		parentanchor = center
+		texture = "[GetGoodsIcon(Location.GetRawMaterial.Self)]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightGoods(Location.GetRawMaterial.Self)]"
+		tooltipwidget = {
+			using = SpecificGoodsMarket_tooltip
+		}
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "OPEN_GOOD_PANEL"
+			on_action = "[ShowGoods(Location.GetRawMaterial.Self)]"
+		}
+	}
+
+	button = {
+		visible = "[Location.HasSpecificBaseModifier]"
+		parentanchor = bottom|right
+		position = { 0	0 }
+		size = { 50% 50% }
+		icon = {
+			size = { 100% 100% }
+			texture = "[Location.GetSpecificBaseModifier.GetModifier.GetIcon]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightGoods(Location.GetRawMaterial.Self)]"
+			glow = {
+				glow_radius = 3
+				color = {0.0 0.0 0.0 1.0}
+				alpha = 0.5
+			}
+		}
+
+		tooltipwidget = {
+			using = SpecificGoodsMarket_tooltip
+			blockoverride "good_details_extra_info" {
+				TooltipListBase = {
+					TooltipManualTableField = { # SPECIFIC MODIFIERS
+						tooltipwidget = {
+							using = raw_good_location_modifier_tooltip
+						}
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							text = "[location_modifier|e]"
+						}
+
+						icon = {
+							size = { 25 25 }
+							texture = "[Location.GetSpecificBaseModifier.GetModifier.GetIcon]"
+
+							glow = {
+								glow_radius = 3
+								color = {0.0 0.0 0.0 1.0}
+								alpha = 0.5
+							}
+						}
+						text_single = {
+							text = "[Location.GetSpecificBaseModifier.GetName|L]"
+							fontsize = 15
+							using = FontDefaultColor
+						}
+					}
+				}
+			}
+		}
+		# action_tooltip = {
+		# 	click_type = left
+		# 	click_mode = single
+		# 	title = "OPEN_GOOD_PANEL"
+		# 	on_action = "[ShowGoods(Location.GetRawMaterial.Self)]"
+		# }
+	}
+}
+
+### Dynasty Marker
+widget = {
+	name = "dynasty_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+	datacontext = "[DynastyMarker]"
+
+	dynasty_shield_mid = {
+		parentanchor = center
+		visible = "[Not(Or(DynastyMarker.IsRegency, DynastyMarker.IsLowborn))]"
+		datacontext = "[DynastyMarker.GetDynasty]"
+	}
+
+	icon = {
+		using = bg_circle
+		parentanchor = center
+		visible = "[DynastyMarker.IsRegency]"
+		size = { 20 20 }
+		texture = "gfx/interface/icons/character_roles/regent.dds"
+	}
+
+	lowborn_coat_of_arms = {
+		visible = "[DynastyMarker.IsLowborn]"
+		parentanchor = center
+	}
+}
+
+### Supply depot
+widget = {
+	name = "supply_depot_marker"
+	allow_outside = yes
+	datacontext = "[SupplyDepotMarker.GetLocation.GetSupplyDepot]"
+	tooltipwidget = {
+		using = SupplyDepot_tooltip
+	}
+
+	widget = {
+		parentanchor = center
+		allow_outside = yes
+
+		widget = {
+			parentanchor = vcenter|left
+			layoutpolicy_horizontal = expanding
+
+			size = { 100 @unit_marker_frame_height }
+
+			icon = {
+				size = { 100% 100% }
+				using = unit_marker_bg
+
+				modify_texture = {
+					using = color_light_green_texture
+					alpha = 0.3
+				}
+
+				using = overlay_gold
+			}
+
+			icon = {
+				size = { 100% 100% }
+				using = unit_marker_frame
+			}
+
+			text_single = {
+				size = { 100% 100% }
+				autoresize = no
+				align = right|nobaseline
+				margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+				margin_right = @unit_marker_frame_text_margin
+
+				text = "[SupplyDepotMarker.GetLocation.GetSupplyDepot.GetFood.GetCurrentFood|2]"
+			}
+		}
+
+		widget =  {
+			size = { @unit_marker_morale_progressbar_size @unit_marker_morale_progressbar_size }
+			parentanchor = center
+
+			using = bg_circle_piechart
+
+			piechart = {
+				parentanchor = center
+				size = { 90% 90% }
+				using = piechart_angles
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[SupplyDepotMarker.GetProgress]"
+					color = { 0.01 0.9 0.3 0.8 }
+					alwaystransparent = yes
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[Subtract_float('(float)100.0', SupplyDepotMarker.GetProgress)]"
+					color = { 0.0 0.1 0.1 1 }
+					alwaystransparent = yes
+				}
+
+				icon = {
+					parentanchor = center
+					texture = "gfx/interface/mapitems/has_attrition_with_food_supply.dds"
+					size = { 75% 75% }
+				}
+			}
+		}
+	}
+}
+
+### FortFlipRestore Marker
+widget = {
+	name = "flip_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	allow_outside = yes
+	position = { 0 0 }
+
+	widget = {
+		size = { 30 30 }
+		widgetanchor = center
+
+		using = bg_circle_piechart
+		blockoverride "marker_bg_circle_extra_modifiers" {
+			modify_texture = {
+				using = color_light_green_texture
+				alpha = 0.3
+			}
+		}
+
+		tooltipwidget = {
+			SimpleContextualRowTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/icons/location_icons/garrison.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "concept_link" {
+					text = "[controller|e]"
+				}
+
+				lowpriotextcontext = "[FortFlipRestoreMarker.GetTooltip]"
+			}
+		}
+
+		button = {
+			parentanchor = center
+			allow_outside = yes
+
+			block "button_size" {
+				size = { 18 18 }
+			}
+
+			tooltip_enabled = no
+			texture = "gfx/interface/icons/location_icons/garrison.dds"
+			texture_density = 2
+
+			onclick = "[SelectLocation(FortFlipRestoreMarker.GetLocation)]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(FortFlipRestoreMarker.GetLocation)]"
+		}
+
+		piechart = {
+			parentanchor = center
+			size = { 26 26 }
+			using = piechart_angles
+
+			pieslice_no_highlight = {
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				value = "[FortFlipRestoreMarker.GetProgress]"
+				color = { 0.01 0.9 0.2 1 }
+				alwaystransparent = yes
+			}
+
+			pieslice_no_highlight = {
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				value = "[Subtract_float('(float)100.0', FortFlipRestoreMarker.GetProgress)]"
+				color = { 0.0 0.1 0.0 1 }
+				alwaystransparent = yes
+			}
+		}
+	}
+}
+
+### import/export widget
+widget = {
+	name = "import_export_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	position = { 0 -56 }
+	widgetanchor = center
+	size = { 160 70 }
+	alwaystransparent = no
+
+	background = {
+		using = Background_Area
+		shaderfile = "gfx/FX/pdxgui_default.shader"
+	}
+
+	text_single = {
+		parentanchor = top|hcenter
+		widgetanchor = top|hcenter
+		datacontext = "[ImportExportMarker.GetPossibleItem]"
+		text = "POSSIBLE_TRADE_POTENTIAL_PROFIT"
+	}
+
+	hbox = {
+		button = {
+			size = { 22 22 }
+			texture = "[GetGoodsIcon(ImportExportMarker.GetPossibleItem.GetGoods)]"
+			datacontext = "[ImportExportMarker.GetPossibleItem.GetGoods]"
+			datacontext = "[ImportExportMarker.GetLocation.GetOwner]"
+			datacontext = "[ImportExportMarker.GetLocation.GetMarket]"
+			onclick = "[ShowGoods(ImportExportMarker.GetPossibleItem.GetGoods)]"
+			tooltipwidget = {
+				using = SpecificGoodsMarket_tooltip
+			}
+		}
+
+		vbox = {
+			text_single = {
+				size = { 40 20 }
+				autoresize = no
+				align = center|nobaseline
+				using = Font_Size_Small
+				text = "[ImportExportMarker.GetPossibleItem.GetDesiredMerchantCapacity|2]"
+			}
+
+			ranged_slider = {
+				size = { 100 14 }
+				direction = horizontal
+				#set value first or setting the min/max/mincap/maxcap changes the existing value from 0 to something inside the min/max/mincap/maxcap values
+				value = "[ImportExportMarker.GetPossibleItem.GetDefault]"
+				min = 0
+				max = "[ImportExportMarker.GetPossibleItem.GetMaxMerchantCapacity]"
+				mincap = 0
+				maxcap = "[ImportExportMarker.GetPossibleItem.GetMaxMerchantCapacity]"
+				step = "[ImportExportMarker.GetPossibleItem.GetStep]"
+				wheelstep = "[ImportExportMarker.GetPossibleItem.GetStep]"
+				onvaluechanged = "[ImportExportMarker.GetPossibleItem.OnChanged]"
+
+				track = {
+					button = {
+						texture = "gfx/interface/progressbars/slider_default_bg.dds"
+						alpha = 0.5
+						enabled = no
+						texture_density = 2
+						spriteType = Corneredstretched
+						spriteborder = { 0 0 }
+					}
+				}
+
+				track_range = { # Avalible progress
+					button = {
+						texture = "gfx/interface/progressbars/slider_default_bg.dds"
+						texture_density = 2
+						using = color_progress_blue
+						alpha = 0.3
+						spriteType = Corneredstretched
+						spriteborder = { 10 0 }
+
+						effectname = "NoHighlight"
+					}
+				}
+
+				track_highlight = { # Active Progress
+					button = {
+						texture = "gfx/interface/progressbars/progress_bar_blue_alt.dds"
+						texture_density = 2
+						spriteType = Corneredstretched
+						spriteborder = { 0 0 }
+						effectname = "NoHighlight"
+					}
+				}
+
+				slider = {
+					ui_direction_button = {
+
+						size = { 14 14 }
+						blockoverride "button_texture" {
+							texture = "gfx/interface/buttons/flats/slider.dds"
+						}
+
+						glow = {
+							name = "drop_shadow"
+							glow_radius = 3
+							color = {0.0 0.0 0.0 1.0}
+							alpha = 0.5
+						}
+					}
+				}
+
+				dec_button = {
+					ui_direction_button = {
+						size = { 14 14 }
+						blockoverride "button_texture" {
+							texture = "gfx/interface/buttons/flats/minus_button.dds"
+						}
+						using = bg_circle
+					}
+				}
+
+				inc_button = {
+					ui_direction_button = {
+						size = { 14 14 }
+						blockoverride "button_texture" {
+							texture = "gfx/interface/buttons/flats/plus_button.dds"
+						}
+						using = bg_circle
+					}
+				}
+			}
+		}
+
+		ui_direction_button = {
+			size = { 22 22 }
+			using = bg_circle
+			visible = "[ImportExportMarker.GetPossibleItem.IsExport]"
+			enabled = "[ImportExportMarker.GetPossibleItem.CanStart]"
+			tooltip = "[ImportExportMarker.GetPossibleItem.GetStartInfo]"
+			onclick = "[ImportExportMarker.GetPossibleItem.Start]"
+			onmousehierarchyenter = "[ImportExportMarker.GetPossibleItem.EnableHighlight('(bool)yes')]"
+			onmousehierarchyleave = "[ImportExportMarker.GetPossibleItem.EnableHighlight('(bool)no')]"
+			blockoverride "button_texture" {
+				texture = "gfx/interface/buttons/flats/export.dds"
+			}
+		}
+
+		ui_direction_button = {
+			size = { 22 22 }
+			using = bg_circle
+			visible = "[Not(ImportExportMarker.GetPossibleItem.IsExport)]"
+			enabled = "[ImportExportMarker.GetPossibleItem.CanStart]"
+			tooltip = "[ImportExportMarker.GetPossibleItem.GetStartInfo]"
+			onclick = "[ImportExportMarker.GetPossibleItem.Start]"
+			onmousehierarchyenter = "[ImportExportMarker.GetPossibleItem.EnableHighlight('(bool)yes')]"
+			onmousehierarchyleave = "[ImportExportMarker.GetPossibleItem.EnableHighlight('(bool)no')]"
+			blockoverride "button_texture" {
+				texture = "gfx/interface/buttons/flats/import.dds"
+			}
+		}
+	}
+}
+
+### CabinetAction Marker
+widget = {
+	name = "cabinet_action_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	datacontext = "[CabinetActionMarker.GetCabinet]"
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[CabinetActionMarker.GetProgress]"
+			color = { 0.01 0.6 0.9 1 }
+			alwaystransparent = yes
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', CabinetActionMarker.GetProgress)]"
+			color = { 0.0 0.1 0.0 1 }
+			alwaystransparent = yes
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		size = { 22 22 }
+		align = center|nobaseline
+		texture = "[GetCabinetActionIcon(Cabinet.GetAction)]"
+		texture_density = 2
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCabinetActionTarget(CabinetActionMarker.GetCabinet)]"
+
+		tooltipwidget = {
+			using = action_progress_tooltip
+		}
+
+		tooltip_offset = { 20 20 }
+
+		datacontext = "[CabinetActionMarker.GetCabinet]"
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+
+			title = "CABINET_ACTION_SIDEMENU"
+			on_action = "[SelectCabinetAction(Cabinet.Self, '(bool)no')]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			conditions = "[MakeItFailIfLoc(Not(IsChangeCabinetActionTargetEnabled(Cabinet.Self)), 'CANNOT_CABINET_ACTION_SIDEMENU_RMB')]"
+			title = "CABINET_ACTION_SIDEMENU_RMB"
+			visible = "[IsChangeCabinetActionTargetVisible(Cabinet.Self)]"
+			enabled = "[IsChangeCabinetActionTargetEnabled(Cabinet.Self)]"
+			on_action = "[ChangeCabinetActionTarget(Cabinet.Self)]"
+		}
+	}
+}
+
+### BlockedVision Marker
+widget = {
+	name = "blocked_vision_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 20 20 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	# using = bg_circle_piechart
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/mapitems/hidden_from_land.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+					text = "BLOCKED_VISION_TOOLTIP_TEXT"
+			}
+			blockoverride "concept_link" {
+				text = [fow|e]
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipStringPairList = {
+					textcontext = "[BlockedVisionMarker.GetTooltip]"
+				}
+			}
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/hidden_from_land.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onclick = "[SelectLocation(BlockedVisionMarker.GetLocation)]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(BlockedVisionMarker.GetLocation)]"
+	}
+}
+
+### WinterBlocked Marker
+widget = {
+	name = "winter_blocked_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 20 20 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/mapitems/stuck_in_ice.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+					text = "WINTER_BLOCKED_TOOLTIP_TEXT"
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipStringPairList = {
+					textcontext = "[WinterBlockedMarker.GetTooltip]"
+				}
+			}
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/stuck_in_ice.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onclick = "[SelectLocation(WinterBlockedMarker.GetLocation)]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(WinterBlockedMarker.GetLocation)]"
+	}
+}
+
+### Annexation Marker
+widget = {
+	name = "annexation_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	datacontext = "[AnnexationMarker.GetCountry]"
+	tooltip_enabled = "[Country.IsBeingAnnexed]"
+	tooltipwidget = {
+		using = Annexation_tooltip
+	}
+
+	tooltip_offset = { 20 20 }
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+		visible = "[Country.GetDiplomacy.IsBeingAnnexedStalled]"
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[AnnexationMarker.GetProgress]"
+			color = { 0.5 0.5 0.5 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', AnnexationMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+	}
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+		visible = "[Not(Country.GetDiplomacy.IsBeingAnnexedStalled)]"
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[AnnexationMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', AnnexationMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/icons/outliner/categories/annexation.dds"
+		texture_density = 2
+
+		onclick = "[AnnexationMarker.OnClick]"
+		onrightclick = "[AnnexationMarker.OnRightClick]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(AnnexationMarker.GetCountry)]"
+	}
+}
+
+### Desert Connection Marker
+widget = {
+	name = "desert_connection_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+
+	size = { 25 25}
+	widgetanchor = left
+	position = { 0 2 }
+
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/mapitems/desert_connector.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+				text = "DESERT_CONNECTOR_TOOLTIP"
+			}
+
+			blockoverride "concept_link" {
+				text = [corridor|e]
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipScrolledRowList = {
+					blockoverride "block_title" {
+						text = "[DesertConnectionMarker.GetTooltip]"
+					}
+
+					textcontext = "[DesertConnectionMarker.GetConnectedLocationNames]"
+				}
+			}
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/desert_connector.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onmousehierarchyenter = "[DesertConnectionMarker.HighlightConnections]"
+		onmousehierarchyleave = "[DesertConnectionMarker.ClearHighlightedConnections]"
+	}
+}
+
+### Colony Charter Marker
+widget = {
+	name = "colony_charter_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[ColonyCharterMarker.GetProgress]"
+			color = { 0.01 0.6 0.9 1 }
+			alwaystransparent = yes
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', ColonyCharterMarker.GetProgress)]"
+			color = { 0.0 0.1 0.0 1 }
+			alwaystransparent = yes
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		size = { 22 22 }
+		align = center|nobaseline
+		texture = "gfx/interface/mapitems/colonial_charter.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onmousehierarchyenter = "[ColonyCharterMarker.HighlightCharter]"
+		onmousehierarchyleave = "[ColonyCharterMarker.ClearHighlightedCharter]"
+
+		tooltip_offset = { 20 20 }
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "GO_TO_COLONY"
+			on_action = "[ShowProvinceDefinition(ColonyCharterMarker.GetLocation.GetProvinceDefinition)]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "AUTOMATED_SYSTEM_COLONIES_CLICK"
+			on_action = "[OpenLateralViewWithParams('expansion', 'low_tab = colonisation')]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/mapitems/colonial_charter.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "title_text" {
+					text = "COLONIAL_PROGRESS_POT_HEADER"
+				}
+
+				blockoverride "concept_link" {
+					text = [colonial_charter|e]
+				}
+
+				blockoverride "tooltip_content" {
+					TooltipScrolledRowList = {
+						textcontext = "[ColonyCharterMarker.GetTooltip]"
+					}
+				}
+			}
+		}
+	}
+}
+
+### Spy Network Marker
+widget = {
+	name = "building_spy_network_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[BuildingSpyNetworkMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', BuildingSpyNetworkMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			using = spy_network_texture
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(BuildingSpyNetworkMarker.GetCountry)]"
+		tooltipwidget = {
+			using = spy_network_tooltip
+			blockoverride "spy_network_tooltip_countrycontext" {
+				datacontext = "[BuildingSpyNetworkMarker.GetCountry]"
+			}
+			blockoverride "spy_network_tooltip_textcontext" {
+				textcontext = "[BuildingSpyNetworkMarker.GetTooltip]"
+			}
+		}
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[BuildingSpyNetworkMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "CANCEL_BUILD_SPYNETWORKTITLE"
+			on_action = "[BuildingSpyNetworkMarker.OnRightClick]"
+			conditions = "[BuildingSpyNetworkMarker.GetRightClickConditions]"
+			enabled = "[BuildingSpyNetworkMarker.IsRightClickEnabled]"
+		}
+	}
+}
+
+### Casus Belli Marker
+widget = {
+	name = "create_casus_belli_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[CreateCasusBelliMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', CreateCasusBelliMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			texture = "gfx/interface/icons/flat_icons/declare_war/casus_belli.dds"
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(CreateCasusBelliMarker.GetCountry)]"
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[CreateCasusBelliMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "CANCEL_CREATE_CASUS_BELLI_TITLE"
+			on_action = "[CreateCasusBelliMarker.OnRightClick]"
+			conditions = "[CreateCasusBelliMarker.GetRightClickConditions]"
+			enabled = "[CreateCasusBelliMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/icons/flat_icons/declare_war/casus_belli.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "title_text" {
+						text = "ENCYCLOPEDIA_PAGE_CASUS_BELLIS"
+				}
+				blockoverride "concept_link" {
+					text = "[casus_belli|e]"
+				}
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "[CreateCasusBelliMarker.GetTooltip]"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### Improve Opinion Marker
+widget = {
+	name = "improve_opinion_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[ImproveOpinionMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', ImproveOpinionMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			texture = "gfx/interface/icons/flat_icons/foreigncountry/opinion.dds"
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(ImproveOpinionMarker.GetCountry)]"
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[ImproveOpinionMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "CANCEL_IMPROVE_RELATIONTITLE"
+			on_action = "[ImproveOpinionMarker.OnRightClick]"
+			conditions = "[ImproveOpinionMarker.GetRightClickConditions]"
+			enabled = "[ImproveOpinionMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			using = improve_opinion_tooltip
+			blockoverride "improve_opinion_tooltip_countrycontext" {
+				datacontext = "[ImproveOpinionMarker.GetCountry]"
+			}
+			blockoverride "improve_opinion_tooltip_textcontext" {
+				textcontext = "[ImproveOpinionMarker.GetTooltip]"
+			}
+		}
+	}
+}
+
+### Currying Favors Marker
+widget = {
+	name = "currying_favors_marker"
+	max_update_rate = 9999 # FUM: Throttle data updates
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[CurryingFavorsMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', CurryingFavorsMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			using = favors_texture
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(CurryingFavorsMarker.GetCountry)]"
+
+		action_tooltip = {
+			click_type = left
+			title = "OPEN_COUNTRY_PANEL"
+			on_action = "[CurryingFavorsMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			title = "CANCEL_CURRY_FAVORSTITLE"
+			on_action = "[CurryingFavorsMarker.OnRightClick]"
+			conditions = "[CurryingFavorsMarker.GetRightClickConditions]"
+			enabled = "[CurryingFavorsMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/icons/flat_icons/foreigncountry/favors.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "title_text" {
+						text = "DIPLOMACY_CURRYNG_FAVORS"
+				}
+				blockoverride "concept_link" {
+					text = "[favors|e]"
+				}
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "[CurryingFavorsMarker.GetTooltip]"
+						}
+					}
+				}
+			}
+		}
+	}
+}

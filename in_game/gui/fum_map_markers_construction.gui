@@ -1,0 +1,105 @@
+﻿types construction_marker_types {
+	type construction_marker = widget {
+		max_update_rate = 9999 # FUM: Throttle data updates
+		hbox = {
+			margin_bottom = 2
+			widget = {
+				using = layoutpolicy_expanding
+				allow_outside = yes
+
+				blockoverride "marker_bg_circle_extra_modifiers" {
+					using = marker_construction_side_color
+				}
+
+				piechart = {
+					parentanchor = center
+					using = bg_circle_piechart
+					block "piechart_size" {
+						size = { 90% 90% }
+					}
+					using = piechart_angles
+
+					pieslice_no_highlight = {
+						texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						value = "[Construction.GetProgress]"
+						color = "[Construction.GetProgressColor]"
+						alwaystransparent = yes
+					}
+
+					pieslice_no_highlight = {
+						texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						value = "[Construction.GetInverseProgress]"
+						color = { 0.0 0.1 0.1 1 }
+						alwaystransparent = yes
+					}
+				}
+
+				button = {
+					parentanchor = center
+					allow_outside = yes
+					block "button_size" {
+						size = { 55% 55% }
+					}
+
+					texture = "[GetConstructionIcon(Construction.Self)]"
+					texture_density = 2
+					onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(Construction.GetLocation)]"
+
+					block "construction_marker_tooltip" {
+						tooltipwidget = {
+							using = Construction_tooltip
+
+							blockoverride "building_owner" {
+								TooltipTextBlock = {
+									visible = "[Not(CanShowConstructionCancellationDialog(Construction.Self))]"
+									blockoverride "text" {
+										text = "[GetConstructionBuildingOwner(Construction.Self)]"
+									}
+								}
+							}
+						}
+					}
+					block "construction_marker_left_action" {
+						action_tooltip = {
+							visible = "[CanShowConstructionType(Construction.Self)]"
+							click_type = left
+							click_mode = single
+							title = "SHOW_CONSTRUCTION_TYPE"
+							on_action = "[ShowConstructionType(Construction.Self)]"
+						}
+					}
+					action_tooltip = {
+						visible = "[CanShowConstructionCancellationDialog(Construction.Self)]"
+						click_type = right
+						click_mode = single
+						title = "CANCEL_CONSTRUCTION"
+						on_action = "[ShowConstructionCancellationDialog(Construction.Self, '(bool)no')]"
+					}
+					action_tooltip = {
+						visible = "[CanShowConstructionCancellationDialog(Construction.Self)]"
+						click_type = right
+						click_mode = single
+						click_modifier = shift
+						title = "CANCEL_CONSTRUCTION_FORCED"
+						on_action = "[ShowConstructionCancellationDialog(Construction.Self, '(bool)yes')]"
+					}
+				}
+
+				country_flag_small = {
+					size = { 19 12 }
+					parentanchor = bottom|right
+					visible = "[Construction.GetBuilding.GetType.IsForeign]"
+					datacontext = "[Construction.GetBuilding.GetOwner]"
+				}
+				
+				icon = {
+					visible = "[Construction.IsStalled]"
+					size = { 50% 50% }
+					parentanchor = vcenter|hcenter
+					using = icon_locked
+					using = overlay_color_red
+				}
+			}
+		}
+	}
+}
