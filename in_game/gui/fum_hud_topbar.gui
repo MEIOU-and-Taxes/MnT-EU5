@@ -1,0 +1,442 @@
+﻿types FUM_HUD_TopbarTypes {
+	type gamespeed_button_disabled = button {
+		texture = "gfx/interface/component_tiles/hud_corners/speed_bar/speed_disabled.dds"
+		texture_density = 2
+		size = { 21 40 }
+		tooltip_enabled = no
+		button = {
+			block "gamespeed_button_disabled_onclick" {
+				onclick = "[OnSetGameSpeed('(int32)15')]"
+			}
+			tooltipwidget = {
+				LeftClickButtonTooltip = {
+					blockoverride "onclick_text" {
+						text = "[GetGameSpeedTooltip]"
+					}
+				}
+			}
+			enabled = "[CanChangeGameSpeed]"
+			# block "gamespeed_button_texture" {
+			texture = "[GetGraphicalCultureTexture('speed_button')]"
+			# }
+			texture_density = 2
+			# block "gamespeed_button_size" {
+			size = { 100% 100% }
+			# }
+		}
+	}
+
+	type gamespeed_play_button = button {
+		texture = "gfx/interface/component_tiles/hud_corners/speed_bar/speed_on.dds"
+		texture_density = 2
+		size = { 21 40 }
+		tooltip_enabled = no
+		button = {
+			block "gamespeed_play_button_onclick" {
+				onclick = "[OnSetGameSpeed('(int32)15')]"
+			}
+			tooltipwidget = {
+				LeftClickButtonTooltip = {
+					blockoverride "onclick_text" {
+						text = "[GetGameSpeedTooltip]"
+					}
+				}
+			}
+			enabled = "[CanChangeGameSpeed]"
+			# block "gamespeed_button_texture" {
+			texture = "[GetGraphicalCultureTexture('speed_button')]"
+			# }
+			texture_density = 2
+			# block "gamespeed_button_size" {
+			size = { 100% 100% }
+			# }
+		}
+	}
+
+	type gamespeed_paused_button = button {
+		texture = "gfx/interface/component_tiles/hud_corners/speed_bar/speed_paused.dds"
+		texture_density = 2
+		size = { 21 40 }
+		tooltip_enabled = no
+		button = {
+			block "gamespeed_paused_button_onclick" {
+				onclick = "[OnSetGameSpeed('(int32)15')]"
+			}
+			tooltipwidget = {
+				LeftClickButtonTooltip = {
+					blockoverride "onclick_text" {
+						text = "[GetGameSpeedTooltip]"
+					}
+				}
+			}
+			enabled = "[CanChangeGameSpeed]"
+			# block "gamespeed_button_texture" {
+			texture = "[GetGraphicalCultureTexture('speed_button')]"
+			# }
+			texture_density = 2
+			# block "gamespeed_button_size" {
+			size = { 100% 100% }
+			# }
+		}
+	}
+}
+
+
+template speed_bar {
+	hbox = {
+		using = layoutpolicy_expanding
+		using = top_bar_bg
+		hbox = {
+			name = "date_section"
+			using = layoutpolicy_expanding
+			righttoleft = yes
+
+			# FAKE PAUSE BUTTON BORDER
+			margin_right = 2
+
+			# SPEED BUTTONS
+			widget = {
+				size = { 147 40 }
+
+				hbox = {
+					# SPEED 1
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)15'), And(IsGameSpeedEqualOrGreaterThan('(int32)1'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)15'), And(IsGameSpeedEqualOrGreaterThan('(int32)1'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)15'), And(IsGameSpeedEqualOrGreaterThan('(int32)1'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+					}
+
+					# SPEED 2
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)16'), And(IsGameSpeedEqualOrGreaterThan('(int32)2'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_button_disabled_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)16')]"
+						}
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)16'), And(IsGameSpeedEqualOrGreaterThan('(int32)2'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_play_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)16')]"
+						}
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)16'), And(IsGameSpeedEqualOrGreaterThan('(int32)2'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_paused_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)16')]"
+						}
+					}
+
+					# SPEED 3
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)17'), And(IsGameSpeedEqualOrGreaterThan('(int32)3'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_button_disabled_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)17')]"
+						}
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)17'), And(IsGameSpeedEqualOrGreaterThan('(int32)3'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_play_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)17')]"
+						}
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)17'), And(IsGameSpeedEqualOrGreaterThan('(int32)3'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_paused_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)17')]"
+						}
+					}
+
+					# SPEED 4
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)18'), And(IsGameSpeedEqualOrGreaterThan('(int32)4'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_button_disabled_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)18')]"
+						}
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)18'), And(IsGameSpeedEqualOrGreaterThan('(int32)4'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_play_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)18')]"
+						}
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)18'), And(IsGameSpeedEqualOrGreaterThan('(int32)4'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_paused_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)18')]"
+						}
+					}
+
+					# SPEED 5
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)19'), And(IsGameSpeedEqualOrGreaterThan('(int32)5'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_button_disabled_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)19')]"
+						}
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)19'), And(IsGameSpeedEqualOrGreaterThan('(int32)5'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_play_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)19')]"
+						}
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)19'), And(IsGameSpeedEqualOrGreaterThan('(int32)5'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_paused_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)19')]"
+						}
+					}
+					# SPEED 6
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)20'), And(IsGameSpeedEqualOrGreaterThan('(int32)6'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_button_disabled_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)20')]"
+						}
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)20'), And(IsGameSpeedEqualOrGreaterThan('(int32)6'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_play_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)20')]"
+						}
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)20'), And(IsGameSpeedEqualOrGreaterThan('(int32)6'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_paused_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)20')]"
+						}
+					}
+
+					# SPEED 7
+					gamespeed_button_disabled = {
+						visible = "[Not(Or(IsGameSpeedEqualOrGreaterThan('(int32)21'), And(IsGameSpeedEqualOrGreaterThan('(int32)7'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_button_disabled_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)21')]"
+						}
+					}
+					gamespeed_play_button = {
+						visible = "[And(Not(IsGamePaused), Or(IsGameSpeedEqualOrGreaterThan('(int32)21'), And(IsGameSpeedEqualOrGreaterThan('(int32)7'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_play_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)21')]"
+						}
+					}
+					gamespeed_paused_button = {
+						visible = "[And(IsGamePaused, Or(IsGameSpeedEqualOrGreaterThan('(int32)21'), And(IsGameSpeedEqualOrGreaterThan('(int32)7'), Not(IsGameSpeedEqualOrGreaterThan('(int32)8')))))]"
+						blockoverride "gamespeed_paused_button_onclick" {
+							onclick = "[OnSetGameSpeed('(int32)21')]"
+						}
+					}
+
+				}
+
+				# FAKE PLAY PAUSE BUTTON
+				widget = {
+					size = { 36 40 }
+					parentanchor = right
+					widgetanchor = left
+
+					widget = {
+						size = { 40 100% }
+						parentanchor = right
+
+						icon = {
+							texture = "[GetGraphicalCultureTexture('bg_speed_button')]"
+							size = { 100% 100% }
+						}
+
+						icon = {
+							size = { 30 30 }
+							parentanchor = center
+
+							texture = "gfx/interface/buttons/flats/square_button_play.dds"
+							using = pausebutton_texture_overlay
+						}
+					}
+				}
+			}
+
+			# PLAY PAUSE BUTTONS
+			widget = {
+				size = { 36 40 }
+				widget = {
+					size = { 40 100% }
+					icon = {
+						texture = "[GetGraphicalCultureTexture('bg_speed_button')]"
+						size = { 100% 100% }
+					}
+
+					button = {
+						size = { 30 30 }
+						parentanchor = center
+						name = "play_game" #name used as identifiyer for widget_churn_benchmark tests
+						action_tooltip = {
+							title = "[GetResumeTooltip]"
+							on_action = "[OnPause]"
+						}
+						visible = "[IsGameUserPaused]"
+						enabled = "[CanUnpause]"
+
+						tooltipwidget = { BasicFunctionalTooltip = {} }
+
+						texture = "gfx/interface/buttons/flats/square_button_play.dds"
+						using = pausebutton_texture_overlay
+					}
+
+					button = {
+						size = { 30 30 }
+						parentanchor = center
+						name = "semipause_game" #name used as identifiyer for widget_churn_benchmark tests
+
+						action_tooltip = {
+							title = "[GetKeepGamePausedTooltip]"
+							on_action = "[OnPause]"
+						}
+						visible = "[And(Not(IsGameUserPaused), IsGameSystemPaused)]"
+						enabled = "[CanPause]"
+
+						tooltipwidget = { BasicFunctionalTooltip = {} }
+
+						texture = "gfx/interface/buttons/flats/square_button_semipause.dds"
+						using = pausebutton_texture_overlay
+					}
+
+					button = {
+						size = { 30 30 }
+						parentanchor = center
+						name = "pause_game" #name used as identifiyer for widget_churn_benchmark tests
+						action_tooltip = {
+							title = "[GetPauseTooltip]"
+							on_action = "[OnPause]"
+						}
+						visible = "[And(Not(IsGameUserPaused), Not(IsGameSystemPaused))]"
+						enabled = "[CanPause]"
+
+						tooltipwidget = { BasicFunctionalTooltip = {} }
+
+						texture = "gfx/interface/buttons/flats/square_button_pause.dds"
+						using = pausebutton_texture_overlay
+					}
+				}
+			}
+
+			# DATE TEXT
+			widget = {
+				layoutpolicy_horizontal = expanding
+				size = { -1 40 }
+				background = {
+					texture = "[GetGraphicalCultureTexture('top_bar_sideflavor')]"
+					texture_density = 2
+					spriteType = Corneredstretched
+					spriteborder = { 17 17 }
+					alpha = 0.7
+
+					modify_texture = {
+						using = color_intense_bg_blue_texture
+						blend_mode = multiply
+						alpha = 0.9
+					}
+					modify_texture = {
+						using = color_progress_blue_texture
+						blend_mode = overlay
+					}
+				}
+
+				text_single = {
+					visible = "[Not(IsObservingWithoutSelectedCountry)]"
+					parentanchor = center
+					size = { 90% 100% }
+					autoresize = no
+					name = "date_text"
+					text = "CURRENT_DATE"
+					using = Font_Type_Flavor
+					using = Font_Size_Medium
+					align = right|nobaseline
+					default_format = "#color_white"
+					tooltipwidget = {
+						ContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "gfx/interface/icons/players.dds"
+								}
+							}
+
+							blockoverride "title_text" {
+								text = "PLAYERS_SYNC_TT_TITLE"
+							}
+
+							blockoverride "tooltip_content" {
+								TooltipScrolledStringPairList = {
+									blockoverride "block_scrollarea" { maximumsize = { -1 700 }}
+									textcontext = "[GetMultiplayerSyncInfo]"
+								}
+							}
+						}
+					}
+					tooltip_enabled = "[GameIsMultiplayer]"
+				}
+			}
+		}
+
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnIncreaseGameSpeed]"
+			input_action = "increase_speed"
+			tooltip_enabled = no
+		}
+
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnDecreaseGameSpeed]"
+			input_action = "decrease_speed"
+			enabled = "[IsGameSpeedEqualOrGreaterThan('(int32)16')]"
+			tooltip_enabled = no
+		}
+
+		# Remap vanilla speed keybinds (1-7) to mod speeds (15-21)
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)15')]"
+			input_action = "speed_1"
+			tooltip_enabled = no
+		}
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)16')]"
+			input_action = "speed_2"
+			tooltip_enabled = no
+		}
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)17')]"
+			input_action = "speed_3"
+			tooltip_enabled = no
+		}
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)18')]"
+			input_action = "speed_4"
+			tooltip_enabled = no
+		}
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)19')]"
+			input_action = "speed_5"
+			tooltip_enabled = no
+		}
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)20')]"
+			input_action = "speed_6"
+			tooltip_enabled = no
+		}
+		button = {
+			use_global_input_instance = yes
+			on_input_action_shortcut = "[OnSetGameSpeed('(int32)21')]"
+			input_action = "speed_7"
+			tooltip_enabled = no
+		}
+	}
+}
