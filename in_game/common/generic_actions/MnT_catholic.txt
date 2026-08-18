@@ -1,0 +1,84 @@
+﻿invite_inquisitor = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	ai_tick = monthly
+	ai_tick_frequency = 24
+	automation_tick = monthly
+	automation_tick_frequency = 6
+
+	automation_tick = monthly
+	automation_tick_frequency = 12
+	player_automated_category = religiousdoctrines
+
+	sound = UI_action_religion_generic
+
+	potential = {
+		scope:actor.religion = religion:catholic
+	}
+	allow = {
+		papacy_active = yes
+		country_exists = c:PAP
+		scope:actor = {
+			has_law = inquisition_law
+			estate_type_allowed_in_cabinet = { estate_type = estate_type:clergy_estate }
+			estate_satisfaction:clergy_estate >= {
+				value = estate_satisfaction_severe_penalty
+				multiply = -1
+			}
+		}
+		custom_tooltip = {
+			text = invite_inquisitor_no_countries_tt
+			scope:recipient = {
+				any_country_in_religion = {
+					NOT = { this = scope:actor }
+					scope:actor = { within_diplomatic_range = prev }
+					capital ?= { is_discovered_by = scope:actor }		
+					has_discovered = scope:actor.capital
+				}
+			}
+		}
+	}
+
+#	select_trigger = {
+#		looking_for_a = religion
+#		source = actor
+#		target_flag = recipient
+#		name = "choose_religion"
+#		column = {
+#			data = name
+#		}
+#	}
+
+	effect = {
+		custom_tooltip = {
+			text = invite_inquisitor_tt
+			scope:actor = {
+				create_character = {
+					estate = estate_type:clergy_estate
+					culture = root.culture 
+					religion = root.religion
+					adm = { 20 30 }
+					dip = { 40 70 }
+					mil = { 70 90 }
+					add_trait = trait:unsuited_for_naval_command
+					add_trait = trait:unsuited_for_army_command
+					min_age = 40
+					add_trait = trait:theologian
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		value = -190
+		if = {
+			limit = { scope:actor = { NOT = { tag = PAP } } }
+			add = {
+				value = "c:PAP.opinion(scope:actor)"
+				multiply = -1
+			}
+		}
+	}
+}
