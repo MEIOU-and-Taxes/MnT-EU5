@@ -596,3 +596,6 @@ Date: 21/05/2026
 - Remove all Societies of Pops at game initialization (as they don't do anything atm)
 - NOT (yet) ported: character culling, region removal
 - All Credits for these changes should go the authors of Faster Universalis, with a specific mention to Conner, its lead developer
+
+##### M&T v0.2.9
+- Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
