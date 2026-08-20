@@ -598,4 +598,5 @@ Date: 21/05/2026
 - All Credits for these changes should go the authors of Faster Universalis, with a specific mention to Conner, its lead developer
 
 ##### M&T v0.2.9
+- Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
 - Added Invite Inqusitor Religious Action, adds a cleric with high military (disallowed from leading armies) and theologian trait, for 100 Religious influence, if you have the Inquisition policy active (and not Polish Three lands version)
