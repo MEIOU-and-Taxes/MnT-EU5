@@ -598,4 +598,7 @@ Date: 21/05/2026
 - All Credits for these changes should go the authors of Faster Universalis, with a specific mention to Conner, its lead developer
 
 ##### M&T v0.2.9
+
+### Fixes
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
+- Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
