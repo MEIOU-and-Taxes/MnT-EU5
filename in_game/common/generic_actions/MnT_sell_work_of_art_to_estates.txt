@@ -1,0 +1,63 @@
+﻿REPLACE:sell_work_of_art_to_estates = {
+	type = owncountry
+
+	ai_tick = monthly
+	ai_tick_frequency = 3
+
+	automation_tick = never
+
+	ai_prerequisite = {
+		# gold < { value = monthly_income_total multiply = 3 }
+		always = no  #M&T disabled as highly exploitative
+	}
+
+	# No price field — gold paid in effect at 60% of art_quality
+
+	potential = {
+		always = no	#M&T disabled as highly exploitative
+		# scope:actor = {
+		# 	has_sellable_art = yes
+		# }
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = work_of_art
+		source = actor
+		cache_targets = yes
+		target_flag = target
+		name = "sell_woa_to_estates_select_art"
+		none_available_msg_key = "sell_woa_to_estates_no_art"
+		column = {
+			data = name
+		}
+		visible = {
+			art_is_priceless = no
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			add_gold = {
+				value = scope:target.art_price
+				multiply = 0.6
+			}
+		}
+		destroy_art = scope:target
+	}
+
+	ai_will_do = {
+		add = -100
+		# sell to estates only when very low treasury (< 3 months)
+		if = {
+			limit = {
+				scope:actor = {
+					gold < { value = monthly_income_total multiply = 3 }
+				}
+			}
+			add = 100
+		}
+	}
+}
