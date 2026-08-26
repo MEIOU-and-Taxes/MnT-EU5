@@ -16,6 +16,10 @@ mnt_wealth_human_locations_index_accessor = {
 	"global_variable_map(mnt_wealth_human_location_index|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
 }
 
+mnt_wealth_markets_index_accessor = {
+	"global_variable_map(mnt_wealth_market_index|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
+}
+
 # CYCLE is how many months a full sweep of the index takes;
 # up to 512 countries work each pass;
 # INDEX_ACCESSOR is a wrapper effect that scopes to the entry at the
@@ -40,6 +44,8 @@ mnt_wealth_load_balance_this_effect = {
 	#      load balance cycle we are.
 	#   3: Clear and rebuild the player location index map. This makes it safe against country swapping
 	#      and multiplayer stuff
+	#   4: Clear and rebuild the market index. Markets are created and destroyed
+	#      during play, and the set is small enough to rebuild whole each month.
 	if = {
 		limit = { NOT = { has_global_variable = mnt_wealth_months_elapsed } }
 
@@ -68,6 +74,18 @@ mnt_wealth_load_balance_this_effect = {
 					change_global_variable = { name = mnt_wealth_human_location_count add = 1 }
 				}
 			}
+		}
+
+		clear_global_variable_map = mnt_wealth_market_index
+		set_global_variable = { name = mnt_wealth_market_count value = 0 }
+
+		every_market_in_world = {
+			add_to_global_variable_map = {
+				name = mnt_wealth_market_index
+				key = global_var:mnt_wealth_market_count
+				value = this
+			}
+			change_global_variable = { name = mnt_wealth_market_count add = 1 }
 		}
 	}
 

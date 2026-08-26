@@ -95,6 +95,8 @@ EPBM's AI path rides the same sweep: each AI location caches its domestic buildi
 
 `mnt_wealth_human_location_index` (global map): player-held locations. Rebuilt whole each month because no on_action fires when a country gains or loses a player.
 
+`mnt_wealth_market_index` (global map): every market in the world. Rebuilt whole each month because markets are created and destroyed during play; the set is small (a few hundred), so the rebuild is cheap. Swept through `mnt_wealth_markets_index_accessor` with `mnt_wealth_market_count`.
+
 ---
 
 ## Passes, Step by Step
