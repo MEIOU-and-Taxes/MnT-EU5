@@ -45,110 +45,24 @@ cost_of_the_court.1 = {
 	}
 }
 
-# Aggregate all CotC demands into temporary market demands
+# Aggregate all CotC demands into temporary market demands. The per-market
+# work rides the load balancer's market index, spread across up to 512 worker
+# countries instead of one rank-1 great power. Fires one day after the monthly
+# pulse, so every country's cost_of_the_court.1 accumulation is already in.
 cost_of_the_court.2 = {
 	type = country_event
 	title = hidden_event.t
 	hidden = yes
-	trigger = {
-		great_power_ranking = 1
-	}
+	# No trigger: workers are threads sweeping the market index, so a worker's
+	# own standing is irrelevant, and any entry condition the balancer's
+	# reindex does not share drops that worker's slice.
 	immediate = {
-		every_market_in_world = {
-			# Calculate current price corresponding to 1 unit of the demand basket
-			set_local_variable = {
-				name = court_demand_basket_price
-				value = {
-					value = 0
-					add = {
-						# 1 furniture
-						value = 1
-						multiply = "market_price(goods:furniture)"
-					}
-					add = {
-						# 0.25 jewelry
-						value = 0.25
-						multiply = "market_price(goods:jewelry)"
-					}
-					add = {
-						# 0.5 glass
-						value = 0.5
-						multiply = "market_price(goods:glass)"
-					}
-					add = {
-						# 1 fine_cloth
-						value = 1
-						multiply = "market_price(goods:fine_cloth)"
-					}
-                    add = {
-                        # 1 cloth
-                        value = 1
-                        multiply = "market_price(goods:cloth)"
-                    }
-                    add = {
-                        # 1 leather
-                        value = 1
-                        multiply = "market_price(goods:leather)"
-                    }
-                    add = {
-                        # 1 weaponry
-                        value = 1
-                        multiply = "market_price(goods:weaponry)"
-                    }
-                    add = {
-                        # 0.5 books
-                        value = 0.5
-                        multiply = "market_price(goods:books)"
-                    }
-                    add = {
-                        # 1 paper
-                        value = 1
-                        multiply = "market_price(goods:paper)"
-                    }
-				}
-			}
-
-			if = {
-				# In the first month, there are ~10 markets that do not have this variable stored. Removing the condition leads to errors
-				limit = { location = { has_variable = total_cost_of_the_court } }
-
-				# Switching between two temporary demands
-				# If we use only one temporary demand, the UI will not be updated properly
-				if = {
-					limit = {
-						has_temporary_demand = demand:cost_of_the_court_demand1
-					}
-					remove_temporary_demand = demand:cost_of_the_court_demand1
-					add_temporary_demand = {
-						type = demand:cost_of_the_court_demand2
-						months = -1
-						scale = {
-							value = "location.var:total_cost_of_the_court"
-							divide = "local_var:court_demand_basket_price"
-						}
-					}
-				}
-                else = {
-					remove_temporary_demand = demand:cost_of_the_court_demand2
-					add_temporary_demand = {
-						type = demand:cost_of_the_court_demand1
-						months = -1
-						scale = {
-							value = "location.var:total_cost_of_the_court"
-							divide = "local_var:court_demand_basket_price"
-						}
-					}
-				}
-
-				# Clear total CotC value from the last month
-				location = {
-					set_variable = {
-						name = total_cost_of_the_court
-						value = 0
-					}
-				}
-			}
+		mnt_wealth_load_balance_this_effect = {
+			CYCLE = 1
+			PASS_KEY = 4
+			INDEX_ACCESSOR = mnt_wealth_markets_index_accessor
+			INDEX_SIZE = mnt_wealth_market_count
+			EFFECT = apply_cost_of_the_court_demand
 		}
-
 	}
 }
