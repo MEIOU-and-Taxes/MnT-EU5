@@ -101,6 +101,8 @@ Market passes ride the balancer with CYCLE=1: every market is processed the same
 
 The AI food events (`mnt_food.2` build, `mnt_food.3` destroy) spread differently: their work is per country over that country's own markets, and no iterator lists the countries present in a market, so they fire monthly one day after the pulse and each country acts only when `(country_index + months_elapsed) modulo cycle` is zero (cycle 12 for builds, 24 for destroys). One twelfth of the AI acts each month instead of everyone on the same yearly pulse.
 
+EPBM's market price caches no longer need a monthly world sweep either: each market center carries an `epbm_cache_month` stamp, and the first pricing that touches it in a new month clears and restamps its maps in place.
+
 ---
 
 ## Passes, Step by Step
