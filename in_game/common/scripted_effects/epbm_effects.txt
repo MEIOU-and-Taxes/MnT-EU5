@@ -11,6 +11,18 @@ epbm_init_estate_var = {
 	set_local_variable = { name = epbm_estate_$estate$ value = 0 }
 }
 
+epbm_store_estate_cost = {
+	set_variable = { name = epbm_estate_cost_$estate$ value = local_var:epbm_estate_$estate$ }
+}
+
+epbm_load_estate_cost = {
+	if = {
+		limit = { has_variable = epbm_estate_cost_$estate$ }
+		set_local_variable = { name = epbm_estate_$estate$ value = var:epbm_estate_cost_$estate$ }
+	}
+	else = { set_local_variable = { name = epbm_estate_$estate$ value = 0 } }
+}
+
 epbm_set_pay_from_power = {
 	set_local_variable = { name = est value = estate_type:$estate$_estate }
 
@@ -227,13 +239,29 @@ epbm_full_rebuild = {
 	epbm_init_blacklist = yes
 	every_country = { limit = { is_real_country = yes } epbm_for_each_estate = { effect = epbm_init_modifier_scale } }
 
-	every_country = {
-		limit = { is_real_country = yes any_active_estate = { exists = yes } }
+	# Seed location-level costs for every AI-owned location so the
+	# aggregation has data immediately instead of waiting a full sweep cycle.
+	every_ownable_location = {
+		limit = { exists = owner owner = { is_ai = yes } }
+		epbm_price_location_buildings = yes
+	}
 
+	# AI countries: price estate and foreign buildings, then aggregate
+	# and charge in one shot so costs are ready from month one.
+	every_country = {
+		limit = { is_real_country = yes is_ai = yes any_active_estate = { exists = yes } }
+		epbm_calculate_estate_and_foreign = yes
+		epbm_aggregate_maintenance = yes
+		epbm_charge_estates = yes
+	}
+
+	# Player countries: the full three-loop calculation and immediate
+	# charge, then zero pay so the first monthly snapshot captures it.
+	every_country = {
+		limit = { is_real_country = yes is_ai = no any_active_estate = { exists = yes } }
 		epbm_calculate_maintenance = yes
 		epbm_charge_estates = yes
-
-		if = { limit = { is_ai = no } epbm_for_each_estate = { effect = epbm_zero_pay } }
+		epbm_for_each_estate = { effect = epbm_zero_pay }
 	}
 }
 # snapshot first: prev vars must capture last month before recalc overwrites them
