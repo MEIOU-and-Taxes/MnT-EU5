@@ -81,7 +81,9 @@ Player locations compute wages and investment spending monthly. AI locations ski
 
 The first balancer call each month reindexes every country (`every_country`, not the landed subset: the monthly pulse reaches countries the landed iterator never yields, and every worker that can pulse must hold an index). Each month claims one chunk of the index (`chunk = index_size / CYCLE`). The first `WORKERS` countries by `mnt_wealth_country_index` split that chunk evenly. Which country processes which location carries no gameplay meaning.
 
-The dispatcher is index-agnostic: a call site passes `INDEX_ACCESSOR` (a wrapper effect that scopes to the entry at the cursor), `INDEX_SIZE` (the index's count variable), and a `PASS_KEY` unique to that call site, which keys the frozen chunk size so passes never share a chunk-size slot. Any dense global index with a count variable can ride it.
+The dispatcher is index-agnostic: a call site passes `INDEX_ACCESSOR` (a wrapper effect that scopes to the entry at the cursor), `INDEX_SIZE` (the index's count variable), and a `PASS_KEY` unique to that call site, which keys the frozen chunk size so passes never share a chunk-size slot. Any dense global index with a count variable can ride it. Up to 512 countries work each pass.
+
+A dispatched `EFFECT` may bundle several sub effects that want the same index and cycle. The yearly pass dispatches `mnt_yearly_location_pass`, which runs the wealth yearly tick and the centers of importance scoring (`calc_location_center_scores`) in one sweep. The centers ranking reads those cached scores once per cycle: `mnt_centers.2` fires one day after the monthly pulse and runs `mnt_rank_centers` (in `MnT_centers_ranking.txt`) in the twelfth cycle month, cleaning last year's winners through the `mnt_center_holders` global list instead of sweeping the world.
 
 `EFFECT` must never rewrite the index it sweeps. For the location indices that means no colonizing or decolonizing: either moves entries between slots while the cursor is reading them.
 

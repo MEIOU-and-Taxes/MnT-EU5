@@ -17,7 +17,7 @@ mnt_wealth_human_locations_index_accessor = {
 }
 
 # CYCLE is how many months a full sweep of the index takes;
-# WORKERS is how many countries do the work;
+# up to 512 countries work each pass;
 # INDEX_ACCESSOR is a wrapper effect that scopes to the entry at the
 # designated index(cursor) in the map, and INDEX_SIZE is how many entries
 # that index holds; the two must refer to the same index's data;
@@ -72,7 +72,7 @@ mnt_wealth_load_balance_this_effect = {
 	}
 
 	if = {
-		limit = { var:mnt_wealth_country_index < $WORKERS$ }
+		limit = { var:mnt_wealth_country_index < 512 }
 		# The index is cut into CYCLE chunks and this month takes one of them.
 		# L = 12 CYCLE = 3 -> [{LLLL}|LLLL|LLLL], 12 locations split into 3 chunks.
 		# Month 0 takes the first chunk, month 1 takes the second, and so on.
@@ -144,10 +144,10 @@ mnt_wealth_load_balance_this_effect = {
 			}
 		}
 
-		# Use at most $WORKERS$ and at least num_countries
+		# Use at most 512 workers and at least num_countries
 		set_local_variable = {
 			name = mnt_wealth_load_balance_worker_count
-			value = { value = $WORKERS$ max = global_var:mnt_wealth_country_count }
+			value = { value = 512 max = global_var:mnt_wealth_country_count }
 		}
 
 		# Within a chunk {L|L|L|L} we divide it up equally among all our workers
