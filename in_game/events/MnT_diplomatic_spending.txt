@@ -107,87 +107,25 @@ diplomatic_spending.1 = {
     }
 }
 
-# Aggregate all diplomatic spending demands into temporary market demands
+# Aggregate all diplomatic spending demands into temporary market demands.
+# The per-market work rides the load balancer's market index, spread across
+# up to 512 worker countries instead of one rank-1 great power. Fires one day
+# after the monthly pulse, so every country's diplomatic_spending.1
+# accumulation is already in.
 diplomatic_spending.2 = {
     type = country_event
     title = hidden_event.t
     hidden = yes
-    trigger = {
-        great_power_ranking = 1
-    }
-    immediate = { 
-        every_market_in_world = {
-            set_local_variable = {
-                name = diplo_demand_basket_price
-                value = {
-                    value = 0
-                    add = {
-                        # 0.5 jewelry
-                        value = 0.5
-                        multiply = "market_price(goods:jewelry)"
-                    }
-                    add = {
-                        # 1 Fine CLoth
-                        value = 1
-                        multiply = "market_price(goods:fine_cloth)"
-                    }
-                    add = {
-                        # 1 Books
-                        value = 1
-                        multiply = "market_price(goods:books)"
-                    }
-                    add = {
-                        # 0.5 Furniture
-                        value = 0.5
-                        multiply = "market_price(goods:furniture)"
-                    }
-                    add = {
-                        # 0.5 paper
-                        value = 0.5
-                        multiply = "market_price(goods:paper)"
-                    }
-                }
-            }
-
-            if = {
-                # In the first month, there are ~10 markets that do not have this variable stored. Removing the condition leads to errors
-                limit = { location = { has_variable = total_diplomatic_spending } }
-
-                # Switching between two temporary demands
-                # If we use only one temporary demand, the UI will not be updated properly
-                if = {
-                    limit = {
-                        has_temporary_demand = demand:diplomatic_spending_demand1
-                    }
-                    remove_temporary_demand = demand:diplomatic_spending_demand1
-                    add_temporary_demand = {
-                        type = demand:diplomatic_spending_demand2
-                        months = -1
-                        scale = {
-                            value = "location.var:total_diplomatic_spending"
-                            divide = "local_var:diplo_demand_basket_price"
-                        }
-                    }
-                } else = {
-                    remove_temporary_demand = demand:diplomatic_spending_demand2
-                    add_temporary_demand = {
-                        type = demand:diplomatic_spending_demand1
-                        months = -1
-                        scale = {
-                            value = "location.var:total_diplomatic_spending"
-                            divide = "local_var:diplo_demand_basket_price"
-                        }
-                    }
-                }
-            }
-
-            # Clear total CotC value from the last month
-            location = {
-                set_variable = {
-                    name = total_diplomatic_spending
-                    value = 0
-                }
-            }
+    # No trigger: workers are threads sweeping the market index, so a worker's
+    # own standing is irrelevant, and any entry condition the balancer's
+    # reindex does not share drops that worker's slice.
+    immediate = {
+        mnt_wealth_load_balance_this_effect = {
+            CYCLE = 1
+            PASS_KEY = 5
+            INDEX_ACCESSOR = mnt_wealth_markets_index_accessor
+            INDEX_SIZE = mnt_wealth_market_count
+            EFFECT = apply_diplomatic_spending_demand
         }
     }
 }

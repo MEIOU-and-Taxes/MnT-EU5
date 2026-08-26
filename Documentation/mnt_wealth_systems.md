@@ -97,7 +97,7 @@ EPBM's AI path rides the same sweep: each AI location caches its domestic buildi
 
 `mnt_wealth_market_index` (global map): every market in the world. Rebuilt whole each month because markets are created and destroyed during play; the set is small (a few hundred), so the rebuild is cheap. Swept through `mnt_wealth_markets_index_accessor` with `mnt_wealth_market_count`.
 
-Market passes ride the balancer with CYCLE=1: every market is processed the same day, spread across the workers. Cost of the Court's aggregation (`cost_of_the_court.2` dispatching `apply_cost_of_the_court_demand`, PASS_KEY 4) runs this way one day after the monthly pulse, when every country's accumulation is already on the market centers.
+Market passes ride the balancer with CYCLE=1: every market is processed the same day, spread across the workers. The demand aggregations (`cost_of_the_court.2` dispatching `apply_cost_of_the_court_demand`, PASS_KEY 4; `diplomatic_spending.2` dispatching `apply_diplomatic_spending_demand`, PASS_KEY 5; workers in `MnT_market_demand_workers.txt`) run this way one day after the monthly pulse, when every country's accumulation is already on the market centers.
 
 ---
 
