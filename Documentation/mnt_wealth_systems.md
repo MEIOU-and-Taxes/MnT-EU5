@@ -99,6 +99,8 @@ EPBM's AI path rides the same sweep: each AI location caches its domestic buildi
 
 Market passes ride the balancer with CYCLE=1: every market is processed the same day, spread across the workers. The demand aggregations (`cost_of_the_court.2` dispatching `apply_cost_of_the_court_demand`, PASS_KEY 4; `diplomatic_spending.2` dispatching `apply_diplomatic_spending_demand`, PASS_KEY 5; workers in `MnT_market_demand_workers.txt`) run this way one day after the monthly pulse, when every country's accumulation is already on the market centers.
 
+The AI food events (`mnt_food.2` build, `mnt_food.3` destroy) spread differently: their work is per country over that country's own markets, and no iterator lists the countries present in a market, so they fire monthly one day after the pulse and each country acts only when `(country_index + months_elapsed) modulo cycle` is zero (cycle 12 for builds, 24 for destroys). One twelfth of the AI acts each month instead of everyone on the same yearly pulse.
+
 ---
 
 ## Passes, Step by Step
