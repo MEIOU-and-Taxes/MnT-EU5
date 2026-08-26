@@ -1,10 +1,12 @@
-﻿# The location index is a dense array of every owned location, keyed 0 upward.
-# The load balancer splits it into monthly chunks across WORKER countries,
-# divided evenly over CYCLE months, so one large country never bottlenecks
-# a pulse and a heavy effect can be spread over many months.
+﻿# An index is a dense array of scopes, keyed 0 upward. The load balancer
+# splits an index into monthly chunks across WORKER countries, divided evenly
+# over CYCLE months, so one large country never bottlenecks a pulse and a
+# heavy effect can be spread over many months. The location indices live
+# here; any pre-built index with a count variable can ride the same
+# dispatcher through its own accessor.
 
 # ── INDEX ACCESSORS ──
-# Scope: the location the cursor is pointing at.
+# Scope: the entry the cursor is pointing at.
 
 mnt_wealth_all_locations_index_accessor = {
 	"global_variable_map(mnt_wealth_location_index|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
@@ -14,16 +16,18 @@ mnt_wealth_human_locations_index_accessor = {
 	"global_variable_map(mnt_wealth_human_location_index|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
 }
 
-# CYCLE is how many months a full sweep of every location takes;
+# CYCLE is how many months a full sweep of the index takes;
 # WORKERS is how many countries do the work;
-# LOCATION_INDEX_ACCESSOR is a wrapper effect that scopes to the location at the
-# designated index(cursor) in the map, and LOCATION_INDEX_SIZE is how many entries
+# INDEX_ACCESSOR is a wrapper effect that scopes to the entry at the
+# designated index(cursor) in the map, and INDEX_SIZE is how many entries
 # that index holds; the two must refer to the same index's data;
-# EFFECT runs once per location;
+# PASS_KEY is a small integer unique to each call site; it keys the frozen
+# chunk size so two passes never share a chunk-size slot;
+# EFFECT runs once per entry;
 #
-# EFFECT must never colonize or decolonize a location. Either one rewrites
-# the location index while the cursor is reading it, which moves locations
-# between slots mid sweep and makes every slice unreliable.
+# EFFECT must never rewrite the index it is sweeping. For the location
+# indices that means no colonizing or decolonizing: either one moves
+# locations between slots mid sweep and makes every slice unreliable.
 
 mnt_wealth_load_balance_this_effect = {
 	# The first country, aka worker, sees no global variable set, it sets one with an expiration
@@ -73,47 +77,50 @@ mnt_wealth_load_balance_this_effect = {
 		# L = 12 CYCLE = 3 -> [{LLLL}|LLLL|LLLL], 12 locations split into 3 chunks.
 		# Month 0 takes the first chunk, month 1 takes the second, and so on.
 		#
-		# The chunk size is frozen for the whole cycle so locations added mid-cycle wait for the next one.
-		# This leaves some staleness but stops colonization and decolonization from leaving locations stale
+		# The chunk size is frozen for the whole cycle so entries added mid-cycle wait for the next one.
+		# This leaves some staleness but stops index growth and shrinkage from leaving entries stale
 		# for unbounded amounts of time.
-		set_local_variable = { name = mnt_wealth_load_balance_cycle value = $CYCLE$ }
-
 		set_local_variable = { # take a module of months elapsed against the cycle, this gives us how far into the cycle we are
 			name = mnt_wealth_load_balance_cycle_month
 			value = { value = global_var:mnt_wealth_months_elapsed modulo = $CYCLE$ }
 		}
 
 		# Refresh the chunk size every month or when none has been set yet(first time firing).
+		set_local_variable = { name = mnt_wealth_load_balance_pass_key value = $PASS_KEY$ }
+
 		if = {
 			limit = {
 				OR = {
 					local_var:mnt_wealth_load_balance_cycle_month = 0
 					NOT = {
-						is_key_in_global_variable_map = { name = mnt_wealth_frozen_chunk_size target = local_var:mnt_wealth_load_balance_cycle }
+						is_key_in_global_variable_map = {
+							name = mnt_wealth_frozen_chunk_size
+							target = local_var:mnt_wealth_load_balance_pass_key
+						}
 					}
 				}
 			}
 			set_local_variable = {
 				name = mnt_wealth_frozen_chunk_size
 				value = {
-					value = global_var:$LOCATION_INDEX_SIZE$
+					value = global_var:$INDEX_SIZE$
 					divide = $CYCLE$
 					ceiling = yes
 				}
 			}
 
-			# Use a map for this so we can extend the load balancer to use arbitrary length cycles
-			# and dont need to maintain separate global vars for each.
+			# Use a map for this so every pass keeps its own chunk size and we
+			# dont need to maintain separate global vars for each.
 			add_to_global_variable_map = {
 				name = mnt_wealth_frozen_chunk_size
-				key = local_var:mnt_wealth_load_balance_cycle
+				key = local_var:mnt_wealth_load_balance_pass_key
 				value = local_var:mnt_wealth_frozen_chunk_size
 			}
 		}
 		else = {
 			set_local_variable = {
 				name = mnt_wealth_frozen_chunk_size
-				value = "global_variable_map(mnt_wealth_frozen_chunk_size|local_var:mnt_wealth_load_balance_cycle)"
+				value = "global_variable_map(mnt_wealth_frozen_chunk_size|local_var:mnt_wealth_load_balance_pass_key)"
 			}
 		}
 
@@ -133,7 +140,7 @@ mnt_wealth_load_balance_this_effect = {
 			value = {
 				value = local_var:mnt_wealth_load_balance_chunk_start
 				add = local_var:mnt_wealth_frozen_chunk_size
-				max = global_var:$LOCATION_INDEX_SIZE$
+				max = global_var:$INDEX_SIZE$
 			}
 		}
 
@@ -179,7 +186,7 @@ mnt_wealth_load_balance_this_effect = {
 			limit = { local_var:mnt_wealth_load_balance_remaining > 0 }
 			while = { # Iterate through the index exactly where this worker is supposed to work.
 				count = local_var:mnt_wealth_load_balance_remaining
-				$LOCATION_INDEX_ACCESSOR$ = { EFFECT = $EFFECT$ }
+				$INDEX_ACCESSOR$ = { EFFECT = $EFFECT$ }
 				change_local_variable = { name = mnt_wealth_load_balance_cursor add = 1 }
 			}
 		}

@@ -81,7 +81,9 @@ Player locations compute wages and investment spending monthly. AI locations ski
 
 The first balancer call each month reindexes every country (`every_country`, not the landed subset: the monthly pulse reaches countries the landed iterator never yields, and every worker that can pulse must hold an index). Each month claims one chunk of the index (`chunk = index_size / CYCLE`). The first `WORKERS` countries by `mnt_wealth_country_index` split that chunk evenly. Which country processes which location carries no gameplay meaning.
 
-`EFFECT` must never colonize or decolonize a location: either rewrites the index while the cursor is reading it.
+The dispatcher is index-agnostic: a call site passes `INDEX_ACCESSOR` (a wrapper effect that scopes to the entry at the cursor), `INDEX_SIZE` (the index's count variable), and a `PASS_KEY` unique to that call site, which keys the frozen chunk size so passes never share a chunk-size slot. Any dense global index with a count variable can ride it.
+
+`EFFECT` must never rewrite the index it sweeps. For the location indices that means no colonizing or decolonizing: either moves entries between slots while the cursor is reading them.
 
 ### Indices
 
@@ -355,7 +357,7 @@ pool_after_12 = pool * survival^12 + monthly_inflow * (1 - survival^12) / invest
 | `mnt_wealth_power_per_pop` | Political weight per person for each estate (seeded at game start) |
 | `mnt_wealth_estate_short_key` | Short flag key per estate type (seeded at game start) |
 | `mnt_wealth_bands` | Map mode color thresholds (5 bands) |
-| `mnt_wealth_frozen_chunk_size` | Load balancer chunk size per cycle length, frozen for the whole cycle |
+| `mnt_wealth_frozen_chunk_size` | Load balancer chunk size per pass key, frozen for the whole cycle |
 
 ---
 
