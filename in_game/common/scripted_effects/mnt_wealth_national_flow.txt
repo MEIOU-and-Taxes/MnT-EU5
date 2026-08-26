@@ -1,0 +1,329 @@
+﻿# GDP and Wages: gold moving between estate treasuries and their locations.
+#
+# One signed number per estate carries both directions: above its savings goal
+# an estate sends gold down to its locations, below it takes gold back out.
+
+# ── NATIONAL SAVINGS VALVES ──
+
+# Scope: country. Called monthly by mnt_wealth_economy.10.
+# For each estate, compares its treasury gold to a savings goal based on the
+# country's economic size and the estate's power share, then sets a single
+# signed flow between the treasury and the estate's locations. Above the goal
+# the flow is positive: the estate pays gold into its locations as national
+# investment. Below the goal it is negative: the estate seizes gold out of its
+# locations to cover the shortfall. The locations apply the flow later, in
+# mnt_wealth_resolve_estate_monthly_income and mnt_wealth_apply_national_flow_to_location.
+#
+# EPBM's building maintenance (epbm_charge_estates) debits the same estate
+# treasury this valve reads. A maintenance-drained estate shows a larger gold
+# gap here, so building costs flow through into seizure demand on their own.
+
+mnt_wealth_set_national_savings_valves = {
+	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
+
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = mnt_wealth_current_estate
+		set_local_variable = { name = mnt_wealth_estate_key value = estate_type }
+
+		prev = {
+			set_local_variable = {
+				name = mnt_wealth_national_savings_goal
+				value = {
+					value = local_var:mnt_wealth_country_economical_base
+					multiply = "estate_power(scope:mnt_wealth_current_estate.estate_type)"
+					min = 1
+				}
+			}
+
+			# Last month's flow for this estate. Negative means the estate was
+			# seizing: that seized gold inflated the treasury, so subtracting
+			# it raises the effective goal to where income alone would land.
+			set_local_variable = { name = mnt_wealth_last_flow value = 0 }
+
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow target = local_var:mnt_wealth_estate_key } }
+				set_local_variable = {
+					name = mnt_wealth_last_flow
+					value = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_estate_key)"
+				}
+			}
+
+			# How far under its effective goal the treasury is. The effective
+			# goal during seizure is savings_goal + seized, so the gap stays
+			# positive until organic income alone would cover the goal.
+			set_local_variable = {
+				name = mnt_wealth_estate_gold_gap
+				value = {
+					value = local_var:mnt_wealth_national_savings_goal
+					subtract = scope:mnt_wealth_current_estate.estate_gold
+					subtract = { value = local_var:mnt_wealth_last_flow min = 0 }
+				}
+			}
+
+			mnt_wealth_update_estate_seizure_demand = yes
+			# One twelfth of the gap each month, capped so neither direction moves
+			# too fast. The payout cap is a share of the whole economic base, so a
+			# numerous but powerless estate is not throttled by the little political
+			# weight it carries.
+			set_local_variable = {
+				name = mnt_wealth_payout_cap
+				value = { value = local_var:mnt_wealth_country_economical_base multiply = mnt_wealth_national_investment_limit_factor }
+			}
+
+			# The seizure cap carries the estate's standing demand on top of the base limit.
+			set_local_variable = {
+				name = mnt_wealth_seizure_cap
+				value = {
+					value = mnt_wealth_estate_seizure_limit_factor
+					add = local_var:mnt_wealth_seizure_demand
+					multiply = local_var:mnt_wealth_national_savings_goal
+				}
+			}
+
+			# Zero when the estate has no raw power anywhere (no locations to pay out to).
+			set_local_variable = { name = mnt_wealth_estate_monthly_flow value = 0 }
+
+			if = {
+				limit = {
+					is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = local_var:mnt_wealth_estate_key }
+					"variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)" > 0
+				}
+				# Clamp the seizure to the actual shortfall, so the estate never
+				# takes more gold than it is missing.
+				if = {
+					limit = { local_var:mnt_wealth_estate_gold_gap > 0 }
+					set_local_variable = {
+						name = mnt_wealth_estate_monthly_flow
+						value = {
+							value = local_var:mnt_wealth_estate_gold_gap
+							divide = 12
+							multiply = { value = 1 add = local_var:mnt_wealth_seizure_demand }
+							max = local_var:mnt_wealth_estate_gold_gap
+							multiply = -1
+							min = { value = local_var:mnt_wealth_seizure_cap multiply = -1 }
+						}
+					}
+				}
+				else = {
+					set_local_variable = {
+						name = mnt_wealth_estate_monthly_flow
+						value = {
+							value = local_var:mnt_wealth_estate_gold_gap
+							multiply = -1
+							divide = 12
+							max = local_var:mnt_wealth_payout_cap
+						}
+					}
+				}
+			}
+
+			add_to_variable_map = {
+				name = mnt_wealth_estate_flow
+				key = local_var:mnt_wealth_estate_key
+				value = local_var:mnt_wealth_estate_monthly_flow
+			}
+
+			# The treasury moves opposite to the flow: it loses what it pays out
+			# and gains what it seizes.
+			add_gold_to_estate = {
+				estate_type = scope:mnt_wealth_current_estate.estate_type
+				value = { value = local_var:mnt_wealth_estate_monthly_flow multiply = -1 }
+			}
+		}
+	}
+}
+
+# Scope: country. Called by mnt_wealth_set_national_savings_valves once per estate.
+# Tracks the estate's accumulated demand to seize, which grows each month the
+# treasury sits under its goal and decays once the treasury recovers.
+# Reads local_var:mnt_wealth_estate_gold_gap and local_var:mnt_wealth_national_savings_goal.
+# Saves local_var:mnt_wealth_seizure_demand.
+
+mnt_wealth_update_estate_seizure_demand = {
+	set_local_variable = { name = mnt_wealth_seizure_demand value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_seizure_demand target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_seizure_demand
+			value = "variable_map(mnt_wealth_estate_seizure_demand|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_estate_gold_gap > 0 }
+		change_local_variable = {
+			name = mnt_wealth_seizure_demand
+			add = { value = local_var:mnt_wealth_estate_gold_gap divide = local_var:mnt_wealth_national_savings_goal }
+		}
+	}
+	else = {
+		set_local_variable = {
+			name = mnt_wealth_seizure_demand
+			value = { value = local_var:mnt_wealth_seizure_demand multiply = mnt_wealth_seizure_demand_decay }
+		}
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_estate_seizure_demand
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_seizure_demand
+	}
+}
+
+# ── ONE LOCATION'S SHARE ──
+
+# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income and
+# mnt_wealth_apply_national_flow_to_location.
+# Saves local_var:mnt_wealth_gold_returned: one month of the estate's national flow at
+# this location, the estate's payout split by this location's share of the
+# estate's national raw power. Reads local_var:mnt_wealth_estate_key set by the caller.
+
+mnt_wealth_set_estate_national_flow_share = {
+	set_local_variable = { name = mnt_wealth_gold_returned value = 0 }
+	# This location's raw power for the estate.
+	set_local_variable = { name = mnt_wealth_local_raw_power value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_raw_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_local_raw_power
+			value = "variable_map(mnt_wealth_raw_power|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	owner ?= {
+		if = {
+			limit = {
+				is_key_in_variable_map = { name = mnt_wealth_estate_flow               target = local_var:mnt_wealth_estate_key }
+				is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = local_var:mnt_wealth_estate_key }
+				"variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)" > 0
+			}
+			set_local_variable = {
+				name = mnt_wealth_national_raw_power
+				value = "variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)"
+			}
+
+			# The national total already counts this location, so it can never be
+			# smaller than this location's share.
+			if = {
+				limit = { local_var:mnt_wealth_local_raw_power > local_var:mnt_wealth_national_raw_power }
+				error_log = "MNT_WEALTH-INVARIANT national estate raw power is smaller than this one location's share local=[SCOPE.GetLocalVariable('mnt_wealth_local_raw_power').GetValue|4] national=[SCOPE.GetLocalVariable('mnt_wealth_national_raw_power').GetValue|4]"
+			}
+
+			set_local_variable = {
+				name = mnt_wealth_gold_returned
+				value = {
+					value = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_estate_key)"
+					multiply = local_var:mnt_wealth_local_raw_power
+					divide = local_var:mnt_wealth_national_raw_power
+				}
+			}
+		}
+	}
+}
+
+# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income and
+# mnt_wealth_apply_national_flow_to_location.
+# Applies one estate's signed flow for this location. Reads
+# local_var:mnt_wealth_gold_returned (positive invests, negative seizes) and saves
+# local_var:mnt_wealth_pool_delta, the gold to add to or take from the pool.
+# When seizing, the estate's own liquid pool wealth is taken first; whatever
+# that cannot cover is ripped out of its invested wealth, which lowers its
+# investment level toward neglect.
+
+mnt_wealth_apply_estate_flow = {
+	if = {
+		limit = { local_var:mnt_wealth_gold_returned >= 0 }
+		set_local_variable = { name = mnt_wealth_pool_delta value = local_var:mnt_wealth_gold_returned }
+	}
+	else = {
+		set_local_variable = { name = mnt_wealth_seizing value = { value = local_var:mnt_wealth_gold_returned multiply = -1 } }
+		# No percentage entry means no liquid share to seize from.
+		set_local_variable = { name = mnt_wealth_own_liquid value = 0 }
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = {
+				name = mnt_wealth_own_liquid
+				value = {
+					value = var:mnt_wealth_pool
+					multiply = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+				}
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_from_liquid
+			value = { value = local_var:mnt_wealth_seizing max = local_var:mnt_wealth_own_liquid }
+		}
+		set_local_variable = { name = mnt_wealth_pool_delta value = { value = local_var:mnt_wealth_from_liquid multiply = -1 } }
+		# What the liquid share could not cover comes out of invested wealth.
+		set_local_variable = {
+			name = mnt_wealth_from_invested
+			value = { value = local_var:mnt_wealth_seizing subtract = local_var:mnt_wealth_from_liquid }
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_investment_change
+			value = { value = local_var:mnt_wealth_from_invested multiply = -1 }
+		}
+
+		mnt_wealth_add_investment_progress = yes
+	}
+}
+
+# ── APPLYING THE FLOW ──
+
+# Scope: location. Called by mnt_wealth_estate_month through
+# mnt_wealth_for_each_national_estate_in_power_cache.
+# Gold arriving for one estate this month: the kept wages from
+# mnt_wealth_set_estate_wage_balance plus this location's share of the estate's
+# national flow (negative when the estate is seizing).
+
+mnt_wealth_resolve_estate_monthly_income = {
+	# One month of the estate's national flow at this location.
+	mnt_wealth_set_estate_national_flow_share = yes
+	mnt_wealth_apply_estate_flow = yes
+
+	set_local_variable = {
+		name = mnt_wealth_estate_arriving
+		value = {
+			value = "local_variable_map(mnt_wealth_kept_wages|local_var:mnt_wealth_estate_key)"
+			add = local_var:mnt_wealth_pool_delta
+		}
+	}
+
+	add_to_local_variable_map = {
+		name = mnt_wealth_arriving
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_estate_arriving
+	}
+
+	change_local_variable = { name = mnt_wealth_arriving_running_total add = local_var:mnt_wealth_estate_arriving }
+}
+
+# Scope: location. Called by mnt_wealth_settle_investment_accumulators.
+# Applies one estate's accumulated national flow, split by this location's
+# share of the estate's national raw power.
+
+mnt_wealth_apply_national_flow_to_location = {
+	# One month of the estate's national flow at this location.
+	mnt_wealth_set_estate_national_flow_share = yes
+	# Scale the monthly share by the whole year of accumulated months.
+	set_local_variable = {
+		name = mnt_wealth_gold_returned
+		value = { value = local_var:mnt_wealth_gold_returned multiply = var:mnt_wealth_investment_months }
+	}
+
+	mnt_wealth_apply_estate_flow = yes
+
+	add_to_local_variable_map = {
+		name = mnt_wealth_arriving
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_pool_delta
+	}
+
+	change_local_variable = { name = mnt_wealth_arriving_running_total add = local_var:mnt_wealth_pool_delta }
+}

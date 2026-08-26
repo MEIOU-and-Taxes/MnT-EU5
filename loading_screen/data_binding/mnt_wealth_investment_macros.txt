@@ -1,0 +1,317 @@
+﻿# Investment display macros. The level comes from a persistent gold pool
+# measured against a fixed cost base.
+#
+# AI locations do a year of work in one tick, so the DC macros below project
+# from the wealth pool monthly to keep display values smooth.
+
+# --- accessors ---
+
+macro = {
+	description = "Read a location variable value"
+	definition = "LocationVariable(Name)"
+	replace_with = "LocationView.GetLocation.MakeScope.GetVariable(Name).GetValue"
+}
+
+macro = {
+	description = "Read a location variable as float"
+	definition = "LocationVariableFloat(Name)"
+	replace_with = "FixedPointToFloat(LocationVariable(Name))"
+}
+
+macro = {
+	description = "Read a location script value"
+	definition = "LocationScriptValue(Name)"
+	replace_with = "LocationView.GetLocation.MakeScope.ScriptValue(Name)"
+}
+
+# --- level cost curve ---
+
+macro = {
+	description = "Investment progress in gold the first level costs, from the tuning constant"
+	definition = "LevelCostBase()"
+	replace_with = "FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_level_cost_base'))"
+}
+
+# --- modifier filter helpers ---
+
+macro = {
+	description = "True when the current timed modifier matches the given modifier key"
+	definition = "IsModifier(Key)"
+	replace_with = "EqualTo_string(TimedModifier.GetModifier.GetName, GetModifier(Key).GetName)"
+}
+
+macro = {
+	description = "True when the current timed modifier is any wealth system modifier"
+	definition = "IsWealthModifier()"
+	replace_with = "Or(Or8(IsModifier('mnt_wealth_wage_burden'), IsModifier('mnt_wealth_investment_nobles'), IsModifier('mnt_wealth_investment_clergy'), IsModifier('mnt_wealth_investment_burghers'), IsModifier('mnt_wealth_investment_peasants'), IsModifier('mnt_wealth_investment_dhimmi'), IsModifier('mnt_wealth_investment_tribes'), IsModifier('mnt_wealth_investment_cossacks')), Or7(IsModifier('mnt_wealth_neglect_nobles'), IsModifier('mnt_wealth_neglect_clergy'), IsModifier('mnt_wealth_neglect_burghers'), IsModifier('mnt_wealth_neglect_peasants'), IsModifier('mnt_wealth_neglect_dhimmi'), IsModifier('mnt_wealth_neglect_tribes'), IsModifier('mnt_wealth_neglect_cossacks')))"
+}
+
+# --- modifier helpers ---
+
+macro = {
+	description = "A location modifier value as float"
+	definition = "LocalModifierFloat(Name)"
+	replace_with = "FixedPointToFloat(LocationView.GetLocation.GetModifierValueFixed(Name))"
+}
+
+macro = {
+	description = "An owner country modifier value as float"
+	definition = "OwnerModifierFloat(Name)"
+	replace_with = "FixedPointToFloat(LocationView.GetLocation.GetOwner.GetModifierRawValue(Name))"
+}
+
+macro = {
+	description = "Investment rate as a percent: local plus national rate, times the efficiency multiplier floored at 0.5"
+	definition = "InvestmentRatePercent()"
+	replace_with = "Multiply_float(Multiply_float(Max_float(Add_float(LocalModifierFloat('mnt_wealth_local_investment_rate'), OwnerModifierFloat('mnt_wealth_global_investment_rate')), '(float)0'), Max_float(Add_float('(float)1', Add_float(LocalModifierFloat('mnt_wealth_local_investment_rate_efficiency'), OwnerModifierFloat('mnt_wealth_global_investment_rate_efficiency'))), '(float)0.5')), '(float)100')"
+}
+
+# --- estate datacontext macros (inside datamodel / datacontext_from_model iterations) ---
+
+macro = {
+	description = "Read a location variable map entry for the current estate"
+	definition = "DCLocationMap(Map)"
+	replace_with = "LocationView.GetLocation.MakeScope.GetVariableFromVariableMap(Map, Estate.GetType.MakeScope).GetValue"
+}
+
+macro = {
+	description = "Read a location variable map entry for the current estate as float"
+	definition = "DCLocationMapFloat(Map)"
+	replace_with = "FixedPointToFloat(DCLocationMap(Map))"
+}
+
+macro = {
+	description = "Read an owner variable map entry for the current estate"
+	definition = "DCOwnerMap(Map)"
+	replace_with = "LocationView.GetLocation.GetOwner.MakeScope.GetVariableFromVariableMap(Map, Estate.GetType.MakeScope).GetValue"
+}
+
+macro = {
+	description = "The estate's investment level as a float, read from the variable map"
+	definition = "DCInvestmentLevel()"
+	replace_with = "DCLocationMapFloat('mnt_wealth_investment_level')"
+}
+
+macro = {
+	description = "The whole investment level as a float: floor of the absolute level"
+	definition = "DCWholeLevel()"
+	replace_with = "IntToFloat(FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level'))))"
+}
+
+macro = {
+	description = "The fractional progress within the current whole level"
+	definition = "DCLevelFraction()"
+	replace_with = "Subtract_float(Abs_float(DCInvestmentLevel()), DCWholeLevel())"
+}
+
+macro = {
+	description = "Green bar fraction: the fractional progress when investing, zero when neglecting"
+	definition = "DCInvestmentSolidBar()"
+	replace_with = "Select_float(GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)0'), DCLevelFraction(), '(float)0')"
+}
+
+macro = {
+	description = "Red bar fraction: the fractional progress when neglecting, zero when investing"
+	definition = "DCNeglectSolidBar()"
+	replace_with = "Select_float(LessThan_float(DCInvestmentLevel(), '(float)0'), DCLevelFraction(), '(float)0')"
+}
+
+macro = {
+	description = "Unfilled ring remainder beyond the solid slice"
+	definition = "DCUnfilledRing()"
+	replace_with = "Subtract_float('(float)1', DCLevelFraction())"
+}
+
+macro = {
+	description = "The estate's local wealth in gold from the variable maps"
+	definition = "DCEstateWealth()"
+	replace_with = "Multiply_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), DCLocationMap('mnt_wealth_local_wealth_share'))"
+}
+
+macro = {
+	description = "The estate's desired wealth from the variable map"
+	definition = "DCDesiredWealth()"
+	replace_with = "DCLocationMap('mnt_wealth_expected_wealth')"
+}
+
+macro = {
+	description = "The investment or neglect level the estate settles at, from mnt_wealth_investment_equilibrium_level. Undoing the desired wealth curve needs a square root, which the data binding language does not have, so the calculation runs in script and the location and estate are handed in as named scopes"
+	definition = "DCInvestmentEquilibrium()"
+	replace_with = "FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_investment_equilibrium'))"
+}
+
+macro = {
+	description = "The estate's relative estate power from the variable map"
+	definition = "DCPowerPercentage()"
+	replace_with = "DCLocationMap('mnt_wealth_cached_local_relative_estate_power')"
+}
+
+macro = {
+	description = "True when the estate is investing into its locations"
+	definition = "DCEstateIsInvesting()"
+	replace_with = "GreaterThan_float(DCEstateFlowTotal(), '(float)0')"
+}
+
+macro = {
+	description = "The estate's signed monthly flow from the country variable map"
+	definition = "DCEstateFlowTotal()"
+	replace_with = "FixedPointToFloat(DCOwnerMap('mnt_wealth_estate_flow'))"
+}
+
+macro = {
+	description = "The estate's raw power in this location, as a float"
+	definition = "DCEstateRawPower()"
+	replace_with = "FixedPointToFloat(DCLocationMap('mnt_wealth_raw_power'))"
+}
+
+macro = {
+	description = "The estate's national raw power total from the country variable map: the sum of its raw power across every owned location"
+	definition = "DCNationalEstateRawPower()"
+	replace_with = "FixedPointToFloat(DCOwnerMap('mnt_wealth_national_estate_raw_power'))"
+}
+
+macro = {
+	description = "This location's share of the estate's national raw power: its raw power here over the estate's national raw power total. The estate's national flow is split across its locations by this share"
+	definition = "DCEstateLocalPayoutShare()"
+	replace_with = "Divide_float(DCEstateRawPower(), Max_float(DCNationalEstateRawPower(), '(float)0.001'))"
+}
+
+macro = {
+	description = "The estate's flow at this location: total flow times this location's share of the estate's national raw power"
+	definition = "DCEstateLocalFlow()"
+	replace_with = "Multiply_float(DCEstateFlowTotal(), DCEstateLocalPayoutShare())"
+}
+
+macro = {
+	description = "Gold torn out of this location's invested wealth by a national seizure this month: the part of a negative estate flow that exceeds the estate's liquid share of the pool. Zero when the estate is investing or when its liquid share covers the whole seizure"
+	definition = "DCSeizureFromInvested()"
+	replace_with = "Max_float('(float)0', Subtract_float(Subtract_float('(float)0', DCEstateLocalFlow()), FixedPointToFloat(DCEstateWealth())))"
+}
+
+macro = {
+	description = "The seizure taken from the estate's liquid wealth share, as a signed negative number: the whole seizure minus the part that overflowed into invested wealth"
+	definition = "DCSeizedFromWealth()"
+	replace_with = "Add_float(DCEstateLocalFlow(), DCSeizureFromInvested())"
+}
+
+macro = {
+	description = "The seizure that overflowed into the estate's invested wealth, as a signed negative number for display"
+	definition = "DCSeizedFromInvestments()"
+	replace_with = "Multiply_float(DCSeizureFromInvested(), '(float)-1')"
+}
+
+macro = {
+	description = "Gold invested from local wealth for the estate per month"
+	definition = "DCEstateInvestedGold()"
+	replace_with = "Multiply_float(Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_local_wealth_total')), DCLocationMapFloat('mnt_wealth_local_wealth_share')), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate')))"
+}
+
+macro = {
+	description = "The estate's share of local wages"
+	definition = "DCEstateIncome()"
+	replace_with = "Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_local_wage_pool')), FixedPointToFloat(DCPowerPercentage()))"
+}
+
+macro = {
+	description = "The estate's monthly wealth percentage drift"
+	definition = "DCWealthShareDrift()"
+	replace_with = "Multiply_CFixedPoint(Subtract_CFixedPoint(DCLocationMap('mnt_wealth_cached_local_relative_estate_power'), DCLocationMap('mnt_wealth_local_wealth_share')), LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_share_monthly_trend_rate'))"
+}
+
+macro = {
+	description = "The monthly wealth percentage drift converted to gold"
+	definition = "DCWealthShareDriftGold()"
+	replace_with = "Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_displayed_wealth_pool')), FixedPointToFloat(DCWealthShareDrift()))"
+}
+
+macro = {
+	description = "Total monthly change to the estate's local wealth"
+	definition = "DCEstateWealthChange()"
+	replace_with = "Add_float(Add_float(Subtract_float(DCEstateIncome(), DCEstateInvestedGold()), DCEstateLocalFlow()), DCWealthShareDriftGold())"
+}
+
+macro = {
+	description = "Monthly investment progress: estate wealth times the investment rate, scaled by investment efficiency"
+	definition = "DCMonthlyInvestment()"
+	replace_with = "Multiply_float(Multiply_float(FixedPointToFloat(DCEstateWealth()), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_efficiency_multiplier')))"
+}
+
+macro = {
+	description = "Upkeep curve: desired wealth times the investment rate"
+	definition = "DCUpkeepCurve()"
+	replace_with = "Multiply_float(FixedPointToFloat(DCDesiredWealth()), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate')))"
+}
+
+macro = {
+	description = "Upkeep floor line: base desired wealth times the investment rate, plus the per-level minimum change times the current level"
+	definition = "DCUpkeepFloor()"
+	replace_with = "Add_float(Multiply_float(DCLocationMapFloat('mnt_wealth_base_desired_wealth'), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))), Multiply_float(DCInvestmentLevel(), FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_change_per_investment_level'))))"
+}
+
+macro = {
+	description = "Monthly upkeep, matching mnt_wealth_compute_estate_upkeep: the larger of the curve and floor line when investing, the smaller of the two (never below zero) when neglecting, then scaled by upkeep efficiency"
+	definition = "DCMonthlyUpkeep()"
+	replace_with = "Multiply_float(Select_float(GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)0'), Max_float(DCUpkeepCurve(), DCUpkeepFloor()), Max_float(Min_float(DCUpkeepCurve(), DCUpkeepFloor()), '(float)0')), FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_efficiency_multiplier')))"
+}
+
+macro = {
+	description = "Monthly net: investment minus upkeep before the progress modifier"
+	definition = "DCMonthlyNet()"
+	replace_with = "Subtract_float(DCMonthlyInvestment(), DCMonthlyUpkeep())"
+}
+
+macro = {
+	description = "Monthly change to investment progress: the net of efficiency-scaled investment minus efficiency-scaled upkeep"
+	definition = "DCMonthlyChange()"
+	replace_with = "DCMonthlyNet()"
+}
+
+macro = {
+	description = "The estate's true monthly change to invested wealth: the investment change minus any national asset seizure taken from invested wealth"
+	definition = "DCMonthlyChangeAfterSeizure()"
+	replace_with = "Subtract_float(DCMonthlyChange(), DCSeizureFromInvested())"
+}
+
+macro = {
+	description = "Gold cost of the current whole level from the variable map"
+	definition = "DCCurrentLevelCost()"
+	replace_with = "Multiply_float(LevelCostBase(), Add_float(Multiply_float('(float)2', DCWholeLevel()), '(float)1'))"
+}
+
+macro = {
+	description = "Cumulative gold cost of all levels below the current one"
+	definition = "DCPreviousLevelsCost()"
+	replace_with = "Multiply_float(LevelCostBase(), Multiply_float(DCWholeLevel(), DCWholeLevel()))"
+}
+
+macro = {
+	description = "Cumulative gold to reach the next whole level"
+	definition = "DCNextLevelTotalCost()"
+	replace_with = "Multiply_float(LevelCostBase(), Multiply_float(Add_float(DCWholeLevel(), '(float)1'), Add_float(DCWholeLevel(), '(float)1')))"
+}
+
+macro = {
+	description = "Investment progress in gold: cumulative cost to this point, negative while neglecting"
+	definition = "DCInvestmentProgressGold()"
+	replace_with = "Multiply_float(Add_float(DCPreviousLevelsCost(), Multiply_float(DCLevelFraction(), DCCurrentLevelCost())), Select_float(LessThan_float(DCInvestmentLevel(), '(float)0'), '(float)-1', '(float)1'))"
+}
+
+# --- estate key derivation (index map → short key string → Concatenate) ---
+
+macro = {
+	description = "The estate's lowercase short key. GetFlagName returns a capitalized word; mnt_wealth_estate_iconkey_ loc maps it back to lowercase."
+	definition = "DCEstateShortKey()"
+	replace_with = "Localize(Concatenate('mnt_wealth_estate_iconkey_', GetVariableFromGlobalVariableMap('mnt_wealth_estate_short_key', Estate.GetType.MakeScope).GetFlagName))"
+}
+
+macro = {
+	description = "The neglect modifier key for the current estate"
+	definition = "DCNeglectModifierKey()"
+	replace_with = "Concatenate('mnt_wealth_neglect_', DCEstateShortKey())"
+}
+
+macro = {
+	description = "The investment modifier key for the current estate"
+	definition = "DCInvestmentModifierKey()"
+	replace_with = "Concatenate('mnt_wealth_investment_', DCEstateShortKey())"
+}

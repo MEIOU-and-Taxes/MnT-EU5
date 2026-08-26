@@ -1,0 +1,574 @@
+﻿# GDP and Wages: the investment level an estate reaches, reviewed yearly.
+#
+# Each year an estate's progress is added to its lifetime pool, its investment
+# level is recalculated from that pool, and desired wealth and a sized modifier
+# follow. The gold that buys the progress is in mnt_wealth_investment_spending.
+
+# ── INVESTMENT LEVEL UPDATE ──
+
+# Scope: location. Called by mnt_wealth_location_year and mnt_wealth_on_location_changed_owner.
+# Releases departed estates, rebuilds the cached power maps, redistributes their
+# investment, recalculates present levels.
+
+mnt_wealth_update_investment_levels = {
+	set_local_variable = { name = mnt_wealth_freed_investment         value = 0 }
+	set_local_variable = { name = mnt_wealth_freed_local_wealth_share value = 0 }
+	set_local_variable = { name = mnt_wealth_estate_departed          value = 0 }
+	# Pass 1: collect keys whose estate is gone (cannot remove mid-iteration).
+	clear_local_variable_list = mnt_wealth_stale_estates
+
+	every_key_in_variable_map = {
+		variable = mnt_wealth_investment_level
+		save_temporary_scope_as = mnt_wealth_level_key
+
+		prev = {
+			if = {
+				limit = { mnt_wealth_estate_has_departed = yes }
+				add_to_local_variable_list = { name = mnt_wealth_stale_estates target = scope:mnt_wealth_level_key }
+			}
+		}
+	}
+
+	# A wealth share can outlive its estate without ever having an investment
+	# level. The drift pass never visits these, so they must be collected for
+	# release here.
+	every_key_in_variable_map = {
+		variable = mnt_wealth_local_wealth_share
+		save_temporary_scope_as = mnt_wealth_level_key
+
+		prev = {
+			if = {
+				limit = {
+					NOT = { is_key_in_variable_map = { name = mnt_wealth_investment_level target = scope:mnt_wealth_level_key } }
+					mnt_wealth_estate_has_departed = yes
+				}
+				add_to_local_variable_list = { name = mnt_wealth_stale_estates target = scope:mnt_wealth_level_key }
+			}
+		}
+	}
+
+	# Pass 2: release each stale estate.
+	every_in_local_list = {
+		variable = mnt_wealth_stale_estates
+		save_temporary_scope_as = mnt_wealth_stale_key
+		prev = { mnt_wealth_release_absent_estate = yes }
+	}
+
+	# The cached power maps are a year old and still list the estate that just
+	# left. Rebuild them before the redistribution below uses them.
+	if = { limit = { local_var:mnt_wealth_estate_departed = 1 } mnt_wealth_resurvey_estate_data = yes }
+
+	if = {
+		limit = { OR = { local_var:mnt_wealth_freed_investment > 0 local_var:mnt_wealth_freed_local_wealth_share > 0 } }
+		mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_redistribute_to_estate }
+		mnt_wealth_set_local_wealth_share_sum = yes
+	}
+
+	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_update_estate_investment_level }
+}
+
+# Scope: location. Adapter: the estate iterators call by name with no parameters,
+# so the estate name is looked up here.
+
+mnt_wealth_update_estate_investment_level = {
+	mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_run_estate_investment_update }
+}
+
+# Scope: location. Runs one estate's yearly review: credits progress to the
+# invested wealth pool, then rebuilds its level, desired wealth, and modifier.
+
+mnt_wealth_run_estate_investment_update = {
+	mnt_wealth_add_progress_to_invested_wealth = yes
+	mnt_wealth_recompute_estate_investment = { ESTATE = $ESTATE$ }
+}
+
+# Scope: location. Rebuilds one estate's level, desired wealth, and modifier
+# from its current invested wealth, without crediting new progress.
+
+mnt_wealth_recompute_estate_investment = {
+	# Base desired wealth first: it is what the level is measured against.
+	mnt_wealth_set_estate_desired_tuning = { ESTATE = $ESTATE$ }
+	mnt_wealth_compute_base_desired_wealth = yes
+	mnt_wealth_read_estate_investment_pool = yes
+	mnt_wealth_set_whole_investment_level = yes
+	mnt_wealth_set_fractional_investment_level = yes
+	mnt_wealth_set_desired_wealth = yes
+	mnt_wealth_refresh_estate_investment_modifier = { ESTATE = $ESTATE$ }
+}
+
+# Scope: location. Reads the estate's current level and splits its lifetime
+# invested wealth into a sign and a magnitude. Negative invested wealth (neglect)
+# uses the same formula as positive, so the level calculation only needs the magnitude.
+# Saves local_var:mnt_wealth_investment_level_now, mnt_wealth_investment_base,
+# mnt_wealth_investment_level_sign and mnt_wealth_pool_magnitude.
+
+mnt_wealth_read_estate_investment_pool = {
+	set_local_variable = { name = mnt_wealth_investment_level_now value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_investment_level target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_investment_level_now
+			value = "variable_map(mnt_wealth_investment_level|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_investment_base value = mnt_wealth_investment_level_cost_base }
+	set_local_variable = { name = mnt_wealth_pool_value      value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_pool_value
+			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_investment_level_sign value = 1 }
+	set_local_variable = { name = mnt_wealth_pool_magnitude        value = local_var:mnt_wealth_pool_value }
+
+	if = {
+		limit = { local_var:mnt_wealth_pool_value < 0 }
+		set_local_variable = { name = mnt_wealth_investment_level_sign value = -1 }
+		set_local_variable = {
+			name = mnt_wealth_pool_magnitude
+			value = { value = local_var:mnt_wealth_pool_value multiply = -1 }
+		}
+	}
+}
+
+# Scope: location. The whole level plus how far the pool has come toward the
+# next one, signed. Writes the result into mnt_wealth_investment_level.
+
+mnt_wealth_set_fractional_investment_level = {
+	set_local_variable = {
+		name = mnt_wealth_new_investment_level
+		value = {
+			value = local_var:mnt_wealth_next_investment_level_cost
+			subtract = local_var:mnt_wealth_reached_cost
+			save_temporary_value_as = mnt_wealth_this_investment_level_cost
+			value = local_var:mnt_wealth_pool_magnitude
+			subtract = local_var:mnt_wealth_reached_cost
+			divide = scope:mnt_wealth_this_investment_level_cost
+			add = local_var:mnt_wealth_whole_investment_level
+			multiply = local_var:mnt_wealth_investment_level_sign
+		}
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_investment_level
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_new_investment_level
+	}
+}
+
+# Scope: location. Puts this estate's sized modifier back at its new level.
+# Both come off first, because a level that crossed zero has to lose the one
+# it used to carry.
+
+mnt_wealth_refresh_estate_investment_modifier = {
+	set_local_variable = { name = mnt_wealth_current_level value = local_var:mnt_wealth_new_investment_level }
+	mnt_wealth_remove_estate_investment_modifiers = { ESTATE = $ESTATE$ }
+
+	if = {
+		limit = { local_var:mnt_wealth_current_level > 0 }
+		mnt_wealth_apply_estate_investment_modifier = { ESTATE = $ESTATE$ }
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_current_level < 0 }
+
+		set_local_variable = {
+			name = mnt_wealth_neglect_size
+			value = { value = local_var:mnt_wealth_current_level multiply = -1 }
+		}
+
+		mnt_wealth_apply_estate_neglect_modifier = { ESTATE = $ESTATE$ }
+	}
+}
+
+# Scope: location. Largest whole level N where base * N^2 fits the pool.
+# Reuses last year's level, recalculates the square root only when the pool
+# crosses a boundary.
+
+mnt_wealth_set_whole_investment_level = {
+	set_local_variable = {
+		name = mnt_wealth_whole_investment_level
+		value = {
+			value = local_var:mnt_wealth_investment_level_now
+			multiply = local_var:mnt_wealth_investment_level_sign
+			floor = yes
+			min = 0
+		}
+	}
+
+	mnt_wealth_set_investment_level_boundaries = yes
+
+	if = {
+		limit = {
+			OR = {
+				local_var:mnt_wealth_pool_magnitude < local_var:mnt_wealth_reached_cost
+				local_var:mnt_wealth_pool_magnitude >= local_var:mnt_wealth_next_investment_level_cost
+			}
+		}
+		set_local_variable = {
+			name = mnt_wealth_whole_investment_level
+			value = {
+				value = local_var:mnt_wealth_pool_magnitude
+				divide = local_var:mnt_wealth_investment_base
+				pow = 0.5
+				floor = yes
+			}
+		}
+
+		mnt_wealth_set_investment_level_boundaries = yes
+	}
+}
+
+# Scope: location. Calculates the pool cost at the current whole level and the next.
+
+mnt_wealth_set_investment_level_boundaries = {
+	set_local_variable = {
+		name = mnt_wealth_reached_cost
+		value = {
+			value = local_var:mnt_wealth_whole_investment_level
+			multiply = local_var:mnt_wealth_whole_investment_level
+			multiply = local_var:mnt_wealth_investment_base
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_next_investment_level_cost
+		value = {
+			value = local_var:mnt_wealth_whole_investment_level
+			add = 1
+			save_temporary_value_as = mnt_wealth_next_whole_investment_level
+			multiply = scope:mnt_wealth_next_whole_investment_level
+			multiply = local_var:mnt_wealth_investment_base
+		}
+	}
+}
+
+# ── ESTATE NAME LOOKUP ──
+
+# Scope: location. Resolves the estate key to a name and runs $EFFECT$ with it.
+
+mnt_wealth_run_effect_with_estate_name = {
+	switch = {
+		trigger = local_var:mnt_wealth_estate_key
+		estate_type:nobles_estate   = { $EFFECT$ = { ESTATE = nobles } }
+		estate_type:clergy_estate   = { $EFFECT$ = { ESTATE = clergy } }
+		estate_type:burghers_estate = { $EFFECT$ = { ESTATE = burghers } }
+		estate_type:peasants_estate = { $EFFECT$ = { ESTATE = peasants } }
+		estate_type:dhimmi_estate   = { $EFFECT$ = { ESTATE = dhimmi } }
+		estate_type:tribes_estate   = { $EFFECT$ = { ESTATE = tribes } }
+		estate_type:cossacks_estate = { $EFFECT$ = { ESTATE = cossacks } }
+	}
+}
+
+# ── PROGRESS AND DESIRED WEALTH ──
+
+# Scope: location. Adds since-review progress to the lifetime pool, then zeroes it.
+
+mnt_wealth_add_progress_to_invested_wealth = {
+	set_local_variable = { name = mnt_wealth_current_invested value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_current_invested
+			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_current_since_review value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_current_since_review
+			value = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_merged_invested
+		value = { value = local_var:mnt_wealth_current_invested add = local_var:mnt_wealth_current_since_review }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_invested_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_merged_invested
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_invested_since_review
+		key = local_var:mnt_wealth_estate_key
+		value = 0
+	}
+}
+
+# Scope: location. Sets base desired wealth from the estate key's tuning.
+
+mnt_wealth_set_base_desired_wealth = {
+	mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_set_estate_desired_tuning }
+	mnt_wealth_compute_base_desired_wealth = yes
+}
+
+# Scope: location. base_desired = raw_power / power_per_pop * multiplier * modifier,
+# floored at the estate's share of local GDP.
+
+mnt_wealth_compute_base_desired_wealth = {
+	set_local_variable = {
+		name = mnt_wealth_raw_power_value
+		value = "variable_map(mnt_wealth_raw_power|local_var:mnt_wealth_estate_key)"
+	}
+	set_local_variable = {
+		name = mnt_wealth_power_per_pop
+		value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_estate_key)"
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_computed_base_desired_wealth
+		value = {
+			value = local_var:mnt_wealth_raw_power_value
+			divide = local_var:mnt_wealth_power_per_pop
+			multiply = local_var:mnt_wealth_desired_multiplier
+			multiply = local_var:mnt_wealth_desired_modifier
+			min = { value = var:mnt_wealth_local_gdp multiply = "local_relative_estate_power(local_var:mnt_wealth_estate_key)" }
+		}
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_base_desired_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_computed_base_desired_wealth
+	}
+}
+
+# Scope: location. Sets the desired-wealth multiplier and modifier from this estate's tuning.
+
+mnt_wealth_set_estate_desired_tuning = {
+	set_local_variable = {
+		name = mnt_wealth_desired_multiplier
+		value = {
+			value = modifier:mnt_wealth_local_$ESTATE$_desired_wealth
+			add = owner.modifier:mnt_wealth_global_$ESTATE$_desired_wealth
+		}
+	}
+	set_local_variable = {
+		name = mnt_wealth_desired_modifier
+		value = {
+			value = 1
+			add = modifier:mnt_wealth_local_$ESTATE$_desired_wealth_modifier
+			add = owner.modifier:mnt_wealth_global_$ESTATE$_desired_wealth_modifier
+		}
+	}
+}
+
+# Scope: location. Scales base desired wealth by the investment level.
+
+mnt_wealth_set_desired_wealth = {
+	set_local_variable = {
+		name = mnt_wealth_base_desired_wealth
+		value = "variable_map(mnt_wealth_base_desired_wealth|local_var:mnt_wealth_estate_key)"
+	}
+	set_local_variable = { name = mnt_wealth_desired_wealth_now value = local_var:mnt_wealth_base_desired_wealth }
+	set_local_variable = {
+		name = mnt_wealth_current_level
+		value = "variable_map(mnt_wealth_investment_level|local_var:mnt_wealth_estate_key)"
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_current_level >= 0 }
+		set_local_variable = {
+			name = mnt_wealth_desired_wealth_now
+			value = {
+				value = 1
+				add = local_var:mnt_wealth_current_level
+				save_temporary_value_as = mnt_wealth_one_plus_investment_level
+				multiply = scope:mnt_wealth_one_plus_investment_level
+				multiply = local_var:mnt_wealth_base_desired_wealth
+			}
+		}
+	}
+	else = {
+		set_local_variable = {
+			name = mnt_wealth_desired_wealth_now
+			value = {
+				value = 1
+				subtract = { value = local_var:mnt_wealth_current_level multiply = mnt_wealth_desired_wealth_per_investment_level }
+				save_temporary_value_as = mnt_wealth_neglect_denominator
+				value = local_var:mnt_wealth_base_desired_wealth
+				divide = scope:mnt_wealth_neglect_denominator
+			}
+		}
+	}
+
+	# The desired total follows the map by difference, so it stays right when a
+	# level change rewrites this entry between surveys. The survey clears the
+	# map before calling this, so a missing entry means the old value was 0.
+	set_local_variable = { name = mnt_wealth_desired_wealth_before value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_expected_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_desired_wealth_before
+			value = "variable_map(mnt_wealth_expected_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_expected_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_desired_wealth_now
+	}
+
+	change_variable = { name = mnt_wealth_desired_total add = local_var:mnt_wealth_desired_wealth_now }
+	change_variable = { name = mnt_wealth_desired_total subtract = local_var:mnt_wealth_desired_wealth_before }
+}
+
+# ── INVESTMENT MODIFIER ──
+
+# Scope: location. Applies this estate's sized investment or neglect modifier.
+
+mnt_wealth_remove_estate_investment_modifiers = {
+	mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_investment_$ESTATE$ }
+	mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_neglect_$ESTATE$ }
+}
+
+mnt_wealth_apply_estate_investment_modifier = {
+	mnt_wealth_apply_sized_modifier = {
+		MODIFIER = mnt_wealth_investment_$ESTATE$
+		SIZE = local_var:mnt_wealth_current_level
+		FACTOR = mnt_wealth_investment_rounding_factor
+	}
+}
+
+mnt_wealth_apply_estate_neglect_modifier = {
+	mnt_wealth_apply_sized_modifier = {
+		MODIFIER = mnt_wealth_neglect_$ESTATE$
+		SIZE = local_var:mnt_wealth_neglect_size
+		FACTOR = mnt_wealth_investment_rounding_factor
+	}
+}
+
+# ── ABSENT ESTATE RELEASE ──
+
+# Scope: location. Frees a departed estate's investment and wealth percentage
+# for redistribution. Saves local_var:mnt_wealth_freed_investment,
+# local_var:mnt_wealth_freed_local_wealth_share and local_var:mnt_wealth_estate_departed.
+
+mnt_wealth_release_absent_estate = {
+	set_local_variable = { name = mnt_wealth_estate_key      value = scope:mnt_wealth_stale_key }
+	set_local_variable = { name = mnt_wealth_estate_departed value = 1 }
+	mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_remove_estate_investment_modifiers }
+	mnt_wealth_add_progress_to_invested_wealth = yes
+	remove_from_variable_map = { name = mnt_wealth_investment_level key = local_var:mnt_wealth_estate_key }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+
+		set_local_variable = {
+			name = mnt_wealth_released_investment
+			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+		}
+
+		if = {
+			limit = { local_var:mnt_wealth_released_investment > 0 }
+			change_local_variable = { name = mnt_wealth_freed_investment add = local_var:mnt_wealth_released_investment }
+		}
+
+		remove_from_variable_map = { name = mnt_wealth_invested_wealth key = local_var:mnt_wealth_estate_key }
+	}
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+
+		set_local_variable = {
+			name = mnt_wealth_released_percentage
+			value = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+		}
+
+		if = {
+			limit = { local_var:mnt_wealth_released_percentage > 0 }
+			change_local_variable = { name = mnt_wealth_freed_local_wealth_share add = local_var:mnt_wealth_released_percentage }
+		}
+
+		remove_from_variable_map = { name = mnt_wealth_local_wealth_share key = local_var:mnt_wealth_estate_key }
+	}
+
+	remove_from_variable_map = { name = mnt_wealth_invested_since_review key = local_var:mnt_wealth_estate_key }
+	remove_from_variable_map = { name = mnt_wealth_base_desired_wealth   key = local_var:mnt_wealth_estate_key }
+	remove_from_variable_map = { name = mnt_wealth_expected_wealth       key = local_var:mnt_wealth_estate_key }
+}
+
+# Scope: location. Called by mnt_wealth_update_investment_levels through
+# mnt_wealth_for_each_national_estate_in_power_cache.
+# Distributes the freed investment and wealth percentage from absent
+# estates to present estates in proportion to their power.
+
+mnt_wealth_redistribute_to_estate = {
+	set_local_variable = {
+		name = mnt_wealth_relative_power
+		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_freed_investment > 0 }
+
+		set_local_variable = {
+			name = mnt_wealth_investment_share
+			value = { value = local_var:mnt_wealth_freed_investment multiply = local_var:mnt_wealth_relative_power }
+		}
+
+		set_local_variable = { name = mnt_wealth_existing_wealth value = 0 }
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = {
+				name = mnt_wealth_existing_wealth
+				value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_new_invested_wealth
+			value = { value = local_var:mnt_wealth_existing_wealth add = local_var:mnt_wealth_investment_share }
+		}
+
+		add_to_variable_map = {
+			name = mnt_wealth_invested_wealth
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_new_invested_wealth
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_freed_local_wealth_share > 0 }
+		# A newly present estate may not have a percentage entry yet.
+		set_local_variable = { name = mnt_wealth_existing_percentage value = 0 }
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = {
+				name = mnt_wealth_existing_percentage
+				value = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_new_percentage
+			value = {
+				value = local_var:mnt_wealth_existing_percentage
+				add = { value = local_var:mnt_wealth_freed_local_wealth_share multiply = local_var:mnt_wealth_relative_power }
+			}
+		}
+
+		add_to_variable_map = {
+			name = mnt_wealth_local_wealth_share
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_new_percentage
+		}
+	}
+}

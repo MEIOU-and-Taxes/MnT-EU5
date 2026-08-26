@@ -1,0 +1,72 @@
+﻿# These effects are the designated way for other systems to add or remove
+# gold from the wealth system. They handle ownership shares and pool
+# clamping so callers do not need to.
+#
+# The estate effects take $ESTATE$ as a text name (nobles, clergy, etc.)
+# and set scope:mnt_wealth_estate before calling the internal workers.
+
+# Scope: location. Adds $AMOUNT$ gold to the wealth pool (unattributed).
+
+mnt_wealth_add_location_wealth = {
+	set_local_variable = { name = mnt_wealth_add_amount value = { value = $AMOUNT$ min = 0 } }
+	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_add_amount }
+}
+
+# Scope: location. Removes up to $AMOUNT$ gold from the wealth pool.
+# Saves local_var:mnt_wealth_removed_total with how much was actually removed.
+
+mnt_wealth_remove_location_wealth = {
+	set_local_variable = { name = mnt_wealth_remove_amount value = { value = $AMOUNT$ min = 0 } }
+
+	set_local_variable = {
+		name = mnt_wealth_removed_amount
+		value = {
+			value = local_var:mnt_wealth_remove_amount
+			max = var:mnt_wealth_pool
+			min = 0
+		}
+	}
+
+	set_variable = {
+		name = mnt_wealth_pool
+		value = {
+			value = var:mnt_wealth_pool
+			subtract = local_var:mnt_wealth_removed_amount
+			min = 0
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_removed_total value = local_var:mnt_wealth_removed_amount }
+}
+
+# Scope: location. Adds $AMOUNT$ gold to the wealth pool, attributed
+# to $ESTATE$. Updates that estate's ownership share.
+# Will only register amounts greater or equal to 0
+
+mnt_wealth_add_local_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:$ESTATE$_estate }
+	set_local_variable = { name = mnt_wealth_add_amount value = { value = $AMOUNT$ min = 0 } }
+	mnt_wealth_credit_estate_wealth = { AMOUNT = local_var:mnt_wealth_add_amount }
+}
+
+# Scope: location. Removes up to $AMOUNT$ gold from $ESTATE$'s share
+# of the wealth pool. Will only register amounts greater or equal to 0
+# Saves local_var:mnt_wealth_removed_total with how much was actually removed.
+
+mnt_wealth_remove_local_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:$ESTATE$_estate }
+	mnt_wealth_set_local_estate_wealth = yes # Uses mnt_wealth_estate_key to grab current estate wealth and save it to local_var:mnt_wealth_local_estate_wealth
+
+	set_local_variable = {
+		name = mnt_wealth_take_amount
+		value = {
+			value = $AMOUNT$
+			min = 0
+			max = local_var:mnt_wealth_local_estate_wealth
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_removed_total value = local_var:mnt_wealth_take_amount }
+	set_local_variable = { name = mnt_wealth_take_amount   value = { value = local_var:mnt_wealth_take_amount multiply = -1 } }
+	mnt_wealth_credit_estate_wealth = { AMOUNT = local_var:mnt_wealth_take_amount }
+}

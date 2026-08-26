@@ -1,0 +1,1825 @@
+﻿# Shared widget types that the templates and cards below instantiate.
+
+types MnTWealthBaseTypes
+{
+	# One row of a formula tooltip: a label on the left, a value on the right and any additional optional row attributes
+	type mnt_wealth_formula_row = TooltipManualTableField {
+		block "row_attributes" {  }
+		blockoverride "field_content" {
+			block "row_icon" {  }
+
+			text_single = {
+				layoutpolicy_horizontal = expanding
+				max_update_rate = 4
+				block "row_label" { raw_text = "" }
+			}
+			text_single = {
+				align = right
+				min_width = 90
+				max_update_rate = 4
+				block "row_value_attributes" {  }
+				block "row_value" { raw_text = "" }
+			}
+		}
+	}
+
+	type mnt_wealth_bar_tick = icon {
+		size = { 2 13 }
+		texture = "gfx/interface/progressbars/progress_black.dds"
+		spriteType = Corneredstretched
+		spriteborder = { 1 1 }
+		modify_texture = { using = color_white_texture }
+		alpha = 0.55
+		max_update_rate = 4
+		block "tick_at" {  }
+	}
+
+	type mnt_wealth_investment_tooltip_base = ContextualTooltipType {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Estate#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+
+		blockoverride "tooltip_content" {
+			widget = {
+				size = { 373 62 }
+
+				widget = {
+					position = { 162 5 }
+					size = { 48 48 }
+					block "level_number" {  }
+				}
+
+				widget = {
+					position = { 16 30 }
+					size = { 340 22 }
+					background = { using = color_black_texture alpha = 0.75 }
+					using = bg_paper_card
+					using = bg_cabinet_card_frame
+					block "bar_tooltip" {  }
+
+					progressbar = {
+						position = { 20 5 }
+						size = { 150 13 }
+						mirror = horizontal
+						min = 0
+						max = 1
+						direction = horizontal
+						progresstexture = "gfx/interface/progressbars/progress_bar_red_alt.dds"
+						noprogresstexture = "gfx/interface/icons/unit_view/moral_bar_transparent.dds"
+						texture_density = 2
+						spriteType = Corneredstretched
+						spriteborder = { 12 0 }
+						max_update_rate = 4
+						block "neglect_solid" {  }
+					}
+
+					progressbar = {
+						position = { 170 5 }
+						size = { 150 13 }
+						min = 0
+						max = 1
+						direction = horizontal
+						progresstexture = "gfx/interface/progressbars/progress_bar_green_alt.dds"
+						noprogresstexture = "gfx/interface/icons/unit_view/moral_bar_transparent.dds"
+						texture_density = 2
+						spriteType = Corneredstretched
+						spriteborder = { 12 0 }
+						max_update_rate = 4
+						block "invest_solid" {  }
+					}
+
+					icon = {
+						position = { 169 2 }
+						size = { 2 18 }
+						texture = "gfx/interface/progressbars/progress_black.dds"
+						spriteType = Corneredstretched
+						spriteborder = { 1 1 }
+						modify_texture = { using = color_white_texture }
+						alpha = 0.95
+					}
+				}
+
+				block "impact_icons" {  }
+			}
+
+			TooltipListBase = {
+				blockoverride "block_title" { visible = no }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { block "size_label" { raw_text = "" } }
+					blockoverride "row_value" { block "size_value" { raw_text = "" } }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { block "target_label" { raw_text = "" } }
+					blockoverride "row_value" { block "target_value" { raw_text = "" } }
+				}
+			}
+
+			TooltipListBase = {
+				blockoverride "block_title" { visible = no }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "investment_tooltip" {  } }
+					blockoverride "row_label" { raw_text = "Monthly Investment" }
+					blockoverride "row_value" { block "investment_monthly_value" { raw_text = "" } }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "upkeep_tooltip" {  } }
+					blockoverride "row_label" { raw_text = "+ Monthly Upkeep" }
+					blockoverride "row_value" { block "upkeep_monthly_value" { raw_text = "" } }
+				}
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { visible = "[GreaterThan_float(DCSeizureFromInvested(), '(float)0')]" }
+					blockoverride "row_label" { raw_text = "+ National Asset Seizure" }
+					blockoverride "row_value" { block "seizure_monthly_value" { raw_text = "" } }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "level_cost_tooltip" {  } }
+					blockoverride "row_label" { block "investment_progress_label" { raw_text = "" } }
+					blockoverride "row_value_attributes" { min_width = 120 }
+					blockoverride "row_value" { block "investment_progress_value" { raw_text = "" } }
+				}
+			}
+		}
+	}
+}
+
+# A wealth-system entry in a location's modifier list. The card on the
+# illustration already shows this information, so the list hides these.
+# Each row is matched against the wealth system's own modifiers, so a new
+# modifier added to the system has to be listed here as well.
+
+template mnt_wealth_hide_if_wealth_modifier {
+	max_update_rate = 30
+	visible = "[Not(IsWealthModifier())]"
+}
+
+# Shrinks a hidden wealth-modifier icon slot to nothing so the row of icons
+# closes the gap instead of leaving blank space.
+
+template mnt_wealth_collapse_if_wealth_modifier_small {
+	size = "[Select_CVector2f(Not(IsWealthModifier()), '(CVector2f)26,26', '(CVector2f)0,0')]"
+}
+
+# The crown holds no local wealth, so it is skipped.
+
+template mnt_wealth_desired_wealth_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_expected_wealth')]" }
+		}
+		blockoverride "title_text" { raw_text = "#T Desired Wealth#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				vbox = {
+					layoutpolicy_horizontal = expanding
+					datamodel = "[DataModelSkipFirst(LocationView.GetLocation.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+
+					item = {
+						mnt_wealth_formula_row = {
+							blockoverride "row_attributes" {
+								tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip }
+								visible = "[GreaterThan_CFixedPoint(DCDesiredWealth(), '(CFixedPoint)0')]"
+							}
+							blockoverride "row_icon" {
+								icon = {
+									size = { 20 20 }
+									texture = "[GetEstateIcon(Estate.GetType)]"
+									texture_density = 2
+								}
+							}
+							blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip]" }
+							blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCDesiredWealth())|2]@gold!" }
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_estate_desired_wealth_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Desired Wealth#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Estate Pops (Thousands)" }
+					blockoverride "row_value" {
+						raw_text = "[Divide_float(FixedPointToFloat(DCLocationMap('mnt_wealth_raw_power')), FixedPointToFloat(GetVariableFromGlobalVariableMap('mnt_wealth_power_per_pop', Estate.GetType.MakeScope).GetValue))|3]"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_gdp_header_tooltip } }
+					blockoverride "row_label" { raw_text = "Floor: Local GDP × [Estate.GetType.GetNameWithNoTooltip] Estate Power" }
+					blockoverride "row_value" {
+						raw_text = "[Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_local_gdp_value')), FixedPointToFloat(DCPowerPercentage()))|2]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Base Desired Wealth" }
+					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_base_desired_wealth')|2]@gold!" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" {
+						raw_text = "[Select_CString(LessThan_float(DCInvestmentLevel(), '(float)0'), '÷ (1 + 0.5 × Neglect Level)', '× (1 + Investment Level) ^ 2')]"
+					}
+					blockoverride "row_value" {
+						raw_text = "[Select_float(LessThan_float(DCInvestmentLevel(), '(float)0'), Add_float('(float)1', Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_desired_wealth_per_investment_level')), Abs_float(DCInvestmentLevel()))), Multiply_float(Add_float('(float)1', Abs_float(DCInvestmentLevel())), Add_float('(float)1', Abs_float(DCInvestmentLevel()))))|2]"
+					}
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Desired Wealth" }
+					blockoverride "row_value" { raw_text = "#bold [FixedPointToFloat(DCDesiredWealth())|2]#!@gold!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_center_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_local_wealth')]" } }
+		blockoverride "title_text" { raw_text = "#T Local Wealth#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_local_wealth|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_local_wealth','Local Wealth')]#!" }
+					blockoverride "row_value" {
+						raw_text = "#bold [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]#!@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_desired_wealth_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_expected_wealth','Desired Wealth')]#!" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_baseline')|2]@gold!" }
+				}
+			}
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_wage_residuals_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_wages','Wages')]#!" }
+					blockoverride "row_value" {
+						raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wage_pool')|2+=]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_estate_treasury_tooltip } }
+					blockoverride "row_label" {
+						raw_text = "#explanation_link [Concept('mnt_wealth_national_estate_investments','National Estate Investments')]#!"
+					}
+					blockoverride "row_value" {
+						raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_estate_flow_total')|2+=]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_investment_spending_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_investment_spending','Local Wealth Invested')]#!" }
+					blockoverride "row_value" {
+						raw_text = "[Subtract_float('(float)0', Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_local_wealth_total')), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))))|2+=]@gold!"
+					}
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_local_wealth','Local Wealth')]#!" }
+					blockoverride "row_value" {
+						raw_text = "([LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change')|2+=]) #bold [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]#!@gold!"
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_wage_residuals_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_wages')]" } }
+		blockoverride "title_text" { raw_text = "#T Wages#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_wages|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_gdp_header_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_cached_gdp','GDP at Last Survey')]#!" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_gdp_value')|2]@gold!" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_wage_rate_tooltip } }
+					blockoverride "row_label" { raw_text = "× Wage Rate" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_wage_rate_percent')|1]%" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Wages" }
+					blockoverride "row_value" {
+						raw_text = "#bold [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wage_pool')|2+=]#!@gold!"
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_estate_treasury_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_national_estate_investments')]" }
+		}
+		blockoverride "title_text" { raw_text = "#T National Estate Investments#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_national_estate_investments|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				vbox = {
+					layoutpolicy_horizontal = expanding
+					datamodel = "[DataModelSkipFirst(LocationView.GetLocation.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+
+					item = {
+						mnt_wealth_formula_row = {
+							blockoverride "row_attributes" {
+								tooltipwidget = { using = mnt_wealth_estate_treasury_row }
+								visible = "[GreaterThan_CFixedPoint(DCPowerPercentage(), '(CFixedPoint)0')]"
+							}
+							blockoverride "row_icon" {
+								icon = {
+									size = { 20 20 }
+									texture = "[GetEstateIcon(Estate.GetType)]"
+									texture_density = 2
+								}
+							}
+							blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip]" }
+							blockoverride "row_value" { raw_text = "[DCEstateLocalFlow()|2+=]@gold!" }
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_savings_percentage_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" {
+			raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] [Select_CString(GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_ratio'), '(CFixedPoint)1'), 'Monthly Investment', 'Monthly Asset Seizure')]#!"
+		}
+		blockoverride "concept_link" { text = "[mnt_wealth_national_estate_investments|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Treasury" }
+					blockoverride "row_value" { raw_text = "[Estate.GetGold|2]@gold!" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "- National Savings Goal" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_goal')|2]@gold!" }
+				}
+
+				divider_solid_gold = {  }
+				# Treasury gap, spread over a year and capped per month.
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" {
+						raw_text = "= [Select_CString(GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_ratio'), '(CFixedPoint)1'), 'Treasury Surplus', 'Treasury Shortfall')]"
+					}
+					blockoverride "row_value" {
+						raw_text = "[Subtract_CFixedPoint(Estate.GetGold, Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_goal'))|2+=]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = { blockoverride "row_label" { raw_text = "÷ 12 Months" } blockoverride "row_value" { raw_text = "12" } }
+				# Only the seizing side carries the built-up demand.
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						visible = "[LessThanOrEqualTo_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_ratio'), '(CFixedPoint)1')]"
+						tooltipwidget = { using = mnt_wealth_seizure_demand_tooltip }
+					}
+					blockoverride "row_label" { raw_text = "× #explanation_link Seizure Demand#!" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_multiplier')|2]" }
+				}
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						visible = "[LessThanOrEqualTo_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_ratio'), '(CFixedPoint)1')]"
+					}
+					blockoverride "row_label" { raw_text = "Capped per Month at" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_cap')|2]@gold!" }
+				}
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						visible = "[GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_ratio'), '(CFixedPoint)1')]"
+					}
+					blockoverride "row_label" { raw_text = "Capped per Month at" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_estate_payout_cap')|2]@gold!" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" {
+						raw_text = "= [Select_CString(GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_savings_ratio'), '(CFixedPoint)1'), 'Invested into Local Wealth', 'Seized from Local Wealth')]"
+					}
+					blockoverride "row_value" {
+						raw_text = "#bold [Estate.MakeScope.ScriptValue('mnt_wealth_estate_location_investment')|2+=]#!@gold!"
+					}
+				}
+			}
+		}
+	}
+}
+
+# The drill-down behind the seizure demand row. One way only: nothing in here
+# points back at the tooltip that opened it.
+
+template mnt_wealth_seizure_demand_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Seizure Demand#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_asset_seizure|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					raw_text = "An estate that cannot reach its savings goal presses harder on its locations the longer it stays short. The shortfall counts seized gold against the estate: the treasury must exceed the goal by what was seized before the estate counts as solvent, so demand keeps growing until organic income alone would cover the goal. Once that happens the demand fades instead of clearing, so a single good month does not undo years of pressure."
+				}
+			}
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "Demand Built Up" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_demand_level')|2]" }
+				}
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						visible = "[GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_demand_growth'), '(CFixedPoint)0')]"
+					}
+					blockoverride "row_label" { raw_text = "+ Added This Month" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_demand_growth')|2]" }
+				}
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						visible = "[LessThanOrEqualTo_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_demand_growth'), '(CFixedPoint)0')]"
+					}
+					blockoverride "row_label" { raw_text = "Fading While At Goal, per Month" }
+					blockoverride "row_value" { raw_text = "[Estate.MakeScope.ScriptValue('mnt_wealth_seizure_demand_decay')|%0]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Seizure Multiplied By" }
+					blockoverride "row_value" { raw_text = "#bold [Estate.MakeScope.ScriptValue('mnt_wealth_estate_seizure_multiplier')|2]#!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_estate_treasury_row {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" {
+			raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] [Select_CString(DCEstateIsInvesting(), 'Estate Investment', 'Asset Seizure')]#!"
+		}
+		blockoverride "concept_link" { text = "[mnt_wealth_national_estate_investments|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_savings_percentage_tooltip } }
+					blockoverride "row_label" {
+						raw_text = "[Estate.GetType.GetNameWithNoTooltip] Monthly [Select_CString(DCEstateIsInvesting(), 'Investment', 'Seizure')]"
+					}
+					blockoverride "row_value" { raw_text = "[DCEstateFlowTotal()|2+=]@gold!" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "× This Location's Share of [Estate.GetType.GetNameWithNoTooltip] Estate Raw Power" }
+					blockoverride "row_value" { raw_text = "[DCEstateLocalPayoutShare()|%1]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" {
+						raw_text = "= [Estate.GetType.GetNameWithNoTooltip] [Select_CString(DCEstateIsInvesting(), 'Invested Here', 'Seized Here')]"
+					}
+					blockoverride "row_value" { raw_text = "#bold [DCEstateLocalFlow()|2+=]#!@gold!" }
+				}
+
+				# Invested wealth seizure line, visible only when liquid wealth could not cover it.
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { visible = "[Not(DCEstateIsInvesting())]" }
+					blockoverride "row_label" { raw_text = " - from Local [Estate.GetType.GetNameWithNoTooltip] Wealth" }
+					blockoverride "row_value" { raw_text = "[DCSeizedFromWealth()|2+=]@gold!" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { visible = "[GreaterThan_float(DCSeizureFromInvested(), '(float)0')]" }
+					blockoverride "row_label" { raw_text = " - from Local [Estate.GetType.GetNameWithNoTooltip] Investments" }
+					blockoverride "row_value" { raw_text = "[DCSeizedFromInvestments()|2+=]@gold!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_investment_spending_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_investment_spending')]" }
+		}
+		blockoverride "title_text" { raw_text = "#T Local Wealth Invested#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_investment_spending|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				vbox = {
+					layoutpolicy_horizontal = expanding
+					datamodel = "[DataModelSkipFirst(LocationView.GetLocation.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+
+					item = {
+						mnt_wealth_formula_row = {
+							blockoverride "row_attributes" {
+								tooltipwidget = { using = mnt_wealth_estate_invested_row }
+								visible = "[GreaterThan_float(DCLocationMapFloat('mnt_wealth_local_wealth_share'), '(float)0')]"
+							}
+							blockoverride "row_icon" {
+								icon = {
+									size = { 20 20 }
+									texture = "[GetEstateIcon(Estate.GetType)]"
+									texture_density = 2
+								}
+							}
+							blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip]" }
+							blockoverride "row_value" { raw_text = "[DCEstateInvestedGold()|2]@gold!" }
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_estate_invested_row {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Local Wealth Invested#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_investment_spending|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_local_wealth','Local Wealth')]#!" }
+					blockoverride "row_value" {
+						raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
+					blockoverride "row_label" { raw_text = "× [Estate.GetType.GetNameWithNoTooltip] Wealth Share" }
+					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_local_wealth_share')|%1]" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "× #explanation_link [Concept('mnt_wealth_investment_rate','Investment Rate')]#!" }
+					blockoverride "row_value" { raw_text = "[InvestmentRatePercent()|2]%" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Gold Invested" }
+					blockoverride "row_value" { raw_text = "#bold [DCEstateInvestedGold()|2]#!@gold!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_gdp_header_text {
+	text_single = {
+		align = nobaseline
+		max_update_rate = 4
+		visible = "[LocationView.GetLocation.HasOwner]"
+		raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_live_gdp')|2]@gold!"
+		tooltipwidget = { using = mnt_wealth_gdp_header_tooltip }
+	}
+}
+
+template mnt_wealth_gdp_header_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_gdp')]" } }
+		blockoverride "title_text" { raw_text = "#T Local GDP#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_gdp|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "Current GDP" }
+					blockoverride "row_value" {
+						raw_text = "#color_yellow [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_live_gdp')|2]#!@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_cached_gdp','GDP at Last Survey')]#!" }
+					blockoverride "row_value" {
+						raw_text = "#color_yellow [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_gdp_value')|2]#!@gold!"
+					}
+				}
+			}
+			TooltipListBase = {
+				blockoverride "block_title" { raw_text = "#T Goods Produced#!" }
+				TooltipListScrollArea = {
+					blockoverride "block_scrollarea" { maximumsize = { -1 180 } minimumsize = { -1 30 } }
+					blockoverride "scrollarea_content" {
+						vbox = {
+							set_parent_dimension_to_minimum = height
+							layoutpolicy_horizontal = expanding
+							datamodel = "[LocationView.GetLocationGoodsItems]"
+
+							item = {
+								mnt_wealth_formula_row = {
+									blockoverride "row_icon" {
+										icon = {
+											size = { 20 20 }
+											texture = "[GetGoodsIcon(LocationGoodItem.GetGoods)]"
+											texture_density = 2
+										}
+									}
+									blockoverride "row_label" { raw_text = "[LocationGoodItem.GetGoods.GetNameWithNoTooltip]" }
+									blockoverride "row_value_attributes" { min_width = 150 }
+									blockoverride "row_value" {
+										raw_text = "[LocationGoodItem.GetTotalOutput|2]@supply! #W (#!#color_yellow [Multiply_CFixedPoint(LocationGoodItem.GetTotalOutput, LocationView.GetLocation.GetMarket.GetPrice(LocationGoodItem.GetGoods))|2]@gold!#!#W )#!"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_wage_rate_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_wages')]" } }
+		blockoverride "title_text" { raw_text = "#T Wage Rate#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_wages|E]" }
+
+		blockoverride "tooltip_content" {
+			# Section one: the wage rate is the local wage modifier plus the national one.
+			TooltipListBase = {
+				blockoverride "block_title" { raw_text = "#T Wage Rate#!" }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { raw_text = "#T [ShowModifierTypeName('mnt_wealth_local_wage_modifier')]#!" }
+								blockoverride "tooltip_content" {
+									TooltipStringPairList = {
+										layoutpolicy_horizontal = expanding
+										textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_wage_modifier')]"
+									}
+								}
+							}
+						}
+					}
+					blockoverride "row_label" { raw_text = "[ShowModifierTypeName('mnt_wealth_local_wage_modifier')]" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.GetModifierValue('mnt_wealth_local_wage_modifier')]" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { raw_text = "#T [ShowModifierTypeName('mnt_wealth_global_wage_modifier')]#!" }
+								blockoverride "tooltip_content" {
+									TooltipStringPairList = {
+										layoutpolicy_horizontal = expanding
+										textcontext = "[LocationView.GetLocation.GetOwner.GetDescriptionFor('mnt_wealth_global_wage_modifier')]"
+									}
+								}
+							}
+						}
+					}
+					blockoverride "row_label" { raw_text = "+ [ShowModifierTypeName('mnt_wealth_global_wage_modifier')]" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.GetOwner.GetModifierValue('mnt_wealth_global_wage_modifier')]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Wage Rate" }
+					blockoverride "row_value" {
+						raw_text = "#bold [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_wage_rate_computed_percent')|1]%#!"
+					}
+				}
+			}
+			# Section two: the minimum wage rate is the local minimum-wage modifier plus the national one.
+			TooltipListBase = {
+				blockoverride "block_title" { raw_text = "#T Minimum Wage Rate#!" }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { raw_text = "#T [ShowModifierTypeName('mnt_wealth_local_minimum_wage')]#!" }
+								blockoverride "tooltip_content" {
+									TooltipStringPairList = {
+										layoutpolicy_horizontal = expanding
+										textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_minimum_wage')]"
+									}
+								}
+							}
+						}
+					}
+					blockoverride "row_label" { raw_text = "[ShowModifierTypeName('mnt_wealth_local_minimum_wage')]" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.GetModifierValue('mnt_wealth_local_minimum_wage')]" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" {
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { raw_text = "#T [ShowModifierTypeName('mnt_wealth_global_minimum_wage')]#!" }
+								blockoverride "tooltip_content" {
+									TooltipStringPairList = {
+										layoutpolicy_horizontal = expanding
+										textcontext = "[LocationView.GetLocation.GetOwner.GetDescriptionFor('mnt_wealth_global_minimum_wage')]"
+									}
+								}
+							}
+						}
+					}
+					blockoverride "row_label" { raw_text = "+ [ShowModifierTypeName('mnt_wealth_global_minimum_wage')]" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.GetOwner.GetModifierValue('mnt_wealth_global_minimum_wage')]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Minimum Wage Rate" }
+					blockoverride "row_value" {
+						raw_text = "#bold [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_minimum_wage_percent')|1]%#!"
+					}
+				}
+			}
+		}
+	}
+}
+
+# Empty value and tooltip blocks, filled by mnt_wealth_estate_wealth_tooltip_bound so
+# one body serves every estate through the estate datacontext.
+
+template mnt_wealth_estate_wealth_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Wealth#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_local_wealth|E]" }
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "wealth_share_tooltip" {  } }
+					blockoverride "row_label" {
+						raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('mnt_wealth_local_wealth','Wealth Share')]#!"
+					}
+					blockoverride "row_value" { block "wealth_share_display" { raw_text = "" } }
+				}
+			}
+
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "local_estate_wealth_tooltip" {  } }
+					blockoverride "row_label" {
+						raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('mnt_wealth_local_wealth','Wealth')]#!"
+					}
+					blockoverride "row_value" { block "local_estate_wealth" { raw_text = "" } }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "desired_wealth_tooltipwidget" {  } }
+					blockoverride "row_label" { block "desired_wealth_label" { raw_text = "#explanation_link [Concept('mnt_wealth_expected_wealth','Desired Wealth')]#!" } }
+					blockoverride "row_value" { block "desired_wealth_value" { raw_text = "" } }
+				}
+			}
+
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "wage_residual_tooltip" {  } }
+					blockoverride "row_label" {
+						raw_text = "[Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('mnt_wealth_wages','Wages')]#!"
+					}
+					blockoverride "row_value" { block "wage_residual_value" { raw_text = "" } }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "estate_investment_tooltip" {  } }
+					blockoverride "row_label" {
+						raw_text = "National [Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('mnt_wealth_national_estate_investments','Investments')]#!"
+					}
+					blockoverride "row_value" { block "estate_investment_value" { raw_text = "" } }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "invested_outflow_tooltip" {  } }
+					blockoverride "row_label" {
+						raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('mnt_wealth_investment_spending','Wealth Invested')]#!"
+					}
+					blockoverride "row_value" { block "invested_outflow_value" { raw_text = "" } }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "wealth_share_drift_tooltip" {  } }
+					blockoverride "row_label" { raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] Wealth Share Drift" }
+					blockoverride "row_value" { block "wealth_share_drift_gold" { raw_text = "" } }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] Wealth" }
+					blockoverride "row_value" { block "wealth_change" { raw_text = "" } }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_estate_wealth_tooltip_bound {
+	using = mnt_wealth_estate_wealth_tooltip
+	blockoverride "local_estate_wealth_tooltip" { tooltipwidget = { using = mnt_wealth_local_estate_wealth_tooltip } }
+	blockoverride "local_estate_wealth" { raw_text = "#bold [FixedPointToFloat(DCEstateWealth())|2]#!@gold!" }
+	blockoverride "wealth_share_tooltip" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
+	blockoverride "wealth_share_drift_tooltip" { tooltipwidget = { using = mnt_wealth_drift_gold_tooltip } }
+	blockoverride "wealth_share_drift_gold" { raw_text = "[DCWealthShareDriftGold()|2+=]@gold!" }
+	blockoverride "wealth_share_display" {
+		raw_text = "([FixedPointToFloat(DCWealthShareDrift())|%2+=]) [DCLocationMapFloat('mnt_wealth_local_wealth_share')|%0]"
+	}
+	blockoverride "wage_residual_tooltip" { tooltipwidget = { using = mnt_wealth_estate_wage_residual_tooltip } }
+	blockoverride "wage_residual_value" { raw_text = "[DCEstateIncome()|2+=]@gold!" }
+	blockoverride "estate_investment_tooltip" { tooltipwidget = { using = mnt_wealth_estate_treasury_row } }
+	blockoverride "estate_investment_value" { raw_text = "[DCEstateLocalFlow()|2+=]@gold!" }
+	blockoverride "invested_outflow_tooltip" { tooltipwidget = { using = mnt_wealth_estate_invested_row } }
+	blockoverride "invested_outflow_value" { raw_text = "[Subtract_float('(float)0', DCEstateInvestedGold())|2+=]@gold!" }
+	blockoverride "wealth_change" { raw_text = "([DCEstateWealthChange()|2+=]) #bold [FixedPointToFloat(DCEstateWealth())|2]#!@gold!" }
+	blockoverride "desired_wealth_tooltipwidget" { tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip } }
+	blockoverride "desired_wealth_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Desired Wealth" }
+	blockoverride "desired_wealth_value" { raw_text = "[FixedPointToFloat(DCDesiredWealth())|2]@gold!" }
+}
+
+template mnt_wealth_share_drift_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Wealth Share#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_local_wealth|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" {
+						raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('estate_power','Estate Power')]#!"
+					}
+					blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCPowerPercentage())|%1]" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "- Local [Estate.GetType.GetNameWithNoTooltip] Wealth Share" }
+					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_local_wealth_share')|%1]" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "× Drift Rate per Month" }
+					blockoverride "row_value" {
+						raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_share_monthly_trend_rate')|%2]"
+					}
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Expected Change" }
+					blockoverride "row_value" { raw_text = "#bold [FixedPointToFloat(DCWealthShareDrift())|%2+=]#!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_local_estate_wealth_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T Local [Estate.GetType.GetNameWithNoTooltip] Wealth#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_local_wealth|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_center_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_local_wealth','Local Wealth')]#!" }
+					blockoverride "row_value" {
+						raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
+					blockoverride "row_label" { raw_text = "× [Estate.GetType.GetNameWithNoTooltip] Wealth Share" }
+					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_local_wealth_share')|%1]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= Local [Estate.GetType.GetNameWithNoTooltip] Wealth" }
+					blockoverride "row_value" { raw_text = "#bold [FixedPointToFloat(DCEstateWealth())|2]#!@gold!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_drift_gold_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Wealth Share Drift#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_local_wealth|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_center_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_local_wealth','Local Wealth')]#!" }
+					blockoverride "row_value" {
+						raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
+					blockoverride "row_label" { raw_text = "× Expected Wealth Share Change" }
+					blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCWealthShareDrift())|%2+=]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= [Estate.GetType.GetNameWithNoTooltip] Wealth Share Drift" }
+					blockoverride "row_value" { raw_text = "#bold [DCWealthShareDriftGold()|2+=]#!@gold!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_estate_wage_residual_tooltip {
+	ContextualTooltipType = {
+		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Wages#!" }
+		blockoverride "concept_link" { text = "[mnt_wealth_wages|E]" }
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_wage_residuals_tooltip } }
+					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_wages','Local Wages')]#!" }
+					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wage_pool')|2]@gold!" }
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" {
+						raw_text = "× Local [Estate.GetType.GetNameWithNoTooltip] #explanation_link [Concept('estate_power','Estate Power')]#!"
+					}
+					blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCPowerPercentage())|%1]" }
+				}
+
+				divider_solid_gold = {  }
+
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "= [Estate.GetType.GetNameWithNoTooltip] Wages Paid In" }
+					blockoverride "row_value" { raw_text = "#bold [DCEstateIncome()|2+=]#!@gold!" }
+				}
+			}
+		}
+	}
+}
+
+template mnt_wealth_investment_rows {
+	TooltipListBase = {
+		blockoverride "block_title" { visible = no }
+
+		mnt_wealth_formula_row = {
+			blockoverride "row_attributes" { block "investment_wealth_tooltip" {  } }
+			blockoverride "row_label" { raw_text = "Local [Estate.GetType.GetNameWithNoTooltip] Wealth" }
+			blockoverride "row_value" { block "investment_estate_wealth_value" { raw_text = "" } }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "× #explanation_link [Concept('mnt_wealth_investment_rate','Investment Rate')]#!" }
+			blockoverride "row_value" { raw_text = "[InvestmentRatePercent()|2]%" }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_attributes" {
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" { raw_text = "#T Investment Efficiency#!" }
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								layoutpolicy_horizontal = expanding
+								textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_investment_efficiency')]"
+							}
+							TooltipStringPairList = {
+								layoutpolicy_horizontal = expanding
+								textcontext = "[LocationView.GetLocation.GetOwner.GetDescriptionFor('mnt_wealth_global_investment_efficiency')]"
+							}
+						}
+					}
+				}
+			}
+			blockoverride "row_label" { raw_text = "× #explanation_link Investment Efficiency#!" }
+			blockoverride "row_value" {
+				raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_efficiency_multiplier'))|2]"
+			}
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "= Monthly Investment" }
+			blockoverride "row_value" { block "investment_monthly_bold_value" { raw_text = "" } }
+		}
+	}
+}
+
+template mnt_wealth_upkeep_rows {
+	TooltipListBase = {
+		blockoverride "block_title" { visible = no }
+
+		mnt_wealth_formula_row = {
+			blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip } }
+			blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_expected_wealth','Desired Wealth')]#!" }
+			blockoverride "row_value" { block "upkeep_desired_wealth_value" { raw_text = "" } }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "× #explanation_link [Concept('mnt_wealth_investment_rate','Investment Rate')]#!" }
+			blockoverride "row_value" { raw_text = "[InvestmentRatePercent()|2]%" }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "Minimum Change per Level" }
+			blockoverride "row_value" { block "upkeep_min_change_value" { raw_text = "" } }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_attributes" {
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" { raw_text = "#T Upkeep Efficiency#!" }
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								layoutpolicy_horizontal = expanding
+								textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_upkeep_efficiency')]"
+							}
+							TooltipStringPairList = {
+								layoutpolicy_horizontal = expanding
+								textcontext = "[LocationView.GetLocation.GetOwner.GetDescriptionFor('mnt_wealth_global_upkeep_efficiency')]"
+							}
+						}
+					}
+				}
+			}
+			blockoverride "row_label" { raw_text = "× #explanation_link Upkeep Efficiency#!" }
+			blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_efficiency_multiplier'))|2]" }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "= Monthly Upkeep" }
+			blockoverride "row_value" { block "upkeep_monthly_bold_value" { raw_text = "" } }
+		}
+	}
+}
+
+template mnt_wealth_level_cost_rows {
+	TooltipListBase = {
+		blockoverride "block_title" { visible = no }
+
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "Level Cost Base" }
+			blockoverride "row_value" { block "cost_base_value" { raw_text = "" } }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "× (2 × level + 1)" }
+			blockoverride "row_value" { block "cost_level_multiplier_value" { raw_text = "" } }
+		}
+
+		divider_solid_gold = {  }
+
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { block "cost_this_level_label" { raw_text = "" } }
+			blockoverride "row_value" { block "cost_this_level_bold_value" { raw_text = "" } }
+		}
+	}
+	TooltipListBase = {
+		blockoverride "block_title" { visible = no }
+
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "Previous Levels" }
+			blockoverride "row_value" { block "cost_previous_levels_value" { raw_text = "" } }
+		}
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "+ This Level" }
+			blockoverride "row_value" { block "cost_this_level_value" { raw_text = "" } }
+		}
+
+		divider_solid_gold = {  }
+
+		mnt_wealth_formula_row = {
+			blockoverride "row_label" { raw_text = "= Total Cost for Next Level" }
+			blockoverride "row_value" { block "cost_next_level_total_value" { raw_text = "" } }
+		}
+	}
+}
+
+template mnt_wealth_estate_investment_tooltip {
+	mnt_wealth_investment_tooltip_base = {
+		blockoverride "invest_solid" { value = "[DCInvestmentSolidBar()]" }
+		blockoverride "neglect_solid" { value = "[DCNeglectSolidBar()]" }
+		blockoverride "level_number" {
+			icon = {
+				parentanchor = center
+				size = { 100% 100% }
+				texture = "gfx/interface/progressbars/empty_circle_bg.dds"
+
+				color = {
+					0.5
+					0.4
+					0.3
+					1
+				}
+			}
+
+			text_single = {
+				parentanchor = center
+				position = { 0 -6 }
+				align = center|nobaseline
+				fontsize = 14
+				max_update_rate = 30
+				visible = "[GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)1')]"
+				raw_text = "#G #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+			}
+			text_single = {
+				parentanchor = center
+				position = { 0 -6 }
+				align = center|nobaseline
+				fontsize = 14
+				max_update_rate = 30
+				visible = "[LessThanOrEqualTo_float(DCInvestmentLevel(), '(float)-1')]"
+				raw_text = "#R #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+			}
+			text_single = {
+				parentanchor = center
+				position = { 0 -6 }
+				align = center|nobaseline
+				fontsize = 14
+				max_update_rate = 30
+				visible = "[And(GreaterThan_float(DCInvestmentLevel(), '(float)-1'), LessThan_float(DCInvestmentLevel(), '(float)1'))]"
+				raw_text = "#high #bold 0#!"
+			}
+		}
+		blockoverride "size_label" {
+			raw_text = "[Select_CString(LessThan_float(DCInvestmentLevel(), '(float)0'), 'Neglect Level', 'Investment Level')]"
+		}
+		blockoverride "size_value" { raw_text = "[DCInvestmentLevel()|2+=]" }
+		blockoverride "target_label" {
+			raw_text = "[Select_CString(LessThan_float(DCInvestmentEquilibrium(), '(float)0'), 'Neglect Equilibrium Level', 'Investment Equilibrium Level')]"
+		}
+		blockoverride "target_value" { raw_text = "[DCInvestmentEquilibrium()|2+=]" }
+		blockoverride "investment_tooltip" {
+			tooltipwidget = {
+				ContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_investment_rate')]" }
+					}
+					blockoverride "title_text" { raw_text = "#T Monthly Investment#!" }
+					blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+					blockoverride "tooltip_content" {
+						using = mnt_wealth_investment_rows
+						blockoverride "investment_wealth_tooltip" { tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound } }
+						blockoverride "investment_estate_wealth_value" { raw_text = "[FixedPointToFloat(DCEstateWealth())|2]@gold!" }
+						blockoverride "investment_monthly_bold_value" { raw_text = "#bold [DCMonthlyInvestment()|2+=]#!@gold!" }
+					}
+				}
+			}
+		}
+		blockoverride "investment_monthly_value" { raw_text = "[DCMonthlyInvestment()|2+=]@gold!" }
+		blockoverride "investment_progress_label" {
+			raw_text = "[Select_CString(LessThan_float(DCInvestmentLevel(), '(float)0'), 'Neglect Progress', 'Investment Progress')]"
+		}
+		blockoverride "investment_progress_value" {
+			raw_text = "([DCMonthlyChangeAfterSeizure()|2+=]) #bold [DCInvestmentProgressGold()|2]#!@gold! / [Multiply_float(DCNextLevelTotalCost(), Select_float(LessThan_float(DCInvestmentLevel(), '(float)0'), '(float)-1', '(float)1'))|2]@gold!"
+		}
+		blockoverride "bar_tooltip" {
+			tooltipwidget = {
+				ContextualTooltipType = {
+					blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
+					blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Investment#!" }
+					blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+					blockoverride "tooltip_content" {
+						TooltipListBase = {
+							mnt_wealth_formula_row = {
+								blockoverride "row_label" { raw_text = "Current" }
+								blockoverride "row_value" { raw_text = "#bold [DCInvestmentLevel()|2]#!" }
+							}
+						}
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							ignoreinvisible = yes
+							datamodel = "[LocationView.GetLocation.GetTimedModifiers]"
+
+							item = {
+								TooltipStringPairList = {
+									layoutpolicy_horizontal = expanding
+									visible = "[Or( EqualTo_string(TimedModifier.GetModifier.GetName, GetModifier(DCInvestmentModifierKey()).GetName), EqualTo_string(TimedModifier.GetModifier.GetName, GetModifier(DCNeglectModifierKey()).GetName) )]"
+									textcontext = "[TimedModifier.GetModifierEffect]"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		blockoverride "upkeep_monthly_value" { raw_text = "[Subtract_float('(float)0', DCMonthlyUpkeep())|2+=]@gold!" }
+		blockoverride "seizure_monthly_value" { raw_text = "[Subtract_float('(float)0', DCSeizureFromInvested())|2+=]@gold!" }
+		blockoverride "upkeep_tooltip" {
+			tooltipwidget = {
+				ContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_investment_rate')]" }
+					}
+					blockoverride "title_text" { raw_text = "#T Monthly Upkeep#!" }
+					blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
+					blockoverride "tooltip_content" {
+						using = mnt_wealth_upkeep_rows
+						blockoverride "upkeep_desired_wealth_value" { raw_text = "[FixedPointToFloat(DCDesiredWealth())|2]@gold!" }
+						blockoverride "upkeep_min_change_value" {
+							raw_text = "[Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_change_per_investment_level')), DCInvestmentLevel())|2+=]@gold!"
+						}
+						blockoverride "upkeep_monthly_bold_value" { raw_text = "#bold [Subtract_float('(float)0', DCMonthlyUpkeep())|2+=]#!@gold!" }
+					}
+				}
+			}
+		}
+		blockoverride "level_cost_tooltip" {
+			tooltipwidget = {
+				ContextualTooltipType = {
+					blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_gdp')]" } }
+					blockoverride "title_text" { raw_text = "#T Gold for One Level#!" }
+					blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+					blockoverride "tooltip_content" {
+						using = mnt_wealth_level_cost_rows
+						blockoverride "cost_base_value" { raw_text = "[LevelCostBase()|2]@gold!" }
+						blockoverride "cost_level_multiplier_value" { raw_text = "[Add_float(Multiply_float('(float)2', DCWholeLevel()), '(float)1')|2]" }
+						blockoverride "cost_this_level_label" {
+							raw_text = "[Select_CString(GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)0'), '= Cost of This Level', '= Cost to Recover This Level')]"
+						}
+						blockoverride "cost_this_level_bold_value" { raw_text = "#bold [DCCurrentLevelCost()|2]#!@gold!" }
+						blockoverride "cost_previous_levels_value" { raw_text = "[DCPreviousLevelsCost()|2]@gold!" }
+						blockoverride "cost_this_level_value" { raw_text = "[DCCurrentLevelCost()|2+=]@gold!" }
+						blockoverride "cost_next_level_total_value" { raw_text = "#bold [DCNextLevelTotalCost()|2]#!@gold!" }
+					}
+				}
+			}
+		}
+		blockoverride "impact_icons" {
+			widget = {
+				position = { 4 24 }
+				size = { 35 35 }
+
+				icon = {
+					parentanchor = center
+					size = { 35 35 }
+					visible = "[LessThan_float(DCMonthlyChangeAfterSeizure(), '(float)0')]"
+					texture = "gfx/interface/progressbars/red_circle_bg.dds"
+
+					color = {
+						0.5
+						0.4
+						0.3
+						1
+					}
+				}
+				icon = {
+					parentanchor = center
+					size = { 35 35 }
+					visible = "[Not(LessThan_float(DCMonthlyChangeAfterSeizure(), '(float)0'))]"
+					texture = "gfx/interface/progressbars/empty_circle_bg.dds"
+
+					color = {
+						0.5
+						0.4
+						0.3
+						1
+					}
+				}
+
+				icon = {
+					parentanchor = center
+					size = { 23 23 }
+					texture = "[GetConceptTexture(DCNeglectModifierKey())]"
+					texture_density = 2
+
+					tooltipwidget = {
+						ContextualTooltipType = {
+							blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture(DCNeglectModifierKey())]" } }
+							blockoverride "title_text" { raw_text = "#T Each Level of [Estate.GetType.GetNameWithNoTooltip] Neglect#!" }
+							blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+							blockoverride "tooltip_content" {
+								TooltipStringPairList = {
+									blockoverride "block_title" { visible = no }
+									layoutpolicy_horizontal = expanding
+									textcontext = "[GetModifier(DCNeglectModifierKey()).GetDesc]"
+								}
+							}
+						}
+					}
+				}
+			}
+			widget = {
+				position = { 331 24 }
+				size = { 35 35 }
+
+				icon = {
+					parentanchor = center
+					size = { 35 35 }
+					visible = "[GreaterThan_float(DCMonthlyChangeAfterSeizure(), '(float)0')]"
+					texture = "gfx/interface/progressbars/green_circle_bg.dds"
+
+					color = {
+						0.5
+						0.4
+						0.3
+						1
+					}
+				}
+				icon = {
+					parentanchor = center
+					size = { 35 35 }
+					visible = "[Not(GreaterThan_float(DCMonthlyChangeAfterSeizure(), '(float)0'))]"
+					texture = "gfx/interface/progressbars/empty_circle_bg.dds"
+
+					color = {
+						0.5
+						0.4
+						0.3
+						1
+					}
+				}
+
+				icon = {
+					parentanchor = center
+					size = { 23 23 }
+					texture = "[GetConceptTexture(DCInvestmentModifierKey())]"
+					texture_density = 2
+
+					tooltipwidget = {
+						ContextualTooltipType = {
+							blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture(DCInvestmentModifierKey())]" } }
+							blockoverride "title_text" { raw_text = "#T Each Level of [Estate.GetType.GetNameWithNoTooltip] Investment#!" }
+							blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+							blockoverride "tooltip_content" {
+								TooltipStringPairList = {
+									blockoverride "block_title" { visible = no }
+									layoutpolicy_horizontal = expanding
+									textcontext = "[GetModifier(DCInvestmentModifierKey()).GetDesc]"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+types MnTWealthTypes
+{
+	type mnt_wealth_donut = widget {
+		parentanchor = bottom|right
+		position = { -44 0 }
+		size = { 138 138 }
+		scissor = yes
+		allow_outside = no
+		visible = "[LocationView.GetLocation.HasOwner]"
+
+		widget = {
+			position = { 32 32 }
+			size = { 212 212 }
+			alwaystransparent = yes
+
+			background = {
+				texture = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture_density = 2
+				modify_texture = { using = color_black_texture }
+			}
+		}
+
+		widget = {
+			position = { 28 28 }
+			size = { 220 220 }
+			alwaystransparent = yes
+			background = { texture = "gfx/interface/mnt_wealth/mnt_wealth_ring_edge_brown.dds" texture_density = 2 }
+		}
+
+		piechart = {
+			position = { 32 32 }
+			size = { 212 212 }
+			filter_mouse = none
+			startangle = 180
+			endangle = 90
+
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 1 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.33
+					0.45
+					0.80
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 2 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.78
+					0.83
+					0.90
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 3 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.79
+					0.56
+					0.10
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 4 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.41
+					0.47
+					0.26
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 5 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.85
+					0.05
+					0.35
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 6 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.47
+					0.33
+					0.26
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+			pieslice = {
+				mask = "gfx/interface/mnt_wealth/mnt_wealth_ring_mask.dds"
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				datacontext_from_model = { datamodel = "[LocationView.GetLocation.GetOwner.GetGovernment.GetEstates]" index = 7 }
+				value = "[FixedPointToFloat(DCEstateWealth())]"
+
+				color = {
+					0.76
+					0.78
+					0.24
+					1
+				}
+
+				tagtooltip_enabled = yes
+				tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound }
+			}
+		}
+
+		widget = {
+			parentanchor = bottom|right
+			size = { 100 100 }
+			scissor = yes
+			allow_outside = no
+			alwaystransparent = yes
+
+			widget = {
+				position = { 10 10 }
+				size = { 180 180 }
+				alwaystransparent = yes
+				background = { texture = "gfx/interface/mnt_wealth/mnt_wealth_disc_tinted.dds" texture_density = 2 }
+			}
+
+			widget = {
+				position = { 10 10 }
+				size = { 180 180 }
+				alwaystransparent = yes
+				background = { texture = "gfx/interface/mnt_wealth/mnt_wealth_ring_edge_brown.dds" texture_density = 2 }
+			}
+
+			text_single = {
+				parentanchor = top|right
+				position = { -10 42 }
+				autoresize = yes
+				max_update_rate = 6
+				default_format = "#color_yellow"
+				tooltipwidget = { using = mnt_wealth_wage_rate_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_wage_rate_percent')|1]%@gold!"
+			}
+
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
+				default_format = "#color_red"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
+				default_format = "#color_red"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
+				default_format = "#color_red"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+			}
+
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5') ), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
+				default_format = "#color_orange"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5') ), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
+				default_format = "#color_orange"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5') ), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
+				default_format = "#color_orange"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+			}
+
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5') ), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
+				default_format = "#color_yellow"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5') ), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
+				default_format = "#color_yellow"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5') ), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
+				default_format = "#color_yellow"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+			}
+
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5'), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
+				default_format = "#color_green"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5'), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
+				default_format = "#color_green"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
+				default_format = "#color_green"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+			}
+		}
+	}
+
+	type mnt_wealth_estate_status_card = widget {
+		parentanchor = bottom|right
+		position = { -1 -2 }
+		size = { 42 100% }
+		visible = "[LocationView.GetLocation.HasOwner]"
+
+		vbox = {
+			layoutpolicy_vertical = expanding
+			spacing = 0
+			expand = {  }
+
+			vbox = {
+				minimumsize = { 42 106 }
+				margin = { 2 0 }
+				spacing = 3
+				visible = "[LocationView.GetLocation.HasOwner]"
+				using = bg_number_container_bckg
+				expand = {  }
+
+				vbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 3
+					datamodel = "[DataModelSkipFirst(LocationView.GetLocation.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+
+					item = {
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							visible = "[GreaterThan_CFixedPoint(DCPowerPercentage(), '(CFixedPoint)0')]"
+							tooltipwidget = { using = mnt_wealth_estate_investment_tooltip }
+
+							widget = {
+								size = { 26 28 }
+
+								piechart = {
+									parentanchor = center
+									size = { 22 22 }
+									using = piechart_angles
+									using = bg_circle
+									using = bg_circle_piechart
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+										value = "[DCInvestmentSolidBar()]"
+
+										color = {
+											0.30
+											0.80
+											0.30
+											1
+										}
+									}
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+										value = "[DCUnfilledRing()]"
+
+										color = {
+											0
+											0
+											0
+											1
+										}
+									}
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+										value = "[DCNeglectSolidBar()]"
+
+										color = {
+											0.62
+											0.18
+											0.18
+											1
+										}
+									}
+								}
+
+								icon = {
+									parentanchor = center
+									size = { 18 18 }
+									texture = "[GetEstateIcon(Estate.GetType)]"
+									texture_density = 2
+								}
+							}
+
+							widget = {
+								size = { 12 28 }
+
+								text_single = {
+									parentanchor = center
+									align = center|nobaseline
+									fontsize = 12
+									fontsize_min = 6
+									visible = "[GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)1')]"
+									raw_text = "#G #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+								}
+								text_single = {
+									parentanchor = center
+									align = center|nobaseline
+									fontsize = 12
+									fontsize_min = 6
+									visible = "[LessThanOrEqualTo_float(DCInvestmentLevel(), '(float)-1')]"
+									raw_text = "#R #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+								}
+								text_single = {
+									parentanchor = center
+									align = center|nobaseline
+									fontsize = 12
+									fontsize_min = 6
+									visible = "[And(GreaterThan_float(DCInvestmentLevel(), '(float)-1'), LessThan_float(DCInvestmentLevel(), '(float)1'))]"
+									raw_text = "#high #bold 0#!"
+								}
+							}
+						}
+					}
+				}
+
+				expand = {  }
+			}
+		}
+	}
+}

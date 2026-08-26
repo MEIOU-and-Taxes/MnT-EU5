@@ -1,0 +1,698 @@
+﻿@zoom_step = 2
+@gradient_alpha_inside = 1
+@gradient_alpha_outside = 1
+@gradient_width = 0.875
+@gradient_color_mult = 0.9
+@edge_width = 0
+@edge_sharpness = 0.01
+@edge_alpha = 0
+@edge_color_mult = 0
+@before_lighting_blend = 0.5
+@after_lighting_blend = 0.5
+
+# ===== Local Wealth (dynamic ceiling, deficit stripes) =====
+
+mnt_wealth_local_wealth = {
+	map_color = {
+		if = {
+			limit = { is_land = no }
+			value = hsv {
+				0.58
+				0.50
+				0.52
+			}
+		}
+		else_if = {
+			limit = { NOT = { exists = owner } }
+			value = rgb {
+				50
+				50
+				50
+			}
+		}
+		else_if = {
+			limit = { has_variable = mnt_wealth_pool global_var:mnt_wealth_map_mode_max_wealth_pool > 0 }
+
+			if = {
+				limit = { var:mnt_wealth_pool >= "global_variable_map(mnt_wealth_bands|5)" }
+				lerp = {
+					min_color = rgb {
+						0
+						255
+						240
+					}
+
+					max_color = rgb {
+						255
+						255
+						255
+					}
+
+					factor = {
+						value = var:mnt_wealth_pool
+						divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+						subtract = 0.833
+						multiply = 6
+						min = 0
+						max = 1
+					}
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_pool >= "global_variable_map(mnt_wealth_bands|4)" }
+				lerp = {
+					min_color = rgb {
+						36
+						255
+						0
+					}
+
+					max_color = rgb {
+						0
+						255
+						240
+					}
+
+					factor = {
+						value = var:mnt_wealth_pool
+						divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+						subtract = 0.667
+						multiply = 6
+					}
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_pool >= "global_variable_map(mnt_wealth_bands|3)" }
+				lerp = {
+					min_color = rgb {
+						255
+						255
+						0
+					}
+
+					max_color = rgb {
+						36
+						255
+						0
+					}
+
+					factor = {
+						value = var:mnt_wealth_pool
+						divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+						subtract = 0.5
+						multiply = 6
+					}
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_pool >= "global_variable_map(mnt_wealth_bands|2)" }
+				lerp = {
+					min_color = rgb {
+						255
+						128
+						0
+					}
+
+					max_color = rgb {
+						255
+						255
+						0
+					}
+
+					factor = {
+						value = var:mnt_wealth_pool
+						divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+						subtract = 0.333
+						multiply = 6
+					}
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_pool >= "global_variable_map(mnt_wealth_bands|1)" }
+				lerp = {
+					min_color = rgb {
+						255
+						0
+						0
+					}
+
+					max_color = rgb {
+						255
+						128
+						0
+					}
+
+					factor = {
+						value = var:mnt_wealth_pool
+						divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+						subtract = 0.167
+						multiply = 6
+					}
+				}
+			}
+			else = {
+				lerp = {
+					min_color = rgb {
+						0
+						0
+						0
+					}
+
+					max_color = rgb {
+						255
+						0
+						0
+					}
+
+					factor = {
+						value = var:mnt_wealth_pool
+						divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+						multiply = 6
+					}
+				}
+			}
+		}
+		else = {
+			value = rgb {
+				0
+				0
+				0
+			}
+		}
+	}
+
+	secondary_map_color = {
+		if = {
+			limit = {
+				has_owner = yes
+				has_variable = mnt_wealth_pool
+				mnt_wealth_health_ratio < 1
+			}
+			value = rgb {
+				139
+				0
+				0
+			}
+		}
+	}
+
+	tooltip_key = {
+		if = {
+			limit = {
+				is_land = yes
+				exists = owner
+				has_variable = mnt_wealth_pool
+			}
+			value = MNT_WEALTH_LOCAL_WEALTH_MAPMODE_TT
+		}
+		else_if = {
+			limit = { is_land = yes NOT = { exists = owner } }
+			value = MNT_WEALTH_MAPMODE_TT_UNCOLONISED
+		}
+		else = {
+			value = MNT_WEALTH_MAPMODE_TT_WATER
+		}
+	}
+
+	legend_key = {
+		desc = "mnt_wealth_legend_white"
+		color = rgb {
+			255
+			255
+			255
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_blue"
+		color = rgb {
+			0
+			255
+			240
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_green"
+		color = rgb {
+			36
+			255
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_yellow"
+		color = rgb {
+			255
+			255
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_orange"
+		color = rgb {
+			255
+			128
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_red"
+		color = rgb {
+			255
+			0
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_black"
+		color = rgb {
+			0
+			0
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_deficit"
+		color = rgb {
+			139
+			0
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_legend_gray"
+		color = rgb {
+			50
+			50
+			50
+		}
+	}
+
+	small_map_names = location
+	medium_map_names = location
+	large_map_names = location
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+	fill_in_impassable = yes
+	enable_snow = no
+	flatmap_behaviour = always
+	use_fow = no
+	category = economy
+	index = 0
+	allow_allocate_hotkey = yes
+	map_markers = { all = no }
+
+	gradient_parameters = {
+		zoom_step = @zoom_step
+		gradient_alpha_inside = @gradient_alpha_inside
+		gradient_alpha_outside = @gradient_alpha_outside
+		gradient_width = @gradient_width
+		gradient_color_mult = @gradient_color_mult
+		edge_width = @edge_width
+		edge_sharpness = @edge_sharpness
+		edge_alpha = @edge_alpha
+		edge_color_mult = @edge_color_mult
+		before_lighting_blend = @before_lighting_blend
+		after_lighting_blend = @after_lighting_blend
+	}
+
+	refresh_colors_on_selection_change = yes
+	color_refresh_counters           = { Month }
+	color_and_names_refresh_counters = { Month }
+}
+
+# ===== Wages (fixed bands, 0-25%) =====
+
+mnt_wealth_wages = {
+	map_color = {
+		if = {
+			limit = { is_land = no }
+			value = hsv {
+				0.58
+				0.50
+				0.52
+			}
+		}
+		else_if = {
+			limit = { NOT = { exists = owner } }
+			value = rgb {
+				50
+				50
+				50
+			}
+		}
+		else_if = {
+			limit = { mnt_wealth_wage_mapmode_fraction >= 0.75 }
+			lerp = {
+				min_color = rgb {
+					36
+					255
+					0
+				}
+
+				max_color = rgb {
+					0
+					255
+					240
+				}
+
+				factor = {
+					value = mnt_wealth_wage_mapmode_fraction
+					subtract = 0.75
+					divide = 0.25
+					min = 0
+					max = 1
+				}
+			}
+		}
+		else_if = {
+			limit = { mnt_wealth_wage_mapmode_fraction >= 0.5 }
+			lerp = {
+				min_color = rgb {
+					255
+					255
+					0
+				}
+
+				max_color = rgb {
+					36
+					255
+					0
+				}
+
+				factor = {
+					value = mnt_wealth_wage_mapmode_fraction
+					subtract = 0.5
+					divide = 0.25
+				}
+			}
+		}
+		else_if = {
+			limit = { mnt_wealth_wage_mapmode_fraction >= 0.25 }
+			lerp = {
+				min_color = rgb {
+					255
+					0
+					0
+				}
+
+				max_color = rgb {
+					255
+					255
+					0
+				}
+
+				factor = {
+					value = mnt_wealth_wage_mapmode_fraction
+					subtract = 0.25
+					divide = 0.25
+				}
+			}
+		}
+		else_if = {
+			limit = { mnt_wealth_wage_mapmode_fraction >= 0 }
+			lerp = {
+				min_color = rgb {
+					0
+					0
+					0
+				}
+
+				max_color = rgb {
+					255
+					0
+					0
+				}
+
+				factor = { value = mnt_wealth_wage_mapmode_fraction divide = 0.25 }
+			}
+		}
+		else = {
+			value = rgb {
+				0
+				0
+				0
+			}
+		}
+	}
+
+	tooltip_key = {
+		if = {
+			limit = { is_land = yes exists = owner }
+			value = MNT_WEALTH_WAGES_MAPMODE_TT
+		}
+		else_if = {
+			limit = { is_land = yes NOT = { exists = owner } }
+			value = MNT_WEALTH_WAGES_MAPMODE_TT_UNCOLONISED
+		}
+		else = {
+			value = MNT_WEALTH_WAGES_MAPMODE_TT_WATER
+		}
+	}
+
+	legend_key = {
+		desc = "mnt_wealth_wages_legend_blue"
+		color = rgb {
+			0
+			255
+			240
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_wages_legend_green"
+		color = rgb {
+			36
+			255
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_wages_legend_yellow"
+		color = rgb {
+			255
+			255
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_wages_legend_red"
+		color = rgb {
+			255
+			0
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_wages_legend_black"
+		color = rgb {
+			0
+			0
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_wages_legend_gray"
+		color = rgb {
+			50
+			50
+			50
+		}
+	}
+
+	small_map_names = location
+	medium_map_names = location
+	large_map_names = location
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+	fill_in_impassable = yes
+	enable_snow = no
+	flatmap_behaviour = always
+	use_fow = no
+	category = economy
+	index = 0
+	allow_allocate_hotkey = yes
+	map_markers = { all = no }
+
+	gradient_parameters = {
+		zoom_step = @zoom_step
+		gradient_alpha_inside = @gradient_alpha_inside
+		gradient_alpha_outside = @gradient_alpha_outside
+		gradient_width = @gradient_width
+		gradient_color_mult = @gradient_color_mult
+		edge_width = @edge_width
+		edge_sharpness = @edge_sharpness
+		edge_alpha = @edge_alpha
+		edge_color_mult = @edge_color_mult
+		before_lighting_blend = @before_lighting_blend
+		after_lighting_blend = @after_lighting_blend
+	}
+
+	refresh_colors_on_selection_change = yes
+	color_refresh_counters           = { Month }
+	color_and_names_refresh_counters = { Month }
+}
+
+# ===== Estate Capital Flow (outflow as % of wages, inflow as % of GDP) =====
+
+mnt_wealth_estate_flow = {
+	map_color = {
+		if = {
+			limit = { is_land = no }
+			value = hsv {
+				0.58
+				0.50
+				0.52
+			}
+		}
+		else_if = {
+			limit = { NOT = { exists = owner } }
+			value = rgb {
+				50
+				50
+				50
+			}
+		}
+		else_if = {
+			limit = { has_variable = mnt_wealth_pool mnt_wealth_estate_flow_ratio >= 0 }
+			lerp = {
+				min_color = rgb {
+					100
+					100
+					100
+				}
+
+				max_color = rgb {
+					36
+					255
+					0
+				}
+
+				factor = {
+					value = mnt_wealth_estate_flow_ratio
+					divide = 5
+					min = 0
+					max = 1
+				}
+			}
+		}
+		else_if = {
+			limit = { has_variable = mnt_wealth_pool }
+			lerp = {
+				min_color = rgb {
+					100
+					100
+					100
+				}
+
+				max_color = rgb {
+					255
+					0
+					0
+				}
+
+				factor = {
+					value = mnt_wealth_estate_flow_ratio
+					multiply = -1
+					divide = 5
+					min = 0
+					max = 1
+				}
+			}
+		}
+		else = {
+			value = rgb {
+				100
+				100
+				100
+			}
+		}
+	}
+
+	tooltip_key = {
+		if = {
+			limit = {
+				is_land = yes
+				exists = owner
+				has_variable = mnt_wealth_pool
+			}
+			value = MNT_WEALTH_ESTATE_FLOW_MAPMODE_TT
+		}
+		else_if = {
+			limit = { is_land = yes NOT = { exists = owner } }
+			value = MNT_WEALTH_FLOW_MAPMODE_TT_UNCOLONISED
+		}
+		else = {
+			value = MNT_WEALTH_FLOW_MAPMODE_TT_WATER
+		}
+	}
+
+	legend_key = {
+		desc = "mnt_wealth_flow_legend_green"
+		color = rgb {
+			36
+			255
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_flow_legend_neutral"
+		color = rgb {
+			100
+			100
+			100
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_flow_legend_red"
+		color = rgb {
+			255
+			0
+			0
+		}
+	}
+	legend_key = {
+		desc = "mnt_wealth_flow_legend_gray"
+		color = rgb {
+			50
+			50
+			50
+		}
+	}
+
+	small_map_names = location
+	medium_map_names = location
+	large_map_names = location
+	small_tooltip_context = location
+	medium_tooltip_context = location
+	large_tooltip_context = location
+	enable_rivers = yes
+	fill_in_impassable = yes
+	enable_snow = no
+	flatmap_behaviour = always
+	use_fow = no
+	category = economy
+	index = 0
+	allow_allocate_hotkey = yes
+	map_markers = { all = no }
+
+	gradient_parameters = {
+		zoom_step = @zoom_step
+		gradient_alpha_inside = @gradient_alpha_inside
+		gradient_alpha_outside = @gradient_alpha_outside
+		gradient_width = @gradient_width
+		gradient_color_mult = @gradient_color_mult
+		edge_width = @edge_width
+		edge_sharpness = @edge_sharpness
+		edge_alpha = @edge_alpha
+		edge_color_mult = @edge_color_mult
+		before_lighting_blend = @before_lighting_blend
+		after_lighting_blend = @after_lighting_blend
+	}
+
+	refresh_colors_on_selection_change = yes
+	color_refresh_counters           = { Month }
+	color_and_names_refresh_counters = { Month }
+}

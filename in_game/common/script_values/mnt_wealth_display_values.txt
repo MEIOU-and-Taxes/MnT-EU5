@@ -1,0 +1,528 @@
+﻿# Script values the interface reads: the location window, its tooltips, the map
+# modes and the map mode tooltip strings. Nothing here is read by the
+# simulation; those values live in mnt_wealth_values.txt.
+
+# --- the display month ---
+
+# How many months have passed since this location's last yearly review.
+# AI locations do a whole year of work in one tick, so the display projects
+# forward from the review state using this count.
+
+mnt_wealth_months_since_review = {
+	value = mnt_wealth_months_since_campaign_start
+	subtract = var:mnt_wealth_review_month
+}
+
+# --- pool and health ---
+
+# For AI locations, projects the wealth pool forward from the review state
+# using the same geometric series the yearly shortcut will eventually apply.
+# For human locations, just reads the pool directly.
+
+mnt_wealth_displayed_wealth_pool = {
+	value = var:mnt_wealth_pool
+
+	if = {
+		limit = {
+			exists = owner
+			owner = { is_ai = yes }
+			var:mnt_wealth_local_wealth_share_sum > 0
+			mnt_wealth_investment_rate > 0
+		}
+		value = mnt_wealth_investment_rate
+		multiply = var:mnt_wealth_local_wealth_share_sum
+		save_temporary_value_as = mnt_wealth_display_spend_rate
+		value = 1
+		subtract = scope:mnt_wealth_display_spend_rate
+		save_temporary_value_as = mnt_wealth_display_decay
+		value = scope:mnt_wealth_display_decay
+		pow = mnt_wealth_months_since_review
+		save_temporary_value_as = mnt_wealth_display_decay_n
+		# Monthly inflow: wages kept + national estate investment returned to the pool.
+		value = var:mnt_wealth_kept_income_total
+		add = mnt_wealth_estate_flow_total
+		save_temporary_value_as = mnt_wealth_display_income
+		value = var:mnt_wealth_pool
+		add = scope:mnt_wealth_display_income
+		save_temporary_value_as = mnt_wealth_display_pool_plus_income
+		value = scope:mnt_wealth_display_pool_plus_income
+		multiply = scope:mnt_wealth_display_decay_n
+
+		add = {
+			value = scope:mnt_wealth_display_income
+			multiply = { value = scope:mnt_wealth_display_decay subtract = scope:mnt_wealth_display_decay_n }
+			divide = scope:mnt_wealth_display_spend_rate
+		}
+	}
+}
+
+mnt_wealth_local_wealth_total = {
+	value = mnt_wealth_displayed_wealth_pool
+}
+
+mnt_wealth_baseline = {
+	value = var:mnt_wealth_desired_total
+}
+
+# Zero when there is no desired wealth to measure against, which means no estate
+# is present here or the location has not been surveyed yet.
+
+mnt_wealth_health_ratio = {
+	value = 0
+
+	if = {
+		limit = { mnt_wealth_baseline > 0 }
+		value = mnt_wealth_local_wealth_total
+		divide = mnt_wealth_baseline
+	}
+}
+
+mnt_wealth_band = {
+	value = 0
+	if = { limit = { mnt_wealth_health_ratio >= 0.5 } add = 1 }
+	if = { limit = { mnt_wealth_health_ratio >= 0.9 } add = 1 }
+	if = { limit = { mnt_wealth_health_ratio >= 1.1 } add = 1 }
+}
+
+# --- economy ---
+
+mnt_wealth_local_gdp_value = {
+	value = var:mnt_wealth_local_gdp
+}
+
+mnt_wealth_local_wage_pool = {
+	value = var:mnt_wealth_local_wages
+}
+
+mnt_wealth_wage_rate_percent = {
+	value = var:mnt_wealth_current_wage_rate
+	multiply = 100
+}
+
+# Wage rate as a fraction of a ceiling that scales from 5% to 25% over 500 years.
+# ceiling = clamp((year - 1337) * 0.0004 + 0.05, 0.05, 0.25); result = rate / ceiling.
+
+mnt_wealth_wage_mapmode_fraction = {
+	value = current_year
+	subtract = 1337
+	min = 0
+	multiply = 0.0004
+	add = 0.05
+	max = 0.25
+	save_temporary_value_as = mnt_wealth_wage_ceiling
+	value = var:mnt_wealth_current_wage_rate
+	divide = scope:mnt_wealth_wage_ceiling
+}
+
+mnt_wealth_live_gdp = {
+	value = 0
+
+	if = {
+		limit = { exists = market }
+		every_goods = {
+			save_temporary_scope_as = mnt_wealth_live_gdp_good
+			add = { value = "prev.goods_output(scope:mnt_wealth_live_gdp_good)" multiply = "price_in_market(prev.market)" }
+		}
+	}
+}
+
+# --- wage rate breakdown ---
+
+mnt_wealth_minimum_wage_percent = {
+	value = mnt_wealth_minimum_wage_rate
+	multiply = 100
+}
+
+mnt_wealth_wage_rate_computed_percent = {
+	value = modifier:mnt_wealth_local_wage_modifier
+	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_wage_modifier }
+	multiply = 100
+}
+
+# Zero where nothing is being invested, since with no investment there is no
+# upkeep for a level to change.
+
+mnt_wealth_change_per_investment_level = {
+	value = 0
+
+	if = {
+		limit = { mnt_wealth_investment_rate > 0 }
+		value = mnt_wealth_upkeep_change_per_investment_level
+		divide = mnt_wealth_investment_rate
+	}
+}
+
+# --- flow map mode ratio ---
+
+# Net estate capital flow / monthly investment. Positive = investing, negative = seizing.
+# flow_ratio = estate_investment_total / (wealth * investment_rate).
+# Zero where there is no monthly investment to measure the flow against.
+
+mnt_wealth_estate_flow_ratio = {
+	value = 0
+
+	if = {
+		limit = { mnt_wealth_local_wealth_total > 0 mnt_wealth_investment_rate > 0 }
+		value = mnt_wealth_estate_flow_total
+		divide = { value = mnt_wealth_local_wealth_total multiply = mnt_wealth_investment_rate }
+	}
+}
+
+# --- investment equilibrium ---
+
+# The level an estate settles at is where its monthly investment exactly pays its
+# monthly upkeep. Working that out means undoing the desired wealth curve, which
+# is a square root that cannot be computed in the data binding language.
+#
+# Every value in this section runs in location scope and reads scope:mnt_wealth_estate,
+# the estate type the tooltip row is showing.
+
+# Entry point for the location window. The interface hands in the location and
+# the estate as named scopes because the tooltip row knows both.
+
+mnt_wealth_displayed_investment_equilibrium = {
+	value = 0
+	scope:mnt_wealth_location = { add = mnt_wealth_investment_equilibrium_level }
+}
+
+# The estate's share of the location's wealth pool.
+
+mnt_wealth_equilibrium_estate_wealth = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_local_wealth_share
+			is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = scope:mnt_wealth_estate }
+		}
+		value = mnt_wealth_local_wealth_total
+		multiply = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_estate)"
+	}
+}
+
+# This location's slice of the estate's national flow: the national flow split
+# by how much of the estate's raw power sits here. Positive when the estate is
+# investing gold into the location, negative when it is seizing gold out.
+
+mnt_wealth_equilibrium_estate_flow = {
+	value = 0
+	save_temporary_scope_as = mnt_wealth_equilibrium_location
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_raw_power
+			is_key_in_variable_map = { name = mnt_wealth_raw_power target = scope:mnt_wealth_estate }
+
+			owner ?= {
+				has_variable_map = mnt_wealth_estate_flow
+				has_variable_map = mnt_wealth_national_estate_raw_power
+				is_key_in_variable_map = { name = mnt_wealth_estate_flow               target = scope:mnt_wealth_estate }
+				is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:mnt_wealth_estate }
+				"variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_estate)" > 0
+			}
+		}
+		owner = {
+			add = {
+				value = "variable_map(mnt_wealth_estate_flow|scope:mnt_wealth_estate)"
+				multiply = "scope:mnt_wealth_equilibrium_location.variable_map(mnt_wealth_raw_power|scope:mnt_wealth_estate)"
+				divide = "variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_estate)"
+			}
+		}
+	}
+}
+
+# Gold a national seizure tears out of invested wealth this month: the part of a
+# negative flow that the estate's liquid wealth cannot cover. Zero while the
+# estate is investing or while its liquid wealth covers the whole seizure.
+
+mnt_wealth_equilibrium_seizure_from_invested = {
+	value = 0
+	subtract = mnt_wealth_equilibrium_estate_flow
+	subtract = mnt_wealth_equilibrium_estate_wealth
+	min = 0
+}
+
+# The wealth the equilibrium is measured from: estate wealth scaled by investment
+# efficiency, minus any seized invested wealth converted back to its wealth cost,
+# all divided by upkeep efficiency.
+
+mnt_wealth_equilibrium_wealth = {
+	value = mnt_wealth_equilibrium_estate_wealth
+	multiply = mnt_wealth_investment_efficiency_multiplier
+
+	if = {
+		limit = { mnt_wealth_investment_rate > 0 }
+		subtract = { value = mnt_wealth_equilibrium_seizure_from_invested divide = mnt_wealth_investment_rate }
+	}
+
+	divide = mnt_wealth_upkeep_efficiency_multiplier
+}
+
+# The level the estate settles at. Upkeep is the larger of the desired wealth
+# curve and the floor line while investing and the smaller of the two while
+# neglecting, so the settling level is whichever of the two lines the estate
+# reaches first: the lower level when investing, the higher when neglecting.
+#
+# Inverting each line for the level that makes its upkeep equal the equilibrium
+# wealth gives:
+#   curve while investing:  desired = base * (1 + level)^2  ->  sqrt(wealth / base) - 1
+#   curve while neglecting: desired = base / (1 + 0.5 * |level|)
+#                                                 ->  -((base / wealth) - 1) / 0.5
+#   floor line, both ways:  (wealth - base) / wealth change per level
+
+mnt_wealth_investment_equilibrium_level = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_base_desired_wealth
+			is_key_in_variable_map = { name = mnt_wealth_base_desired_wealth target = scope:mnt_wealth_estate }
+			"variable_map(mnt_wealth_base_desired_wealth|scope:mnt_wealth_estate)" > 0
+			mnt_wealth_equilibrium_wealth > 0
+			mnt_wealth_change_per_investment_level > 0
+		}
+		value = "variable_map(mnt_wealth_base_desired_wealth|scope:mnt_wealth_estate)"
+		save_temporary_value_as = mnt_wealth_equilibrium_base
+		value = mnt_wealth_equilibrium_wealth
+		save_temporary_value_as = mnt_wealth_equilibrium_target
+		value = scope:mnt_wealth_equilibrium_target
+		subtract = scope:mnt_wealth_equilibrium_base
+		divide = mnt_wealth_change_per_investment_level
+		save_temporary_value_as = mnt_wealth_equilibrium_floor_level
+
+		if = {
+			limit = { scope:mnt_wealth_equilibrium_target >= scope:mnt_wealth_equilibrium_base }
+			value = scope:mnt_wealth_equilibrium_target
+			divide = scope:mnt_wealth_equilibrium_base
+			pow = 0.5
+			subtract = 1
+			max = scope:mnt_wealth_equilibrium_floor_level
+		}
+		else = {
+			value = scope:mnt_wealth_equilibrium_base
+			divide = scope:mnt_wealth_equilibrium_target
+			subtract = 1
+			divide = mnt_wealth_desired_wealth_per_investment_level
+			multiply = -1
+			min = scope:mnt_wealth_equilibrium_floor_level
+		}
+	}
+}
+
+# --- per-estate investment levels (for map modes) ---
+
+mnt_wealth_investment_level_nobles_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:nobles_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:nobles_estate)"
+	}
+}
+
+mnt_wealth_investment_level_clergy_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:clergy_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:clergy_estate)"
+	}
+}
+
+mnt_wealth_investment_level_burghers_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:burghers_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:burghers_estate)"
+	}
+}
+
+mnt_wealth_investment_level_peasants_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:peasants_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:peasants_estate)"
+	}
+}
+
+mnt_wealth_investment_level_dhimmi_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:dhimmi_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:dhimmi_estate)"
+	}
+}
+
+mnt_wealth_investment_level_tribes_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:tribes_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:tribes_estate)"
+	}
+}
+
+mnt_wealth_investment_level_cossacks_estate = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:cossacks_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|estate_type:cossacks_estate)"
+	}
+}
+
+# --- hidden modifier count ---
+
+mnt_wealth_hidden_location_modifier_count = {
+	value = 0
+	if = { limit = { has_location_modifier = mnt_wealth_wage_burden }         add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_nobles }   add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_clergy }   add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_burghers } add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_peasants } add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_dhimmi }   add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_tribes }   add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_investment_cossacks } add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_nobles }      add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_clergy }      add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_burghers }    add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_peasants }    add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_dhimmi }      add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_tribes }      add = 1 }
+	if = { limit = { has_location_modifier = mnt_wealth_neglect_cossacks }    add = 1 }
+}
+
+# --- aggregate display values ---
+
+# Net monthly wealth change: wages paid in, plus the net estate flow (positive
+# when estates invest, negative when they seize), minus what is invested.
+
+mnt_wealth_local_wealth_change = {
+	value = mnt_wealth_local_wage_pool
+	add = mnt_wealth_estate_flow_total
+	subtract = { value = mnt_wealth_local_wealth_total multiply = mnt_wealth_investment_rate }
+}
+
+# Monthly fraction of the yearly wealth-share drift, for tooltip display.
+
+mnt_wealth_local_wealth_share_monthly_trend_rate = {
+	value = mnt_wealth_local_wealth_share_trend_rate
+	divide = 12
+}
+
+# --- estate savings (estate scope) ---
+
+# A newly formed country has no economic base yet, so the goal is held at a
+# gold minimum. The ratios measured against it below then always have something
+# to divide by.
+
+mnt_wealth_estate_savings_goal = {
+	value = 0
+	owner = { add = { value = country_economical_base multiply = "estate_power(prev.estate_type)" } }
+	min = 1
+}
+
+mnt_wealth_estate_savings_ratio = {
+	value = estate_gold
+	divide = mnt_wealth_estate_savings_goal
+}
+
+# --- estate seizure demand (estate scope) ---
+
+# The demand the estate has built up over every month its treasury has sat under
+# the savings goal.
+
+mnt_wealth_estate_seizure_demand_level = {
+	value = 0
+
+	owner = {
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_seizure_demand target = prev.estate_type } }
+			add = "variable_map(mnt_wealth_estate_seizure_demand|prev.estate_type)"
+		}
+	}
+}
+
+# What the built-up demand multiplies this month's seizure by.
+
+mnt_wealth_estate_seizure_multiplier = {
+	value = 1
+	add = mnt_wealth_estate_seizure_demand_level
+}
+
+# The share of the goal the estate can seize this month, demand included.
+
+mnt_wealth_estate_seizure_cap = {
+	value = mnt_wealth_estate_seizure_limit_factor
+	add = mnt_wealth_estate_seizure_demand_level
+	multiply = mnt_wealth_estate_savings_goal
+}
+
+# The most any estate can pay into its locations in a month. A share of the
+# whole economic base, so it does not shrink with the estate's power.
+
+mnt_wealth_estate_payout_cap = {
+	value = 0
+	owner = { add = country_economical_base }
+	multiply = mnt_wealth_national_investment_limit_factor
+}
+
+# How much of this month's shortfall is being added to the demand: the gap
+# between the effective goal and the treasury, as a share of the savings goal.
+# The effective goal adds last month's seizure so the demand keeps growing until
+# organic income alone would cover the goal.
+
+mnt_wealth_estate_seizure_demand_growth = {
+	value = mnt_wealth_estate_savings_goal
+	subtract = estate_gold
+
+	owner = {
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow target = prev.estate_type } }
+			subtract = { value = "variable_map(mnt_wealth_estate_flow|prev.estate_type)" min = 0 }
+		}
+	}
+
+	min = 0
+	divide = mnt_wealth_estate_savings_goal
+}
+
+# --- estate capital flow (estate scope) ---
+
+# One estate's net monthly flow with its locations: positive when it invests
+# gold into them, negative when it seizes gold out to cover a shortfall.
+
+mnt_wealth_estate_location_investment = {
+	value = 0
+
+	owner = {
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow target = prev.estate_type } }
+			add = "variable_map(mnt_wealth_estate_flow|prev.estate_type)"
+		}
+	}
+}

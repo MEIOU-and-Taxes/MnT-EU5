@@ -1,0 +1,46 @@
+﻿# GDP and Wages: the wealth map mode's colour scale.
+#
+# The scale spreads five colour thresholds across a ceiling that rises as the
+# richest location gets richer, so locations stay spread across the colours
+# instead of all saturating at the top.
+
+# ── MAP MODE WEALTH BANDS ──
+
+# Scope: none. Distributes five color thresholds evenly across the current
+# ceiling, placing band n at n sixths of that ceiling.
+
+mnt_wealth_set_wealth_map_mode_bands = {
+	set_local_variable = { name = mnt_wealth_band_index value = 1 }
+
+	while = {
+		count = 5
+
+		set_local_variable = {
+			name = mnt_wealth_band_threshold
+			value = {
+				value = global_var:mnt_wealth_map_mode_max_wealth_pool
+				multiply = local_var:mnt_wealth_band_index
+				divide = 6
+			}
+		}
+
+		add_to_global_variable_map = {
+			name = mnt_wealth_bands
+			key = local_var:mnt_wealth_band_index
+			value = local_var:mnt_wealth_band_threshold
+		}
+
+		change_local_variable = { name = mnt_wealth_band_index add = 1 }
+	}
+}
+
+# Scope: location. If the wealth pool exceeds the current ceiling, bumps the
+# ceiling up so the color scale stays spread out.
+
+mnt_wealth_raise_wealth_map_mode_ceiling = {
+	if = {
+		limit = { var:mnt_wealth_pool > global_var:mnt_wealth_map_mode_max_wealth_pool }
+		change_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool add = 500 }
+		mnt_wealth_set_wealth_map_mode_bands = yes
+	}
+}

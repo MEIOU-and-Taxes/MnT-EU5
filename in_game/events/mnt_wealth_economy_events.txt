@@ -1,0 +1,93 @@
+﻿
+namespace = mnt_wealth_economy
+
+# Fired one day after a location changes owner. Settles estate accounting
+# under the new owner once it has finished forming.
+
+mnt_wealth_economy.30 = {
+	type = location_event
+	hidden = yes
+	title = empty_text
+	trigger = { has_owner = yes }
+	# Same order as mnt_wealth_location_year: the update reads the cached survey data,
+	# then the resurvey refreshes the caches for next time.
+	immediate = {
+		mnt_wealth_settle_investment_accumulators = yes
+		mnt_wealth_update_investment_levels = yes
+		mnt_wealth_set_review_month = yes
+		mnt_wealth_resurvey_estate_data = yes
+	}
+}
+
+# Fired one day after a civil war annexation. The map reset at resolution can
+# land after every hook and wipe the same-day rebuild, so the winner's raw
+# power totals are recounted once the reset is over.
+
+mnt_wealth_economy.31 = {
+	type = country_event
+	hidden = yes
+	title = empty_text
+	trigger = { num_locations > 0 }
+	immediate = { mnt_wealth_rebuild_national_estate_raw_power = yes }
+}
+
+# Monthly: recalculates each estate's savings valve and national payout.
+
+mnt_wealth_economy.10 = {
+	type = country_event
+	hidden = yes
+	title = empty_text
+	trigger = { num_locations > 0 }
+	immediate = { mnt_wealth_set_national_savings_valves = yes }
+}
+
+# Monthly: runs the full monthly tick on each human-owned location
+# via the load balancer.
+
+mnt_wealth_economy.21 = {
+	type = country_event
+	hidden = yes
+	title = empty_text
+	# No trigger and no index guard, for the same reason as mnt_wealth_economy.22
+	# below: the balancer reindexes before it reads the index, and any entry
+	# condition the reindex does not share drops that worker's slice.
+
+	immediate = {
+		mnt_wealth_load_balance_this_effect = {
+			CYCLE = 1
+			WORKERS = 500
+			LOCATION_INDEX_ACCESSOR = mnt_wealth_human_locations_index_accessor
+			LOCATION_INDEX_SIZE = mnt_wealth_human_location_count
+			EFFECT = mnt_wealth_location_month
+		}
+	}
+}
+
+# Monthly: runs the GDP survey rotation and the yearly location review
+# via the load balancer across all locations (human and AI).
+
+mnt_wealth_economy.22 = {
+	type = country_event
+	hidden = yes
+	title = empty_text
+	# No trigger: workers are threads sweeping the global location index, so a
+	# worker's own holdings are irrelevant. Any condition here that the
+	# balancer's reindex does not share drops that worker's slice of the chunk.
+
+	immediate = {
+		mnt_wealth_load_balance_this_effect = {
+			CYCLE = mnt_wealth_gdp_cycle_months
+			WORKERS = 500
+			LOCATION_INDEX_ACCESSOR = mnt_wealth_all_locations_index_accessor
+			LOCATION_INDEX_SIZE = mnt_wealth_location_count
+			EFFECT = mnt_wealth_survey_location
+		}
+		mnt_wealth_load_balance_this_effect = {
+			CYCLE = 12
+			WORKERS = 500
+			LOCATION_INDEX_ACCESSOR = mnt_wealth_all_locations_index_accessor
+			LOCATION_INDEX_SIZE = mnt_wealth_location_count
+			EFFECT = mnt_wealth_location_year
+		}
+	}
+}

@@ -1,0 +1,370 @@
+﻿# ── ECONOMY INITIALIZATION ──
+# Called by the mnt_wealth_initialize_economy on_action at game start.
+
+# Scope: none. Seeds the global constants the wealth system reads: the map
+# mode wealth bands, each estate's power per pop, and each estate's short key.
+
+mnt_wealth_seed_economy_constants = {
+	set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = 500 }
+	mnt_wealth_set_wealth_map_mode_bands = yes
+	# These are just political power in map form so I can grap them at runtime more easily
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:nobles_estate
+		value = mnt_wealth_nobles_power_per_pop
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:clergy_estate
+		value = mnt_wealth_clergy_power_per_pop
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:burghers_estate
+		value = mnt_wealth_burghers_power_per_pop
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:peasants_estate
+		value = mnt_wealth_peasants_power_per_pop
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:dhimmi_estate
+		value = mnt_wealth_dhimmi_power_per_pop
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:tribes_estate
+		value = mnt_wealth_tribes_power_per_pop
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_power_per_pop
+		key = estate_type:cossacks_estate
+		value = mnt_wealth_cossacks_power_per_pop
+	}
+
+	# These are used to dynamically resolve the paths in the GUI for the icons used in the per estate investment tooltips.
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:nobles_estate
+		value = flag:nobles
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:clergy_estate
+		value = flag:clergy
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:burghers_estate
+		value = flag:burghers
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:peasants_estate
+		value = flag:peasants
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:dhimmi_estate
+		value = flag:dhimmi
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:tribes_estate
+		value = flag:tribes
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_estate_short_key
+		key = estate_type:cossacks_estate
+		value = flag:cossacks
+	}
+}
+
+# Scope: none. Zeroes location wealth system variables on every ownable location
+# and indexes the owned ones for the load balancer.
+
+mnt_wealth_index_owned_locations = {
+	every_ownable_location = {
+		mnt_wealth_zero_location = yes
+		if = { limit = { exists = owner } mnt_wealth_index_location = yes }
+	}
+}
+
+# Scope: none. Handles variable setup on every country and its locations
+
+mnt_wealth_initialize_countries = {
+	every_landed_country = {
+		# The locations come first because country init needs to sum data from them.
+		every_owned_location = { mnt_wealth_setup_location = yes }
+		mnt_wealth_initialize_country = yes
+	}
+}
+
+# Scope: country. Builds every country-level figure from the locations the
+# country owns right now, assuming nothing about what it held before.
+#
+# The mirror of mnt_wealth_clear_annexed_country: everything cleared there is
+# recounted here from the locations the country owns now.
+
+mnt_wealth_initialize_country = {
+	set_variable = { name = mnt_wealth_national_gdp_total value = mnt_wealth_owned_local_gdp_sum }
+	mnt_wealth_rebuild_national_estate_raw_power = yes
+	mnt_wealth_set_national_savings_valves = yes
+}
+
+# Scope: country (the one being annexed). Called by mnt_wealth_on_country_annexed.
+# Country variables outlive the country, so a tag that is released again later
+# comes back holding the totals it died with. Its national flow would then be
+# computed against a treasury and a raw power total that no longer exist.
+
+mnt_wealth_clear_annexed_country = {
+	remove_variable = mnt_wealth_national_gdp_total
+	clear_variable_map = mnt_wealth_national_estate_raw_power
+	clear_variable_map = mnt_wealth_estate_flow
+	clear_variable_map = mnt_wealth_estate_seizure_demand
+}
+
+# ── LOCATION SETUP ──
+
+# Scope: location. Zeroes the wealth variables and maps this location owns, so
+# later reads can count on them existing. The gdp survey owns the power maps.
+
+mnt_wealth_zero_location = {
+	set_variable = { name = mnt_wealth_pool                   value = 0 }
+	set_variable = { name = mnt_wealth_local_gdp              value = 0 }
+	set_variable = { name = mnt_wealth_local_wages            value = 0 }
+	set_variable = { name = mnt_wealth_current_wage_rate      value = 0 }
+	set_variable = { name = mnt_wealth_desired_total          value = 0 }
+	set_variable = { name = mnt_wealth_kept_income_total      value = 0 }
+	set_variable = { name = mnt_wealth_local_wealth_share_sum value = 0 }
+	set_variable = { name = mnt_wealth_investment_paid_total  value = 0 }
+	set_variable = { name = mnt_wealth_investment_rate_total  value = 0 }
+	set_variable = { name = mnt_wealth_investment_months      value = 0 }
+	set_variable = { name = mnt_wealth_review_month           value = 0 }
+	clear_variable_map = mnt_wealth_local_wealth_share
+	clear_variable_map = mnt_wealth_investment_level
+	clear_variable_map = mnt_wealth_invested_since_review
+	clear_variable_map = mnt_wealth_invested_wealth
+	clear_variable_map = mnt_wealth_base_desired_wealth
+}
+
+# Scope: location. Sets up a location for the wealth system: surveys
+# its goods and estate data, seeds ownership shares, fills the starting
+# pool, and sets initial wage rates.
+#
+# Estate data is actually still unreliable on_game_start and on_game_start_after_lobby but it's
+# tolerable and self correcting so I'm leaving it as is. We could rebuild after a day or a month
+# but it would be a few second long lag spike.
+
+mnt_wealth_setup_location = {
+	mnt_wealth_ensure_survey_data = yes # GDP, Raw Power, Desired Wealth 
+	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_local_wealth_share } # What percent of wealth does each estate own?
+	mnt_wealth_set_local_wealth_share_sum = yes # Make sure wealth shares sum to 100%
+	mnt_wealth_fill_starting_pool = yes # Set Local Wealth to Desired Wealth
+	mnt_wealth_set_location_rates = yes # Wage setup
+	mnt_wealth_set_review_month = yes # Save when this location was last updated, used for display predictions.
+}
+
+mnt_wealth_set_location_rates = {
+	mnt_wealth_set_location_wages = yes # Sum up wage modifiers and minimum wage and apply sized 'wage burden' modifier.
+	mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_estate_in_power_cache } # Apply wage rates to initialize cashflow
+}
+
+# Scope: location. Fills the wealth pool to a multiple of total desired
+# wealth so the economy starts near equilibrium.
+
+mnt_wealth_fill_starting_pool = {
+	set_local_variable = {
+		name = mnt_wealth_starting_expectation
+		value = {
+			value = 0
+			every_key_in_variable_map = {
+				variable = mnt_wealth_expected_wealth
+				save_temporary_scope_as = mnt_wealth_iter_key
+				prev = { add = "variable_map(mnt_wealth_expected_wealth|scope:mnt_wealth_iter_key)" }
+			}
+		}
+	}
+
+	set_variable = {
+		name = mnt_wealth_pool
+		value = { value = local_var:mnt_wealth_starting_expectation multiply = mnt_wealth_starting_savings_multiplier }
+	}
+}
+
+# ── ESTATE ITERATORS ──
+
+# Scope: location. Iterates the owner's live estate list. Used by the
+# resurvey, which needs the country's current estates regardless of what the
+# power cache holds.
+
+mnt_wealth_for_each_national_estate = {
+	save_temporary_scope_as = mnt_wealth_location
+
+	owner = {
+		every_estate = {
+			limit = { estate_type != estate_type:crown_estate }
+			save_temporary_scope_as = mnt_wealth_estate
+			set_local_variable = { name = mnt_wealth_estate_key value = estate_type }
+			scope:mnt_wealth_location = { $EFFECT$ = yes }
+		}
+	}
+}
+
+# Scope: caller's scope. Hardcoded list of all seven non-crown estate types.
+# Used by the survey to build the estate power cache. The survey has to iterate every
+# estate type to initialize a location because the cache does not exist yet and every_estate
+# is unreliable until the first tick.
+
+mnt_wealth_for_all_estate_types = {
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:nobles_estate }
+	$EFFECT$ = yes
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:clergy_estate }
+	$EFFECT$ = yes
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:burghers_estate }
+	$EFFECT$ = yes
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:peasants_estate }
+	$EFFECT$ = yes
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:dhimmi_estate }
+	$EFFECT$ = yes
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:tribes_estate }
+	$EFFECT$ = yes
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:cossacks_estate }
+	$EFFECT$ = yes
+}
+
+# Scope: location. Iterates the keys of mnt_wealth_cached_local_relative_estate_power
+# directly. Used by game-start setup to read the cache the survey just built,
+# visiting only estates that actually have power here. Also useful to identify
+# estates that may have cached data but are no longer present, potentially post-conquest.
+
+mnt_wealth_for_each_estate_in_power_cache = {
+	save_temporary_scope_as = mnt_wealth_surveyed_location
+
+	every_key_in_variable_map = {
+		variable = mnt_wealth_cached_local_relative_estate_power
+		save_temporary_scope_as = mnt_wealth_surveyed_key
+
+		scope:mnt_wealth_surveyed_location = {
+			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_surveyed_key }
+			$EFFECT$ = yes
+		}
+	}
+}
+
+# Scope: location. Iterates the owner's estates filtered by the power cache.
+# Owner-authoritative: only estates the current owner has nationally and that
+# hold an entry in mnt_wealth_cached_local_relative_estate_power. The most stable and
+# consistent iterator for general work.
+
+mnt_wealth_for_each_national_estate_in_power_cache = {
+	save_temporary_scope_as = mnt_wealth_location
+
+	owner = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				scope:mnt_wealth_location ?= { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
+			}
+			save_temporary_scope_as = mnt_wealth_estate
+			set_local_variable = { name = mnt_wealth_estate_key value = estate_type }
+			scope:mnt_wealth_location = { $EFFECT$ = yes }
+		}
+	}
+}
+
+# ── LOCATION PASSES ──
+#
+# Human locations run the full estate loop every month. AI locations skip
+# it and receive a closed-form yearly equivalent instead. Basically player locations
+# use exact values, AI locations guess a year at a time.
+
+# Scope: location. Records when this location was last reviewed, so the display
+# can project an AI location's guess forward from that point.
+
+mnt_wealth_set_review_month = {
+	set_variable = { name = mnt_wealth_review_month value = mnt_wealth_months_since_campaign_start }
+}
+
+# Scope: location. One estate's monthly tick: computes this estate's wage
+# balance (what the estate pays minus what it earns from wages), then
+# collects income into the arriving wealth map.
+
+mnt_wealth_estate_month = {
+	mnt_wealth_set_estate_wage_balance = yes
+	mnt_wealth_resolve_estate_monthly_income = yes
+}
+
+# Scope: location (human-owned, load balanced).
+# The full monthly cycle for one human location: set wages, loop each
+# estate for income, add income to the pool, then spend on investment.
+
+mnt_wealth_location_month = {
+	# Frozen for the month so mid-loop estate changes do not shift the rate.
+	# For if investment rate modifiers are added as investment/neglect modifiers
+	set_local_variable = { name = mnt_wealth_cached_investment_rate value = mnt_wealth_investment_rate }
+	# Accumulate each estate's kept income and investment spending across the
+	# loop, then write the totals to variables and subtract from the pool.
+	set_local_variable = { name = mnt_wealth_kept_income_running_total value = 0 }
+	set_local_variable = { name = mnt_wealth_invested_running_total    value = 0 }
+	mnt_wealth_clear_arriving_wealth = yes
+	# Wage rates have to be set before the estate loop because each
+	# estate's income depends on the location's total wages.
+	mnt_wealth_set_location_wages = yes
+	# Each estate earns its share of local wages and collects any
+	# national payout the country is sending back. We only care about
+	# national estates with power, any other cached power is transient
+	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_estate_month }
+	# The gold each estate collected goes into the wealth pool and
+	# their ownership shares are updated to reflect the new totals.
+	mnt_wealth_apply_arriving_wealth = yes
+	set_local_variable = { name = mnt_wealth_pool_before_investment value = var:mnt_wealth_pool }
+	# Each estate spends its share of the pool on investment progress.
+	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_invest_estate_wealth }
+
+	set_variable = {
+		name = mnt_wealth_pool
+		value = { value = var:mnt_wealth_pool subtract = local_var:mnt_wealth_invested_running_total }
+	}
+
+	set_variable = { name = mnt_wealth_kept_income_total value = local_var:mnt_wealth_kept_income_running_total }
+	mnt_wealth_raise_wealth_map_mode_ceiling = yes
+}
+
+# Scope: location (load balanced, all locations).
+# load balancing means this is run monthly but hits each location every 12 months
+# The yearly review handles work too expensive or infrequent for the monthly
+# loop: settling accumulated investment into per-estate modifiers, recomputing
+# investment levels, drifting wealth shares toward current power, and
+# resurveying estate power from the actual population.
+
+mnt_wealth_location_year = {
+	mnt_wealth_set_review_month = yes
+	# AI locations do not run the monthly loop, so they need their
+	# wages and investment computed here in bulk.
+	if = {
+		limit = { owner ?= { is_ai = yes } }
+		mnt_wealth_set_location_wages = yes
+		mnt_wealth_set_ai_yearly_investment = yes # How much was spent in the last 12 months?
+	}
+
+	# Convert accumulated investment totals into per-estate progress.
+	mnt_wealth_settle_investment_accumulators = yes
+	# Recompute investment levels from each estate's lifetime pool.
+	mnt_wealth_update_investment_levels = yes
+	# Wealth percentage slowly trends toward actual estate power so
+	# that changes in estate composition are reflected over time.
+	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_drift_local_wealth_share }
+	mnt_wealth_set_local_wealth_share_sum = yes
+	# AI locations need their wage totals recomputed here since
+	# they do not update them monthly.
+	if = {
+		limit = { owner ?= { is_ai = yes } }
+		mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_national_estate_in_power_cache }
+	}
+
+	mnt_wealth_resurvey_estate_data = yes # rebuild raw power, relative power, desired wealth
+	mnt_wealth_raise_wealth_map_mode_ceiling = yes
+}

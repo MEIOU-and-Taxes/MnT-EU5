@@ -230,7 +230,7 @@ types LocationWindowTypes
 				vbox = {
 					block "margin_size" {
 						margin_top = 23
-					}	
+					}
 					widget = {
 						layoutpolicy_horizontal = expanding
 						block "number_size" {
@@ -418,7 +418,7 @@ types LocationWindowTypes
 										blockoverride "text" {
 											text = "PROD_METHOD_BONUS_ACTIVE"
 										}
-										blockoverride "textblock_background_tint"  {
+										blockoverride "textblock_background_tint" {
 											modify_texture = {
 												using = color_light_green_texture
 											}
@@ -429,7 +429,7 @@ types LocationWindowTypes
 										blockoverride "text" {
 											text = "PROD_METHOD_BONUS_POTENTIAL"
 										}
-										blockoverride "textblock_background_tint"  {
+										blockoverride "textblock_background_tint" {
 											modify_texture = {
 												using = color_muztard_texture
 											}
@@ -486,7 +486,7 @@ types LocationWindowTypes
 						)]"
 						datacontext = "[LocationBuildingItem.GetBuilding]"
 						using = bg_circle
-					}		
+					}
 
 					icon = {
 						parentanchor = bottom|left
@@ -570,7 +570,7 @@ types LocationWindowTypes
 						spacing = -1
 						datacontext = "[LocationBuildingItem.GetBuilding.GetType]"
 						datacontext = "[LocationBuildingItem.GetBuilding]"
-						blockoverride "flag_estate_building_card_extra"{
+						blockoverride "flag_estate_building_card_extra" {
 							button_square_minus = {
 								layoutpolicy_horizontal = expanding
 								block "square_icon_out_size_minus" {
@@ -776,7 +776,7 @@ types LocationWindowTypes
 						}
 						blockoverride "square_icon_out_size_plus" {
 							size = { -1 18 }
-						}	
+						}
 						blockoverride "square_icon_out_size_minus" {
 							size = { -1 18 }
 						}
@@ -792,7 +792,7 @@ types LocationWindowTypes
 		}
 	}
 
-	type garrison_sortie_button = header_action_button_left {		
+	type garrison_sortie_button = header_action_button_left {
 		blockoverride "icon_texture" {
 			texture = "gfx/interface/buttons/flats/garrison.dds"
 		}
@@ -822,15 +822,154 @@ types LocationWindowTypes
 				block "location_card_margins" {
 					margin = {5 5}
 					margin_right = 5
-				}	
+				}
 
 				# TOP CONTENT
 				hbox = {
 					using = layoutpolicy_expanding
 					# layoutstretchfactor_vertical = 5
 					margin_left = 1
-					spacing = 2 
-					
+					spacing = 2
+
+					# GDP & Wages debug marker. Shown only when the global variable
+					# mnt_wealth_debug_mode is set (set it from the console to reveal it).
+					# The circle sits left of the rank icon; hovering it dumps this
+					# location's wealth-system variables and per-estate map entries.
+					widget = {
+						size = { 33 33 }
+						visible = "[GetGlobalVariable('mnt_wealth_debug_mode').IsSet]"
+
+						icon = {
+							size = { 24 24 }
+							parentanchor = center
+							texture = "gfx/interface/component_tiles/hud_corners/circle_background.dds"
+						}
+
+						text_single = {
+							parentanchor = center
+							default_format = "#R"
+							raw_text = "!"
+						}
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { raw_text = "#T GDP & Wages — Location Debug#!" }
+								blockoverride "concept_link" {}
+
+								blockoverride "tooltip_content" {
+									TooltipListBase = {
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Wealth Pool" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_pool')|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Wealth % Sum" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_local_wealth_share_sum')|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Live GDP" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_live_gdp'))|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Goods Value" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_local_gdp')|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Wage Pool" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_local_wage_pool'))|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Investment Rate" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "Review Month" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_review_month')|6]" }
+										}
+										mnt_wealth_formula_row = {
+											blockoverride "row_label" { raw_text = "National GDP" }
+											blockoverride "row_value_attributes" { min_width = 130 }
+											blockoverride "row_value" {
+												raw_text = "[FixedPointToFloat(LocationView.GetLocation.GetOwner.MakeScope.GetVariable('mnt_wealth_national_gdp_total').GetValue)|6]"
+											}
+										}
+									}
+									# One section per estate. The estate list is a data model, so each
+									# repeat sets the estate as the datacontext and every value below
+									# reads off that estate rather than a hardcoded key.
+									vbox = {
+										datamodel = "[DataModelSkipFirst(LocationView.GetLocation.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+										item = {
+											vbox = {
+												divider_solid_gold = {}
+												text_single = { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip]#!" }
+
+												TooltipListBase = {
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Power %" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_cached_local_relative_estate_power', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Wealth %" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_local_wealth_share', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Investment Level" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_investment_level', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Invested Since Review" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_invested_since_review', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Invested Wealth" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_invested_wealth', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Base Desired Wealth" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_base_desired_wealth', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+													mnt_wealth_formula_row = {
+														blockoverride "row_label" { raw_text = "Expected Desired Wealth" }
+														blockoverride "row_value_attributes" { min_width = 130 }
+														blockoverride "row_value" {
+															raw_text = "[FixedPointToFloat(LocationView.GetLocation.MakeScope.GetVariableFromVariableMap('mnt_wealth_expected_wealth', Estate.GetType.MakeScope).GetValue)|6]"
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+
 					# UPGRADE RANK
 					widget = {
 						size = { 33 33 }
@@ -1057,7 +1196,7 @@ types LocationWindowTypes
 									parentanchor = center
 									texture = "[GetIntegrationLevelIcon(Location.GetIntegrationLevel)]"
 									alwaystransparent = yes
-								}								
+								}
 							}
 							
 
@@ -1111,7 +1250,7 @@ types LocationWindowTypes
 
 							using = location_background
 
-							block "location_card_main_action_button"{
+							block "location_card_main_action_button" {
 								action_tooltip = {
 									click_type = left
 									click_mode = single
@@ -1187,6 +1326,14 @@ types LocationWindowTypes
 											using = Combat_tooltip
 										}
 									}
+								}
+
+								text_single = {
+									align = nobaseline
+									max_update_rate = 4
+									visible = "[LocationView.GetLocation.HasOwner]"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_live_gdp')|2]@gold!"
+									tooltipwidget = { using = mnt_wealth_gdp_header_tooltip }
 								}
 							}
 						}
@@ -1844,7 +1991,7 @@ types LocationWindowTypes
 						TooltipTextBlock = {
 							blockoverride "text" {
 								text = "AVAILABLE_ARMY_SLOT"
-							}									
+							}
 						}
 					}
 				}
@@ -1882,7 +2029,7 @@ types LocationWindowTypes
 						TooltipTextBlock = {
 							blockoverride "text" {
 								text = "AVAILABLE_NAVY_SLOT"
-							}									
+							}
 						}
 					}
 				}
@@ -2308,7 +2455,7 @@ types LocationWindowTypes
 								blockoverride "text" {
 									text = "PROD_METHOD_BONUS_POTENTIAL"
 								}
-								blockoverride "textblock_background_tint"  {
+								blockoverride "textblock_background_tint" {
 									modify_texture = {
 										using = color_muztard_texture
 									}
@@ -3188,7 +3335,7 @@ lateralview = {
 	blockoverride "panel_header" {
 		window_header_alt = {
 			using = bg_main_inner_alt
-			blockoverride "window_header_alt_color_texture"{
+			blockoverride "window_header_alt_color_texture" {
 				using = color_default_brown_texture
 			}
 			blockoverride "bg_top_header_graphical_culture_pattern" {
@@ -3486,7 +3633,7 @@ lateralview = {
 								text = "[Province.GetNameWithNoTooltip]"
 								align = nobaseline
 							}
-							blockoverride "subheader_unified_icon_post"{
+							blockoverride "subheader_unified_icon_post" {
 								expand = {}
 							}
 						}
@@ -3541,7 +3688,7 @@ lateralview = {
 								text = "[ProvinceDefinition.GetNameWithNoTooltip]"
 								align = nobaseline
 							}
-							blockoverride "subheader_unified_icon_post"{
+							blockoverride "subheader_unified_icon_post" {
 								expand = {}
 							}
 						}
@@ -3749,7 +3896,7 @@ lateralview = {
 				using = bg_age_event_frame
 
 				hbox = {
-					ecs_scene_viewer_widget =  {
+					ecs_scene_viewer_widget = {
 						layoutpolicy_horizontal = expanding
 						layoutpolicy_vertical = expanding
 						name = "event_window_scene_viewer"
@@ -3762,9 +3909,9 @@ lateralview = {
 					size = { 100% 40 }
 					datacontext = "[LocationView.GetLocation]"
 					visible = "[Location.IsOccupied]"
-					tooltipwidget = {										
+					tooltipwidget = {
 						ContextualTooltipType = {
-							blockoverride "title_text" {								
+							blockoverride "title_text" {
 								text = "game_concept_occupied"
 							}
 							
@@ -3789,7 +3936,7 @@ lateralview = {
 								}
 							}
 						}
-					}	
+					}
 					background = {
 						texture = "gfx/interface/colors/black.dds"
 						alpha = 1
@@ -3856,7 +4003,7 @@ lateralview = {
 										color = {0.0 0.0 0.0 1.0}
 										alpha = 0.3
 									}
-								}	
+								}
 							}
 
 							text_single = {
@@ -3867,7 +4014,7 @@ lateralview = {
 								using = Font_Type_Headers
 								using = Font_Size_Medium
 							}
-						}		
+						}
 					}
 				}
 			
@@ -4109,8 +4256,8 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
+										}
 									}
-								}
 
 									widget = {
 										size = { 32 32 }
@@ -4128,8 +4275,8 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
+										}
 									}
-								}
 
 									widget = {
 										size = { 32 32 }
@@ -4147,8 +4294,8 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
+										}
 									}
-								}
 
 									### NOT COASTAL
 									widget = {
@@ -4170,8 +4317,8 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
+										}
 									}
-								}
 
 									### COASTAL
 									widget = {
@@ -4253,7 +4400,7 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
-									}
+										}
 
 										icon = {
 											size = { 30 30 }
@@ -4266,8 +4413,8 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
+										}
 									}
-								}
 
 									### IS BLOCKADED by ice
 									widget = {
@@ -4307,10 +4454,10 @@ lateralview = {
 											color = {0.0 0.0 0.0 1.0}
 											alpha = 0.3
 										}
+										}
 									}
 								}
 							}
-						}
 
 						widget = {
 							using = layoutpolicy_expanding
@@ -4596,23 +4743,25 @@ lateralview = {
 								# Location timed modifiers
 								widget = {
 									size = { 45 26 }
-									visible = "[GreaterThan_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), '(int32)0')]"
+									max_update_rate = 30
+									visible = "[GreaterThan_int32(Subtract_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), FixedPointToInt(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_hidden_location_modifier_count'))), '(int32)0')]"
 
 									# RIGHT DIVISION
 									flowcontainer = {
-										visible = "[Not(GreaterThan_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), '(int32)1'))]"
+										max_update_rate = 30
+										visible = "[Not(GreaterThan_int32(Subtract_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), FixedPointToInt(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_hidden_location_modifier_count'))), '(int32)1'))]"
 
 										layoutpolicy_horizontal = expanding
 
 										datamodel = "[LocationView.GetLocation.GetTimedModifiers]"
 										item = {
-											timed_modifier_icon = {
-												datacontext = "[TimedModifier]"
-												tooltipwidget = {
-													using = timed_modifier_tooltip
-													blockoverride "concept_link" {
-														text = "[location_modifier|e]"
-													}
+											widget = {
+												using = mnt_wealth_hide_if_wealth_modifier
+												using = mnt_wealth_collapse_if_wealth_modifier_small
+
+												timed_modifier_icon = {
+													datacontext = "[TimedModifier]"
+													tooltipwidget = { using = timed_modifier_tooltip blockoverride "concept_link" { text = "[location_modifier|e]" } }
 												}
 											}
 										}
@@ -4621,12 +4770,14 @@ lateralview = {
 									}
 
 									flowcontainer = {
-										visible = "[GreaterThan_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), '(int32)1')]"
+										max_update_rate = 30
+										visible = "[GreaterThan_int32(Subtract_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), FixedPointToInt(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_hidden_location_modifier_count'))), '(int32)1')]"
 
 										text_single = {
 											minimumsize = { -1 26 }
 											align = nobaseline|hcenter
-											text = "[GetDataModelSize(LocationView.GetLocation.GetTimedModifiers)]"
+											max_update_rate = 30
+											text = "[Subtract_int32(GetDataModelSize(LocationView.GetLocation.GetTimedModifiers), FixedPointToInt(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_hidden_location_modifier_count')))]"
 										}
 										icon = {
 											size = { 26 26 }
@@ -4654,6 +4805,7 @@ lateralview = {
 															blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(LocationView.GetLocation.GetTimedModifiers)]"}
 															blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(LocationView.GetLocation.GetTimedModifiers)]"}
 															blockoverride "rowlist_datamodel" { datamodel = "[LocationView.GetLocation.GetTimedModifiers]" }
+															blockoverride "visibility" { using = mnt_wealth_hide_if_wealth_modifier }
 															blockoverride "rowlist_content" {
 																hbox = {
 																	layoutpolicy_horizontal = expanding
@@ -4810,7 +4962,7 @@ lateralview = {
 											parentanchor = center 
 											size = { 20 20 }
 	
-											datacontext_from_model = { 
+											datacontext_from_model = {
 												datamodel = "[GetQuickMovements(LocationView.GetLocation).GetMovements]" 
 												index = 0 
 											}
@@ -4833,6 +4985,9 @@ lateralview = {
 						expand = {}
 					}
 				}
+
+				mnt_wealth_donut = {}
+				mnt_wealth_estate_status_card = {}
 			}
 
 			# TABS
@@ -4840,7 +4995,7 @@ lateralview = {
 				blockoverride "content" {
 					button_secondary_tab_alt = {
 						using = layoutpolicy_expanding
-						blockoverride "tab_text"{
+						blockoverride "tab_text" {
 							text = "LOC_VIEW_INFRASTRUCTURE_TAB"
 						}
 						tooltipwidget = { using = TabInfrastructureTooltip }
@@ -4853,7 +5008,7 @@ lateralview = {
 
 					button_secondary_tab_alt = {
 						using = layoutpolicy_expanding
-						blockoverride "tab_text"{
+						blockoverride "tab_text" {
 							text = "LOC_VIEW_GOODS_TAB"
 						}
 						tooltipwidget = { using = SubTabGoodsTooltip }
@@ -4866,7 +5021,7 @@ lateralview = {
 
 					button_secondary_tab_alt = {
 						using = layoutpolicy_expanding
-						blockoverride "tab_text"{
+						blockoverride "tab_text" {
 							text = "LOC_VIEW_MILITARY_TAB"
 						}
 						tooltipwidget = { using = SubTabMilitaryTooltip }
@@ -4879,7 +5034,7 @@ lateralview = {
 
 					button_secondary_tab_alt = {
 						using = layoutpolicy_expanding
-						blockoverride "tab_text"{
+						blockoverride "tab_text" {
 							text = "LOC_VIEW_DEMOGRAPHICS_TAB"
 						}
 						tooltipwidget = { using = TabDemographicsTooltip }
@@ -5539,17 +5694,17 @@ lateralview = {
 																												align = left|nobaseline
 																												fontsize = 14
 																								raw_text = "0/[LocationView.GetLocation.MakeScope.ScriptValue('mnt_location_max_rgo_building_level_rounded')|0]"
+																											}
+																										}
+																									}
+																								}
 																							}
-																						}
-																					}
-																				}
-																			}
 																		}
 
 																	}
+																				}
+																			}
 																}
-															}
-														}
 
 																# Foreign locations have no player-potential building item. Show the
 																# raw-material card directly, without exposing a build action.
@@ -6083,7 +6238,7 @@ lateralview = {
 																		textcontext = "[ColonialCharterItem.GetInformation]"
 																	}
 																}
-															}
+																}
 														}
 														layoutpolicy_horizontal = expanding
 														text_single = {
@@ -6117,7 +6272,7 @@ lateralview = {
 													size = { -1 60 }
 													datacontext = "[LocationView.GetColonialCharter]"
 													possible_colony_item = {
-														blockoverride "colony_item_size"{
+														blockoverride "colony_item_size" {
 															size = { 100% 100% }
 														}
 													}
@@ -6129,7 +6284,7 @@ lateralview = {
 													size = { -1 60 }
 													datacontext = "[LocationView.GetColonialCharter]"
 													colonial_charter_item = {
-														blockoverride "colony_item_size"{
+														blockoverride "colony_item_size" {
 															size = {100% 100%}
 														}
 														blockoverride "highlight_cost" {}
@@ -6148,7 +6303,7 @@ lateralview = {
 															layoutpolicy_horizontal = expanding
 															size = {-1 60}
 															colonial_charter_item = {
-																blockoverride "colony_item_size"{
+																blockoverride "colony_item_size" {
 																	size = {100% 100%}
 																}
 																blockoverride "highlight_cost" {}
@@ -6447,7 +6602,7 @@ lateralview = {
 																			}
 																		}
 																	}
-																}	
+																}
 																
 																extra_list = {
 																	visible = "[GreaterThan_int32(LocationView.GetNumPopTypeBuildings(PopType.Self), '(int32)9')]"
@@ -6493,7 +6648,7 @@ lateralview = {
 															}
 				
 														}
-													}	
+													}
 												}
 											}
 										}
@@ -6848,7 +7003,7 @@ lateralview = {
 									# 		tooltip = "[disease|e]"
 									# 	}
 									# 	blockoverride "location_conditions_card_header_texture" {
-                					# 		texture = "gfx/interface/icons/map_modes/disease.dds"
+									# 		texture = "gfx/interface/icons/map_modes/disease.dds"
 									# 	}
 
 									# 	blockoverride "location_conditions_card_main_content" {
@@ -7439,7 +7594,7 @@ lateralview = {
 								tooltipwidget = {
 									using = Garrison_tooltip
 								}
-								blockoverride "header_button_icon_obj"	{
+								blockoverride "header_button_icon_obj" {
 									piechart = {
 										visible = "[HasGarrisonIntelOn(Location.Self)]"
 										datacontext = "[LocationView.GetLocation]"
@@ -7701,7 +7856,7 @@ lateralview = {
 										visible = "[Or3(Location.HasOwner, LocationView.HasBuildingBasedOwners, LocationView.HasPopBasedOwners)]"
 									}
 
-									blockoverride "header_size" { 
+									blockoverride "header_size" {
 										visible = "[Location.HasOwner]"
 										# size = { 75 -1 } # this is the width needed for showing the flag of owner as well
 										size = { 40 -1 }
@@ -7902,13 +8057,13 @@ lateralview = {
 												}
 												flags_with_limit = {
 													visible = "[And(Not(LocationView.HasBuildingBasedOwners), Not(LocationView.HasPopBasedOwners))]"
-													blockoverride "flags_with_limit_datamodel"{
+													blockoverride "flags_with_limit_datamodel" {
 														datamodel = "[DataModelFirst(Location.GetCores,'(int32)8')]"
 													}
-													blockoverride "flags_with_limit_text"{
+													blockoverride "flags_with_limit_text" {
 														raw_text = "+[Subtract_int32(GetDataModelSize(Location.GetCores), '(int32)8')]"
 													}
-													blockoverride "flags_with_limit_visible_extra"{
+													blockoverride "flags_with_limit_visible_extra" {
 														visible = "[GreaterThan_int32(GetDataModelSize(Location.GetCores), '(int32)8')]"
 													}
 												}
@@ -7951,16 +8106,16 @@ lateralview = {
 												}
 												flags_with_limit = {
 													visible = "[And(IsDataModelEmpty(Location.GetCores), Not(LocationView.HasPopBasedOwners))]"
-													blockoverride "flags_with_limit_datamodel"{
+													blockoverride "flags_with_limit_datamodel" {
 														datamodel = "[DataModelFirst(LocationView.GetBuildingBasedOwners,'(int32)8')]"
 													}
-													blockoverride "flags_with_limit_text"{
+													blockoverride "flags_with_limit_text" {
 														raw_text = "+[Subtract_int32(GetDataModelSize(LocationView.GetBuildingBasedOwners), '(int32)8')]"
 													}
-													blockoverride "flags_with_limit_visible_extra"{
+													blockoverride "flags_with_limit_visible_extra" {
 														visible = "[GreaterThan_int32(GetDataModelSize(LocationView.GetBuildingBasedOwners), '(int32)8')]"
 													}
-													blockoverride "flags_with_limit_tooltip_extra"{
+													blockoverride "flags_with_limit_tooltip_extra" {
 														tooltipwidget = {
 															using = ForeignBuildingsFlags_tooltip
 														}
@@ -7968,16 +8123,16 @@ lateralview = {
 												}
 												flags_with_limit = {
 													visible = "[Or(Not(IsDataModelEmpty(Location.GetCores)), LocationView.HasPopBasedOwners)]"
-													blockoverride "flags_with_limit_datamodel"{
+													blockoverride "flags_with_limit_datamodel" {
 														datamodel = "[DataModelFirst(LocationView.GetBuildingBasedOwners,'(int32)2')]"
 													}
-													blockoverride "flags_with_limit_text"{
+													blockoverride "flags_with_limit_text" {
 														raw_text = "+[Subtract_int32(GetDataModelSize(LocationView.GetBuildingBasedOwners), '(int32)2')]"
 													}
-													blockoverride "flags_with_limit_visible_extra"{
+													blockoverride "flags_with_limit_visible_extra" {
 														visible = "[GreaterThan_int32(GetDataModelSize(LocationView.GetBuildingBasedOwners), '(int32)2')]"
 													}
-													blockoverride "flags_with_limit_tooltip_extra"{
+													blockoverride "flags_with_limit_tooltip_extra" {
 														tooltipwidget = {
 															using = ForeignBuildingsFlags_tooltip
 														}
@@ -8021,16 +8176,16 @@ lateralview = {
 												}
 												flags_with_limit = {
 													visible = "[And(IsDataModelEmpty(Location.GetCores), Not(LocationView.HasBuildingBasedOwners))]"
-													blockoverride "flags_with_limit_datamodel"{
+													blockoverride "flags_with_limit_datamodel" {
 														datamodel = "[DataModelFirst(LocationView.GetPopBasedOwners,'(int32)8')]"
 													}
-													blockoverride "flags_with_limit_text"{
+													blockoverride "flags_with_limit_text" {
 														raw_text = "+[Subtract_int32(GetDataModelSize(LocationView.GetPopBasedOwners), '(int32)8')]"
 													}
-													blockoverride "flags_with_limit_visible_extra"{
+													blockoverride "flags_with_limit_visible_extra" {
 														visible = "[GreaterThan_int32(GetDataModelSize(LocationView.GetPopBasedOwners), '(int32)8')]"
 													}
-													blockoverride "flags_with_limit_tooltip_extra"{
+													blockoverride "flags_with_limit_tooltip_extra" {
 														tooltipwidget = {
 															using = CultureCountriesFlags_tooltip
 														}
@@ -8038,16 +8193,16 @@ lateralview = {
 												}
 												flags_with_limit = {
 													visible = "[Or(Not(IsDataModelEmpty(Location.GetCores)), LocationView.HasBuildingBasedOwners)]"
-													blockoverride "flags_with_limit_datamodel"{
+													blockoverride "flags_with_limit_datamodel" {
 														datamodel = "[DataModelFirst(LocationView.GetPopBasedOwners,'(int32)2')]"
 													}
-													blockoverride "flags_with_limit_text"{
+													blockoverride "flags_with_limit_text" {
 														raw_text = "+[Subtract_int32(GetDataModelSize(LocationView.GetPopBasedOwners), '(int32)2')]"
 													}
-													blockoverride "flags_with_limit_visible_extra"{
+													blockoverride "flags_with_limit_visible_extra" {
 														visible = "[GreaterThan_int32(GetDataModelSize(LocationView.GetPopBasedOwners), '(int32)2')]"
 													}
-													blockoverride "flags_with_limit_tooltip_extra"{
+													blockoverride "flags_with_limit_tooltip_extra" {
 														tooltipwidget = {
 															using = CultureCountriesFlags_tooltip
 														}
@@ -8131,7 +8286,7 @@ lateralview = {
 								# Armies in progress
 								location_conditions_item = {
 									visible = "[Location.HasOwner]"
-									blockoverride "location_conditions_item_size"{
+									blockoverride "location_conditions_item_size" {
 										size = { -1 80}
 									}
 
@@ -8139,7 +8294,7 @@ lateralview = {
 									# 	using = color_military_texture
 									# }
 
-									blockoverride "bg_card_header_01_bg"{
+									blockoverride "bg_card_header_01_bg" {
 										using = bg_card_header_01_military
 									}
 
@@ -8318,7 +8473,7 @@ lateralview = {
 																	blockoverride "concept_link" {
 																		text = [levy|E]
 																	}
-																	blockoverride "title_button" { 
+																	blockoverride "title_button" {
 																		hint_button = {
 																			action_tooltip = {
 																				title = "OPEN_HINT"
@@ -8593,7 +8748,7 @@ lateralview = {
 								# Navies in progress
 								location_conditions_item = {
 									visible = "[And(Location.IsCoastal, Location.HasOwner)]"
-									blockoverride "location_conditions_item_size"{
+									blockoverride "location_conditions_item_size" {
 										size = { -1 80}
 									}
 
@@ -8601,7 +8756,7 @@ lateralview = {
 									# 	using = color_military_texture
 									# }
 
-									blockoverride "bg_card_header_01_bg"{
+									blockoverride "bg_card_header_01_bg" {
 										using = bg_card_header_01_military
 									}
 
@@ -8786,7 +8941,7 @@ lateralview = {
 																		text = [levy|E]
 																	}
 
-																	blockoverride "title_button" { 
+																	blockoverride "title_button" {
 																		hint_button = {
 																			action_tooltip = {
 																				title = "OPEN_HINT"
@@ -8907,7 +9062,7 @@ lateralview = {
 
 															# 	}
 															# }
-															blockoverride "army_small_item_value"{
+															blockoverride "army_small_item_value" {
 																text = "CONSTRUCTION_DURATION_DAYS"
 															}
 														}
@@ -10496,7 +10651,7 @@ select_menu_left = {
 								text = "[Province.GetNameWithNoTooltip]"
 								align = nobaseline
 							}
-							blockoverride "subheader_unified_icon_post"{
+							blockoverride "subheader_unified_icon_post" {
 								expand = {}
 							}
 						}
@@ -10529,7 +10684,7 @@ select_menu_left = {
 								text = "[ProvinceDefinition.GetNameWithNoTooltip]"
 								align = nobaseline
 							}
-							blockoverride "subheader_unified_icon_post"{
+							blockoverride "subheader_unified_icon_post" {
 								expand = {}
 							}
 						}

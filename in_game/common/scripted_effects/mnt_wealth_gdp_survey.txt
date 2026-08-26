@@ -1,0 +1,458 @@
+﻿# GDP and Wages: GDP survey pipeline.
+#
+# Prices every good a location produces to compute its GDP,
+# and computes each estate's raw power and desired wealth. The survey
+# runs on a multi-month rotation via the load balancer so not every
+# location is surveyed every month.
+
+# ── GOODS DISCOVERY ──
+
+mnt_wealth_clear_found_goods = {
+	clear_local_variable_map = mnt_wealth_found_goods_map
+	clear_local_variable_list = mnt_wealth_found_goods_list
+}
+
+mnt_wealth_add_raw_material_good = {
+	if = {
+		limit = { exists = raw_material }
+
+		add_to_local_variable_map = {
+			name = mnt_wealth_found_goods_map
+			key = raw_material
+			value = 1
+		}
+
+		add_to_local_variable_list = { name = mnt_wealth_found_goods_list target = raw_material }
+	}
+}
+
+mnt_wealth_set_goods_list = {
+	clear_variable_list = mnt_wealth_goods_list
+
+	every_in_local_list = {
+		variable = mnt_wealth_found_goods_list
+		save_temporary_scope_as = mnt_wealth_current_good
+
+		scope:mnt_wealth_gdp_location ?= {
+			add_to_variable_list = { name = mnt_wealth_goods_list target = scope:mnt_wealth_current_good }
+		}
+	}
+}
+
+# ── LOCAL GDP ──
+
+# Scope: location. Calculates this location's GDP: the market value of
+# every good it produces, summed up.
+
+mnt_wealth_calculate_local_gdp = {
+	set_variable = { name = mnt_wealth_local_gdp value = 0 }
+
+	every_in_list = {
+		variable = mnt_wealth_goods_list
+		save_temporary_scope_as = mnt_wealth_current_good
+		set_local_variable = { name = mnt_wealth_current_price value = "price_in_market(scope:mnt_wealth_gdp_location.market)" }
+
+		scope:mnt_wealth_gdp_location = {
+			change_variable = {
+				name = mnt_wealth_local_gdp
+				add = { value = "goods_output(scope:mnt_wealth_current_good)" multiply = local_var:mnt_wealth_current_price }
+			}
+		}
+	}
+}
+
+# ── BUILDING CLASSIFICATION ──
+
+# Scope: none (fired from weather_monthly_pulse).
+# Rebuilds the building-type lookup table when it expires. The table
+# caches which building types produce goods so the GDP survey does
+# not have to check every building every time.
+
+mnt_wealth_maintain_building_produced_goods_cache = {
+	if = {
+		limit = {
+			OR = {
+				NOT = { has_global_variable = mnt_wealth_building_table_age }
+				global_var:mnt_wealth_building_table_age >= mnt_wealth_building_table_lifetime_months
+			}
+		}
+		clear_global_variable_map = mnt_wealth_building_makes_goods
+		set_global_variable = { name = mnt_wealth_building_table_age value = 0 }
+	}
+	else = {
+		change_global_variable = { name = mnt_wealth_building_table_age add = 1 }
+	}
+}
+
+# Scope: building. Caches whether this building type produces goods
+# in a global map so we only check each type once per table lifetime.
+
+mnt_wealth_classify_building_type = {
+	if = {
+		limit = {
+			NOT = {
+				is_key_in_global_variable_map = {
+					name = mnt_wealth_building_makes_goods
+					target = scope:mnt_wealth_current_building_type
+				}
+			}
+		}
+		if = {
+			limit = { any_production_method_of_building = { exists = produced_goods } }
+			add_to_global_variable_map = {
+				name = mnt_wealth_building_makes_goods
+				key = scope:mnt_wealth_current_building_type
+				value = 1
+			}
+		}
+		else = {
+			add_to_global_variable_map = {
+				name = mnt_wealth_building_makes_goods
+				key = scope:mnt_wealth_current_building_type
+				value = 0
+			}
+		}
+	}
+}
+
+mnt_wealth_collect_building_goods = {
+	if = {
+		limit = { "global_variable_map(mnt_wealth_building_makes_goods|scope:mnt_wealth_current_building_type)" > 0 }
+		every_production_method_of_building = {
+			limit = {
+				exists = produced_goods
+				NOT = { is_key_in_local_variable_map = { name = mnt_wealth_found_goods_map target = produced_goods } }
+			}
+			add_to_local_variable_map = {
+				name = mnt_wealth_found_goods_map
+				key = produced_goods
+				value = 1
+			}
+
+			add_to_local_variable_list = { name = mnt_wealth_found_goods_list target = produced_goods }
+		}
+	}
+}
+
+# ── ESTATE POWER ──
+
+# Scope: location. Counts slave pops per estate into mnt_wealth_estate_slave_counts.
+# Slaves have no political power, so the engine misses them;
+# mnt_wealth_add_slave_pop_power adds them back.
+
+mnt_wealth_count_slave_pops_per_estate = {
+	clear_local_variable_map = mnt_wealth_estate_slave_counts
+
+	if = {
+		limit = { owner = { country_has_estate = estate_type:dhimmi_estate } }
+		set_local_variable = { name = mnt_wealth_dhimmi_slave_count  value = 0 }
+		set_local_variable = { name = mnt_wealth_peasant_slave_count value = 0 }
+
+		every_pop = {
+			limit = { pop_type = pop_type:slaves }
+			if = {
+				limit = { is_dhimmi = yes }
+				change_local_variable = { name = mnt_wealth_dhimmi_slave_count add = pop_size }
+			}
+			else_if = {
+				limit = { owner = { country_has_estate = estate_type:peasants_estate } }
+				change_local_variable = { name = mnt_wealth_peasant_slave_count add = pop_size }
+			}
+		}
+
+		if = {
+			limit = { local_var:mnt_wealth_dhimmi_slave_count > 0 }
+			add_to_local_variable_map = {
+				name = mnt_wealth_estate_slave_counts
+				key = estate_type:dhimmi_estate
+				value = local_var:mnt_wealth_dhimmi_slave_count
+			}
+		}
+
+		if = {
+			limit = { local_var:mnt_wealth_peasant_slave_count > 0 }
+			add_to_local_variable_map = {
+				name = mnt_wealth_estate_slave_counts
+				key = estate_type:peasants_estate
+				value = local_var:mnt_wealth_peasant_slave_count
+			}
+		}
+	}
+	else_if = {
+		limit = { owner = { country_has_estate = estate_type:peasants_estate } }
+		add_to_local_variable_map = {
+			name = mnt_wealth_estate_slave_counts
+			key = estate_type:peasants_estate
+			value = num_pop_type:slaves
+		}
+	}
+}
+
+# Scope: location. Clears and rebuilds the full estate survey: raw power,
+# cached relative power, expected wealth, base desired wealth, and desired
+# total. Also seeds investment level for estates arriving at this location
+# for the first time.
+#
+# ITERATOR selects the estate iterator: mnt_wealth_for_all_estate_types at game start
+# (because the cache does not exist yet), mnt_wealth_for_each_national_estate at runtime.
+
+mnt_wealth_survey_estate_data = {
+	save_temporary_scope_as = mnt_wealth_survey_location
+	clear_variable_map = mnt_wealth_raw_power
+	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
+	clear_variable_map = mnt_wealth_expected_wealth
+	set_variable = { name = mnt_wealth_desired_total value = 0 }
+
+	if = {
+		limit = { exists = owner }
+		set_local_variable = { name = mnt_wealth_location_has_slaves value = 0 }
+
+		if = {
+			limit = { num_pop_type:slaves > 0 }
+			set_local_variable = { name = mnt_wealth_location_has_slaves value = 1 }
+			mnt_wealth_count_slave_pops_per_estate = yes
+		}
+
+		$ITERATOR$ = { EFFECT = mnt_wealth_survey_one_estate }
+		# Estates with a wealth share or slave-only presence can be missing from
+		# the owner's list. Pick up any the iterator did not reach.
+		every_key_in_variable_map = {
+			variable = mnt_wealth_local_wealth_share
+			save_temporary_scope_as = mnt_wealth_leftover_key
+
+			scope:mnt_wealth_survey_location = {
+				if = {
+					limit = {
+						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+					}
+					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
+					mnt_wealth_survey_one_estate = yes
+				}
+			}
+		}
+
+		every_key_in_local_variable_map = {
+			variable = mnt_wealth_estate_slave_counts
+			save_temporary_scope_as = mnt_wealth_leftover_key
+
+			scope:mnt_wealth_survey_location = {
+				if = {
+					limit = {
+						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+					}
+					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
+					mnt_wealth_survey_one_estate = yes
+				}
+			}
+		}
+	}
+}
+
+# Scope: location. One estate's local and national estate power modifiers,
+# resolved from the estate key.
+
+mnt_wealth_set_power_modifiers_for = {
+	set_local_variable = { name = mnt_wealth_local_power_modifier  value = modifier:local_$ESTATE$_estate_power }
+	set_local_variable = { name = mnt_wealth_global_power_modifier value = owner.modifier:global_$ESTATE$_estate_power }
+}
+
+mnt_wealth_set_estate_power_modifiers = {
+	switch = {
+		trigger = local_var:mnt_wealth_estate_key
+		estate_type:nobles_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = nobles } }
+		estate_type:clergy_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = clergy } }
+		estate_type:burghers_estate = { mnt_wealth_set_power_modifiers_for = { ESTATE = burghers } }
+		estate_type:peasants_estate = { mnt_wealth_set_power_modifiers_for = { ESTATE = peasants } }
+		estate_type:dhimmi_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = dhimmi } }
+		estate_type:tribes_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = tribes } }
+		estate_type:cossacks_estate = { mnt_wealth_set_power_modifiers_for = { ESTATE = cossacks } }
+	}
+}
+
+# Scope: location. Called by mnt_wealth_survey_estate_data through whichever estate
+# iterator it was given.
+# Works out one estate's raw power here and files it: strip the modifiers the
+# engine mixed in, add the slaves it left out, then store the result.
+
+mnt_wealth_survey_one_estate = {
+	mnt_wealth_set_estate_power_without_modifiers = yes
+	mnt_wealth_add_slave_pop_power = yes
+	mnt_wealth_store_estate_survey_results = yes
+}
+
+# Scope: location. Divides the power modifiers back out of the engine's estate
+# power, leaving pop count times base weight.
+
+mnt_wealth_set_estate_power_without_modifiers = {
+	set_local_variable = {
+		name = mnt_wealth_raw_power_for_one_estate
+		value = "local_estate_power(local_var:mnt_wealth_estate_key)"
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_raw_power_for_one_estate > 0 }
+		mnt_wealth_set_estate_power_modifiers = yes
+		# Floored at 0.1 so modifiers totalling -100% or worse still leave a
+		# deflator to divide by.
+		set_local_variable = {
+			name = mnt_wealth_deflator_for_one_estate
+			value = {
+				value = 1
+				add = owner.modifier:global_estate_power
+				add = local_var:mnt_wealth_local_power_modifier
+				add = local_var:mnt_wealth_global_power_modifier
+				min = 0.1
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_raw_power_for_one_estate
+			value = { value = local_var:mnt_wealth_raw_power_for_one_estate divide = local_var:mnt_wealth_deflator_for_one_estate }
+		}
+	}
+}
+
+# Scope: location. Slaves carry no political power, so the engine's figure
+# leaves them out. Adds their heads back at this estate's power per pop.
+
+mnt_wealth_add_slave_pop_power = {
+	if = {
+		limit = {
+			local_var:mnt_wealth_location_has_slaves = 1
+			is_key_in_local_variable_map = { name = mnt_wealth_estate_slave_counts target = local_var:mnt_wealth_estate_key }
+		}
+		set_local_variable = {
+			name = mnt_wealth_power_per_pop
+			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_estate_key)"
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_raw_power_for_one_estate
+			value = {
+				value = local_var:mnt_wealth_raw_power_for_one_estate
+				add = {
+					value = "local_variable_map(mnt_wealth_estate_slave_counts|local_var:mnt_wealth_estate_key)"
+					multiply = local_var:mnt_wealth_power_per_pop
+				}
+			}
+		}
+	}
+}
+
+# Scope: location. Writes one estate's full survey results: cached relative
+# power, raw power, investment level (if new), base desired wealth, and
+# desired wealth. Called once per estate by mnt_wealth_survey_one_estate.
+
+mnt_wealth_store_estate_survey_results = {
+	set_local_variable = {
+		name = mnt_wealth_estate_relative_power
+		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
+	}
+
+	# Raw power and relative power can each exist without the other: an estate
+	# made entirely of slaves has raw power and no relative power. Either one
+	# makes the estate part of the survey.
+	if = {
+		limit = { OR = { local_var:mnt_wealth_estate_relative_power > 0 local_var:mnt_wealth_raw_power_for_one_estate > 0 } }
+
+		add_to_variable_map = {
+			name = mnt_wealth_cached_local_relative_estate_power
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_estate_relative_power
+		}
+
+		add_to_variable_map = {
+			name = mnt_wealth_raw_power
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_raw_power_for_one_estate
+		}
+
+		# An estate arriving at this location for the first time starts unlevelled.
+		if = {
+			limit = {
+				NOT = { is_key_in_variable_map = { name = mnt_wealth_investment_level target = local_var:mnt_wealth_estate_key } }
+			}
+			add_to_variable_map = {
+				name = mnt_wealth_investment_level
+				key = local_var:mnt_wealth_estate_key
+				value = 0
+			}
+		}
+
+		mnt_wealth_set_base_desired_wealth = yes
+		# Maintains mnt_wealth_desired_total itself.
+		mnt_wealth_set_desired_wealth = yes
+	}
+}
+
+# ── SURVEY ENTRY POINTS ──
+
+# Scope: location. Full GDP survey: recomputes goods value and estate
+# percentages. Runs once per rotation via the load balancer.
+
+mnt_wealth_survey_location = {
+	mnt_wealth_update_local_gdp = yes
+	mnt_wealth_resurvey_estate_data = yes
+}
+
+# Scope: location. Fills in survey data only if it is missing. Used
+# at game start so locations that already have data are not resurveyed.
+
+mnt_wealth_ensure_survey_data = {
+	if = { limit = { var:mnt_wealth_local_gdp = 0 } mnt_wealth_update_local_gdp = yes }
+
+	if = {
+		limit = {
+			NOT = {
+				has_variable_map = mnt_wealth_cached_local_relative_estate_power
+				has_variable_map = mnt_wealth_raw_power
+				has_variable_map = mnt_wealth_expected_wealth
+			}
+		}
+		mnt_wealth_survey_estate_data = { ITERATOR = mnt_wealth_for_all_estate_types }
+	}
+}
+
+# Scope: location. Recomputes this location's GDP from the goods it
+# produces, and keeps the owner's national GDP total correct by removing
+# the old value before the recompute and adding the new value after.
+
+mnt_wealth_update_local_gdp = {
+	save_scope_as = mnt_wealth_gdp_location
+	mnt_wealth_remove_local_gdp_from_national_total = yes
+	mnt_wealth_clear_found_goods = yes
+	mnt_wealth_add_raw_material_good = yes
+	every_buildings_in_location         = { mnt_wealth_check_building = yes }
+	every_foreign_buildings_in_location = { mnt_wealth_check_building = yes }
+	mnt_wealth_set_goods_list = yes
+	mnt_wealth_calculate_local_gdp = yes
+	mnt_wealth_add_local_gdp_to_national_total = yes
+}
+
+# ── ESTATE POWER RESURVEY ──
+
+# Scope: location. Rebuilds all survey data for this location and keeps the
+# owner's national raw power map correct: subtract the old power, run a
+# full survey, then add the new power back.
+
+mnt_wealth_resurvey_estate_data = {
+	if = {
+		limit = { exists = owner }
+		owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
+		mnt_wealth_apply_national_estate_raw_power = { SIGN = -1 }
+	}
+
+	mnt_wealth_survey_estate_data = { ITERATOR = mnt_wealth_for_each_national_estate }
+
+	if = {
+		limit = { exists = owner }
+		owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
+		mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
+	}
+}
+
+mnt_wealth_check_building = {
+	building_type ?= { save_temporary_scope_as = mnt_wealth_current_building_type }
+	mnt_wealth_classify_building_type = yes
+	mnt_wealth_collect_building_goods = yes
+}

@@ -1,0 +1,155 @@
+﻿# Script values the simulation itself reads. Everything the interface reads
+# lives in mnt_wealth_display_values.txt.
+
+# --- calendar ---
+
+# Months since the campaign start of April 1337. Every month number in the
+# system comes from here, so they all count from the same zero.
+
+mnt_wealth_months_since_campaign_start = {
+	value = current_year
+	subtract = 1337
+	multiply = 12
+	add = current_month
+	subtract = 4
+}
+
+# --- wage rate ---
+
+mnt_wealth_minimum_wage_rate = {
+	value = modifier:mnt_wealth_local_minimum_wage
+	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_minimum_wage }
+}
+
+# --- investment rate ---
+
+mnt_wealth_investment_rate_multiplier = {
+	value = 1
+	add = modifier:mnt_wealth_local_investment_rate_efficiency
+	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_investment_rate_efficiency }
+	min = 0.5
+}
+
+mnt_wealth_investment_rate = {
+	value = modifier:mnt_wealth_local_investment_rate
+	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_investment_rate }
+	multiply = mnt_wealth_investment_rate_multiplier
+}
+
+# --- investment multipliers ---
+
+# Scales the gold an estate invests into progress. 1 + efficiency, floored at 0
+# so it can never turn investment into loss. Higher efficiency builds faster.
+
+mnt_wealth_investment_efficiency_multiplier = {
+	value = 1
+	add = modifier:mnt_wealth_local_investment_efficiency
+	add = owner.modifier:mnt_wealth_global_investment_efficiency
+	min = 0
+}
+
+# Scales the upkeep an estate pays to hold its level. Follows the vanilla cost
+# efficiency convention: divide by 1 + efficiency, with the divisor floored at
+# 0.5 so a penalty can at most double the upkeep. Higher efficiency is cheaper.
+
+mnt_wealth_upkeep_efficiency_multiplier = {
+	value = 1
+
+	divide = {
+		value = 1
+		add = modifier:mnt_wealth_local_upkeep_efficiency
+		add = owner.modifier:mnt_wealth_global_upkeep_efficiency
+		min = 0.5
+	}
+}
+
+# Raises the monthly survival fraction to the 12th power by repeated squaring.
+
+mnt_wealth_decay_twelfth_power = {
+	value = local_var:mnt_wealth_decay
+	multiply = local_var:mnt_wealth_decay
+	save_temporary_value_as = mnt_wealth_decay_squared
+	value = scope:mnt_wealth_decay_squared
+	multiply = scope:mnt_wealth_decay_squared
+	save_temporary_value_as = mnt_wealth_decay_fourth
+	value = scope:mnt_wealth_decay_fourth
+	multiply = scope:mnt_wealth_decay_fourth
+	save_temporary_value_as = mnt_wealth_decay_eighth
+	value = scope:mnt_wealth_decay_eighth
+	multiply = scope:mnt_wealth_decay_fourth
+}
+
+# --- estate capital flow ---
+
+# Scope: location. Net gold between the estates and this location's pool, each
+# estate's national flow split by this location's share of its raw power.
+# Positive when the estates invest here, negative when they seize.
+
+mnt_wealth_estate_flow_total = {
+	value = 0
+	save_temporary_scope_as = mnt_wealth_flow_location
+
+	if = {
+		limit = {
+			exists = owner
+			owner = { has_variable_map = mnt_wealth_estate_flow has_variable_map = mnt_wealth_national_estate_raw_power }
+		}
+		owner = {
+			every_key_in_variable_map = {
+				variable = mnt_wealth_estate_flow
+				save_temporary_scope_as = mnt_wealth_flow_key
+
+				if = {
+					limit = {
+						scope:mnt_wealth_flow_location = {
+							has_variable_map = mnt_wealth_raw_power
+							is_key_in_variable_map = { name = mnt_wealth_raw_power target = scope:mnt_wealth_flow_key }
+						}
+						prev = {
+							is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:mnt_wealth_flow_key }
+							"variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_flow_key)" > 0
+						}
+					}
+					prev = {
+						add = {
+							value = "variable_map(mnt_wealth_estate_flow|scope:mnt_wealth_flow_key)"
+							multiply = "scope:mnt_wealth_flow_location.variable_map(mnt_wealth_raw_power|scope:mnt_wealth_flow_key)"
+							divide = "variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_flow_key)"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# --- per-location sums ---
+
+mnt_wealth_local_wealth_share_total = {
+	value = 0
+
+	every_key_in_variable_map = {
+		variable = mnt_wealth_local_wealth_share
+		save_temporary_scope_as = mnt_wealth_iter_key
+		prev = { add = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_iter_key)" }
+	}
+}
+
+# --- national sums ---
+
+mnt_wealth_owned_local_gdp_sum = {
+	value = 0
+	every_owned_location = { add = var:mnt_wealth_local_gdp }
+}
+
+# Fresh recount of one estate's raw power across all owned locations, used by
+# the national estate raw power audit. scope:mnt_wealth_audit_estate is the estate type.
+
+mnt_wealth_owned_raw_power_sum = {
+	value = 0
+
+	every_owned_location = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_raw_power target = scope:mnt_wealth_audit_estate } }
+		add = "variable_map(mnt_wealth_raw_power|scope:mnt_wealth_audit_estate)"
+	}
+}

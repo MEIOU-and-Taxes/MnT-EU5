@@ -1,0 +1,62 @@
+﻿
+namespace = mnt_wealth_orphan
+
+# Silence engine warnings for variables only read in loc or GUI.
+
+mnt_wealth_orphan.1 = {
+	type = country_event
+	title = empty_text
+	desc = empty_text
+	outcome = neutral
+	orphan = yes
+	trigger = { always = no }
+	option = { name = empty_text }
+
+	immediate = {
+		change_variable = { name = mnt_wealth_loot_amount multiply = 1 }
+		set_local_variable = { name = mnt_wealth_estate_key value = 0 }
+		change_local_variable = { name = mnt_wealth_estate_key multiply = 1 }
+		set_local_variable = { name = mnt_wealth_savings_key value = 0 }
+		change_local_variable = { name = mnt_wealth_savings_key multiply = 1 }
+		set_local_variable = { name = mnt_wealth_expectation_key value = 0 }
+		change_local_variable = { name = mnt_wealth_expectation_key multiply = 1 }
+		set_local_variable = { name = mnt_wealth_local_estate_wealth value = 0 }
+		change_local_variable = { name = mnt_wealth_local_estate_wealth multiply = 1 }
+
+		add_to_variable_map = {
+			name = mnt_wealth_investment_level
+			key = estate_type:nobles_estate
+			value = 0
+		}
+
+		change_variable = { name = mnt_wealth_investment_level multiply = 1 }
+
+		add_to_variable_map = {
+			name = mnt_wealth_local_wealth_share
+			key = estate_type:nobles_estate
+			value = 0
+		}
+
+		change_variable = { name = mnt_wealth_local_wealth_share multiply = 1 }
+		set_local_variable = { name = mnt_wealth_upkeep_key value = 0 }
+		change_local_variable = { name = mnt_wealth_upkeep_key multiply = 1 }
+
+		add_to_global_variable_map = {
+			name = mnt_wealth_estate_short_key
+			key = estate_type:nobles_estate
+			value = flag:nobles
+		}
+
+		if = {
+			limit = {
+				local_var:mnt_wealth_estate_key = flag:nobles
+				local_var:mnt_wealth_estate_key = flag:clergy
+				local_var:mnt_wealth_estate_key = flag:burghers
+				local_var:mnt_wealth_estate_key = flag:peasants
+				local_var:mnt_wealth_estate_key = flag:dhimmi
+				local_var:mnt_wealth_estate_key = flag:tribes
+				local_var:mnt_wealth_estate_key = flag:cossacks
+			}
+		}
+	}
+}

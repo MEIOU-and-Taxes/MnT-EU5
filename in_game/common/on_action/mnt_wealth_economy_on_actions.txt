@@ -1,0 +1,139 @@
+﻿# GDP and Wages: on_actions registered in mnt_wealth_hardcoded.txt.
+# Each handler hands off to named effects in the relevant system file.
+
+# Scope: none (first country to pulse). Fires once at game start after
+# the lobby, because estate data is unreliable during on_game_start.
+
+mnt_wealth_initialize_economy = {
+	effect = {
+		mnt_wealth_seed_economy_constants = yes
+		mnt_wealth_index_owned_locations = yes
+		mnt_wealth_initialize_countries = yes
+	}
+}
+
+# Scope: none (weather_monthly_pulse).
+
+mnt_wealth_weather_monthly_pulse = {
+	effect = {
+		mnt_wealth_maintain_building_produced_goods_cache = yes
+	}
+}
+
+# Per-country events fired on parallel threads.
+
+mnt_wealth_monthly_country_pulse = {
+	events = {
+		mnt_wealth_economy.10       # estate treasury flow valves
+		mnt_wealth_economy.21       # monthly location tick: wages, income, investment
+		mnt_wealth_economy.22       # yearly rates and GDP survey
+	}
+}
+
+# Scope: country (occupier). scope:target is the location taken.
+# The engine splits capture by fort: a location without one changes hands here,
+# a location with one through on_siege_won below. Both are looted the same way.
+
+mnt_wealth_on_location_occupied = {
+	effect = {
+		mnt_wealth_loot_captured_location = yes
+	}
+}
+
+# Scope: country (occupier). scope:target is the location taken.
+# A location with a fort changes hands here instead, once its siege ends.
+
+mnt_wealth_on_siege_won = {
+	effect = {
+		mnt_wealth_loot_captured_location = yes
+	}
+}
+
+# Scope: country (root = the newly formed country).
+
+mnt_wealth_on_new_country_formed = {
+	effect = {
+		mnt_wealth_initialize_country = yes
+	}
+}
+
+# Scope: country (root = the annexing country). scope:target is the country that
+# was annexed. Fires after the annexation, so its locations have already moved
+# their totals across.
+
+mnt_wealth_on_country_annexed = {
+	effect = {
+		scope:target ?= { mnt_wealth_clear_annexed_country = yes }
+	}
+}
+
+# Scope: country (root = the country that annexed its civil war rival).
+# scope:target is the annexed country. Maps reset at civil war resolution,
+# so the raw power totals are gone; rebuild recounts them from owned locations.
+
+mnt_wealth_on_country_civil_war_annexed = {
+	effect = {
+		scope:target ?= { mnt_wealth_clear_annexed_country = yes }
+		mnt_wealth_rebuild_national_estate_raw_power = yes
+	}
+}
+
+# Scope: country (root = the country that won its civil war). Winning resets
+# the winner's variable maps while its plain variables survive, so the raw
+# power totals kept during the war are gone; count them again from the
+# locations the winner holds now.
+
+mnt_wealth_on_civil_war_won = {
+	effect = {
+		mnt_wealth_rebuild_national_estate_raw_power = yes
+	}
+}
+
+# Scope: country (root = the country that lost its civil war to the rebels).
+# scope:winner is the rebel country. The rebel-won resolution never fires
+# on_civil_war_won, and its map reset lands after every hook, wiping even a
+# rebuild done here, so the winner also recounts one day later through
+# mnt_wealth_economy.31, once the reset is over.
+
+mnt_wealth_on_civil_war_lost = {
+	effect = {
+		scope:winner ?= {
+			mnt_wealth_rebuild_national_estate_raw_power = yes
+			trigger_event_silently = { id = mnt_wealth_economy.31 days = 1 }
+		}
+	}
+}
+
+# Scope: location. scope:winner is the new owner, scope:loser is the
+# old owner (either may not exist for colonization/decolonization).
+
+mnt_wealth_on_location_changed_owner = {
+	on_actions = { mnt_wealth_on_location_colonized mnt_wealth_on_location_decolonized }
+
+	effect = {
+		mnt_wealth_transfer_location_between_owners = yes
+	}
+
+	# Delayed one day because new countries have no estate data on their formation frame.
+	events = { delay = { days = 1 } mnt_wealth_economy.30 }
+}
+
+# Fires when a location gains its first owner (no scope:loser).
+
+mnt_wealth_on_location_colonized = {
+	trigger = { NOT = { exists = scope:loser } }
+
+	effect = {
+		mnt_wealth_index_location = yes
+	}
+}
+
+# Fires when a location loses its last owner (no scope:winner).
+
+mnt_wealth_on_location_decolonized = {
+	trigger = { NOT = { exists = scope:winner } }
+
+	effect = {
+		mnt_wealth_unindex_location = yes
+	}
+}
