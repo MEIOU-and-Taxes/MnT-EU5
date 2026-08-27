@@ -133,11 +133,13 @@ epbm_price_location_buildings = {
 
 			if = {
 				limit = { local_var:epbm_bldg_cost > 0 }
-				if = {
-					limit = { building_category = government_category }
-					change_variable = { name = epbm_loc_crown_cost add = local_var:epbm_bldg_cost }
+				location = {
+					if = {
+						limit = { prev = { building_category = government_category } }
+						change_variable = { name = epbm_loc_crown_cost add = local_var:epbm_bldg_cost }
+					}
+					else = { change_variable = { name = epbm_loc_shared_cost add = local_var:epbm_bldg_cost } }
 				}
-				else = { change_variable = { name = epbm_loc_shared_cost add = local_var:epbm_bldg_cost } }
 			}
 		}
 	}
@@ -187,11 +189,13 @@ epbm_calculate_estate_and_foreign = {
 
 		if = {
 			limit = { local_var:epbm_bldg_cost > 0 }
-			if = {
-				limit = { building_category = government_category }
-				change_variable = { name = epbm_foreign_crown_cost add = local_var:epbm_bldg_cost }
+			owner = {
+				if = {
+					limit = { prev = { building_category = government_category } }
+					change_variable = { name = epbm_foreign_crown_cost add = local_var:epbm_bldg_cost }
+				}
+				else = { change_variable = { name = epbm_foreign_shared_cost add = local_var:epbm_bldg_cost } }
 			}
-			else = { change_variable = { name = epbm_foreign_shared_cost add = local_var:epbm_bldg_cost } }
 		}
 	}
 }
