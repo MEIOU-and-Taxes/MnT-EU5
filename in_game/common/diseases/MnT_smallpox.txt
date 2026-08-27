@@ -38,6 +38,23 @@
 						continent = continent:oceania
 					}
 				}
+				#If the Great Pestilence is active, only spawn in Locations that were in contact with Old World diseases.
+				trigger_if = {
+					limit = {
+						situation:great_pestilence = {
+							situation_is_active = yes
+							situation_has_ended = no
+						}
+						#Endemic regions
+						OR = {
+							continent = continent:asia
+							continent = continent:europe
+							continent = continent:africa
+							continent = continent:oceania
+							has_variable = had_great_pestilence_in_location
+						}
+					}
+				}
 
 
 				#If we can't find an appropiate location we don't spawn
@@ -151,7 +168,19 @@
 
 	#event sent when the disease spreads to a country
 	on_spread_to_country = {
-		trigger_event_non_silently = diseases.1
+		if = {
+			limit = {
+				is_situation_active = situation:great_pestilence
+				capital = {
+					continent = continent:america
+				}
+				NOT = { has_variable = had_event_great_pestilence }
+			}
+			trigger_event_non_silently = great_pestilence.1
+		}
+		else = {
+			trigger_event_non_silently = diseases.1
+		}
 	}
 
 	#map color for the disease

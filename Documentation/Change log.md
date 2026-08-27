@@ -66,6 +66,8 @@ Date: 21/05/2026
 - Block tribal governments (tribes and steppe hordes) from settling their tribes
 - Tribal strongholds privilege now improves rural control instead of making it worse
 - AI now has better non-royal marriage logic so that dynasties don't die out nearly as often due to refusal to wed
+- Development now directly reduced by looting and sieges.
+- Development will now decay at low enough prosperity levels.
 
 ##### Diplomacy
 
@@ -568,3 +570,40 @@ Date: 21/05/2026
 # Mechanics
 - Don't let nations and estates build farming villages
   - There is a scripted system that handles that and should be the only thing handling it
+
+##### M&T v0.2.7
+
+### Great Pestilence reworked
+- Imaginary disease Great Pestilence is gone
+- Reworked the Great Pestilence Situation:
+  - Now tracks Smallpox, Influenza and Measles
+  - During the Great Pestilence Situation these diseases can start spawning in the new world
+  - First they can only spawn in Locations with top-overlord in the Old World, but everywhere any of the 3 diseases spread will become a valid location for its start
+  - Situation-linked events are all reworked to be working off these diseases instead of a 'Great Pestilence' disease
+  - Situation mapmode will display with stripes any locations that have already been affected
+  - At start 1 smallpox is release on the New World to have something happen for sure
+  - Situation otherwise functions pretty much the same
+
+### Fixes
+- Fix local RGO size modifier not being applied (we coded global but forgot local D: )
+
+##### M&T v0.2.8
+
+### Faster Universalis integrated
+- To be specific, the 24h tick versions, aka, 1 tick = 1 day now
+- Ported over performance Defines
+- Ported over map market optimizations (actually cache map markers)
+- Remove all Societies of Pops at game initialization (as they don't do anything atm)
+- NOT (yet) ported: character culling, region removal
+- All Credits for these changes should go the authors of Faster Universalis, with a specific mention to Conner, its lead developer
+
+##### M&T v0.2.9
+
+### Balance
+- Disable selling Works of Art to either other Nations or Estates
+  - Too exploitative for the player
+
+### Fixes
+- Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
+- Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
+- Fix errors on startup that about too many farming villages in Locations

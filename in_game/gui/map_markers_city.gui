@@ -1,0 +1,291 @@
+﻿@city_marker_icon_size = 20
+@city_marker_fort_icon_size = 16
+
+template MapMarkerFlags
+{
+	country_flag_small = {
+		name = "controller_flag_country_capital"
+		# size = { 24 16 }
+		tooltip_enabled = no
+		datacontext = "[CityMarker.GetLocation.GetController]"
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And(CityMarker.ShouldShowOccupationFlag, CityMarker.GetLocation.IsCapital)]"
+	}
+
+	country_flag_very_small = {
+		name = "controller_flag_province_capital"
+		# size = { 24 16 }
+		tooltip_enabled = no
+		datacontext = "[CityMarker.GetLocation.GetController]"
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And3(CityMarker.ShouldShowOccupationFlag, CityMarker.GetLocation.IsProvinceCapital, Not(CityMarker.GetLocation.IsCapital))]"
+	}
+
+	country_flag_mini = {
+		# size = { 24 16 }
+		tooltip_enabled = no
+		datacontext = "[CityMarker.GetLocation.GetController]"
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And3(CityMarker.ShouldShowOccupationFlag, Not(CityMarker.GetLocation.IsProvinceCapital), Not(CityMarker.GetLocation.IsCapital))]"
+	}
+
+	country_flag_small_plus = {
+		# size = { 24 16 }
+		tooltip_enabled = no
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And(GreaterThanOrEqualTo_int32(CityMarker.GetLocation.GetOwner.GetRank.GetLevelNumber, '(int32)4'), CityMarker.ShouldBeShownAsCapital)]"
+	}
+
+	country_flag_small = {
+		# size = { 24 16 }
+		tooltip_enabled = no
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And(EqualTo_int32(CityMarker.GetLocation.GetOwner.GetRank.GetLevelNumber, '(int32)3'), CityMarker.ShouldBeShownAsCapital)]"
+	}
+
+	country_flag_very_small = {
+		# size = { 24 16 }
+		tooltip_enabled = no
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And(EqualTo_int32(CityMarker.GetLocation.GetOwner.GetRank.GetLevelNumber, '(int32)2'), CityMarker.ShouldBeShownAsCapital)]"
+	}
+
+	country_flag_mini = {
+		size = { 24 16 }
+		tooltip_enabled = no
+
+		blockoverride "click" {
+			onclick = "[CityMarker.OnClick]"
+		}
+
+		blockoverride "double_click" {}
+		visible = "[And(LessThanOrEqualTo_int32(CityMarker.GetLocation.GetOwner.GetRank.GetLevelNumber, '(int32)1'), CityMarker.ShouldBeShownAsCapital)]"
+	}
+}
+
+types map_marker_city {
+	type marker_rank_icon = icon {
+		allow_outside = yes
+		size = "[CityMarker.GetRankSize]"
+		texture = "[CityMarker.GetLocation.GetRankIcon]"
+		datacontext = "[CityMarker.GetLocation]"
+		tooltipwidget = {
+			using = location_rank_tooltip
+		}
+
+		widgetanchor = center
+		parentanchor = center
+
+		flowcontainer = {
+			parentanchor = vcenter|left
+			widgetanchor = vcenter|right
+			ignoreinvisible = yes
+
+			datacontext = "[CityMarker.GetLocation.GetOwner]"
+
+			flowcontainer = {
+				visible = "[MapMarkerFlagsVisible]"
+				ignoreinvisible = yes
+
+				using = MapMarkerFlags
+			}
+		}
+
+		flowcontainer = {
+			parentanchor = vcenter|right
+			widgetanchor = vcenter|left
+			position = { 2 0 }
+			ignoreinvisible = yes
+
+			text_single = {
+				text = "[CityMarker.GetLocation.GetNameWithNoTooltip|U]"
+				snap_to_pixels = no
+				default_format = "#map_city_label_capital"
+				align = nobaseline
+
+				visible = "[CityMarker.ShouldBeShownAsCapital]"
+			}
+
+			text_single = {
+				text = "[CityMarker.GetLocation.GetNameWithNoTooltip|U]"
+				snap_to_pixels = no
+				default_format = "#map_city_label"
+				align = nobaseline
+
+				visible = "[CityMarker.ShouldBeShownAsCity]"
+			}
+		}
+	}
+
+	type location_rank_icon = widget {
+		block "icon_size" {
+			size =  { @city_marker_icon_size @city_marker_icon_size }
+		}
+		icon = {
+			parentanchor = center
+			visible = "[And(Location.GetRank.IsCity, Location.GetRank.IsMaxRank)]"
+			texture = "[Location.GetRankIcon]"
+			block "icon_size" {
+				size =  { @city_marker_icon_size @city_marker_icon_size }
+			}
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightProvince(Location.GetProvince)]"
+		}
+		icon = {
+			parentanchor = center
+			visible = "[And(Location.GetRank.IsCity, Not(Location.GetRank.IsMaxRank))]"
+			texture = "[Location.GetRankIcon]"
+			block "icon_size" {
+				size =  { @city_marker_icon_size @city_marker_icon_size }
+			}
+			scale = 0.8
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightProvince(Location.GetProvince)]"
+		}
+		icon = {
+			parentanchor = center
+			visible = "[Not(Location.GetRank.IsCity)]"
+			texture = "[Location.GetRankIcon]"
+			block "icon_size" {
+				size =  { @city_marker_icon_size @city_marker_icon_size }
+			}
+			scale = 0.7
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightProvince(Location.GetProvince)]"
+		}
+		tooltipwidget = {
+			using = location_rank_tooltip
+		}
+	}
+}
+
+### CITY
+
+widget = {
+	name = "city_marker"
+	allow_outside = yes
+
+	widget = {
+		parentanchor = center
+		allow_outside = yes
+
+		visible = "[CityMarker.ShowDetailsOrHasWarFort]"
+		size = { @city_marker_icon_size @city_marker_icon_size }
+
+		widget = {
+			parentanchor = left|vcenter
+			widgetanchor = right|vcenter
+
+			hbox = {
+				margin = { 0 0 }
+				minimumsize = { -1 @city_marker_icon_size }
+				set_parent_size_to_minimum = yes
+				visible = "[CityMarker.ShouldShowOccupationFlag]"
+				datacontext = "[CityMarker.GetLocation.GetController]"
+				country_flag_small = {
+					visible = "[MapMarkerFlagsVisible]"
+				}
+			}
+		}
+
+		widget = {
+			parentanchor = left|vcenter
+			widgetanchor = left|vcenter
+
+			background = { # FUM: simple_paper_card_texture with its colour tint baked in
+				visible = "[CityMarker.ShowDetails]"
+				texture = "gfx/interface/buttons/flats/fum_paper_card_bg_blue.dds"
+				texture_density = 2
+				spriteType = corneredstretched
+				spriteborder = { 100 100 }
+				alpha = 0.5
+				margin = { 0 -2 }
+				margin_right = 8
+				mirror = horizontal
+			}
+
+			hbox = {
+				minimumsize = { -1 @city_marker_icon_size }
+				set_parent_size_to_minimum = yes
+				ignoreinvisible = yes
+				spacing = 2
+
+				location_rank_icon = {
+					datacontext = "[CityMarker.GetLocation]"
+				}
+
+				hbox = {
+					tooltipwidget = {
+						ContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									texture = "[GetBuildingIcon(CityMarker.GetLocation.GetBestFortBuilding.GetType)]"
+									using = tooltip_title_icon_size
+								}
+							}
+							blockoverride "title_text" {
+									text = "FORT_LEVEL"
+							}
+							blockoverride "concept_link" {
+								text = "[fort|e]"
+							}
+							blockoverride "tooltip_content" {
+								TooltipStringPairList = {
+									textcontext = "[CityMarker.GetLocation.GetDescriptionFor('fort_level')]"
+								}
+							}
+						}
+					}
+
+					icon = {
+						alwaystransparent = no
+						onmousehierarchyenter = "[PdxGuiWidget.SetHighlightFort(CityMarker.GetLocation)]"
+						visible = "[And(CityMarker.GetLocation.HasAnyFort, CityMarker.IsFortSettingEnabled)]"
+						texture = "gfx/interface/icons/map_modes/fort_level_icon.dds"
+						size = { @city_marker_fort_icon_size @city_marker_fort_icon_size }
+					}
+				}
+
+				text_single = {
+					visible = "[CityMarker.ShowDetails]"
+					text = "[CityMarker.GetLocation.GetNameWithNoTooltip|U]"
+					snap_to_pixels = yes
+					fontsize = 12
+					align = nobaseline
+					default_format = "#map_city_label"
+				}
+			}
+		}
+	}
+
+	marker_rank_icon = {
+		visible = "[CityMarker.GetRankVisible]"
+	}
+}
