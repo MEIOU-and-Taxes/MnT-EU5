@@ -55,6 +55,14 @@ REPLACE:cheap_food_in_location = {
 	#local_population_growth = 0.0015 #removed by M&T, price changed only based on stockpile, not helpful for long term
 }
 
+REPLACE:has_road = {
+	game_data = {
+		category = location
+	}
+	local_monthly_development_modifier = 0.1
+	local_construction_speed = 0.05
+}
+
 #multiplied with 1-control
 REPLACE:inverse_control = {
 	game_data = {
@@ -75,6 +83,19 @@ REPLACE:proximity_to_capital = {
 		category = location
 	}
 	local_max_control = 0.50  #M&T from 0.75
+}
+
+# Scales depending on how much over capacity
+REPLACE:overpopulation = {
+	game_data = {
+		category = location
+	}
+	#M&T Removed: cap_maximum_population_growth_at_zero = yes
+	local_population_growth = -0.005 #added by M&T, soft cap
+	local_pop_demotion_speed_modifier = 0.5
+	local_migration_attraction = -25.0
+	local_migration_speed = 0.15 # Pops migrate faster the more overpopulated the area is #M&T from 0.05
+	local_mercenaries_modifier = 0.5
 }
 
 REPLACE:total_population = {
@@ -236,58 +257,99 @@ REPLACE:river_flowing_through_1 = {
 	game_data = {
 		category = location
 	}
-	local_population_capacity_modifier = 0.10
-    #MnT_removed:  local_monthly_food_modifier = 0.05
+	local_population_capacity_modifier = 0.05 #M&T from 0.10
+	local_population_capacity = 2 #added by M&T
+	#MnT_removed:  local_monthly_food_modifier = 0.05
 	local_supply_limit_modifier = 0.05
 	local_monthly_development_modifier = 0.05
+}
+
+REPLACE:river_flowing_through_coast_1 = {
+	game_data = {
+		category = location
+	}
+	natural_harbor_suitability = 0.05
 }
 
 REPLACE:river_flowing_through_2 = {
 	game_data = {
 		category = location
 	}
-	local_population_capacity_modifier = 0.20
-    #MnT_removed:  local_monthly_food_modifier = 0.10
+	local_population_capacity_modifier = 0.1 #M&T from 0.20
+	local_population_capacity = 4 #added by M&T
+	MnT_removed:  local_monthly_food_modifier = 0.10
 	local_supply_limit_modifier = 0.10
 	local_monthly_development_modifier = 0.10
+}
+
+REPLACE:river_flowing_through_coast_2 = {
+	game_data = {
+		category = location
+	}
+	natural_harbor_suitability = 0.10
 }
 
 REPLACE:river_flowing_through_3 = {
 	game_data = {
 		category = location
 	}
-	local_population_capacity_modifier = 0.30
-    #MnT_removed:  local_monthly_food_modifier = 0.15
+	local_population_capacity_modifier = 0.15 #M&T from 0.30
+	local_population_capacity = 6 #added by M&T
+	MnT_removed:  local_monthly_food_modifier = 0.15
 	local_supply_limit_modifier = 0.15
 	local_monthly_development_modifier = 0.15
+}
+
+REPLACE:river_flowing_through_coast_3 = {
+	game_data = {
+		category = location
+	}
+	natural_harbor_suitability = 0.15
 }
 
 REPLACE:river_flowing_through_4 = {
 	game_data = {
 		category = location
 	}
-	local_population_capacity_modifier = 0.40
-    #MnT_removed:  local_monthly_food_modifier = 0.20
+	local_population_capacity_modifier = 0.20 #M&T from 0.40
+	local_population_capacity = 8 #added by M&T
+	MnT_removed:  local_monthly_food_modifier = 0.20
 	local_supply_limit_modifier = 0.20
 	local_monthly_development_modifier = 0.20
+}
+
+REPLACE:river_flowing_through_coast_4 = {
+	game_data = {
+		category = location
+	}
+	natural_harbor_suitability = 0.20
 }
 
 REPLACE:river_flowing_through_5 = {
 	game_data = {
 		category = location
 	}
-	local_population_capacity_modifier = 0.50
-    #MnT_removed:  local_monthly_food_modifier = 0.25
+	local_population_capacity_modifier = 0.25 #M&T from 0.30
+	local_population_capacity = 10 #added by M&T
+	MnT_removed:  local_monthly_food_modifier = 0.25
 	local_supply_limit_modifier = 0.25
 	local_monthly_development_modifier = 0.25
+}
+
+REPLACE:river_flowing_through_coast_5 = {
+	game_data = {
+		category = location
+	}
+	natural_harbor_suitability = 0.25
 }
 
 REPLACE:coastal = {
 	game_data = {
 		category = location
 	}
-	local_population_capacity_modifier = 0.25
-	#MnT removed: local_monthly_food_modifier = 0.05
+	local_population_capacity_modifier = 0.1 #M&T from 0.25
+	local_population_capacity = 4 #added by M&T
+	MnT_removed:  local_monthly_food_modifier = 0.05
 	local_supply_limit_modifier = 0.05
 	local_monthly_development_modifier = 0.10
 }
@@ -359,7 +421,7 @@ REPLACE:raised_levies = {
 	game_data = {
 		category = location
 	}
-	local_raw_material_output = -0.2
+	# local_raw_material_output = -0.2		# Would have only caused lower Max RGO sizes temporarily. M&T removed as penalty now in direct cost of levies
 	#MnT removed: local_monthly_food_modifier = -0.2
 }
 
@@ -628,7 +690,6 @@ REPLACE:jap_osaka_castle = {
 	local_defensive = 0.50
 	local_fort_maintenance_efficiency = 0.50
 	#MnT removed: local_monthly_food_modifier = 0.1
-}
 
 REPLACE:building_levels = {
 	game_data = {
@@ -636,31 +697,6 @@ REPLACE:building_levels = {
 	}
 	local_population_capacity_modifier = 0.001
 	local_trade_center_power = 0.0 #M&T removeed as factor, to swingy
-}
-
-REPLACE:winter_normal = {
-	game_data = {
-		category = location
-	}
-	local_army_attrition = 1
-	local_navy_attrition = 5
-	max_attrition = 2
-	#local_monthly_food_modifier = 0 M&T handled through climate
-	local_food_decay = 0.0025
-	local_construction_speed = -0.5
-}
-
-REPLACE:winter_severe = {
-	game_data = {
-		category = location
-	}
-	movement_cost = 0.25
-	local_army_attrition = 2
-	local_navy_attrition = 10
-	max_attrition = 4	
-	#local_monthly_food_modifier = 0 M&T through climate
-	constructions_stalled = yes
-	local_food_decay = 0.005
 }
 
 REPLACE:possible_promotion_percentage = {
@@ -672,12 +708,4 @@ REPLACE:possible_promotion_percentage = {
     #local_burghers_estate_power = -1 #M&T removed
     #local_nobles_estate_power = -1 #M&T removed
     #local_clergy_estate_power = -1 #M&T removed
-}
-
-REPLACE:raised_levies = {
-	game_data = {
-		category = location
-	}
-	# local_raw_material_output = -0.2		# Would have only caused lower Max RGO sizes temporarily. M&T removed as penalty now in direct cost of levies
-	local_monthly_food_modifier = -0.2
 }

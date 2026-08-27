@@ -195,6 +195,8 @@ Date: 21/05/2026
 - Tribesmen pops now have same share of the tax base as peasants
 - Stop randomly spawning Eunuch children
 - Added tribes to the Steppe
+- Entire max population system reworked to be more climate related, and lower in general.
+- Population growth does not cease after max population is reached, but instead slowly tapers off with a soft cap.
 
 ##### Religion
 
@@ -601,4 +603,12 @@ Date: 21/05/2026
 - All Credits for these changes should go the authors of Faster Universalis, with a specific mention to Conner, its lead developer
 
 ##### M&T v0.2.9
+
+### Balance
+- Disable selling Works of Art to either other Nations or Estates
+  - Too exploitative for the player
+
+### Fixes
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
+- Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
+- Fix errors on startup that about too many farming villages in Locations
