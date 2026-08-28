@@ -68,6 +68,7 @@ Date: 21/05/2026
 - AI now has better non-royal marriage logic so that dynasties don't die out nearly as often due to refusal to wed
 - Development now directly reduced by looting and sieges.
 - Development will now decay at low enough prosperity levels.
+- Promotion rules changed, peasants unable to promote to nobles, many other classes able to promote 'upward'.
 
 ##### Diplomacy
 
@@ -193,6 +194,8 @@ Date: 21/05/2026
 - Tribesmen pops now have same share of the tax base as peasants
 - Stop randomly spawning Eunuch children
 - Added tribes to the Steppe
+- Entire max population system reworked to be more climate related, and lower in general.
+- Population growth does not cease after max population is reached, but instead slowly tapers off with a soft cap.
 
 ##### Religion
 
