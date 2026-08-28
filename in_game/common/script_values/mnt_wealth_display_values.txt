@@ -36,13 +36,15 @@ mnt_wealth_displayed_wealth_pool = {
 		subtract = scope:mnt_wealth_display_spend_rate
 		save_temporary_value_as = mnt_wealth_display_decay
 		value = scope:mnt_wealth_display_decay
-		pow = mnt_wealth_months_since_review
+		pow = mnt_wealth_projected_months
 		save_temporary_value_as = mnt_wealth_display_decay_n
 		# Monthly inflow: wages kept + national estate investment returned to the pool.
 		value = var:mnt_wealth_kept_income_total
 		add = mnt_wealth_estate_flow_total
 		save_temporary_value_as = mnt_wealth_display_income
-		value = var:mnt_wealth_pool
+		# The review-time pool, not the stored one: the yearly pass already ran the
+		# stored pool twelve months forward, so projecting from it counts a year twice.
+		value = mnt_wealth_review_pool_anchor
 		add = scope:mnt_wealth_display_income
 		save_temporary_value_as = mnt_wealth_display_pool_plus_income
 		value = scope:mnt_wealth_display_pool_plus_income
@@ -54,6 +56,8 @@ mnt_wealth_displayed_wealth_pool = {
 			divide = scope:mnt_wealth_display_spend_rate
 		}
 	}
+
+	min = 0
 }
 
 mnt_wealth_local_wealth_total = {
@@ -210,8 +214,8 @@ mnt_wealth_equilibrium_estate_flow = {
 
 	if = {
 		limit = {
-			has_variable_map = mnt_wealth_raw_power
-			is_key_in_variable_map = { name = mnt_wealth_raw_power target = scope:mnt_wealth_estate }
+			has_variable_map = mnt_estate_raw_power
+			is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_estate }
 
 			owner ?= {
 				has_variable_map = mnt_wealth_estate_flow
@@ -224,7 +228,7 @@ mnt_wealth_equilibrium_estate_flow = {
 		owner = {
 			add = {
 				value = "variable_map(mnt_wealth_estate_flow|scope:mnt_wealth_estate)"
-				multiply = "scope:mnt_wealth_equilibrium_location.variable_map(mnt_wealth_raw_power|scope:mnt_wealth_estate)"
+				multiply = "scope:mnt_wealth_equilibrium_location.variable_map(mnt_estate_raw_power|scope:mnt_wealth_estate)"
 				divide = "variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_estate)"
 			}
 		}
@@ -307,6 +311,410 @@ mnt_wealth_investment_equilibrium_level = {
 			min = scope:mnt_wealth_equilibrium_floor_level
 		}
 	}
+}
+
+# --- projected investment level ---
+
+# mnt_wealth_set_ai_yearly_investment settles a whole year in one tick: it
+# leaves var:mnt_wealth_pool holding the pool twelve months from the review and
+# mnt_wealth_invested_wealth holding a year of credit. Both therefore run ahead
+# of the calendar, which is what made the window read thirteen months of
+# spending on the first month of a campaign.
+#
+# The pass is a geometric series, so it inverts. These values read the stored
+# state back to the review, replay only the months that have actually elapsed,
+# and write nothing.
+
+mnt_wealth_review_spend_rate = {
+	value = mnt_wealth_investment_rate
+	multiply = var:mnt_wealth_local_wealth_share_sum
+}
+
+mnt_wealth_review_decay = {
+	value = 1
+	subtract = mnt_wealth_review_spend_rate
+}
+
+mnt_wealth_review_decay_year = {
+	value = mnt_wealth_review_decay
+	pow = 12
+}
+
+# Months of spending a full year of the series is worth, always short of twelve
+# because each month spends from a pool the month before already drew down.
+
+mnt_wealth_review_effective_months = {
+	value = 0
+
+	if = {
+		limit = { mnt_wealth_review_spend_rate > 0 }
+		value = 1
+		subtract = mnt_wealth_review_decay_year
+		divide = mnt_wealth_review_spend_rate
+	}
+}
+
+mnt_wealth_projected_effective_months = {
+	value = 0
+
+	if = {
+		limit = { mnt_wealth_review_spend_rate > 0 }
+		value = mnt_wealth_review_decay
+		pow = mnt_wealth_projected_months
+		save_temporary_value_as = mnt_wealth_review_decay_n
+		value = 1
+		subtract = scope:mnt_wealth_review_decay_n
+		divide = mnt_wealth_review_spend_rate
+	}
+}
+
+# The stored pool with the settle's national payout taken back off.
+# mnt_wealth_apply_national_flow_to_location scales one month of estate flow by
+# var:mnt_wealth_investment_months and adds it to the pool after the series has
+# already run, so the stored pool is the series output plus a year of flow.
+
+mnt_wealth_review_pool_settled = {
+	value = var:mnt_wealth_pool
+	subtract = { value = mnt_wealth_estate_flow_total multiply = 12 }
+	# A seizure is clamped against the pool it draws from, so the settle can never
+	# have taken the pool under zero and neither can undoing it.
+	min = 0
+}
+
+# The pool as it stood at the review, undoing
+#   after = (before + income) x decay^12 + income x (decay - decay^12) / spend
+
+mnt_wealth_review_pool_before = {
+	value = var:mnt_wealth_pool
+
+	if = {
+		limit = {
+			mnt_wealth_review_spend_rate > 0
+			mnt_wealth_review_decay_year > 0
+		}
+		value = mnt_wealth_review_decay
+		subtract = mnt_wealth_review_decay_year
+		divide = mnt_wealth_review_spend_rate
+		multiply = var:mnt_wealth_kept_income_total
+		save_temporary_value_as = mnt_wealth_review_income_tail
+		value = mnt_wealth_review_pool_settled
+		subtract = scope:mnt_wealth_review_income_tail
+		divide = mnt_wealth_review_decay_year
+		subtract = var:mnt_wealth_kept_income_total
+	}
+
+	min = 0
+}
+
+# Where the replay starts. A location the yearly pass has never reached still
+# holds the pool setup gave it, so that one is already the review-time pool.
+
+mnt_wealth_review_pool_anchor = {
+	value = var:mnt_wealth_pool
+
+	if = {
+		limit = {
+			exists = owner
+			owner = { is_ai = yes }
+			has_variable_map = mnt_wealth_invested_wealth
+		}
+		value = mnt_wealth_review_pool_before
+	}
+}
+
+# Replays mnt_wealth_set_ai_yearly_investment for the months elapsed so far.
+# Runs in location scope and reads scope:mnt_wealth_estate.
+
+mnt_wealth_projected_months = {
+	value = mnt_wealth_months_since_review
+	min = 0
+	max = 12
+}
+
+mnt_wealth_projected_stored_level = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = scope:mnt_wealth_estate }
+		}
+		value = "variable_map(mnt_wealth_investment_level|scope:mnt_wealth_estate)"
+	}
+}
+
+# Income is the kept wage total alone, matching the pass; estate flow arrives
+# separately through the national payout.
+
+mnt_wealth_projected_investment_paid = {
+	value = 0
+
+	if = {
+		limit = {
+			mnt_wealth_projected_months > 0
+			var:mnt_wealth_local_wealth_share_sum > 0
+			mnt_wealth_investment_rate > 0
+		}
+		value = mnt_wealth_projected_effective_months
+		save_temporary_value_as = mnt_wealth_proj_effective_months
+		value = mnt_wealth_review_pool_anchor
+		add = var:mnt_wealth_kept_income_total
+		multiply = scope:mnt_wealth_proj_effective_months
+
+		add = {
+			value = var:mnt_wealth_kept_income_total
+			multiply = { value = mnt_wealth_projected_months subtract = scope:mnt_wealth_proj_effective_months }
+			divide = mnt_wealth_review_spend_rate
+		}
+
+		multiply = mnt_wealth_investment_rate
+	}
+}
+
+# The same series run out to a full year: what the last review actually banked.
+
+mnt_wealth_review_investment_paid = {
+	value = 0
+
+	if = {
+		limit = {
+			var:mnt_wealth_local_wealth_share_sum > 0
+			mnt_wealth_investment_rate > 0
+		}
+		value = mnt_wealth_review_effective_months
+		save_temporary_value_as = mnt_wealth_rev_effective_months
+		value = mnt_wealth_review_pool_anchor
+		add = var:mnt_wealth_kept_income_total
+		multiply = scope:mnt_wealth_rev_effective_months
+
+		add = {
+			value = var:mnt_wealth_kept_income_total
+			multiply = { value = 12 subtract = scope:mnt_wealth_rev_effective_months }
+			divide = mnt_wealth_review_spend_rate
+		}
+
+		multiply = mnt_wealth_investment_rate
+	}
+}
+
+# Mirrors mnt_wealth_compute_estate_upkeep, RATE = rate x months.
+
+mnt_wealth_projected_estate_upkeep = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_expected_wealth
+			is_key_in_variable_map = { name = mnt_wealth_expected_wealth target = scope:mnt_wealth_estate }
+		}
+		value = mnt_wealth_investment_rate
+		multiply = mnt_wealth_projected_months
+		save_temporary_value_as = mnt_wealth_proj_rate_total
+		value = "variable_map(mnt_wealth_expected_wealth|scope:mnt_wealth_estate)"
+		multiply = scope:mnt_wealth_proj_rate_total
+		save_temporary_value_as = mnt_wealth_proj_curve_upkeep
+		value = 0
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_base_desired_wealth target = scope:mnt_wealth_estate } }
+			value = "variable_map(mnt_wealth_base_desired_wealth|scope:mnt_wealth_estate)"
+			multiply = scope:mnt_wealth_proj_rate_total
+		}
+
+		add = {
+			value = mnt_wealth_projected_stored_level
+			multiply = mnt_wealth_upkeep_change_per_investment_level
+			multiply = mnt_wealth_projected_months
+		}
+
+		save_temporary_value_as = mnt_wealth_proj_upkeep_floor
+
+		if = {
+			limit = { mnt_wealth_projected_stored_level >= 0 }
+			value = scope:mnt_wealth_proj_curve_upkeep
+			min = scope:mnt_wealth_proj_upkeep_floor
+		}
+		else = {
+			value = scope:mnt_wealth_proj_curve_upkeep
+			max = scope:mnt_wealth_proj_upkeep_floor
+			min = 0
+		}
+	}
+}
+
+# An estate with no ownership share still owes upkeep, as the pass has it.
+
+mnt_wealth_projected_estate_progress = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_local_wealth_share
+			is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = scope:mnt_wealth_estate }
+		}
+		value = mnt_wealth_projected_investment_paid
+		multiply = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_estate)"
+	}
+
+	multiply = mnt_wealth_investment_efficiency_multiplier
+	subtract = { value = mnt_wealth_projected_estate_upkeep multiply = mnt_wealth_upkeep_efficiency_multiplier }
+}
+
+# A full year of upkeep: the twin of mnt_wealth_projected_estate_upkeep with
+# MONTHS = 12, matching the RATE and MONTHS the yearly pass hands the real one.
+
+mnt_wealth_review_estate_upkeep = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_expected_wealth
+			is_key_in_variable_map = { name = mnt_wealth_expected_wealth target = scope:mnt_wealth_estate }
+		}
+		value = mnt_wealth_investment_rate
+		multiply = 12
+		save_temporary_value_as = mnt_wealth_rev_rate_total
+		value = "variable_map(mnt_wealth_expected_wealth|scope:mnt_wealth_estate)"
+		multiply = scope:mnt_wealth_rev_rate_total
+		save_temporary_value_as = mnt_wealth_rev_curve_upkeep
+		value = 0
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_base_desired_wealth target = scope:mnt_wealth_estate } }
+			value = "variable_map(mnt_wealth_base_desired_wealth|scope:mnt_wealth_estate)"
+			multiply = scope:mnt_wealth_rev_rate_total
+		}
+
+		add = {
+			value = mnt_wealth_projected_stored_level
+			multiply = mnt_wealth_upkeep_change_per_investment_level
+			multiply = 12
+		}
+
+		save_temporary_value_as = mnt_wealth_rev_upkeep_floor
+
+		if = {
+			limit = { mnt_wealth_projected_stored_level >= 0 }
+			value = scope:mnt_wealth_rev_curve_upkeep
+			min = scope:mnt_wealth_rev_upkeep_floor
+		}
+		else = {
+			value = scope:mnt_wealth_rev_curve_upkeep
+			max = scope:mnt_wealth_rev_upkeep_floor
+			min = 0
+		}
+	}
+}
+
+# What the last review banked for this estate: the same arithmetic
+# mnt_wealth_set_estate_investment_progress ran, read back out of the stored state.
+
+mnt_wealth_review_estate_credit = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_local_wealth_share
+			is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = scope:mnt_wealth_estate }
+		}
+		value = mnt_wealth_review_investment_paid
+		multiply = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_estate)"
+	}
+
+	multiply = mnt_wealth_investment_efficiency_multiplier
+	subtract = { value = mnt_wealth_review_estate_upkeep multiply = mnt_wealth_upkeep_efficiency_multiplier }
+}
+
+# Invested wealth as of this month rather than as of the end of the review year.
+# The stored figure already holds the whole year the pass banked, so that year
+# comes back off and only the months that have actually elapsed go back on.
+# A location the yearly pass has never reached has nothing banked and so has
+# nothing to take off.
+
+mnt_wealth_projected_invested_wealth = {
+	value = 0
+
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_invested_wealth
+			is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = scope:mnt_wealth_estate }
+		}
+		value = "variable_map(mnt_wealth_invested_wealth|scope:mnt_wealth_estate)"
+
+		if = {
+			limit = {
+				exists = owner
+				owner = { is_ai = yes }
+			}
+			subtract = mnt_wealth_review_estate_credit
+		}
+	}
+
+	# Progress the monthly loop has banked but the yearly review has not settled.
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_invested_since_review
+			is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = scope:mnt_wealth_estate }
+		}
+		add = "variable_map(mnt_wealth_invested_since_review|scope:mnt_wealth_estate)"
+	}
+
+	add = mnt_wealth_projected_estate_progress
+}
+
+# Human locations tick monthly, so their stored level is already current.
+
+mnt_wealth_projected_investment_level = {
+	value = mnt_wealth_projected_stored_level
+
+	if = {
+		limit = {
+			exists = owner
+			owner = { is_ai = yes }
+			var:mnt_wealth_local_wealth_share_sum > 0
+			mnt_wealth_investment_rate > 0
+			has_variable_map = mnt_wealth_investment_level
+			is_key_in_variable_map = { name = mnt_wealth_investment_level target = scope:mnt_wealth_estate }
+		}
+		value = mnt_wealth_projected_invested_wealth
+		save_temporary_value_as = mnt_wealth_proj_signed
+		value = 1
+		if = { limit = { scope:mnt_wealth_proj_signed < 0 } value = -1 }
+		save_temporary_value_as = mnt_wealth_proj_sign
+		value = scope:mnt_wealth_proj_signed
+		multiply = scope:mnt_wealth_proj_sign
+		save_temporary_value_as = mnt_wealth_proj_magnitude
+		value = scope:mnt_wealth_proj_magnitude
+		divide = mnt_wealth_investment_level_cost_base
+		pow = 0.5
+		floor = yes
+		min = 0
+		save_temporary_value_as = mnt_wealth_proj_whole
+		value = scope:mnt_wealth_proj_whole
+		multiply = scope:mnt_wealth_proj_whole
+		multiply = mnt_wealth_investment_level_cost_base
+		save_temporary_value_as = mnt_wealth_proj_reached
+		value = scope:mnt_wealth_proj_whole
+		add = 1
+		save_temporary_value_as = mnt_wealth_proj_next_whole
+		value = scope:mnt_wealth_proj_next_whole
+		multiply = scope:mnt_wealth_proj_next_whole
+		multiply = mnt_wealth_investment_level_cost_base
+		subtract = scope:mnt_wealth_proj_reached
+		save_temporary_value_as = mnt_wealth_proj_level_cost
+		value = scope:mnt_wealth_proj_magnitude
+		subtract = scope:mnt_wealth_proj_reached
+		divide = scope:mnt_wealth_proj_level_cost
+		add = scope:mnt_wealth_proj_whole
+		multiply = scope:mnt_wealth_proj_sign
+	}
+}
+
+# Entry point for the interface; location and estate come in as named scopes.
+
+mnt_wealth_displayed_investment_level = {
+	value = 0
+	scope:mnt_wealth_location = { add = mnt_wealth_projected_investment_level }
 }
 
 # --- per-estate investment levels (for map modes) ---

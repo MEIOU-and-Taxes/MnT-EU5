@@ -319,9 +319,17 @@ mnt_wealth_set_base_desired_wealth = {
 # floored at the estate's share of local GDP.
 
 mnt_wealth_compute_base_desired_wealth = {
-	set_local_variable = {
-		name = mnt_wealth_raw_power_value
-		value = "variable_map(mnt_wealth_raw_power|local_var:mnt_wealth_estate_key)"
+	# The map only lists estates holding pops, so an estate with relative power
+	# and none of its own is absent rather than zero.
+	set_local_variable = { name = mnt_wealth_raw_power_value value = 0 }
+	if = {
+		limit = {
+			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
+		}
+		set_local_variable = {
+			name = mnt_wealth_raw_power_value
+			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
+		}
 	}
 	set_local_variable = {
 		name = mnt_wealth_power_per_pop

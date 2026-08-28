@@ -215,7 +215,7 @@ template mnt_wealth_estate_desired_wealth_tooltip {
 				mnt_wealth_formula_row = {
 					blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Estate Pops (Thousands)" }
 					blockoverride "row_value" {
-						raw_text = "[Divide_float(FixedPointToFloat(DCLocationMap('mnt_wealth_raw_power')), FixedPointToFloat(GetVariableFromGlobalVariableMap('mnt_wealth_power_per_pop', Estate.GetType.MakeScope).GetValue))|3]"
+						raw_text = "[FixedPointToFloat(DCLocationMap('mnt_estate_pops'))|3]"
 					}
 				}
 				mnt_wealth_formula_row = {
@@ -357,7 +357,7 @@ template mnt_wealth_estate_treasury_tooltip {
 						mnt_wealth_formula_row = {
 							blockoverride "row_attributes" {
 								tooltipwidget = { using = mnt_wealth_estate_treasury_row }
-								visible = "[GreaterThan_CFixedPoint(DCPowerPercentage(), '(CFixedPoint)0')]"
+								visible = "[DCEstateIsPresent()]"
 							}
 							blockoverride "row_icon" {
 								icon = {
@@ -1160,7 +1160,7 @@ template mnt_wealth_estate_investment_tooltip {
 				fontsize = 14
 				max_update_rate = 30
 				visible = "[GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)1')]"
-				raw_text = "#G #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+				raw_text = "#G #bold [DCProjectedWholeLevelInt()]#!"
 			}
 			text_single = {
 				parentanchor = center
@@ -1169,7 +1169,7 @@ template mnt_wealth_estate_investment_tooltip {
 				fontsize = 14
 				max_update_rate = 30
 				visible = "[LessThanOrEqualTo_float(DCInvestmentLevel(), '(float)-1')]"
-				raw_text = "#R #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+				raw_text = "#R #bold [DCProjectedWholeLevelInt()]#!"
 			}
 			text_single = {
 				parentanchor = center
@@ -1730,7 +1730,7 @@ types MnTWealthTypes
 					item = {
 						hbox = {
 							layoutpolicy_horizontal = expanding
-							visible = "[GreaterThan_CFixedPoint(DCPowerPercentage(), '(CFixedPoint)0')]"
+							visible = "[DCEstateIsPresent()]"
 							tooltipwidget = { using = mnt_wealth_estate_investment_tooltip }
 
 							widget = {
@@ -1795,7 +1795,7 @@ types MnTWealthTypes
 									fontsize = 12
 									fontsize_min = 6
 									visible = "[GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)1')]"
-									raw_text = "#G #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+									raw_text = "#G #bold [DCProjectedWholeLevelInt()]#!"
 								}
 								text_single = {
 									parentanchor = center
@@ -1803,7 +1803,7 @@ types MnTWealthTypes
 									fontsize = 12
 									fontsize_min = 6
 									visible = "[LessThanOrEqualTo_float(DCInvestmentLevel(), '(float)-1')]"
-									raw_text = "#R #bold [FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level')))]#!"
+									raw_text = "#R #bold [DCProjectedWholeLevelInt()]#!"
 								}
 								text_single = {
 									parentanchor = center

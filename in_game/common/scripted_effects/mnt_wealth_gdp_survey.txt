@@ -56,10 +56,12 @@ mnt_wealth_build_good_classification_map = {
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:jewelry value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lacquerware value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:leather value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:liquor value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:naval_supplies value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:paper value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:porcelain value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pottery value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:steel value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tools value = flag:urban }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:weaponry value = flag:urban }
 
@@ -93,6 +95,7 @@ mnt_wealth_build_good_classification_map = {
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lumber value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:maize value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:marble value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:masonry value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:medicaments value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:mercury value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:millet value = flag:rural }
@@ -107,8 +110,10 @@ mnt_wealth_build_good_classification_map = {
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:sand value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:silk value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:silver value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:slaves_goods value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:stone value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:sugar value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tar value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tea value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tin value = flag:rural }
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tobacco value = flag:rural }
@@ -242,55 +247,259 @@ mnt_wealth_collect_building_goods = {
 
 # ── ESTATE POWER ──
 
-# Scope: location. Counts slave pops per estate into mnt_wealth_estate_slave_counts.
-# Slaves have no political power, so the engine misses them;
-# mnt_wealth_add_slave_pop_power adds them back.
+# Scope: location. Counts every pop into the estate that actually holds it and
+# files the totals in mnt_estate_pops, with pops x power per pop in
+# mnt_estate_raw_power. Membership is per pop, not per
+# pop type: dhimmi and cossacks divert pops out of their usual estate.
 
-mnt_wealth_count_slave_pops_per_estate = {
-	clear_local_variable_map = mnt_wealth_estate_slave_counts
+mnt_wealth_count_estate_pops = {
+	mnt_wealth_clear_pop_counts = yes
+
+	# Count by type first. It needs no iteration and costs about a microsecond,
+	# and the totals give the check below something to test the engine against.
+	mnt_wealth_count_pops_by_type = yes
+
+	set_local_variable = { name = mnt_wealth_needs_pop_walk value = 0 }
+
+	# Total what was filed and compare it against the location's own population.
+	# Counting by type only knows the pop types listed above, so a shortfall means
+	# a pop reached no estate. The walk routes whatever it finds, so it cannot
+	# miss one the same way.
+	set_local_variable = { name = mnt_wealth_pops_total value = 0 }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_nobles }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_clergy }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_burghers }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_peasants }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_dhimmi }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_tribes }
+	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_cossacks }
+
+	set_local_variable = { name = mnt_wealth_pops_population value = population }
+	set_local_variable = { name = mnt_wealth_pops_unfiled value = local_var:mnt_wealth_pops_population }
+	change_local_variable = { name = mnt_wealth_pops_unfiled subtract = local_var:mnt_wealth_pops_total }
+
+	# Held for the log, since the walk below overwrites the live counters.
+	set_local_variable = { name = mnt_wealth_pops_bytype  value = local_var:mnt_wealth_pops_total }
+	set_local_variable = { name = mnt_wealth_pops_shortfall value = local_var:mnt_wealth_pops_unfiled }
+	# 0 by type, 1 unused (shortfall check disabled), 2 walked for dhimmi power,
+	# 3 tribesmen split, 4 slave split, 5 both splits.
+	set_local_variable = { name = mnt_wealth_pops_path value = 0 }
+
+	# DISABLED. A shortfall against the location's own population would mean a pop
+	# reached no estate, and the walk would pick it up. It never once fired across
+	# 335,337 surveys in testing, so it is off for a small runtime saving. Turn it
+	# back on if common/pop_types gains a type that mnt_wealth_count_pops_by_type
+	# does not list, which is the case it guards.
+	#
+	# It does NOT guard a dhimmi estate made only of slaves: counting by type puts
+	# those slaves in peasants, so the total still matches and nothing fires.
+	# mnt_wealth_count_pops_slave_split covers that, and does get hit.
+	#
+	# The population read and the total above are kept only because the log line
+	# reports them; drop them too if that logging goes.
+	#
+	#if = {
+	#	limit = { local_var:mnt_wealth_pops_unfiled > 0.001 }
+	#	set_local_variable = { name = mnt_wealth_needs_pop_walk value = 1 }
+	#	set_local_variable = { name = mnt_wealth_pops_path value = 1 }
+	#}
+
+	# Dhimmi can take a pop of any type, so its presence forces the full walk.
+	if = {
+		limit = { "local_estate_power(estate_type:dhimmi_estate)" > 0 }
+		set_local_variable = { name = mnt_wealth_needs_pop_walk value = 1 }
+		set_local_variable = { name = mnt_wealth_pops_path value = 2 }
+	}
 
 	if = {
-		limit = { owner = { country_has_estate = estate_type:dhimmi_estate } }
-		set_local_variable = { name = mnt_wealth_dhimmi_slave_count  value = 0 }
-		set_local_variable = { name = mnt_wealth_peasant_slave_count value = 0 }
+		limit = { local_var:mnt_wealth_needs_pop_walk = 1 }
+		# The by-type totals filed pops into estates that may not hold them.
+		mnt_wealth_clear_pop_counts = yes
+		mnt_wealth_count_pops_full = yes
+	}
+	else = {
+		# Slaves carry no power, so a dhimmi estate made only of them reads as
+		# absent above. Zero dhimmi power means no pop that carries power is
+		# dhimmi, which leaves the slaves as the only ones that can be hidden.
+		if = {
+			limit = {
+				local_var:mnt_wealth_pops_slaves > 0
+				owner = { country_has_estate = estate_type:dhimmi_estate }
+			}
+			mnt_wealth_count_pops_slave_split = yes
+			set_local_variable = { name = mnt_wealth_pops_path value = 4 }
+		}
 
-		every_pop = {
-			limit = { pop_type = pop_type:slaves }
+		if = {
+			limit = { "local_estate_power(estate_type:cossacks_estate)" > 0 }
+			mnt_wealth_count_pops_tribesmen_split = yes
 			if = {
-				limit = { is_dhimmi = yes }
-				change_local_variable = { name = mnt_wealth_dhimmi_slave_count add = pop_size }
+				limit = { local_var:mnt_wealth_pops_path = 4 }
+				set_local_variable = { name = mnt_wealth_pops_path value = 5 }
 			}
-			else_if = {
-				limit = { owner = { country_has_estate = estate_type:peasants_estate } }
-				change_local_variable = { name = mnt_wealth_peasant_slave_count add = pop_size }
-			}
-		}
-
-		if = {
-			limit = { local_var:mnt_wealth_dhimmi_slave_count > 0 }
-			add_to_local_variable_map = {
-				name = mnt_wealth_estate_slave_counts
-				key = estate_type:dhimmi_estate
-				value = local_var:mnt_wealth_dhimmi_slave_count
-			}
-		}
-
-		if = {
-			limit = { local_var:mnt_wealth_peasant_slave_count > 0 }
-			add_to_local_variable_map = {
-				name = mnt_wealth_estate_slave_counts
-				key = estate_type:peasants_estate
-				value = local_var:mnt_wealth_peasant_slave_count
-			}
+			else = { set_local_variable = { name = mnt_wealth_pops_path value = 3 } }
 		}
 	}
-	else_if = {
-		limit = { owner = { country_has_estate = estate_type:peasants_estate } }
-		add_to_local_variable_map = {
-			name = mnt_wealth_estate_slave_counts
-			key = estate_type:peasants_estate
-			value = num_pop_type:slaves
+
+	mnt_wealth_log_pop_counts = yes
+
+	mnt_wealth_store_estate_pops = { ESTATE = nobles }
+	mnt_wealth_store_estate_pops = { ESTATE = clergy }
+	mnt_wealth_store_estate_pops = { ESTATE = burghers }
+	mnt_wealth_store_estate_pops = { ESTATE = peasants }
+	mnt_wealth_store_estate_pops = { ESTATE = dhimmi }
+	mnt_wealth_store_estate_pops = { ESTATE = tribes }
+	mnt_wealth_store_estate_pops = { ESTATE = cossacks }
+}
+
+# Scope: location. Logs what each path counted against the location's own
+# population, so the spread between the two can be measured.
+# Columns: loc,population,bytype,shortfall,path,final,left,pw_dhimmi,pw_cossacks,
+# nobles,clergy,burghers,peasants,dhimmi,tribes,cossacks
+
+mnt_wealth_log_pop_counts = {
+	set_local_variable = { name = mnt_wealth_pops_loc value = -1 }
+	if = {
+		limit = { has_variable = mnt_wealth_location_id }
+		set_local_variable = { name = mnt_wealth_pops_loc value = var:mnt_wealth_location_id }
+	}
+
+	set_local_variable = { name = mnt_wealth_pops_final value = 0 }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_nobles }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_clergy }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_burghers }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_peasants }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_dhimmi }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_tribes }
+	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_cossacks }
+
+	set_local_variable = { name = mnt_wealth_pops_left value = local_var:mnt_wealth_pops_population }
+	change_local_variable = { name = mnt_wealth_pops_left subtract = local_var:mnt_wealth_pops_final }
+
+	set_local_variable = { name = mnt_wealth_pops_pw_dhimmi   value = "local_estate_power(estate_type:dhimmi_estate)" }
+	set_local_variable = { name = mnt_wealth_pops_pw_cossacks value = "local_estate_power(estate_type:cossacks_estate)" }
+
+	debug_log = "MNT_WEALTH-POPS,[SCOPE.GetLocalVariable('mnt_wealth_pops_loc').GetValue|0],[SCOPE.GetLocalVariable('mnt_wealth_pops_population').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_bytype').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_shortfall').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_path').GetValue|0],[SCOPE.GetLocalVariable('mnt_wealth_pops_final').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_left').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_pw_dhimmi').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_pw_cossacks').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_nobles').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_clergy').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_burghers').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_peasants').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_dhimmi').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_tribes').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_cossacks').GetValue|5]"
+}
+
+# Scope: location. Resets the per-estate pop counters.
+
+mnt_wealth_clear_pop_counts = {
+	set_local_variable = { name = mnt_wealth_pops_nobles value = 0 }
+	set_local_variable = { name = mnt_wealth_pops_clergy value = 0 }
+	set_local_variable = { name = mnt_wealth_pops_burghers value = 0 }
+	set_local_variable = { name = mnt_wealth_pops_peasants value = 0 }
+	set_local_variable = { name = mnt_wealth_pops_dhimmi value = 0 }
+	set_local_variable = { name = mnt_wealth_pops_tribes value = 0 }
+	set_local_variable = { name = mnt_wealth_pops_cossacks value = 0 }
+}
+
+# Scope: location. Files one estate's pops and raw power, skipping estates with
+# none so the maps list exactly the estates present here.
+
+mnt_wealth_store_estate_pops = {
+	if = {
+		limit = { local_var:mnt_wealth_pops_$ESTATE$ > 0 }
+		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
+		set_local_variable = {
+			name = mnt_wealth_pops_per_pop
+			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_pops_key)"
 		}
+		# add_to_variable_map takes a plain target, so the product is worked out first.
+		set_local_variable = {
+			name = mnt_wealth_pops_raw
+			value = {
+				value = local_var:mnt_wealth_pops_$ESTATE$
+				multiply = local_var:mnt_wealth_pops_per_pop
+			}
+		}
+
+		add_to_variable_map = {
+			name = mnt_estate_pops
+			key = local_var:mnt_wealth_pops_key
+			value = local_var:mnt_wealth_pops_$ESTATE$
+		}
+		add_to_variable_map = {
+			name = mnt_estate_raw_power
+			key = local_var:mnt_wealth_pops_key
+			value = local_var:mnt_wealth_pops_raw
+		}
+	}
+}
+
+# Scope: location. No estate can divert a pop, so pop type is estate.
+
+mnt_wealth_count_pops_by_type = {
+	set_local_variable = { name = mnt_wealth_pops_nobles   value = num_pop_type:nobles }
+	set_local_variable = { name = mnt_wealth_pops_clergy   value = num_pop_type:clergy }
+	set_local_variable = { name = mnt_wealth_pops_burghers value = num_pop_type:burghers }
+	set_local_variable = { name = mnt_wealth_pops_tribes   value = num_pop_type:tribesmen }
+	set_local_variable = { name = mnt_wealth_pops_slaves   value = num_pop_type:slaves }
+	set_local_variable = { name = mnt_wealth_pops_peasants value = num_pop_type:laborers }
+	change_local_variable = { name = mnt_wealth_pops_peasants add = num_pop_type:soldiers }
+	change_local_variable = { name = mnt_wealth_pops_peasants add = num_pop_type:peasants }
+	change_local_variable = { name = mnt_wealth_pops_peasants add = local_var:mnt_wealth_pops_slaves }
+}
+
+# Scope: location. Moves the dhimmi slaves out of peasants, where counting by
+# type put them. Only slaves are walked because only they can be hidden here.
+
+mnt_wealth_count_pops_slave_split = {
+	every_pop = {
+		limit = {
+			pop_type = pop_type:slaves
+			is_dhimmi = yes
+		}
+		change_local_variable = { name = mnt_wealth_pops_dhimmi   add = pop_size }
+		change_local_variable = { name = mnt_wealth_pops_peasants subtract = pop_size }
+	}
+}
+
+# Scope: location. Cossacks only take tribesmen, so only tribesmen are walked.
+
+mnt_wealth_count_pops_tribesmen_split = {
+	set_local_variable = { name = mnt_wealth_pops_tribes value = 0 }
+
+	every_pop = {
+		limit = { pop_type = pop_type:tribesmen }
+		if = {
+			limit = { is_cossacks = yes }
+			change_local_variable = { name = mnt_wealth_pops_cossacks add = pop_size }
+		}
+		else = { change_local_variable = { name = mnt_wealth_pops_tribes add = pop_size } }
+	}
+}
+
+# Scope: location. Full walk, in the order common/pop_types resolves: tribesmen
+# never reach dhimmi, and dhimmi outranks a pop's own estate for everything else.
+
+mnt_wealth_count_pops_full = {
+	every_pop = {
+		if = {
+			limit = { pop_type = pop_type:tribesmen }
+			if = {
+				limit = { is_cossacks = yes }
+				change_local_variable = { name = mnt_wealth_pops_cossacks add = pop_size }
+			}
+			else = { change_local_variable = { name = mnt_wealth_pops_tribes add = pop_size } }
+		}
+		else_if = {
+			limit = { is_dhimmi = yes }
+			change_local_variable = { name = mnt_wealth_pops_dhimmi add = pop_size }
+		}
+		else_if = {
+			limit = { pop_type = pop_type:nobles }
+			change_local_variable = { name = mnt_wealth_pops_nobles add = pop_size }
+		}
+		else_if = {
+			limit = { pop_type = pop_type:clergy }
+			change_local_variable = { name = mnt_wealth_pops_clergy add = pop_size }
+		}
+		else_if = {
+			limit = { pop_type = pop_type:burghers }
+			change_local_variable = { name = mnt_wealth_pops_burghers add = pop_size }
+		}
+		else = { change_local_variable = { name = mnt_wealth_pops_peasants add = pop_size } }
 	}
 }
 
@@ -304,24 +513,19 @@ mnt_wealth_count_slave_pops_per_estate = {
 
 mnt_wealth_survey_estate_data = {
 	save_temporary_scope_as = mnt_wealth_survey_location
-	clear_variable_map = mnt_wealth_raw_power
+	clear_variable_map = mnt_estate_pops
+	clear_variable_map = mnt_estate_raw_power
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
 	clear_variable_map = mnt_wealth_expected_wealth
 	set_variable = { name = mnt_wealth_desired_total value = 0 }
 
 	if = {
 		limit = { exists = owner }
-		set_local_variable = { name = mnt_wealth_location_has_slaves value = 0 }
+		mnt_wealth_count_estate_pops = yes
 
-		if = {
-			limit = { num_pop_type:slaves > 0 }
-			set_local_variable = { name = mnt_wealth_location_has_slaves value = 1 }
-			mnt_wealth_count_slave_pops_per_estate = yes
-		}
-
-		$ITERATOR$ = { EFFECT = mnt_wealth_survey_one_estate }
-		# Estates with a wealth share or slave-only presence can be missing from
-		# the owner's list. Pick up any the iterator did not reach.
+		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_survey_results }
+		# Estates holding a wealth share or pops can be missing from the owner's
+		# list. Pick up any the iterator did not reach.
 		every_key_in_variable_map = {
 			variable = mnt_wealth_local_wealth_share
 			save_temporary_scope_as = mnt_wealth_leftover_key
@@ -332,13 +536,13 @@ mnt_wealth_survey_estate_data = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_survey_one_estate = yes
+					mnt_wealth_store_estate_survey_results = yes
 				}
 			}
 		}
 
-		every_key_in_local_variable_map = {
-			variable = mnt_wealth_estate_slave_counts
+		every_key_in_variable_map = {
+			variable = mnt_estate_pops
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
 			scope:mnt_wealth_survey_location = {
@@ -347,112 +551,33 @@ mnt_wealth_survey_estate_data = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_survey_one_estate = yes
+					mnt_wealth_store_estate_survey_results = yes
 				}
 			}
 		}
 	}
 }
 
-# Scope: location. One estate's local and national estate power modifiers,
-# resolved from the estate key.
-
-mnt_wealth_set_power_modifiers_for = {
-	set_local_variable = { name = mnt_wealth_local_power_modifier  value = modifier:local_$ESTATE$_estate_power }
-	set_local_variable = { name = mnt_wealth_global_power_modifier value = owner.modifier:global_$ESTATE$_estate_power }
-}
-
-mnt_wealth_set_estate_power_modifiers = {
-	switch = {
-		trigger = local_var:mnt_wealth_estate_key
-		estate_type:nobles_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = nobles } }
-		estate_type:clergy_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = clergy } }
-		estate_type:burghers_estate = { mnt_wealth_set_power_modifiers_for = { ESTATE = burghers } }
-		estate_type:peasants_estate = { mnt_wealth_set_power_modifiers_for = { ESTATE = peasants } }
-		estate_type:dhimmi_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = dhimmi } }
-		estate_type:tribes_estate   = { mnt_wealth_set_power_modifiers_for = { ESTATE = tribes } }
-		estate_type:cossacks_estate = { mnt_wealth_set_power_modifiers_for = { ESTATE = cossacks } }
-	}
-}
-
-# Scope: location. Called by mnt_wealth_survey_estate_data through whichever estate
-# iterator it was given.
-# Works out one estate's raw power here and files it: strip the modifiers the
-# engine mixed in, add the slaves it left out, then store the result.
-
-mnt_wealth_survey_one_estate = {
-	mnt_wealth_set_estate_power_without_modifiers = yes
-	mnt_wealth_add_slave_pop_power = yes
-	mnt_wealth_store_estate_survey_results = yes
-}
-
-# Scope: location. Divides the power modifiers back out of the engine's estate
-# power, leaving pop count times base weight.
-
-mnt_wealth_set_estate_power_without_modifiers = {
-	set_local_variable = {
-		name = mnt_wealth_raw_power_for_one_estate
-		value = "local_estate_power(local_var:mnt_wealth_estate_key)"
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_raw_power_for_one_estate > 0 }
-		mnt_wealth_set_estate_power_modifiers = yes
-		# Floored at 0.1 so modifiers totalling -100% or worse still leave a
-		# deflator to divide by.
-		set_local_variable = {
-			name = mnt_wealth_deflator_for_one_estate
-			value = {
-				value = 1
-				add = owner.modifier:global_estate_power
-				add = local_var:mnt_wealth_local_power_modifier
-				add = local_var:mnt_wealth_global_power_modifier
-				min = 0.1
-			}
-		}
-
-		set_local_variable = {
-			name = mnt_wealth_raw_power_for_one_estate
-			value = { value = local_var:mnt_wealth_raw_power_for_one_estate divide = local_var:mnt_wealth_deflator_for_one_estate }
-		}
-	}
-}
-
-# Scope: location. Slaves carry no political power, so the engine's figure
-# leaves them out. Adds their heads back at this estate's power per pop.
-
-mnt_wealth_add_slave_pop_power = {
-	if = {
-		limit = {
-			local_var:mnt_wealth_location_has_slaves = 1
-			is_key_in_local_variable_map = { name = mnt_wealth_estate_slave_counts target = local_var:mnt_wealth_estate_key }
-		}
-		set_local_variable = {
-			name = mnt_wealth_power_per_pop
-			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_estate_key)"
-		}
-
-		set_local_variable = {
-			name = mnt_wealth_raw_power_for_one_estate
-			value = {
-				value = local_var:mnt_wealth_raw_power_for_one_estate
-				add = {
-					value = "local_variable_map(mnt_wealth_estate_slave_counts|local_var:mnt_wealth_estate_key)"
-					multiply = local_var:mnt_wealth_power_per_pop
-				}
-			}
-		}
-	}
-}
-
-# Scope: location. Writes one estate's full survey results: cached relative
-# power, raw power, investment level (if new), base desired wealth, and
-# desired wealth. Called once per estate by mnt_wealth_survey_one_estate.
+# Scope: location. Writes one estate's survey results: cached relative power,
+# investment level (if new), base desired wealth, and desired wealth. Raw power
+# is already in mnt_estate_raw_power; this only lifts it into the local that
+# mnt_wealth_set_base_desired_wealth reads.
 
 mnt_wealth_store_estate_survey_results = {
 	set_local_variable = {
 		name = mnt_wealth_estate_relative_power
 		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
+	}
+
+	set_local_variable = { name = mnt_wealth_raw_power_for_one_estate value = 0 }
+	if = {
+		limit = {
+			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
+		}
+		set_local_variable = {
+			name = mnt_wealth_raw_power_for_one_estate
+			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
+		}
 	}
 
 	# Raw power and relative power can each exist without the other: an estate
@@ -465,12 +590,6 @@ mnt_wealth_store_estate_survey_results = {
 			name = mnt_wealth_cached_local_relative_estate_power
 			key = local_var:mnt_wealth_estate_key
 			value = local_var:mnt_wealth_estate_relative_power
-		}
-
-		add_to_variable_map = {
-			name = mnt_wealth_raw_power
-			key = local_var:mnt_wealth_estate_key
-			value = local_var:mnt_wealth_raw_power_for_one_estate
 		}
 
 		# An estate arriving at this location for the first time starts unlevelled.
@@ -511,7 +630,7 @@ mnt_wealth_ensure_survey_data = {
 		limit = {
 			NOT = {
 				has_variable_map = mnt_wealth_cached_local_relative_estate_power
-				has_variable_map = mnt_wealth_raw_power
+				has_variable_map = mnt_estate_raw_power
 				has_variable_map = mnt_wealth_expected_wealth
 			}
 		}

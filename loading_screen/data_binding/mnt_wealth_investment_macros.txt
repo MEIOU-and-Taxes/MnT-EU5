@@ -87,15 +87,27 @@ macro = {
 }
 
 macro = {
-	description = "The estate's investment level as a float, read from the variable map"
-	definition = "DCInvestmentLevel()"
-	replace_with = "DCLocationMapFloat('mnt_wealth_investment_level')"
+	description = "The estate's investment level projected over the months since the last review. Runs in script because inverting the level curve needs a square root, so the location and estate are handed in as named scopes"
+	definition = "DCProjectedInvestmentLevelFixed()"
+	replace_with = "GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_investment_level')"
 }
 
 macro = {
-	description = "The whole investment level as a float: floor of the absolute level"
+	description = "The whole projected investment level as an int: the number shown on the ring"
+	definition = "DCProjectedWholeLevelInt()"
+	replace_with = "FixedPointToInt(Abs_CFixedPoint(DCProjectedInvestmentLevelFixed()))"
+}
+
+macro = {
+	description = "The estate's investment level as a float, projected forward from the stored level"
+	definition = "DCInvestmentLevel()"
+	replace_with = "FixedPointToFloat(DCProjectedInvestmentLevelFixed())"
+}
+
+macro = {
+	description = "The whole investment level as a float: floor of the absolute projected level"
 	definition = "DCWholeLevel()"
-	replace_with = "IntToFloat(FixedPointToInt(Abs_CFixedPoint(DCLocationMap('mnt_wealth_investment_level'))))"
+	replace_with = "IntToFloat(DCProjectedWholeLevelInt())"
 }
 
 macro = {
@@ -147,6 +159,12 @@ macro = {
 }
 
 macro = {
+	description = "True when the estate is in the location's survey: relative power or raw power, either one alone, matching mnt_wealth_store_estate_survey_results"
+	definition = "DCEstateIsPresent()"
+	replace_with = "Or(GreaterThan_CFixedPoint(DCPowerPercentage(), '(CFixedPoint)0'), GreaterThan_float(DCEstateRawPower(), '(float)0'))"
+}
+
+macro = {
 	description = "True when the estate is investing into its locations"
 	definition = "DCEstateIsInvesting()"
 	replace_with = "GreaterThan_float(DCEstateFlowTotal(), '(float)0')"
@@ -161,7 +179,7 @@ macro = {
 macro = {
 	description = "The estate's raw power in this location, as a float"
 	definition = "DCEstateRawPower()"
-	replace_with = "FixedPointToFloat(DCLocationMap('mnt_wealth_raw_power'))"
+	replace_with = "FixedPointToFloat(DCLocationMap('mnt_estate_raw_power'))"
 }
 
 macro = {

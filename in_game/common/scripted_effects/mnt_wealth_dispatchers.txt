@@ -164,9 +164,8 @@ mnt_wealth_zero_location = {
 # its goods and estate data, seeds ownership shares, fills the starting
 # pool, and sets initial wage rates.
 #
-# Estate data is actually still unreliable on_game_start and on_game_start_after_lobby but it's
-# tolerable and self correcting so I'm leaving it as is. We could rebuild after a day or a month
-# but it would be a few second long lag spike.
+# Estate data is unreliable during on_game_start but tolerable and
+# self-correcting, so no separate rebuild pass is needed.
 
 mnt_wealth_setup_location = {
 	mnt_wealth_ensure_survey_data = yes # GDP, Raw Power, Desired Wealth 
@@ -375,6 +374,10 @@ mnt_wealth_location_year = {
 		mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_national_estate_in_power_cache }
 	}
 
+	# A location in both the GDP chunk and the yearly chunk this month is surveyed
+	# twice, about 2% of surveys. Deduping on a month stamp was tried and reverted:
+	# the two sweeps land on different workers so the order is not fixed, and the
+	# resurvey has to run after the drift above regardless.
 	mnt_wealth_resurvey_estate_data = yes # rebuild raw power, relative power, desired wealth
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
 }
