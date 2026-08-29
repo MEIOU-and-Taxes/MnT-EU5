@@ -1,0 +1,70 @@
+﻿integrate_province = {
+	ability = mil
+	allow_multiple = yes
+	
+	potential = {
+		num_locations > 0 
+		not = {
+			has_advance = integrate_area_advance
+		}
+	}
+
+	allow = {
+	}
+	
+	select_trigger = {
+		looking_for_a = province
+		source = actor
+		target_flag = target
+		name = "integrate_province_select_province"
+		none_available_msg_key = "integrate_province_no_provinces"
+		column = {
+			data = name
+		}
+		column = {
+			data = integration
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = integrate_province interaction_target = target } }
+			any_location_in_province = {
+				integration_level = conquered
+			}
+		}
+		map_color = {
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+				factor = integration_progress
+			}
+		}
+	}
+
+	is_finished = {
+		scope:target = {
+			any_location_in_province = {
+				OR = {
+					integration_level = integrated
+					integration_level = core
+				}
+				count = all
+			}
+		}
+	}
+
+	province_modifier = {
+		local_integration_speed_modifier = 0.50 #changed by M&T
+	}
+
+	progress = {
+		scope:target = {
+			value = province_average_integration
+		}
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+}
