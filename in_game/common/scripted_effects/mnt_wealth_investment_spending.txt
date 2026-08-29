@@ -47,7 +47,7 @@ mnt_wealth_set_investment_progress_change = {
 # ── MONTHLY INVESTMENT ──
 
 # Scope: location. Called by mnt_wealth_location_month through
-# mnt_wealth_for_each_national_estate_in_power_cache.
+# mnt_wealth_for_each_cached_estate.
 # Takes one estate's share of the wealth pool, subtracts the upkeep needed
 # to maintain the current investment level, and adds the net result to the
 # since-review accumulator.
@@ -142,9 +142,9 @@ mnt_wealth_settle_investment_accumulators = {
 			has_variable = mnt_wealth_investment_paid_total
 			OR = { var:mnt_wealth_investment_paid_total != 0 var:mnt_wealth_investment_rate_total != 0 }
 		}
-		mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_set_estate_investment_progress }
+		# The two halves write different maps, so one walk covers both.
 		mnt_wealth_clear_arriving_wealth = yes
-		mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_apply_national_flow_to_location }
+		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_settle_estate_progress_and_flow }
 		mnt_wealth_apply_arriving_wealth = yes
 		set_variable = { name = mnt_wealth_investment_paid_total value = 0 }
 		set_variable = { name = mnt_wealth_investment_rate_total value = 0 }
@@ -152,8 +152,14 @@ mnt_wealth_settle_investment_accumulators = {
 	}
 }
 
-# Scope: location. Called by mnt_wealth_settle_investment_accumulators through
-# mnt_wealth_for_each_national_estate_in_power_cache.
+# Scope: location. One estate's yearly settlement: progress and national flow.
+
+mnt_wealth_settle_estate_progress_and_flow = {
+	mnt_wealth_set_estate_investment_progress = yes
+	mnt_wealth_apply_national_flow_to_location = yes
+}
+
+# Scope: location. Called by mnt_wealth_settle_estate_progress_and_flow.
 # Yearly equivalent of mnt_wealth_invest_estate_wealth: applies the full year's
 # paid total to one estate's investment progress.
 

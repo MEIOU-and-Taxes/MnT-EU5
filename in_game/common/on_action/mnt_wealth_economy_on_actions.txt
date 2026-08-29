@@ -16,13 +16,25 @@ mnt_wealth_initialize_economy = {
 
 mnt_wealth_weather_monthly_pulse = {
 	effect = {
+		mnt_wealth_log_weather_pulse_month = yes
 		mnt_wealth_maintain_building_produced_goods_cache = yes
 	}
 }
 
-# Per-country events fired on parallel threads.
+# Scope: country. Measured serial across countries, not parallel.
 
 mnt_wealth_monthly_country_pulse = {
+	# Index 0 fires once a month; the marker pairs with the weather pulse.
+	effect = {
+		if = {
+			limit = { has_variable = mnt_wealth_country_index }
+			if = {
+				limit = { var:mnt_wealth_country_index = 0 }
+				mnt_wealth_log_country_pulse_month = yes
+			}
+		}
+	}
+
 	events = {
 		mnt_wealth_economy.10       # estate treasury flow valves
 		mnt_wealth_economy.21       # monthly location tick: wages, income, investment

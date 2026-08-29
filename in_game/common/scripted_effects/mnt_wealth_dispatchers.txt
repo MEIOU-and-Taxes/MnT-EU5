@@ -290,6 +290,77 @@ mnt_wealth_for_each_national_estate_in_power_cache = {
 	}
 }
 
+# ── CACHED ESTATE SET ──
+# The power-cache iterator's estate list, held for the location it was built
+# for. Anything mutating mnt_wealth_cached_local_relative_estate_power mid-pass
+# must call invalidate.
+
+mnt_wealth_invalidate_estate_set = {
+	remove_local_variable = mnt_wealth_estate_set_loc
+}
+
+# Scope: location. Captures the estate set into a local list.
+
+mnt_wealth_build_estate_set = {
+	clear_local_variable_list = mnt_wealth_estate_set
+	save_temporary_scope_as = mnt_wealth_estate_set_location
+
+	owner = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				scope:mnt_wealth_estate_set_location ?= { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
+			}
+			estate_type = { save_temporary_scope_as = mnt_wealth_estate_set_key }
+
+			scope:mnt_wealth_estate_set_location = {
+				add_to_local_variable_list = { name = mnt_wealth_estate_set target = scope:mnt_wealth_estate_set_key }
+			}
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_estate_set_loc value = -1 }
+	if = {
+		limit = { has_variable = mnt_wealth_location_id }
+		set_local_variable = { name = mnt_wealth_estate_set_loc value = var:mnt_wealth_location_id }
+	}
+}
+
+# Scope: location. Replays the cached set, rebuilding it when the stamp is
+# missing or belongs to another location. An unindexed location stamps -1.
+
+mnt_wealth_for_each_cached_estate = {
+	set_local_variable = { name = mnt_wealth_estate_set_hit value = 0 }
+
+	if = {
+		limit = {
+			has_local_variable = mnt_wealth_estate_set_loc
+			has_variable = mnt_wealth_location_id
+		}
+		if = {
+			limit = { local_var:mnt_wealth_estate_set_loc = var:mnt_wealth_location_id }
+			set_local_variable = { name = mnt_wealth_estate_set_hit value = 1 }
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_estate_set_hit = 0 }
+		mnt_wealth_build_estate_set = yes
+	}
+
+	save_temporary_scope_as = mnt_wealth_cached_set_location
+
+	every_in_local_list = {
+		variable = mnt_wealth_estate_set
+		save_temporary_scope_as = mnt_wealth_cached_estate_key
+
+		scope:mnt_wealth_cached_set_location = {
+			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_cached_estate_key }
+			$EFFECT$ = yes
+		}
+	}
+}
+
 # ── LOCATION PASSES ──
 #
 # Human locations run the full estate loop every month. AI locations skip
@@ -331,13 +402,13 @@ mnt_wealth_location_month = {
 	# Each estate earns its share of local wages and collects any
 	# national payout the country is sending back. We only care about
 	# national estates with power, any other cached power is transient
-	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_estate_month }
+	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_estate_month }
 	# The gold each estate collected goes into the wealth pool and
 	# their ownership shares are updated to reflect the new totals.
 	mnt_wealth_apply_arriving_wealth = yes
 	set_local_variable = { name = mnt_wealth_pool_before_investment value = var:mnt_wealth_pool }
 	# Each estate spends its share of the pool on investment progress.
-	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_invest_estate_wealth }
+	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_invest_estate_wealth }
 
 	set_variable = {
 		name = mnt_wealth_pool
@@ -371,13 +442,13 @@ mnt_wealth_location_year = {
 	mnt_wealth_update_investment_levels = yes
 	# Wealth percentage slowly trends toward actual estate power so
 	# that changes in estate composition are reflected over time.
-	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_drift_local_wealth_share }
+	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_drift_local_wealth_share }
 	mnt_wealth_set_local_wealth_share_sum = yes
 	# AI locations need their wage totals recomputed here since
 	# they do not update them monthly.
 	if = {
 		limit = { owner ?= { is_ai = yes } }
-		mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_national_estate_in_power_cache }
+		mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_cached_estate }
 	}
 
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
@@ -402,7 +473,7 @@ mnt_wealth_location_year = {
 
 mnt_wealth_location_registry = {
 	mnt_wealth_registry_due = { CYCLE = mnt_wealth_gdp_cycle_months NAME = gdp }
-	mnt_wealth_registry_due = { CYCLE = 12                          NAME = year }
+	mnt_wealth_registry_due = { CYCLE = mnt_wealth_year_cycle_months NAME = year }
 
 	set_local_variable = { name = mnt_wealth_registry_ran value = 0 }
 
@@ -421,6 +492,7 @@ mnt_wealth_location_registry = {
 	if = {
 		limit = { local_var:mnt_wealth_registry_ran = 1 }
 		mnt_wealth_resurvey_estate_data = yes # raw power, relative power, desired wealth
+		mnt_wealth_invalidate_estate_set = yes
 	}
 
 	# These read the survey, so they follow it rather than sitting with the rest

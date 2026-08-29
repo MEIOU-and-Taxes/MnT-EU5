@@ -14,16 +14,18 @@
 #   location         - the global location index (mnt_wealth_location_index)
 #   human_location   - the human-owned location index (mnt_wealth_human_location_index)
 #   market           - the global market index (mnt_wealth_market_index)
-# CYCLE is how many months a full sweep takes; up to 512 countries work
-# each pass. EFFECT runs once per entry in the worker's assigned slice.
+# CYCLE is how many months a full sweep takes; up to @mnt_wealth_worker_cap
+# countries work each pass. EFFECT runs once per entry in the worker's slice.
 #
 # EFFECT must never rewrite the index it is sweeping.
+
+@mnt_wealth_worker_cap = 512
 
 mnt_wealth_load_balance_this_effect = {
 	mnt_wealth_load_balance_ensure_indices = { DATA_SET = $DATA_SET$ }
 
 	if = {
-		limit = { var:mnt_wealth_country_index < 512 }
+		limit = { var:mnt_wealth_country_index < @mnt_wealth_worker_cap }
 		mnt_wealth_load_balance_resolve_slice = { DATA_SET = $DATA_SET$ CYCLE = $CYCLE$ }
 
 		if = {
@@ -65,10 +67,10 @@ mnt_wealth_load_balance_resolve_slice = {
 		}
 	}
 
-	# Use at most the smaller of 512 and the country count.
+	# Use at most the smaller of the worker cap and the country count.
 	set_local_variable = {
 		name = mnt_wealth_load_balance_worker_count
-		value = { value = 512 max = global_var:mnt_wealth_country_count }
+		value = { value = @mnt_wealth_worker_cap max = global_var:mnt_wealth_country_count }
 	}
 
 	# Split this month's entries evenly across workers

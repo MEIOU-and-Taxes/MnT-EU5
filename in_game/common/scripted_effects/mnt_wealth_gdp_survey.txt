@@ -341,8 +341,6 @@ mnt_wealth_count_estate_pops = {
 		}
 	}
 
-	mnt_wealth_log_pop_counts = yes
-
 	mnt_wealth_store_estate_pops = { ESTATE = nobles }
 	mnt_wealth_store_estate_pops = { ESTATE = clergy }
 	mnt_wealth_store_estate_pops = { ESTATE = burghers }
@@ -350,36 +348,6 @@ mnt_wealth_count_estate_pops = {
 	mnt_wealth_store_estate_pops = { ESTATE = dhimmi }
 	mnt_wealth_store_estate_pops = { ESTATE = tribes }
 	mnt_wealth_store_estate_pops = { ESTATE = cossacks }
-}
-
-# Scope: location. Logs what each path counted against the location's own
-# population, so the spread between the two can be measured.
-# Columns: loc,population,bytype,shortfall,path,final,left,pw_dhimmi,pw_cossacks,
-# nobles,clergy,burghers,peasants,dhimmi,tribes,cossacks
-
-mnt_wealth_log_pop_counts = {
-	set_local_variable = { name = mnt_wealth_pops_loc value = -1 }
-	if = {
-		limit = { has_variable = mnt_wealth_location_id }
-		set_local_variable = { name = mnt_wealth_pops_loc value = var:mnt_wealth_location_id }
-	}
-
-	set_local_variable = { name = mnt_wealth_pops_final value = 0 }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_nobles }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_clergy }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_burghers }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_peasants }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_dhimmi }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_tribes }
-	change_local_variable = { name = mnt_wealth_pops_final add = local_var:mnt_wealth_pops_cossacks }
-
-	set_local_variable = { name = mnt_wealth_pops_left value = local_var:mnt_wealth_pops_population }
-	change_local_variable = { name = mnt_wealth_pops_left subtract = local_var:mnt_wealth_pops_final }
-
-	set_local_variable = { name = mnt_wealth_pops_pw_dhimmi   value = "local_estate_power(estate_type:dhimmi_estate)" }
-	set_local_variable = { name = mnt_wealth_pops_pw_cossacks value = "local_estate_power(estate_type:cossacks_estate)" }
-
-	debug_log = "MNT_WEALTH-POPS,[SCOPE.GetLocalVariable('mnt_wealth_pops_loc').GetValue|0],[SCOPE.GetLocalVariable('mnt_wealth_pops_population').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_bytype').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_shortfall').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_path').GetValue|0],[SCOPE.GetLocalVariable('mnt_wealth_pops_final').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_left').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_pw_dhimmi').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_pw_cossacks').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_nobles').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_clergy').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_burghers').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_peasants').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_dhimmi').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_tribes').GetValue|5],[SCOPE.GetLocalVariable('mnt_wealth_pops_cossacks').GetValue|5]"
 }
 
 # Scope: location. Resets the per-estate pop counters.
@@ -394,12 +362,16 @@ mnt_wealth_clear_pop_counts = {
 	set_local_variable = { name = mnt_wealth_pops_cossacks value = 0 }
 }
 
-# Scope: location. Files one estate's pops and raw power, skipping estates with
-# none so the maps list exactly the estates present here.
+# Scope: location. Files one estate's pops and raw power. Skips an estate with
+# no pops here, or one the owner does not hold, so the maps list only estates
+# that are both present in the location and part of the country.
 
 mnt_wealth_store_estate_pops = {
 	if = {
-		limit = { local_var:mnt_wealth_pops_$ESTATE$ > 0 }
+		limit = {
+			local_var:mnt_wealth_pops_$ESTATE$ > 0
+			owner = { country_has_estate = estate_type:$ESTATE$_estate }
+		}
 		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
 		set_local_variable = {
 			name = mnt_wealth_pops_per_pop

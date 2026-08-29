@@ -52,11 +52,17 @@ mnt_wealth_set_location_wages = {
 # One estate's wage income for this location, saved into mnt_wealth_kept_wages.
 
 mnt_wealth_set_estate_wage_balance = {
-	set_local_variable = {
-		name = mnt_wealth_kept_amount
-		value = {
-			value = var:mnt_wealth_local_wages
-			multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+	# No power entry is no claim on the wages.
+	set_local_variable = { name = mnt_wealth_kept_amount value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_kept_amount
+			value = {
+				value = var:mnt_wealth_local_wages
+				multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			}
 		}
 	}
 

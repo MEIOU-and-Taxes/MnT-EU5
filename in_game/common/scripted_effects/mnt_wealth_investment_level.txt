@@ -56,15 +56,20 @@ mnt_wealth_update_investment_levels = {
 
 	# The cached power maps are a year old and still list the estate that just
 	# left. Rebuild them before the redistribution below uses them.
-	if = { limit = { local_var:mnt_wealth_estate_departed = 1 } mnt_wealth_resurvey_estate_data = yes }
+	if = {
+		limit = { local_var:mnt_wealth_estate_departed = 1 }
+		mnt_wealth_resurvey_estate_data = yes
+		# Power cache was rewritten; the captured estate set is stale.
+		mnt_wealth_invalidate_estate_set = yes
+	}
 
 	if = {
 		limit = { OR = { local_var:mnt_wealth_freed_investment > 0 local_var:mnt_wealth_freed_local_wealth_share > 0 } }
-		mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_redistribute_to_estate }
+		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
 		mnt_wealth_set_local_wealth_share_sum = yes
 	}
 
-	mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_update_estate_investment_level }
+	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_update_estate_investment_level }
 }
 
 # Scope: location. Adapter: the estate iterators call by name with no parameters,
@@ -79,20 +84,28 @@ mnt_wealth_update_estate_investment_level = {
 
 mnt_wealth_run_estate_investment_update = {
 	mnt_wealth_add_progress_to_invested_wealth = yes
-	mnt_wealth_recompute_estate_investment = { ESTATE = $ESTATE$ }
+	# Level only; the registry's trailing resurvey rewrites desired wealth.
+	mnt_wealth_recompute_estate_investment_level = { ESTATE = $ESTATE$ }
 }
 
 # Scope: location. Rebuilds one estate's level, desired wealth, and modifier
 # from its current invested wealth, without crediting new progress.
 
 mnt_wealth_recompute_estate_investment = {
-	# Base desired wealth first: it is what the level is measured against.
+	mnt_wealth_recompute_estate_investment_level = { ESTATE = $ESTATE$ }
+	# No trailing resurvey here, so desired wealth must follow the new level.
 	mnt_wealth_set_estate_desired_tuning = { ESTATE = $ESTATE$ }
 	mnt_wealth_compute_base_desired_wealth = yes
+	mnt_wealth_set_desired_wealth = yes
+}
+
+# Scope: location. Reads the estate's lifetime pool and rewrites its level
+# and sized modifier. Cost curve is mnt_wealth_investment_level_cost_base.
+
+mnt_wealth_recompute_estate_investment_level = {
 	mnt_wealth_read_estate_investment_pool = yes
 	mnt_wealth_set_whole_investment_level = yes
 	mnt_wealth_set_fractional_investment_level = yes
-	mnt_wealth_set_desired_wealth = yes
 	mnt_wealth_refresh_estate_investment_modifier = { ESTATE = $ESTATE$ }
 }
 
@@ -162,20 +175,22 @@ mnt_wealth_set_fractional_investment_level = {
 	}
 }
 
-# Scope: location. Puts this estate's sized modifier back at its new level.
-# Both come off first, because a level that crossed zero has to lose the one
-# it used to carry.
+# Scope: location. Reapplies the sized modifier at the new level, clearing
+# the opposite sign's modifier so a zero-crossing drops the old one.
 
 mnt_wealth_refresh_estate_investment_modifier = {
 	set_local_variable = { name = mnt_wealth_current_level value = local_var:mnt_wealth_new_investment_level }
-	mnt_wealth_remove_estate_investment_modifiers = { ESTATE = $ESTATE$ }
 
+	# Only the other sign is cleared; clearing the current one would reset
+	# the applied-size variable that lets apply_sized_modifier skip no-ops.
 	if = {
 		limit = { local_var:mnt_wealth_current_level > 0 }
+		mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_neglect_$ESTATE$ }
 		mnt_wealth_apply_estate_investment_modifier = { ESTATE = $ESTATE$ }
 	}
 	else_if = {
 		limit = { local_var:mnt_wealth_current_level < 0 }
+		mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_investment_$ESTATE$ }
 
 		set_local_variable = {
 			name = mnt_wealth_neglect_size
@@ -183,6 +198,9 @@ mnt_wealth_refresh_estate_investment_modifier = {
 		}
 
 		mnt_wealth_apply_estate_neglect_modifier = { ESTATE = $ESTATE$ }
+	}
+	else = {
+		mnt_wealth_remove_estate_investment_modifiers = { ESTATE = $ESTATE$ }
 	}
 }
 
@@ -512,7 +530,7 @@ mnt_wealth_release_absent_estate = {
 }
 
 # Scope: location. Called by mnt_wealth_update_investment_levels through
-# mnt_wealth_for_each_national_estate_in_power_cache.
+# mnt_wealth_for_each_cached_estate.
 # Distributes the freed investment and wealth percentage from absent
 # estates to present estates in proportion to their power.
 

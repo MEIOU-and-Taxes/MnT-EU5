@@ -9,9 +9,14 @@
 # Scope: location. Seeds each estate's wealth percentage from its relative estate power.
 
 mnt_wealth_seed_local_wealth_share = {
-	set_local_variable = {
-		name = mnt_wealth_seed_percentage
-		value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+	set_local_variable = { name = mnt_wealth_seed_percentage value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_seed_percentage
+			value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+		}
 	}
 
 	add_to_variable_map = {
@@ -176,7 +181,7 @@ mnt_wealth_clear_arriving_wealth = {
 # ── WEALTH PERCENTAGE TREND ──
 
 # Scope: location. Called yearly by mnt_wealth_location_year through
-# mnt_wealth_for_each_national_estate_in_power_cache.
+# mnt_wealth_for_each_cached_estate.
 # Slowly moves each estate's wealth percentage toward its actual power
 # percentage, so changes in estate composition are reflected over time
 # rather than all at once.
@@ -193,12 +198,23 @@ mnt_wealth_drift_local_wealth_share = {
 		}
 	}
 
+	# No power entry is no power, so the share drifts toward zero.
+	set_local_variable = { name = mnt_wealth_target_percentage value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_target_percentage
+			value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
 	set_local_variable = {
 		name = mnt_wealth_drifted_percentage
 		value = {
 			value = local_var:mnt_wealth_current_percentage
 			add = {
-				value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+				value = local_var:mnt_wealth_target_percentage
 				subtract = local_var:mnt_wealth_current_percentage
 				multiply = mnt_wealth_local_wealth_share_trend_rate
 			}
