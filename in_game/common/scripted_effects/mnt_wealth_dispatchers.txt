@@ -89,7 +89,13 @@ mnt_wealth_seed_economy_constants = {
 mnt_wealth_index_owned_locations = {
 	every_ownable_location = {
 		mnt_wealth_zero_location = yes
-		if = { limit = { exists = owner } mnt_wealth_index_location = yes }
+		if = {
+			limit = {
+				exists = owner
+				NOT = { has_variable = mnt_wealth_location_id }
+			}
+			mnt_wealth_index_location = yes
+		}
 	}
 }
 
@@ -374,20 +380,74 @@ mnt_wealth_location_year = {
 		mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_national_estate_in_power_cache }
 	}
 
-	# A location in both the GDP chunk and the yearly chunk this month is surveyed
-	# twice, about 2% of surveys. Deduping on a month stamp was tried and reverted:
-	# the two sweeps land on different workers so the order is not fixed, and the
-	# resurvey has to run after the drift above regardless.
-	mnt_wealth_resurvey_estate_data = yes # rebuild raw power, relative power, desired wealth
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
+	# No resurvey here. mnt_wealth_location_registry runs one after every entry
+	# that came due, so a location due for this and the GDP refresh in the same
+	# month is surveyed once, after both.
 }
 
 # Scope: location (load balanced, all locations).
 # The wealth yearly tick, centers of importance scoring, and AI building
 # maintenance pricing share one balanced sweep of the location index.
 
-mnt_yearly_location_pass = {
-	mnt_wealth_location_year = yes
-	calc_location_center_scores = yes
-	epbm_price_location_buildings = yes
+# ── LOCATION REGISTRY ──
+# Runs once per location that came due this month. Every entry names its own
+# cycle; the sweep that calls this must run at the greatest common divisor of
+# them all, or entries on the other cycles are never reached. Cycles taken from
+# the divisors of 60 keep that divisor equal to the smallest cycle, which costs
+# no wasted visits.
+#
+# Entries run in the order written. The resurvey runs once, after all of them,
+# because each entry mutates state the survey has to read back.
+
+mnt_wealth_location_registry = {
+	mnt_wealth_registry_due = { CYCLE = mnt_wealth_gdp_cycle_months NAME = gdp }
+	mnt_wealth_registry_due = { CYCLE = 12                          NAME = year }
+
+	set_local_variable = { name = mnt_wealth_registry_ran value = 0 }
+
+	if = {
+		limit = { local_var:mnt_wealth_registry_due_gdp = 1 }
+		mnt_wealth_update_local_gdp = yes
+		set_local_variable = { name = mnt_wealth_registry_ran value = 1 }
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_registry_due_year = 1 }
+		mnt_wealth_location_year = yes
+		set_local_variable = { name = mnt_wealth_registry_ran value = 1 }
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_registry_ran = 1 }
+		mnt_wealth_resurvey_estate_data = yes # raw power, relative power, desired wealth
+	}
+
+	# These read the survey, so they follow it rather than sitting with the rest
+	# of the yearly work.
+	if = {
+		limit = { local_var:mnt_wealth_registry_due_year = 1 }
+		calc_location_center_scores = yes
+		epbm_price_location_buildings = yes
+	}
+}
+
+# Scope: location. Sets mnt_wealth_registry_due_$NAME$ when this location's slot
+# is the one CYCLE has come round to.
+
+mnt_wealth_registry_due = {
+	set_local_variable = {
+		name = mnt_wealth_registry_slot
+		value = { value = var:mnt_wealth_location_id modulo = $CYCLE$ }
+	}
+	set_local_variable = {
+		name = mnt_wealth_registry_month
+		value = { value = global_var:mnt_wealth_months_elapsed modulo = $CYCLE$ }
+	}
+
+	set_local_variable = { name = mnt_wealth_registry_due_$NAME$ value = 0 }
+	if = {
+		limit = { local_var:mnt_wealth_registry_slot = local_var:mnt_wealth_registry_month }
+		set_local_variable = { name = mnt_wealth_registry_due_$NAME$ value = 1 }
+	}
 }

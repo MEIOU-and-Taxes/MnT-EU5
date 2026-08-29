@@ -1,12 +1,207 @@
-﻿# An index is a dense array of scopes, keyed 0 upward. The load balancer
-# splits an index into monthly chunks divided evenly over CYCLE months, 
-# each split into even slices across worker countries, so one large country
-# never bottlenecks a pulse and a heavy effect can be spread over many months.
-# The location indices live here; any pre-built index with a count variable 
-# can use the load balancer through its own accessor.
+﻿# Load balancer: splits a DATA_SET index across CYCLE months and worker
+# countries. Callers name only a DATA_SET; the balancer builds and refreshes
+# the index on demand. A new index needs five names:
+#
+#   mnt_wealth_<DATA_SET>_index            - global variable map (key:int, value:scope)
+#   mnt_wealth_<DATA_SET>_count            - entry count
+#   mnt_wealth_<DATA_SET>_index_fresh      - expiring freshness flag
+#   mnt_wealth_<DATA_SET>_index_lifetime   - macro: days the freshness flag survives
+#   mnt_wealth_<DATA_SET>_index_accessor   - scripted effect: scopes to the cursor's entry
+#   mnt_wealth_create_<DATA_SET>_index     - scripted effect: rebuilds the whole index
+
+# ── MAIN DISPATCHER ──
+# DATA_SET selects which index to sweep. Legal values:
+#   location         - the global location index (mnt_wealth_location_index)
+#   human_location   - the human-owned location index (mnt_wealth_human_location_index)
+#   market           - the global market index (mnt_wealth_market_index)
+# CYCLE is how many months a full sweep takes; up to 512 countries work
+# each pass. EFFECT runs once per entry in the worker's assigned slice.
+#
+# EFFECT must never rewrite the index it is sweeping.
+
+mnt_wealth_load_balance_this_effect = {
+	mnt_wealth_load_balance_ensure_indices = { DATA_SET = $DATA_SET$ }
+
+	if = {
+		limit = { var:mnt_wealth_country_index < 512 }
+		mnt_wealth_load_balance_resolve_slice = { DATA_SET = $DATA_SET$ CYCLE = $CYCLE$ }
+
+		if = {
+			limit = { local_var:mnt_wealth_load_balance_remaining > 0 }
+			while = { # Stepping by CYCLE keeps the cursor on this month's remainder.
+				count = local_var:mnt_wealth_load_balance_remaining
+				mnt_wealth_$DATA_SET$_index_accessor = { EFFECT = $EFFECT$ }
+				change_local_variable = { name = mnt_wealth_load_balance_cursor add = $CYCLE$ }
+			}
+		}
+	}
+}
+
+# ── SLICE RESOLUTION ──
+# Remainder-based dispatch: work is done on entry i when i % CYCLE == month % CYCLE.
+# Cycles that are multiples of one another can be resolved by the same load balancer
+
+# Works out this worker's slice of this month's entries, saving values to
+# local_var:mnt_wealth_load_balance_remaining and local_var:mnt_wealth_load_balance_cursor 
+# so the main effect can properly split the work.
+
+mnt_wealth_load_balance_resolve_slice = {
+	set_local_variable = { name = mnt_wealth_index_size value = global_var:mnt_wealth_$DATA_SET$_count }
+
+	set_local_variable = {
+		name = mnt_wealth_load_balance_offset
+		value = { value = global_var:mnt_wealth_months_elapsed modulo = $CYCLE$ }
+	}
+
+	# How many entries this month handles
+	set_local_variable = {
+		name = mnt_wealth_load_balance_monthly_count
+		value = {
+			value = local_var:mnt_wealth_index_size
+			subtract = local_var:mnt_wealth_load_balance_offset
+			divide = $CYCLE$
+			ceiling = yes
+			min = 0
+		}
+	}
+
+	# Use at most the smaller of 512 and the country count.
+	set_local_variable = {
+		name = mnt_wealth_load_balance_worker_count
+		value = { value = 512 max = global_var:mnt_wealth_country_count }
+	}
+
+	# Split this month's entries evenly across workers
+	set_local_variable = {
+		name = mnt_wealth_locations_per_tick
+		value = {
+			value = local_var:mnt_wealth_load_balance_monthly_count
+			divide = local_var:mnt_wealth_load_balance_worker_count
+			ceiling = yes
+		}
+	}
+
+	# Where this worker starts among this month's entries
+	set_local_variable = {
+		name = mnt_wealth_load_balance_seq_start
+		value = {
+			value = var:mnt_wealth_country_index
+			multiply = local_var:mnt_wealth_locations_per_tick
+		}
+	}
+
+	# How many entries the worker has left; clamps the tail safely.
+	set_local_variable = {
+		name = mnt_wealth_load_balance_remaining
+		value = {
+			value = local_var:mnt_wealth_load_balance_monthly_count
+			subtract = local_var:mnt_wealth_load_balance_seq_start
+			max = local_var:mnt_wealth_locations_per_tick
+			min = 0
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_load_balance_cursor
+		value = {
+			value = local_var:mnt_wealth_load_balance_seq_start
+			multiply = $CYCLE$
+			add = local_var:mnt_wealth_load_balance_offset
+		}
+	}
+}
+
+# ── FRESHNESS ──
+# Builds whatever this sweep needs that is missing: the current month variable, 
+# the country indices that pick the workers, and the index being used.
+
+mnt_wealth_load_balance_ensure_indices = {
+	if = {
+		limit = { NOT = { has_global_variable = mnt_wealth_months_elapsed } }
+		set_global_variable = {
+			name = mnt_wealth_months_elapsed
+			value = mnt_wealth_months_since_campaign_start
+			days = mnt_wealth_month_lifetime
+		}
+	}
+	if = {
+		limit = { NOT = { has_global_variable = mnt_wealth_country_index_fresh } }
+		mnt_wealth_build_index = { DATA_SET = country }
+	}
+	if = {
+		limit = { NOT = { has_global_variable = mnt_wealth_$DATA_SET$_index_fresh } }
+		mnt_wealth_build_index = { DATA_SET = $DATA_SET$ }
+	}
+}
+
+# Builds one index and flags it for its own lifetime. Callers check the flag first.
+mnt_wealth_build_index = {
+	mnt_wealth_create_$DATA_SET$_index = yes
+	set_global_variable = {
+		name = mnt_wealth_$DATA_SET$_index_fresh
+		value = 1
+		days = mnt_wealth_$DATA_SET$_index_lifetime
+	}
+}
+
+# ── INDEX CONSTRUCTION ──
+
+# Rebuilt monthly; annexations and formations invalidate the previous index.
+mnt_wealth_create_country_index = {
+	set_global_variable = { name = mnt_wealth_country_count value = 0 }
+
+	every_country = {
+		set_variable = { name = mnt_wealth_country_index value = global_var:mnt_wealth_country_count }
+		change_global_variable = { name = mnt_wealth_country_count add = 1 }
+	}
+}
+
+# Built once, then maintained in place. A rebuild reshuffles slots, so clear ids first.
+mnt_wealth_create_location_index = {
+	clear_global_variable_map = mnt_wealth_location_index
+	set_global_variable = { name = mnt_wealth_location_count value = 0 }
+
+	every_ownable_location = {
+		remove_variable = mnt_wealth_location_id
+		if = { limit = { exists = owner } mnt_wealth_index_location = yes }
+	}
+}
+
+# Rebuilt monthly to track country swaps and multiplayer joins.
+mnt_wealth_create_human_location_index = {
+	clear_global_variable_map = mnt_wealth_human_location_index
+	set_global_variable = { name = mnt_wealth_human_location_count value = 0 }
+
+	every_country = {
+		limit = { is_human = yes }
+		every_owned_location = {
+			add_to_global_variable_map = {
+				name = mnt_wealth_human_location_index
+				key = global_var:mnt_wealth_human_location_count
+				value = this
+			}
+			change_global_variable = { name = mnt_wealth_human_location_count add = 1 }
+		}
+	}
+}
+
+# Small set; cheaper to rebuild monthly than maintain.
+mnt_wealth_create_market_index = {
+	clear_global_variable_map = mnt_wealth_market_index
+	set_global_variable = { name = mnt_wealth_market_count value = 0 }
+
+	every_market_in_world = {
+		add_to_global_variable_map = {
+			name = mnt_wealth_market_index
+			key = global_var:mnt_wealth_market_count
+			value = this
+		}
+		change_global_variable = { name = mnt_wealth_market_count add = 1 }
+	}
+}
 
 # ── INDEX ACCESSORS ──
-# Scope: the entry the cursor is pointing at.
+# Each of these runs EFFECT on the entry the cursor is currently sitting on.
 
 mnt_wealth_location_index_accessor = {
 	"global_variable_map(mnt_wealth_location_index|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
@@ -20,243 +215,29 @@ mnt_wealth_market_index_accessor = {
 	"global_variable_map(mnt_wealth_market_index|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
 }
 
-# ── MONTHLY SETUP ──
-# Scope: country. The first country each month sees no mnt_wealth_months_elapsed
-# global (it expires after 27 days), sets it, and rebuilds the volatile
-# indices; every later country that month skips this.
-
-mnt_wealth_load_balance_monthly_setup = {
-	# The first country, aka worker, sees no global variable set, it sets one with an expiration
-	# before the next month so all future workers skip this setup.
-	# We do four things here:
-	# 	1: Give every country an index; we use that index to decide if that country does work and
-	# 	   critically which part of the index to do work on. Needs to be done monthly due to annexations
-	#      and new country formations corrupting the indices.
-	#   2: Calculates how many months have passed since game start. This tells us exactly where in the
-	#      load balance cycle we are.
-	#   3: Clear and rebuild the player location index map. This makes it safe against country swapping
-	#      and multiplayer stuff
-	#   4: Clear and rebuild the market index. Markets are created and destroyed
-	#      during play, and the set is small enough to rebuild whole each month.
-	if = {
-		limit = { NOT = { has_global_variable = mnt_wealth_months_elapsed } }
-
-		set_global_variable = {
-			name = mnt_wealth_months_elapsed
-			value = mnt_wealth_months_since_campaign_start
-			days = 27
-		}
-
-		clear_global_variable_map = mnt_wealth_human_location_index
-		set_global_variable = { name = mnt_wealth_human_location_count value = 0 }
-		set_global_variable = { name = mnt_wealth_country_count        value = 0 }
-
-		every_country = {
-			set_variable = { name = mnt_wealth_country_index value = global_var:mnt_wealth_country_count }
-			change_global_variable = { name = mnt_wealth_country_count add = 1 }
-
-			if = {
-				limit = { is_human = yes }
-				every_owned_location = {
-					add_to_global_variable_map = {
-						name = mnt_wealth_human_location_index
-						key = global_var:mnt_wealth_human_location_count
-						value = this
-					}
-					change_global_variable = { name = mnt_wealth_human_location_count add = 1 }
-				}
-			}
-		}
-
-		clear_global_variable_map = mnt_wealth_market_index
-		set_global_variable = { name = mnt_wealth_market_count value = 0 }
-
-		every_market_in_world = {
-			add_to_global_variable_map = {
-				name = mnt_wealth_market_index
-				key = global_var:mnt_wealth_market_count
-				value = this
-			}
-			change_global_variable = { name = mnt_wealth_market_count add = 1 }
-		}
-	}
-}
-
-# ── CHUNK RESOLUTION ──
-# Scope: country. Resolves the frozen chunk size for one (DATA_SET, CYCLE)
-# sweep into mnt_wealth_frozen_chunk_size, cached globally so identical
-# instantiations share it. Sharing is by CYCLE's spelling, not its value.
-
-mnt_wealth_load_balance_resolve_chunk = {
-	set_local_variable = { # take a module of months elapsed against the cycle, this gives us how far into the cycle we are
-		name = mnt_wealth_load_balance_cycle_month
-		value = { value = global_var:mnt_wealth_months_elapsed modulo = $CYCLE$ }
-	}
-
-	# Resolve index size from the count global matching this data set.
-	set_local_variable = { name = mnt_wealth_index_size value = global_var:mnt_wealth_$DATA_SET$_count }
-
-	# Check the per-(DATA_SET, CYCLE) chunk-size cache. The first worker at
-	# a cycle boundary computes and stamps it; every later worker and every
-	# identical instantiation from another call site reads the cached value.
-	set_local_variable = { name = mnt_wealth_needs_refresh value = 1 }
-
-	if = {
-		limit = { has_global_variable = mnt_wealth_frozen_chunk_$DATA_SET$_$CYCLE$ }
-		set_local_variable = {
-			name = mnt_wealth_frozen_chunk_size
-			value = global_var:mnt_wealth_frozen_chunk_$DATA_SET$_$CYCLE$
-		}
-		if = {
-			limit = { local_var:mnt_wealth_load_balance_cycle_month = 0 }
-			if = {
-				limit = { global_var:mnt_wealth_frozen_stamp_$DATA_SET$_$CYCLE$ = global_var:mnt_wealth_months_elapsed }
-				set_local_variable = { name = mnt_wealth_needs_refresh value = 0 }
-			}
-		}
-		else = {
-			set_local_variable = { name = mnt_wealth_needs_refresh value = 0 }
-		}
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_needs_refresh = 1 }
-		set_local_variable = {
-			name = mnt_wealth_frozen_chunk_size
-			value = {
-				value = local_var:mnt_wealth_index_size
-				divide = $CYCLE$
-				ceiling = yes
-			}
-		}
-		set_global_variable = { name = mnt_wealth_frozen_chunk_$DATA_SET$_$CYCLE$ value = local_var:mnt_wealth_frozen_chunk_size }
-		set_global_variable = { name = mnt_wealth_frozen_stamp_$DATA_SET$_$CYCLE$ value = global_var:mnt_wealth_months_elapsed }
-	}
-}
-
-# ── MAIN DISPATCHER ──
-# DATA_SET selects which pre-built index to sweep. Legal values:
-#   market           - the global market index (mnt_wealth_market_index)
-#   location         - the global location index (mnt_wealth_location_index)
-#   human_location   - the human-owned location index (mnt_wealth_human_location_index)
-# The accessor, count global, and cache variables are resolved from
-# DATA_SET by naming convention, so a new index needs only a matching
-# accessor and count global.
-# CYCLE is how many months a full sweep takes; up to 512 countries work
-# each pass. EFFECT runs once per entry in the worker's assigned slice.
-#
-# EFFECT must never rewrite the index it is sweeping. For the location
-# indices that means no colonizing or decolonizing: either one moves
-# locations between slots mid sweep and makes every slice unreliable.
-
-mnt_wealth_load_balance_this_effect = {
-	mnt_wealth_load_balance_monthly_setup = yes
-
-	if = {
-		limit = { var:mnt_wealth_country_index < 512 }
-		# The index is cut into CYCLE chunks and this month takes one of them.
-		# L = 12 CYCLE = 3 -> [{LLLL}|LLLL|LLLL], 12 locations split into 3 chunks.
-		# Month 0 takes the first chunk, month 1 takes the second, and so on.
-		#
-		# The chunk size is frozen for the whole cycle so entries added mid-cycle wait for the next one.
-		# This leaves some staleness but stops index growth and shrinkage from leaving entries stale
-		# for unbounded amounts of time.
-		mnt_wealth_load_balance_resolve_chunk = { DATA_SET = $DATA_SET$ CYCLE = $CYCLE$ }
-
-		# We need to know where our chunk {LLLL} starts and ends.
-		set_local_variable = {
-			name = mnt_wealth_load_balance_chunk_start
-			value = {
-				value = global_var:mnt_wealth_months_elapsed
-				modulo = $CYCLE$
-				multiply = local_var:mnt_wealth_frozen_chunk_size
-			}
-		}
-
-		set_local_variable = {
-			name = mnt_wealth_load_balance_chunk_end
-			value = {
-				value = local_var:mnt_wealth_load_balance_chunk_start
-				add = local_var:mnt_wealth_frozen_chunk_size
-				max = local_var:mnt_wealth_index_size
-			}
-		}
-
-		# Use at most the smaller of 512 and the country count.
-		set_local_variable = {
-			name = mnt_wealth_load_balance_worker_count
-			value = { value = 512 max = global_var:mnt_wealth_country_count }
-		}
-
-		# Within a chunk {L|L|L|L} we divide it up equally among all our workers
-		set_local_variable = {
-			name = mnt_wealth_locations_per_tick
-			value = {
-				value = local_var:mnt_wealth_frozen_chunk_size
-				divide = local_var:mnt_wealth_load_balance_worker_count
-				ceiling = yes
-			}
-		}
-
-		# Set the starting point in the location index for this worker
-		set_local_variable = {
-			name = mnt_wealth_load_balance_cursor
-			value = {
-				value = var:mnt_wealth_country_index
-				multiply = local_var:mnt_wealth_locations_per_tick
-				add = local_var:mnt_wealth_load_balance_chunk_start
-			}
-		}
-
-		# How many locations are left to do, so the loop needs no bounds check inside.
-		# This handles the edges of the index safely.
-		set_local_variable = {
-			name = mnt_wealth_load_balance_remaining
-			value = {
-				value = local_var:mnt_wealth_load_balance_chunk_end
-				subtract = local_var:mnt_wealth_load_balance_cursor
-				max = local_var:mnt_wealth_locations_per_tick
-				min = 0
-			}
-		}
-
-		if = { # Now we actually dispatch it
-			limit = { local_var:mnt_wealth_load_balance_remaining > 0 }
-			while = { # Iterate through the index exactly where this worker is supposed to work.
-				count = local_var:mnt_wealth_load_balance_remaining
-				mnt_wealth_$DATA_SET$_index_accessor = { EFFECT = $EFFECT$ }
-				change_local_variable = { name = mnt_wealth_load_balance_cursor add = 1 }
-			}
-		}
-	}
-}
-
-# ── LOCATION INDEX ──
-# Add a location to the end of the index
+# ── LOCATION INDEX MAINTENANCE ──
+# Add a location to the end of the index. Callers check it is not already in.
 
 mnt_wealth_index_location = {
 	if = {
-		limit = { NOT = { has_variable = mnt_wealth_location_id } }
-
-		if = {
-			limit = { NOT = { has_global_variable = mnt_wealth_location_count } }
-			set_global_variable = { name = mnt_wealth_location_count value = 0 }
-		}
-
-		set_variable = { name = mnt_wealth_location_id value = global_var:mnt_wealth_location_count }
-
-		add_to_global_variable_map = {
-			name = mnt_wealth_location_index
-			key = global_var:mnt_wealth_location_count
-			value = this
-		}
-
-		change_global_variable = { name = mnt_wealth_location_count add = 1 }
+		limit = { NOT = { has_global_variable = mnt_wealth_location_count } }
+		set_global_variable = { name = mnt_wealth_location_count value = 0 }
 	}
+
+	set_variable = { name = mnt_wealth_location_id value = global_var:mnt_wealth_location_count }
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_index
+		key = global_var:mnt_wealth_location_count
+		value = this
+	}
+
+	change_global_variable = { name = mnt_wealth_location_count add = 1 }
 }
 
 # Scope: location. Removes this location from the index by swapping
-# the last entry into the freed slot, keeping the index dense.
+# the last entry into its slot, keeping the index dense.
+# Callers check it is in the index.
 
 mnt_wealth_unindex_location = {
 	if = {
@@ -282,3 +263,16 @@ mnt_wealth_unindex_location = {
 		}
 	}
 }
+
+# ── MAINTAINED ELSEWHERE ──
+# Lifetimes, mnt_wealth_tuning.txt. A new index needs one or its flag never expires.
+#   mnt_wealth_month_lifetime                 27
+#   mnt_wealth_country_index_lifetime         27
+#   mnt_wealth_human_location_index_lifetime  27
+#   mnt_wealth_market_index_lifetime          27
+#   mnt_wealth_location_index_lifetime        -1  never rebuilt, maintained in place
+#
+# Location index upkeep, mnt_wealth_economy_on_actions.txt. Both guard before calling.
+#   mnt_wealth_on_location_colonized    -> mnt_wealth_index_location
+#   mnt_wealth_on_location_decolonized  -> mnt_wealth_unindex_location
+
