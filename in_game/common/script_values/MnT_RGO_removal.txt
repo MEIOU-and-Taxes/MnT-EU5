@@ -1462,7 +1462,7 @@ rgo_elephants_max_level = {
 	}
 }
 
-rgo_fiber_crops_max_level = {
+bad_fiber_crops_max_level = {
 	save_temporary_value_as = {
 		name = base_value
 		value = 0
@@ -1498,11 +1498,102 @@ rgo_fiber_crops_max_level = {
 			multiply = 0.2
 		}
 	}
-	if = { limit = { raw_material = goods:fiber_crops }
+	if = {
+		limit = { owner ?= { modifier:global_max_rgo_size_modifier != 0 } }
 		add = {
-			desc = "IDEAL_RGO_AREA"
+			desc = "GLOBAL_MAX_RGO"
 			value = scope:base_value
-			multiply = 2
+			multiply = owner.modifier:global_max_rgo_size_modifier
+		}
+	}
+	if = {
+		limit = {
+			modifier:local_max_rgo_size_modifier != 0
+		}
+		add = {
+			desc = "LOCAL_MAX_RGO"
+			value = scope:base_value
+			multiply = modifier:local_max_rgo_size_modifier
+		}
+	}
+	if = {
+		limit = {
+			OR = {
+				location_rank ?= location_rank:town
+				location_rank ?= location_rank:city
+				location_rank ?= location_rank:megalopolis
+			}
+			owner ?= { modifier:global_max_rgo_size_modifier_in_non_rural != 0 }
+		}
+		add = {
+			desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+	else_if = {
+		limit = {
+			location_rank ?= location_rank:rural_settlement
+			owner ?= { modifier:global_max_rgo_size_modifier_in_rural != 0 }
+		}
+		add = {
+			desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	if = {
+		limit = { modifier:local_raw_material_output != 0 }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
+			value = scope:base_value
+			multiply = modifier:local_raw_material_output
+		}
+	}
+	if = {
+		limit = { owner ?= { modifier:global_raw_material_output != 0 } }
+		add = {
+			desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
+			value = scope:base_value
+			multiply = owner.modifier:global_raw_material_output
+		}
+	}
+}
+
+rgo_fiber_crops_max_level = {
+	save_temporary_value_as = {
+		name = base_value
+		value = 0
+	}
+	if = { limit = { can_build_fiber_crops_RGO = yes }
+	    # base
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = 1.5
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_BASE"
+			value = 1.5
+		}
+		# dev bonus
+		save_temporary_value_as = { name = base_value
+			value = { value = scope:base_value
+				add = { value = development
+					multiply = 0.15
+				}
+			}
+		}
+		add = { desc = "BUILDING_LEVEL_DEVELOPMENT"
+			value = development
+			multiply = 0.15
+		}
+	}
+	if = {
+		limit = { location_rank ?= location_rank:rural_settlement }
+		add = {
+			desc = "BUILDING_LEVEL_IS_RURAL_SETTLEMENT"
+			value = scope:base_value
+			multiply = 0.2
 		}
 	}
 	if = {
