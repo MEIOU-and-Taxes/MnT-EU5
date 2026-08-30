@@ -1,0 +1,96 @@
+﻿invite_inquisitor = {
+	type = religious
+
+	sound = UI_action_religion_generic
+	
+	ai_tick = monthly
+	ai_tick_frequency = 24
+	automation_tick = monthly
+	automation_tick_frequency = 6
+
+	automation_tick = monthly
+	automation_tick_frequency = 12
+	player_automated_category = religiousdoctrines
+
+	sound = UI_action_religion_generic
+
+	potential = {
+		scope:actor.religion ?= religion:catholic
+	}
+	allow = {
+		papacy_active = yes
+		country_exists = c:PAP
+		scope:actor = {
+			has_law = inquisition_law
+			estate_type_allowed_in_cabinet = { estate_type = estate_type:clergy_estate }
+			estate_satisfaction:clergy_estate >= {
+				value = estate_satisfaction_severe_penalty
+				multiply = -1
+			}
+			NOT = { has_policy = council_of_three_lands_policy }
+		}
+	}
+	
+	price = price:invite_foreign_cleric
+
+	effect = {
+		custom_tooltip = {
+			text = invite_inquisitor_tt
+			scope:actor = {
+				create_character = {
+					estate = estate_type:clergy_estate
+					culture = root.culture 
+					religion = root.religion
+					adm = { 20 30 }
+					dip = { 40 70 }
+					mil = { 70 90 }
+					add_trait = trait:unsuited_for_naval_command
+					add_trait = trait:unsuited_for_army_command
+					min_age = 40
+					add_trait = trait:theologian
+				}
+			}
+		}
+		scope:actor = { 
+			add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_weak_penalty }
+			change_societal_value = { type = spiritualist_vs_humanist value = societal_value_minor_move_to_left }
+		}
+	}
+
+	ai_will_do = {
+		add = -100
+		
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						religious_unity < 0.95
+					}
+				}
+				value = 110
+			}
+		}
+		
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						religious_unity < 0.8
+					}
+				}
+				value = 100
+			}
+		}
+		
+		add = {
+			if = {
+				limit = {
+					scope:actor = {
+						religious_unity < 0.6
+					}
+				}
+				value = 100
+			}
+		}
+	}
+}

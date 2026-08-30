@@ -607,3 +607,6 @@ Date: 21/05/2026
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
 - Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
 - Fix errors on startup that about too many farming villages in Locations
+
+### Mechanics
+- Added Invite Inqusitor Religious Action, adds a cleric with high military (disallowed from leading armies) and theologian trait, for 100 Religious influence, if you have the Inquisition policy active (and not Polish Three lands version)
