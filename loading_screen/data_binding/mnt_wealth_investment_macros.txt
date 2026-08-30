@@ -141,9 +141,15 @@ macro = {
 }
 
 macro = {
-	description = "The estate's desired wealth from the variable map"
-	definition = "DCDesiredWealth()"
-	replace_with = "DCLocationMap('mnt_wealth_expected_wealth')"
+	description = "The estate's live monthly investment decay rate: local plus national modifier, resolved in script by estate type"
+	definition = "DCEstateDecayRate()"
+	replace_with = "FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_estate_decay_rate'))"
+}
+
+macro = {
+	description = "The estate's invested wealth pool in gold, from the variable map"
+	definition = "DCInvestedWealth()"
+	replace_with = "DCLocationMapFloat('mnt_wealth_invested_wealth')"
 }
 
 macro = {
@@ -255,21 +261,9 @@ macro = {
 }
 
 macro = {
-	description = "Upkeep curve: desired wealth times the investment rate"
-	definition = "DCUpkeepCurve()"
-	replace_with = "Multiply_float(FixedPointToFloat(DCDesiredWealth()), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate')))"
-}
-
-macro = {
-	description = "Upkeep floor line: base desired wealth times the investment rate, plus the per-level minimum change times the current level"
-	definition = "DCUpkeepFloor()"
-	replace_with = "Add_float(Multiply_float(DCLocationMapFloat('mnt_wealth_base_desired_wealth'), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))), Multiply_float(DCInvestmentLevel(), FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_change_per_investment_level'))))"
-}
-
-macro = {
-	description = "Monthly upkeep, matching mnt_wealth_compute_estate_upkeep: the larger of the curve and floor line when investing, the smaller of the two (never below zero) when neglecting, then scaled by upkeep efficiency"
+	description = "Monthly upkeep, matching mnt_wealth_compute_estate_upkeep: the estate's invested wealth decayed at its live per-estate rate, scaled by upkeep efficiency"
 	definition = "DCMonthlyUpkeep()"
-	replace_with = "Multiply_float(Select_float(GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)0'), Max_float(DCUpkeepCurve(), DCUpkeepFloor()), Max_float(Min_float(DCUpkeepCurve(), DCUpkeepFloor()), '(float)0')), FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_efficiency_multiplier')))"
+	replace_with = "Multiply_float(FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_monthly_upkeep')), FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_efficiency_multiplier')))"
 }
 
 macro = {

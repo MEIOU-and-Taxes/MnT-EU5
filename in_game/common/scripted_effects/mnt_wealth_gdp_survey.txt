@@ -488,8 +488,6 @@ mnt_wealth_survey_estate_data = {
 	clear_variable_map = mnt_estate_pops
 	clear_variable_map = mnt_estate_raw_power
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
-	clear_variable_map = mnt_wealth_expected_wealth
-	set_variable = { name = mnt_wealth_desired_total value = 0 }
 
 	if = {
 		limit = { exists = owner }
@@ -530,10 +528,8 @@ mnt_wealth_survey_estate_data = {
 	}
 }
 
-# Scope: location. Writes one estate's survey results: cached relative power,
-# investment level (if new), base desired wealth, and desired wealth. Raw power
-# is already in mnt_estate_raw_power; this only lifts it into the local that
-# mnt_wealth_set_base_desired_wealth reads.
+# Scope: location. Writes one estate's survey results: cached relative power and
+# a starting investment level for an estate new to this location.
 
 mnt_wealth_store_estate_survey_results = {
 	set_local_variable = {
@@ -575,10 +571,6 @@ mnt_wealth_store_estate_survey_results = {
 				value = 0
 			}
 		}
-
-		mnt_wealth_set_base_desired_wealth = yes
-		# Maintains mnt_wealth_desired_total itself.
-		mnt_wealth_set_desired_wealth = yes
 	}
 }
 
@@ -596,7 +588,6 @@ mnt_wealth_ensure_survey_data = {
 			NOT = {
 				has_variable_map = mnt_wealth_cached_local_relative_estate_power
 				has_variable_map = mnt_estate_raw_power
-				has_variable_map = mnt_wealth_expected_wealth
 			}
 		}
 		mnt_wealth_survey_estate_data = { ITERATOR = mnt_wealth_for_all_estate_types }

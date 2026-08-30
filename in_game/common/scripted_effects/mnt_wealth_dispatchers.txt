@@ -152,7 +152,6 @@ mnt_wealth_zero_location = {
 	set_variable = { name = mnt_wealth_local_urban_ndp           value = 0 }
 	set_variable = { name = mnt_wealth_local_wages            value = 0 }
 	set_variable = { name = mnt_wealth_current_wage_rate      value = 0 }
-	set_variable = { name = mnt_wealth_desired_total          value = 0 }
 	set_variable = { name = mnt_wealth_kept_income_total      value = 0 }
 	set_variable = { name = mnt_wealth_local_wealth_share_sum value = 0 }
 	set_variable = { name = mnt_wealth_investment_paid_total  value = 0 }
@@ -163,7 +162,6 @@ mnt_wealth_zero_location = {
 	clear_variable_map = mnt_wealth_investment_level
 	clear_variable_map = mnt_wealth_invested_since_review
 	clear_variable_map = mnt_wealth_invested_wealth
-	clear_variable_map = mnt_wealth_base_desired_wealth
 }
 
 # Scope: location. Sets up a location for the wealth system: surveys
@@ -174,10 +172,10 @@ mnt_wealth_zero_location = {
 # self-correcting, so no separate rebuild pass is needed.
 
 mnt_wealth_setup_location = {
-	mnt_wealth_ensure_survey_data = yes # GDP, Raw Power, Desired Wealth 
+	mnt_wealth_ensure_survey_data = yes # GDP, Raw Power
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_local_wealth_share } # What percent of wealth does each estate own?
 	mnt_wealth_set_local_wealth_share_sum = yes # Make sure wealth shares sum to 100%
-	mnt_wealth_fill_starting_pool = yes # Set Local Wealth to Desired Wealth
+	mnt_wealth_fill_starting_pool = yes # Seed Local Wealth from GDP
 	mnt_wealth_set_location_rates = yes # Wage setup
 	mnt_wealth_set_review_month = yes # Save when this location was last updated, used for display predictions.
 }
@@ -187,25 +185,13 @@ mnt_wealth_set_location_rates = {
 	mnt_wealth_set_location_wage_totals = { ITERATOR = mnt_wealth_for_each_estate_in_power_cache } # Apply wage rates to initialize cashflow
 }
 
-# Scope: location. Fills the wealth pool to a multiple of total desired
-# wealth so the economy starts near equilibrium.
+# Scope: location. Seeds the wealth pool with a year of local GDP so the economy
+# starts with liquid wealth roughly proportional to activity.
 
 mnt_wealth_fill_starting_pool = {
-	set_local_variable = {
-		name = mnt_wealth_starting_expectation
-		value = {
-			value = 0
-			every_key_in_variable_map = {
-				variable = mnt_wealth_expected_wealth
-				save_temporary_scope_as = mnt_wealth_iter_key
-				prev = { add = "variable_map(mnt_wealth_expected_wealth|scope:mnt_wealth_iter_key)" }
-			}
-		}
-	}
-
 	set_variable = {
 		name = mnt_wealth_pool
-		value = { value = local_var:mnt_wealth_starting_expectation multiply = mnt_wealth_starting_savings_multiplier }
+		value = { value = var:mnt_wealth_local_gdp multiply = mnt_wealth_starting_gdp_months }
 	}
 }
 

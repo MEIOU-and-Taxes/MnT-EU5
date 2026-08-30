@@ -68,15 +68,10 @@ mnt_wealth_invest_estate_wealth = {
 	}
 
 	change_local_variable = { name = mnt_wealth_invested_running_total add = local_var:mnt_wealth_estate_paid }
-	set_local_variable = { name = mnt_wealth_estate_upkeep value = 0 }
 
-	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_expected_wealth target = local_var:mnt_wealth_estate_key } }
-		mnt_wealth_compute_estate_upkeep = {
-			ESTATE_KEY = local_var:mnt_wealth_estate_key
-			RATE = local_var:mnt_wealth_cached_investment_rate
-			MONTHS = 1
-		}
+	mnt_wealth_compute_estate_upkeep = {
+		ESTATE_KEY = local_var:mnt_wealth_estate_key
+		MONTHS = 1
 	}
 
 	mnt_wealth_set_investment_progress_change = yes
@@ -84,48 +79,49 @@ mnt_wealth_invest_estate_wealth = {
 
 # Scope: location. Called by mnt_wealth_invest_estate_wealth and
 # mnt_wealth_set_estate_investment_progress.
-# Computes the gold one estate needs each period to maintain its
-# current investment level. The floor rises with level so high-level
-# estates cannot coast on a low upkeep.
+# One estate's upkeep for the period: its invested wealth decayed at the
+# live per-estate rate. Self-gates on a positive pool.
 # Saves local_var:mnt_wealth_estate_upkeep.
 
 mnt_wealth_compute_estate_upkeep = {
 	set_local_variable = { name = mnt_wealth_upkeep_key value = $ESTATE_KEY$ }
+	set_local_variable = { name = mnt_wealth_estate_upkeep value = 0 }
 
-	set_local_variable = {
-		name = mnt_wealth_curve_upkeep
-		value = { value = "variable_map(mnt_wealth_expected_wealth|local_var:mnt_wealth_upkeep_key)" multiply = $RATE$ }
-	}
-
-	set_local_variable = {
-		name = mnt_wealth_upkeep_floor_line
-		value = {
-			value = "variable_map(mnt_wealth_base_desired_wealth|local_var:mnt_wealth_upkeep_key)"
-			multiply = $RATE$
-
-			add = {
-				value = "variable_map(mnt_wealth_investment_level|local_var:mnt_wealth_upkeep_key)"
-				multiply = mnt_wealth_upkeep_change_per_investment_level
-				multiply = $MONTHS$
-			}
-		}
-	}
-
+	# Nothing invested, nothing to decay. A non-positive pool owes no upkeep.
 	if = {
-		limit = { "variable_map(mnt_wealth_investment_level|local_var:mnt_wealth_upkeep_key)" >= 0 }
-		set_local_variable = {
-			name = mnt_wealth_estate_upkeep
-			value = { value = local_var:mnt_wealth_curve_upkeep min = local_var:mnt_wealth_upkeep_floor_line }
+		limit = {
+			is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_upkeep_key }
+			"variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_upkeep_key)" > 0
 		}
-	}
-	else = {
+		set_local_variable = { name = mnt_wealth_upkeep_invested value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_upkeep_key)" }
+
+		# The decay rate is a live per-estate modifier, read by name each time so
+		# it responds the moment it changes rather than at the next survey.
+		set_local_variable = { name = mnt_wealth_upkeep_decay_rate value = 0 }
+		mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_read_estate_decay_rate }
+
+		# Drain the pool by rate * months, never below what is in it.
 		set_local_variable = {
 			name = mnt_wealth_estate_upkeep
 			value = {
-				value = local_var:mnt_wealth_curve_upkeep
-				max = local_var:mnt_wealth_upkeep_floor_line
-				min = 0
+				value = local_var:mnt_wealth_upkeep_invested
+				multiply = local_var:mnt_wealth_upkeep_decay_rate
+				multiply = $MONTHS$
+				max = local_var:mnt_wealth_upkeep_invested
 			}
+		}
+	}
+}
+
+# Scope: location. Reads one estate's live decay rate (local plus national)
+# into mnt_wealth_upkeep_decay_rate.
+
+mnt_wealth_read_estate_decay_rate = {
+	set_local_variable = {
+		name = mnt_wealth_upkeep_decay_rate
+		value = {
+			value = modifier:mnt_wealth_local_$ESTATE$_investment_decay
+			add = owner.modifier:mnt_wealth_global_$ESTATE$_investment_decay
 		}
 	}
 }
@@ -164,17 +160,11 @@ mnt_wealth_settle_estate_progress_and_flow = {
 # paid total to one estate's investment progress.
 
 mnt_wealth_set_estate_investment_progress = {
-	# An estate with no desired wealth entry has nothing to maintain, so it owes
-	# no upkeep. Likewise no ownership share means it paid nothing this year.
-	set_local_variable = { name = mnt_wealth_estate_upkeep value = 0 }
-
-	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_expected_wealth target = local_var:mnt_wealth_estate_key } }
-		mnt_wealth_compute_estate_upkeep = {
-			ESTATE_KEY = local_var:mnt_wealth_estate_key
-			RATE = var:mnt_wealth_investment_rate_total
-			MONTHS = var:mnt_wealth_investment_months
-		}
+	# Upkeep decays the invested pool; no ownership share means it paid nothing
+	# this year. compute_estate_upkeep self-gates on a positive pool.
+	mnt_wealth_compute_estate_upkeep = {
+		ESTATE_KEY = local_var:mnt_wealth_estate_key
+		MONTHS = var:mnt_wealth_investment_months
 	}
 
 	set_local_variable = { name = mnt_wealth_estate_paid value = 0 }

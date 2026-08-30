@@ -88,15 +88,11 @@ mnt_wealth_run_estate_investment_update = {
 	mnt_wealth_recompute_estate_investment_level = { ESTATE = $ESTATE$ }
 }
 
-# Scope: location. Rebuilds one estate's level, desired wealth, and modifier
-# from its current invested wealth, without crediting new progress.
+# Scope: location. Rebuilds one estate's level and modifier from its current
+# invested wealth, without crediting new progress.
 
 mnt_wealth_recompute_estate_investment = {
 	mnt_wealth_recompute_estate_investment_level = { ESTATE = $ESTATE$ }
-	# No trailing resurvey here, so desired wealth must follow the new level.
-	mnt_wealth_set_estate_desired_tuning = { ESTATE = $ESTATE$ }
-	mnt_wealth_compute_base_desired_wealth = yes
-	mnt_wealth_set_desired_wealth = yes
 }
 
 # Scope: location. Reads the estate's lifetime pool and rewrites its level
@@ -326,134 +322,6 @@ mnt_wealth_add_progress_to_invested_wealth = {
 	}
 }
 
-# Scope: location. Sets base desired wealth from the estate key's tuning.
-
-mnt_wealth_set_base_desired_wealth = {
-	mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_set_estate_desired_tuning }
-	mnt_wealth_compute_base_desired_wealth = yes
-}
-
-# Scope: location. base_desired = raw_power / power_per_pop * multiplier * modifier,
-# floored at the estate's share of local GDP.
-
-mnt_wealth_compute_base_desired_wealth = {
-	# The map only lists estates holding pops, so an estate with relative power
-	# and none of its own is absent rather than zero.
-	set_local_variable = { name = mnt_wealth_raw_power_value value = 0 }
-	if = {
-		limit = {
-			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
-		}
-		set_local_variable = {
-			name = mnt_wealth_raw_power_value
-			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
-		}
-	}
-	set_local_variable = {
-		name = mnt_wealth_power_per_pop
-		value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_estate_key)"
-	}
-
-	set_local_variable = {
-		name = mnt_wealth_computed_base_desired_wealth
-		value = {
-			value = local_var:mnt_wealth_raw_power_value
-			divide = local_var:mnt_wealth_power_per_pop
-			multiply = local_var:mnt_wealth_desired_multiplier
-			multiply = local_var:mnt_wealth_desired_modifier
-			min = { value = var:mnt_wealth_local_gdp multiply = "local_relative_estate_power(local_var:mnt_wealth_estate_key)" }
-		}
-	}
-
-	add_to_variable_map = {
-		name = mnt_wealth_base_desired_wealth
-		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_computed_base_desired_wealth
-	}
-}
-
-# Scope: location. Sets the desired-wealth multiplier and modifier from this estate's tuning.
-
-mnt_wealth_set_estate_desired_tuning = {
-	set_local_variable = {
-		name = mnt_wealth_desired_multiplier
-		value = {
-			value = modifier:mnt_wealth_local_$ESTATE$_desired_wealth
-			add = owner.modifier:mnt_wealth_global_$ESTATE$_desired_wealth
-		}
-	}
-	set_local_variable = {
-		name = mnt_wealth_desired_modifier
-		value = {
-			value = 1
-			add = modifier:mnt_wealth_local_$ESTATE$_desired_wealth_modifier
-			add = owner.modifier:mnt_wealth_global_$ESTATE$_desired_wealth_modifier
-		}
-	}
-}
-
-# Scope: location. Scales base desired wealth by the investment level.
-
-mnt_wealth_set_desired_wealth = {
-	set_local_variable = {
-		name = mnt_wealth_base_desired_wealth
-		value = "variable_map(mnt_wealth_base_desired_wealth|local_var:mnt_wealth_estate_key)"
-	}
-	set_local_variable = { name = mnt_wealth_desired_wealth_now value = local_var:mnt_wealth_base_desired_wealth }
-	set_local_variable = {
-		name = mnt_wealth_current_level
-		value = "variable_map(mnt_wealth_investment_level|local_var:mnt_wealth_estate_key)"
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_current_level >= 0 }
-		set_local_variable = {
-			name = mnt_wealth_desired_wealth_now
-			value = {
-				value = 1
-				add = local_var:mnt_wealth_current_level
-				save_temporary_value_as = mnt_wealth_one_plus_investment_level
-				multiply = scope:mnt_wealth_one_plus_investment_level
-				multiply = local_var:mnt_wealth_base_desired_wealth
-			}
-		}
-	}
-	else = {
-		set_local_variable = {
-			name = mnt_wealth_desired_wealth_now
-			value = {
-				value = 1
-				subtract = { value = local_var:mnt_wealth_current_level multiply = mnt_wealth_desired_wealth_per_investment_level }
-				save_temporary_value_as = mnt_wealth_neglect_denominator
-				value = local_var:mnt_wealth_base_desired_wealth
-				divide = scope:mnt_wealth_neglect_denominator
-			}
-		}
-	}
-
-	# The desired total follows the map by difference, so it stays right when a
-	# level change rewrites this entry between surveys. The survey clears the
-	# map before calling this, so a missing entry means the old value was 0.
-	set_local_variable = { name = mnt_wealth_desired_wealth_before value = 0 }
-
-	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_expected_wealth target = local_var:mnt_wealth_estate_key } }
-		set_local_variable = {
-			name = mnt_wealth_desired_wealth_before
-			value = "variable_map(mnt_wealth_expected_wealth|local_var:mnt_wealth_estate_key)"
-		}
-	}
-
-	add_to_variable_map = {
-		name = mnt_wealth_expected_wealth
-		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_desired_wealth_now
-	}
-
-	change_variable = { name = mnt_wealth_desired_total add = local_var:mnt_wealth_desired_wealth_now }
-	change_variable = { name = mnt_wealth_desired_total subtract = local_var:mnt_wealth_desired_wealth_before }
-}
-
 # ── INVESTMENT MODIFIER ──
 
 # Scope: location. Applies this estate's sized investment or neglect modifier.
@@ -525,8 +393,6 @@ mnt_wealth_release_absent_estate = {
 	}
 
 	remove_from_variable_map = { name = mnt_wealth_invested_since_review key = local_var:mnt_wealth_estate_key }
-	remove_from_variable_map = { name = mnt_wealth_base_desired_wealth   key = local_var:mnt_wealth_estate_key }
-	remove_from_variable_map = { name = mnt_wealth_expected_wealth       key = local_var:mnt_wealth_estate_key }
 }
 
 # Scope: location. Called by mnt_wealth_update_investment_levels through
