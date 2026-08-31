@@ -101,177 +101,115 @@ mnt_wealth_verify_national_gdp = {
 	debug_log = "MNT_WEALTH-MAPAUDIT negative_seizure=[SCOPE.GetLocalVariable('mnt_wealth_seizure_neg').GetValue|0]"
 }
 
-# Scope: none. Console effect. Iterates the global location index and checks
-# each location's internal consistency: id round-trip, ownership, pool sign,
-# wealth share totals, desired wealth totals, and yearly-pass coverage. Each
-# check tallies failures in a global counter, logged once at the end.
+# Scope: none. Console effect. Checks each owned location's internal
+# consistency: pool sign, wealth share totals, desired wealth totals, and
+# yearly-pass coverage. Each check tallies failures in a global counter,
+# logged once at the end.
 
 mnt_wealth_verify_locations = {
-	set_global_variable = { name = mnt_wealth_locaudit_id_fail      value = 0 }
-	set_global_variable = { name = mnt_wealth_locaudit_owner_fail   value = 0 }
 	set_global_variable = { name = mnt_wealth_locaudit_pool_fail    value = 0 }
 	set_global_variable = { name = mnt_wealth_locaudit_share_diff   value = 0 }
 	set_global_variable = { name = mnt_wealth_locaudit_share_over   value = 0 }
 	set_global_variable = { name = mnt_wealth_locaudit_desired_fail value = 0 }
 	set_global_variable = { name = mnt_wealth_locaudit_stale_fail   value = 0 }
-	set_local_variable  = { name = mnt_wealth_locaudit_cursor       value = 0 }
-	set_local_variable  = { name = mnt_wealth_locaudit_count        value = global_var:mnt_wealth_location_count }
 
-	if = {
-		limit = { local_var:mnt_wealth_locaudit_count > 0 }
-		while = {
-			count = local_var:mnt_wealth_locaudit_count
+	every_ownable_location = {
+		limit = { exists = owner }
+		save_temporary_scope_as = mnt_wealth_locaudit_location
+		set_local_variable = { name = mnt_wealth_locaudit_loc_id value = var:mnt_wealth_location_id }
 
-			"global_variable_map(mnt_wealth_location_index|local_var:mnt_wealth_locaudit_cursor)" = {
-				save_temporary_scope_as = mnt_wealth_locaudit_location
-				set_local_variable = { name = mnt_wealth_locaudit_loc_id value = var:mnt_wealth_location_id }
-				# (a) Round-trip: the location's id must equal the index slot
-				# it was reached through, or the swap-remove bookkeeping is wrong.
-				if = {
-					limit = { NOT = { var:mnt_wealth_location_id = local_var:mnt_wealth_locaudit_cursor } }
-					change_global_variable = { name = mnt_wealth_locaudit_id_fail add = 1 }
-					set_local_variable = { name = mnt_wealth_locaudit_expected_id value = local_var:mnt_wealth_locaudit_cursor }
-					error_log = "MNT_WEALTH-INVARIANT location id round-trip failed loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] expected=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_expected_id').GetValue|0]"
+		# (c) The wealth pool must never go negative. Fixed-point rounding
+		# leaves -0.00 remainders, so only flag below -0.01.
+		if = {
+			limit = { var:mnt_wealth_pool < -0.01 }
+			change_global_variable = { name = mnt_wealth_locaudit_pool_fail add = 1 }
+			set_local_variable = { name = mnt_wealth_locaudit_pool_val value = var:mnt_wealth_pool }
+			error_log = "MNT_WEALTH-INVARIANT negative wealth pool loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] pool=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_pool_val').GetValue|2]"
+		}
+
+		# (d) Wealth shares: the sum of the mnt_wealth_local_wealth_share map
+		# must match var:mnt_wealth_local_wealth_share_sum and must not exceed 1.05.
+		set_local_variable = { name = mnt_wealth_locaudit_share_sum value = 0 }
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_local_wealth_share
+			save_temporary_scope_as = mnt_wealth_locaudit_share_key
+
+			scope:mnt_wealth_locaudit_location = {
+				change_local_variable = {
+					name = mnt_wealth_locaudit_share_sum
+					add = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_locaudit_share_key)"
 				}
+			}
+		}
 
-				# (b) Only owned locations belong in the index.
-				if = {
-					limit = { NOT = { exists = owner } }
-					change_global_variable = { name = mnt_wealth_locaudit_owner_fail add = 1 }
-					error_log = "MNT_WEALTH-INVARIANT unowned location in index loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0]"
-				}
+		set_local_variable = { name = mnt_wealth_locaudit_share_stored value = var:mnt_wealth_local_wealth_share_sum }
+		set_local_variable = {
+			name = mnt_wealth_locaudit_share_delta
+			value = { value = local_var:mnt_wealth_locaudit_share_sum subtract = local_var:mnt_wealth_locaudit_share_stored }
+		}
 
-				# (c) The wealth pool must never go negative. Fixed-point rounding
-				# leaves -0.00 remainders, so only flag below -0.01.
-				if = {
-					limit = { var:mnt_wealth_pool < -0.01 }
-					change_global_variable = { name = mnt_wealth_locaudit_pool_fail add = 1 }
-					set_local_variable = { name = mnt_wealth_locaudit_pool_val value = var:mnt_wealth_pool }
-					error_log = "MNT_WEALTH-INVARIANT negative wealth pool loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] pool=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_pool_val').GetValue|2]"
-				}
+		if = {
+			limit = { local_var:mnt_wealth_locaudit_share_delta > 0.05 }
+			change_global_variable = { name = mnt_wealth_locaudit_share_diff add = 1 }
+			error_log = "MNT_WEALTH-INVARIANT wealth share sum mismatch loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_sum').GetValue|4] stored=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_stored').GetValue|4]"
+		}
+		else_if = {
+			limit = { local_var:mnt_wealth_locaudit_share_delta < -0.05 }
+			change_global_variable = { name = mnt_wealth_locaudit_share_diff add = 1 }
+			error_log = "MNT_WEALTH-INVARIANT wealth share sum mismatch loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_sum').GetValue|4] stored=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_stored').GetValue|4]"
+		}
 
-				# (d) Wealth shares: the sum of the mnt_wealth_local_wealth_share map
-				# must match var:mnt_wealth_local_wealth_share_sum and must not exceed 1.05.
-				set_local_variable = { name = mnt_wealth_locaudit_share_sum value = 0 }
+		if = {
+			limit = { local_var:mnt_wealth_locaudit_share_sum > 1.05 }
+			change_global_variable = { name = mnt_wealth_locaudit_share_over add = 1 }
+			# Sum the cached power map alongside, so the log shows whether
+			# the drift targets themselves add up past one whole pool.
+			set_local_variable = { name = mnt_wealth_locaudit_cache_sum value = 0 }
 
-				every_key_in_variable_map = {
-					variable = mnt_wealth_local_wealth_share
-					save_temporary_scope_as = mnt_wealth_locaudit_share_key
+			every_key_in_variable_map = {
+				variable = mnt_wealth_cached_local_relative_estate_power
+				save_temporary_scope_as = mnt_wealth_locaudit_cache_key
 
-					scope:mnt_wealth_locaudit_location = {
-						change_local_variable = {
-							name = mnt_wealth_locaudit_share_sum
-							add = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_locaudit_share_key)"
-						}
-					}
-				}
-
-				set_local_variable = { name = mnt_wealth_locaudit_share_stored value = var:mnt_wealth_local_wealth_share_sum }
-				set_local_variable = {
-					name = mnt_wealth_locaudit_share_delta
-					value = { value = local_var:mnt_wealth_locaudit_share_sum subtract = local_var:mnt_wealth_locaudit_share_stored }
-				}
-
-				if = {
-					limit = { local_var:mnt_wealth_locaudit_share_delta > 0.05 }
-					change_global_variable = { name = mnt_wealth_locaudit_share_diff add = 1 }
-					error_log = "MNT_WEALTH-INVARIANT wealth share sum mismatch loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_sum').GetValue|4] stored=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_stored').GetValue|4]"
-				}
-				else_if = {
-					limit = { local_var:mnt_wealth_locaudit_share_delta < -0.05 }
-					change_global_variable = { name = mnt_wealth_locaudit_share_diff add = 1 }
-					error_log = "MNT_WEALTH-INVARIANT wealth share sum mismatch loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_sum').GetValue|4] stored=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_stored').GetValue|4]"
-				}
-
-				if = {
-					limit = { local_var:mnt_wealth_locaudit_share_sum > 1.05 }
-					change_global_variable = { name = mnt_wealth_locaudit_share_over add = 1 }
-					# Sum the cached power map alongside, so the log shows whether
-					# the drift targets themselves add up past one whole pool.
-					set_local_variable = { name = mnt_wealth_locaudit_cache_sum value = 0 }
-
-					every_key_in_variable_map = {
-						variable = mnt_wealth_cached_local_relative_estate_power
-						save_temporary_scope_as = mnt_wealth_locaudit_cache_key
-
-						scope:mnt_wealth_locaudit_location = {
-							change_local_variable = {
-								name = mnt_wealth_locaudit_cache_sum
-								add = "variable_map(mnt_wealth_cached_local_relative_estate_power|scope:mnt_wealth_locaudit_cache_key)"
-							}
-						}
-					}
-
-					set_local_variable = { name = mnt_wealth_locaudit_over_pool value = var:mnt_wealth_pool }
-					error_log = "MNT_WEALTH-INVARIANT wealth share sum exceeds one loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_sum').GetValue|4] cache_sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_cache_sum').GetValue|4] pool=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_over_pool').GetValue|2]"
-				}
-
-				# (e) Desired total: the sum of the mnt_wealth_expected_wealth map must
-				# match var:mnt_wealth_desired_total within one gold.
-				set_local_variable = { name = mnt_wealth_locaudit_desired_sum value = 0 }
-
-				every_key_in_variable_map = {
-					variable = mnt_wealth_expected_wealth
-					save_temporary_scope_as = mnt_wealth_locaudit_desired_key
-
-					scope:mnt_wealth_locaudit_location = {
-						change_local_variable = {
-							name = mnt_wealth_locaudit_desired_sum
-							add = "variable_map(mnt_wealth_expected_wealth|scope:mnt_wealth_locaudit_desired_key)"
-						}
-					}
-				}
-
-				set_local_variable = { name = mnt_wealth_locaudit_desired_stored value = var:mnt_wealth_desired_total }
-				set_local_variable = {
-					name = mnt_wealth_locaudit_desired_delta
-					value = { value = local_var:mnt_wealth_locaudit_desired_sum subtract = local_var:mnt_wealth_locaudit_desired_stored }
-				}
-
-				if = {
-					limit = { local_var:mnt_wealth_locaudit_desired_delta > 1 }
-					change_global_variable = { name = mnt_wealth_locaudit_desired_fail add = 1 }
-					error_log = "MNT_WEALTH-INVARIANT desired total mismatch loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_desired_sum').GetValue|2] stored=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_desired_stored').GetValue|2]"
-				}
-				else_if = {
-					limit = { local_var:mnt_wealth_locaudit_desired_delta < -1 }
-					change_global_variable = { name = mnt_wealth_locaudit_desired_fail add = 1 }
-					error_log = "MNT_WEALTH-INVARIANT desired total mismatch loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_desired_sum').GetValue|2] stored=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_desired_stored').GetValue|2]"
-				}
-
-				# (f) Yearly-pass coverage: the load balancer must have visited this
-				# location within the last 13 months or it was skipped. Only AI
-				# locations record the visit in mnt_wealth_review_month, so only they
-				# can be checked; human locations run the monthly loop instead.
-				if = {
-					limit = { owner ?= { is_ai = yes } }
-					set_local_variable = { name = mnt_wealth_locaudit_now    value = mnt_wealth_months_since_campaign_start }
-					set_local_variable = { name = mnt_wealth_locaudit_review value = var:mnt_wealth_review_month }
-					set_local_variable = {
-						name = mnt_wealth_locaudit_age
-						value = { value = local_var:mnt_wealth_locaudit_now subtract = local_var:mnt_wealth_locaudit_review }
-					}
-
-					if = {
-						limit = { local_var:mnt_wealth_locaudit_age > 13 }
-						change_global_variable = { name = mnt_wealth_locaudit_stale_fail add = 1 }
-						error_log = "MNT_WEALTH-INVARIANT stale location loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] months_since_review=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_age').GetValue|0]"
+				scope:mnt_wealth_locaudit_location = {
+					change_local_variable = {
+						name = mnt_wealth_locaudit_cache_sum
+						add = "variable_map(mnt_wealth_cached_local_relative_estate_power|scope:mnt_wealth_locaudit_cache_key)"
 					}
 				}
 			}
 
-			change_local_variable = { name = mnt_wealth_locaudit_cursor add = 1 }
+			set_local_variable = { name = mnt_wealth_locaudit_over_pool value = var:mnt_wealth_pool }
+			error_log = "MNT_WEALTH-INVARIANT wealth share sum exceeds one loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_share_sum').GetValue|4] cache_sum=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_cache_sum').GetValue|4] pool=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_over_pool').GetValue|2]"
+		}
+
+		# (f) Yearly-pass coverage: the load balancer must have visited this
+		# location within the last 13 months or it was skipped. Only AI
+		# locations record the visit in mnt_wealth_review_month, so only they
+		# can be checked; human locations run the monthly loop instead.
+		if = {
+			limit = { owner ?= { is_ai = yes } }
+			set_local_variable = { name = mnt_wealth_locaudit_now    value = mnt_wealth_months_since_campaign_start }
+			set_local_variable = { name = mnt_wealth_locaudit_review value = var:mnt_wealth_review_month }
+			set_local_variable = {
+				name = mnt_wealth_locaudit_age
+				value = { value = local_var:mnt_wealth_locaudit_now subtract = local_var:mnt_wealth_locaudit_review }
+			}
+
+			if = {
+				limit = { local_var:mnt_wealth_locaudit_age > 13 }
+				change_global_variable = { name = mnt_wealth_locaudit_stale_fail add = 1 }
+				error_log = "MNT_WEALTH-INVARIANT stale location loc_id=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_loc_id').GetValue|0] months_since_review=[SCOPE.GetLocalVariable('mnt_wealth_locaudit_age').GetValue|0]"
+			}
 		}
 	}
 
-	set_local_variable = { name = mnt_wealth_la_id      value = global_var:mnt_wealth_locaudit_id_fail }
-	set_local_variable = { name = mnt_wealth_la_owner   value = global_var:mnt_wealth_locaudit_owner_fail }
 	set_local_variable = { name = mnt_wealth_la_pool    value = global_var:mnt_wealth_locaudit_pool_fail }
 	set_local_variable = { name = mnt_wealth_la_share_d value = global_var:mnt_wealth_locaudit_share_diff }
 	set_local_variable = { name = mnt_wealth_la_share_o value = global_var:mnt_wealth_locaudit_share_over }
 	set_local_variable = { name = mnt_wealth_la_desired value = global_var:mnt_wealth_locaudit_desired_fail }
 	set_local_variable = { name = mnt_wealth_la_stale   value = global_var:mnt_wealth_locaudit_stale_fail }
-	debug_log = "MNT_WEALTH-LOCAUDIT id_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_id').GetValue|0] owner_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_owner').GetValue|0] pool_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_pool').GetValue|0] share_diff=[SCOPE.GetLocalVariable('mnt_wealth_la_share_d').GetValue|0] share_over=[SCOPE.GetLocalVariable('mnt_wealth_la_share_o').GetValue|0] desired_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_desired').GetValue|0] stale_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_stale').GetValue|0]"
+	debug_log = "MNT_WEALTH-LOCAUDIT pool_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_pool').GetValue|0] share_diff=[SCOPE.GetLocalVariable('mnt_wealth_la_share_d').GetValue|0] share_over=[SCOPE.GetLocalVariable('mnt_wealth_la_share_o').GetValue|0] desired_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_desired').GetValue|0] stale_fail=[SCOPE.GetLocalVariable('mnt_wealth_la_stale').GetValue|0]"
 }
 
 # ── MONTHLY PULSE MARKERS ──

@@ -1,4 +1,4 @@
-# Location Wealth (GDP and Wages): Systems Reference
+﻿# Location Wealth (GDP and Wages): Systems Reference
 
 Technical reference for the location wealth system, ported into MnT from the GDP and Wages mod with the `mnt_wealth_` prefix. For how the economy works as a game system, see the GDP and Wages mod's README.md.
 
@@ -87,6 +87,25 @@ A dispatched `EFFECT` may bundle several sub effects that want the same index an
 
 EPBM's AI path rides the same sweep: each AI location caches its domestic building maintenance (`epbm_loc_shared_cost`, `epbm_loc_crown_cost`, up to 12 months stale), estate-owned and foreign buildings are repriced yearly per country (`epbm_calculate_estate_and_foreign`; estate buildings are priced from the estate side, where `every_building_owned_by_estate` carries the ownership the engine already tracks), and the monthly charge first sums the caches with a light `every_owned_location` pass (`epbm_aggregate_maintenance`). The player path still recalculates exactly, monthly.
 
+### Estate iterators
+
+Four iterators select different estate sets and are not interchangeable:
+`mnt_wealth_for_each_national_estate` (the owner's live estates, whatever the
+power cache holds), `mnt_wealth_for_all_estate_types` (all seven, for a location
+whose cache does not exist yet), `mnt_wealth_for_each_estate_in_power_cache`
+(cache keys, not owner-filtered, so it can still see estates the owner has lost),
+and `mnt_wealth_for_each_national_estate_in_power_cache` (owner-authoritative:
+the intersection, and the one general work uses).
+
+`mnt_wealth_for_each_cached_estate` is the last of those with its derivation
+memoized. A pass over one location runs that walk several times over an
+unchanging set, so the first call captures the estates into a local list and the
+rest replay it. `mnt_wealth_cached_local_relative_estate_power` has a single
+writer, `mnt_wealth_store_estate_survey_results`, so the set can only go stale
+when a survey lands mid-pass; the one that can, in
+`mnt_wealth_update_investment_levels`, calls `mnt_wealth_invalidate_estate_set`.
+The list lives in locals and cannot outlive the execution root that built it.
+
 `EFFECT` must never rewrite the index it sweeps. For the location indices that means no colonizing or decolonizing: either moves entries between slots while the cursor is reading them.
 
 ### Indices
@@ -139,11 +158,17 @@ workers in the code.
    closed-form pass (`mnt_wealth_set_ai_yearly_investment`).
 2. **Settle the accumulators** (`mnt_wealth_settle_investment_accumulators`): the
    year's paid totals become per-estate progress, and the accumulated national
-   flow is applied to the pool.
+   flow is applied to the pool. Both halves share one walk of the estate set:
+   the progress half writes `mnt_wealth_invested_since_review` and the flow half
+   writes `mnt_wealth_arriving`, so neither reads what the other wrote.
 3. **Change investment levels** (`mnt_wealth_update_investment_levels`): release
    departed estates and redistribute what they held, credit progress to each
-   estate's lifetime pool, then recompute its level, its desired wealth, and its
-   sized investment or neglect modifier.
+   estate's lifetime pool, then recompute its level and its sized investment or
+   neglect modifier. Desired wealth is not recomputed here: the level does not
+   depend on it, and the resurvey in step 6 rewrites it from fresh survey data.
+   Callers with no resurvey behind them (looting) use
+   `mnt_wealth_recompute_estate_investment`, which carries desired wealth
+   forward itself.
 4. **Drift the wealth shares** toward each estate's cached power and rescale the
    share sum.
 5. **AI locations only**: recompute the kept-wage display totals.

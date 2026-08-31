@@ -376,11 +376,32 @@ mnt_wealth_projected_stored_level = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = scope:mnt_wealth_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|scope:mnt_wealth_estate)"
+		limit = { scope:mnt_wealth_estate = estate_type:nobles_estate }
+		add = mnt_wealth_investment_level_nobles_estate
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_estate = estate_type:clergy_estate }
+		add = mnt_wealth_investment_level_clergy_estate
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_estate = estate_type:burghers_estate }
+		add = mnt_wealth_investment_level_burghers_estate
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_estate = estate_type:peasants_estate }
+		add = mnt_wealth_investment_level_peasants_estate
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_estate = estate_type:dhimmi_estate }
+		add = mnt_wealth_investment_level_dhimmi_estate
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_estate = estate_type:tribes_estate }
+		add = mnt_wealth_investment_level_tribes_estate
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_estate = estate_type:cossacks_estate }
+		add = mnt_wealth_investment_level_cossacks_estate
 	}
 }
 
@@ -563,8 +584,8 @@ mnt_wealth_projected_investment_level = {
 			owner = { is_ai = yes }
 			var:mnt_wealth_local_wealth_share_sum > 0
 			mnt_wealth_investment_rate > 0
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = scope:mnt_wealth_estate }
+			has_variable_map = mnt_wealth_invested_wealth
+			is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = scope:mnt_wealth_estate }
 		}
 		value = mnt_wealth_projected_invested_wealth
 		save_temporary_value_as = mnt_wealth_proj_signed
@@ -608,16 +629,22 @@ mnt_wealth_displayed_investment_level = {
 }
 
 # --- per-estate investment levels (for map modes) ---
+# The level is not stored. The modifier carries it at the rounding factor, which
+# is the same figure the location actually receives.
 
 mnt_wealth_investment_level_nobles_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:nobles_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:nobles_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_nobles }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_nobles
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_nobles }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_nobles
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
@@ -625,11 +652,15 @@ mnt_wealth_investment_level_clergy_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:clergy_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:clergy_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_clergy }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_clergy
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_clergy }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_clergy
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
@@ -637,11 +668,15 @@ mnt_wealth_investment_level_burghers_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:burghers_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:burghers_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_burghers }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_burghers
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_burghers }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_burghers
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
@@ -649,11 +684,15 @@ mnt_wealth_investment_level_peasants_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:peasants_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:peasants_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_peasants }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_peasants
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_peasants }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_peasants
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
@@ -661,11 +700,15 @@ mnt_wealth_investment_level_dhimmi_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:dhimmi_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:dhimmi_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_dhimmi }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_dhimmi
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_dhimmi }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_dhimmi
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
@@ -673,11 +716,15 @@ mnt_wealth_investment_level_tribes_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:tribes_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:tribes_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_tribes }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_tribes
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_tribes }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_tribes
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
@@ -685,11 +732,15 @@ mnt_wealth_investment_level_cossacks_estate = {
 	value = 0
 
 	if = {
-		limit = {
-			has_variable_map = mnt_wealth_investment_level
-			is_key_in_variable_map = { name = mnt_wealth_investment_level target = estate_type:cossacks_estate }
-		}
-		value = "variable_map(mnt_wealth_investment_level|estate_type:cossacks_estate)"
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_cossacks }
+		value = var:mnt_wealth_applied_mnt_wealth_investment_cossacks
+		multiply = mnt_wealth_investment_rounding_factor
+	}
+	else_if = {
+		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_cossacks }
+		value = var:mnt_wealth_applied_mnt_wealth_neglect_cossacks
+		multiply = mnt_wealth_investment_rounding_factor
+		multiply = -1
 	}
 }
 
