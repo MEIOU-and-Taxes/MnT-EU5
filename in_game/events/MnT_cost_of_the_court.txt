@@ -44,23 +44,3 @@ cost_of_the_court.1 = {
 		}
 	}
 }
-
-# Aggregate all CotC demands into temporary market demands. The per-market
-# work rides the load balancer's market index, spread across up to 512 worker
-# countries instead of one rank-1 great power. Fires one day after the monthly
-# pulse, so every country's cost_of_the_court.1 accumulation is already in.
-cost_of_the_court.2 = {
-	type = country_event
-	title = hidden_event.t
-	hidden = yes
-	# No trigger: workers are threads sweeping the market index, so a worker's
-	# own standing is irrelevant, and any entry condition the balancer's
-	# reindex does not share drops that worker's slice.
-	immediate = {
-		mnt_wealth_load_balance_this_effect = {
-			DATA_SET = market
-			CYCLE = 1
-			EFFECT = apply_cost_of_the_court_demand
-		}
-	}
-}

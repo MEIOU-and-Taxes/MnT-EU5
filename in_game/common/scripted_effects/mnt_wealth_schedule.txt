@@ -1,0 +1,406 @@
+﻿# Scheduler: decides when each location and market next needs work, and fires
+# the pulse for every rate that is ready.
+#
+# Each entity's schedule lives in global maps keyed by the entity itself:
+#
+#   mnt_wealth_location_last_monthly     - player-owned locations, every month
+#   mnt_wealth_location_last_yearly      - every location, mnt_wealth_year_cycle_months
+#   mnt_wealth_location_last_five_yearly - every location, mnt_wealth_gdp_cycle_months
+#   mnt_wealth_market_last_monthly       - every market, every month
+#   mnt_wealth_location_next_service     - earliest month a location rate is ready
+#   mnt_wealth_market_next_service       - earliest month a market rate is ready
+#
+# An entity with no entries reads as ready and is taken by the next batch, so a
+# location that gains an owner or a market that is created joins the schedule
+# without anything having to register it.
+
+# ── LOADING ONE RATE ──
+# Each loads its map into local_var:mnt_wealth_last_<rate>, zero when the entity
+# has no entry yet.
+
+mnt_wealth_load_last_location_monthly = {
+	set_local_variable = { name = mnt_wealth_last_monthly value = 0 }
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_monthly target = this } }
+		set_local_variable = {
+			name = mnt_wealth_last_monthly
+			value = "global_variable_map(mnt_wealth_location_last_monthly|this)"
+		}
+	}
+}
+
+mnt_wealth_load_last_location_five_yearly = {
+	set_local_variable = { name = mnt_wealth_last_five_yearly value = 0 }
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_five_yearly target = this } }
+		set_local_variable = {
+			name = mnt_wealth_last_five_yearly
+			value = "global_variable_map(mnt_wealth_location_last_five_yearly|this)"
+		}
+	}
+}
+
+mnt_wealth_load_last_location_yearly = {
+	set_local_variable = { name = mnt_wealth_last_yearly value = 0 }
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_yearly target = this } }
+		set_local_variable = {
+			name = mnt_wealth_last_yearly
+			value = "global_variable_map(mnt_wealth_location_last_yearly|this)"
+		}
+	}
+}
+
+mnt_wealth_load_last_market_monthly = {
+	set_local_variable = { name = mnt_wealth_last_monthly value = 0 }
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_market_last_monthly target = this } }
+		set_local_variable = {
+			name = mnt_wealth_last_monthly
+			value = "global_variable_map(mnt_wealth_market_last_monthly|this)"
+		}
+	}
+}
+
+# ── RATE ARITHMETIC ──
+
+# Sets local_var:mnt_wealth_ready_$RATE$ when PERIOD months have passed since
+# the rate last ran.
+
+mnt_wealth_rate_is_ready = {
+	set_local_variable = {
+		name = mnt_wealth_age_$RATE$
+		value = {
+			value = global_var:mnt_wealth_months_elapsed
+			subtract = local_var:mnt_wealth_last_$RATE$
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_ready_$RATE$ value = 0 }
+	if = {
+		limit = { local_var:mnt_wealth_age_$RATE$ >= $PERIOD$ }
+		set_local_variable = { name = mnt_wealth_ready_$RATE$ value = 1 }
+	}
+}
+
+# Lowers local_var:mnt_wealth_next_service to RATE's next occurrence when that falls
+# earlier than the running minimum.
+
+mnt_wealth_offer_next_service = {
+	set_local_variable = {
+		name = mnt_wealth_next_service_candidate
+		value = { value = local_var:mnt_wealth_last_$RATE$ add = $PERIOD$ }
+	}
+	if = {
+		limit = { local_var:mnt_wealth_next_service_candidate < local_var:mnt_wealth_next_service }
+		set_local_variable = { name = mnt_wealth_next_service value = local_var:mnt_wealth_next_service_candidate }
+	}
+}
+
+# Scope: location. Backdates RATE by the location's own serial, so the first run
+# of each falls on a different month across the period.
+
+mnt_wealth_seed_rate = {
+	set_local_variable = {
+		name = mnt_wealth_last_$RATE$
+		value = {
+			value = var:mnt_wealth_location_id
+			modulo = $PERIOD$
+			multiply = -1
+		}
+	}
+}
+
+# ── READING A SCHEDULE ──
+
+# Scope: location.
+
+mnt_wealth_read_location_rates = {
+	mnt_wealth_load_last_location_monthly = yes
+	mnt_wealth_load_last_location_five_yearly = yes
+	mnt_wealth_load_last_location_yearly = yes
+
+	mnt_wealth_rate_is_ready = { RATE = monthly     PERIOD = mnt_wealth_month_cycle_months }
+	mnt_wealth_rate_is_ready = { RATE = five_yearly PERIOD = mnt_wealth_gdp_cycle_months }
+	mnt_wealth_rate_is_ready = { RATE = yearly      PERIOD = mnt_wealth_year_cycle_months }
+}
+
+# Scope: market.
+
+mnt_wealth_read_market_rates = {
+	mnt_wealth_load_last_market_monthly = yes
+	mnt_wealth_rate_is_ready = { RATE = monthly PERIOD = mnt_wealth_month_cycle_months }
+}
+
+# ── RECORDING A RUN ──
+
+mnt_wealth_record_location_monthly = {
+	set_local_variable = { name = mnt_wealth_last_monthly value = global_var:mnt_wealth_months_elapsed }
+	save_temporary_scope_as = mnt_wealth_record_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_last_monthly
+		key = scope:mnt_wealth_record_entity
+		value = local_var:mnt_wealth_last_monthly
+	}
+}
+
+mnt_wealth_record_location_five_yearly = {
+	set_local_variable = { name = mnt_wealth_last_five_yearly value = global_var:mnt_wealth_months_elapsed }
+	save_temporary_scope_as = mnt_wealth_record_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_last_five_yearly
+		key = scope:mnt_wealth_record_entity
+		value = local_var:mnt_wealth_last_five_yearly
+	}
+}
+
+mnt_wealth_record_location_yearly = {
+	set_local_variable = { name = mnt_wealth_last_yearly value = global_var:mnt_wealth_months_elapsed }
+	save_temporary_scope_as = mnt_wealth_record_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_last_yearly
+		key = scope:mnt_wealth_record_entity
+		value = local_var:mnt_wealth_last_yearly
+	}
+}
+
+mnt_wealth_record_market_monthly = {
+	set_local_variable = { name = mnt_wealth_last_monthly value = global_var:mnt_wealth_months_elapsed }
+	save_temporary_scope_as = mnt_wealth_record_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_market_last_monthly
+		key = scope:mnt_wealth_record_entity
+		value = local_var:mnt_wealth_last_monthly
+	}
+}
+
+# ── WRITING THE NEXT SERVICE MONTH ──
+
+# Scope: location. Takes the earliest next occurrence across the rates that
+# apply here. local_var:mnt_wealth_is_player decides whether the monthly rate
+# counts.
+
+mnt_wealth_write_location_next_service = {
+	set_local_variable = {
+		name = mnt_wealth_next_service
+		value = { value = local_var:mnt_wealth_last_yearly add = mnt_wealth_year_cycle_months }
+	}
+
+	mnt_wealth_offer_next_service = { RATE = five_yearly PERIOD = mnt_wealth_gdp_cycle_months }
+	if = {
+		limit = { local_var:mnt_wealth_is_player = 1 }
+		mnt_wealth_offer_next_service = { RATE = monthly PERIOD = mnt_wealth_month_cycle_months }
+	}
+
+	save_temporary_scope_as = mnt_wealth_next_service_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_next_service
+		key = scope:mnt_wealth_next_service_entity
+		value = local_var:mnt_wealth_next_service
+	}
+}
+
+# Scope: market.
+
+mnt_wealth_write_market_next_service = {
+	set_local_variable = {
+		name = mnt_wealth_next_service
+		value = { value = local_var:mnt_wealth_last_monthly add = mnt_wealth_month_cycle_months }
+	}
+
+	save_temporary_scope_as = mnt_wealth_next_service_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_market_next_service
+		key = scope:mnt_wealth_next_service_entity
+		value = local_var:mnt_wealth_next_service
+	}
+}
+
+# Scope: location. Brings the next service forward to now, so the next selection
+# pass picks the location up and rebuilds its schedule against its new owner. A
+# location that changes hands crosses between the rates that apply to
+# player-owned locations and the rates that do not.
+
+mnt_wealth_require_location_service = {
+	# Runs on an owner change rather than inside a sweep, so it reads the month
+	# from the campaign clock instead of the sweep's cached copy.
+	set_local_variable = { name = mnt_wealth_next_service value = mnt_wealth_months_since_campaign_start }
+	save_temporary_scope_as = mnt_wealth_next_service_entity
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_next_service
+		key = scope:mnt_wealth_next_service_entity
+		value = local_var:mnt_wealth_next_service
+	}
+}
+
+# ── LOCATION IDENTITY ──
+# A serial number the estate-set cache and the logs use to tell locations apart.
+
+mnt_wealth_ensure_location_id = {
+	if = {
+		limit = { NOT = { has_variable = mnt_wealth_location_id } }
+		if = {
+			limit = { NOT = { has_global_variable = mnt_wealth_location_serial } }
+			set_global_variable = { name = mnt_wealth_location_serial value = 0 }
+		}
+		set_variable = { name = mnt_wealth_location_id value = global_var:mnt_wealth_location_serial }
+		change_global_variable = { name = mnt_wealth_location_serial add = 1 }
+	}
+}
+
+# ── OPENING SPREAD ──
+# Scope: location. Gives every month an even share of the work from the first
+# year onward.
+
+mnt_wealth_seed_location_schedule = {
+	mnt_wealth_ensure_location_id = yes
+
+	mnt_wealth_seed_rate = { RATE = yearly      PERIOD = mnt_wealth_year_cycle_months }
+	mnt_wealth_seed_rate = { RATE = five_yearly PERIOD = mnt_wealth_gdp_cycle_months }
+	set_local_variable = { name = mnt_wealth_last_monthly value = 0 }
+	set_local_variable = { name = mnt_wealth_is_player value = 0 }
+
+	save_temporary_scope_as = mnt_wealth_seed_location
+
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_last_yearly
+		key = scope:mnt_wealth_seed_location
+		value = local_var:mnt_wealth_last_yearly
+	}
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_last_five_yearly
+		key = scope:mnt_wealth_seed_location
+		value = local_var:mnt_wealth_last_five_yearly
+	}
+
+	mnt_wealth_write_location_next_service = yes
+}
+
+# ── DISPATCHERS ──
+
+# Scope: location. Run once by a worker on each location the selection pass
+# handed it. The pulses run in the order the work depends on: the GDP refresh
+# and the yearly review both feed the resurvey, and the scoring pulse reads what
+# the resurvey produced.
+
+mnt_wealth_service_location = {
+	mnt_wealth_ensure_location_id = yes
+	mnt_wealth_read_location_rates = yes
+
+	set_local_variable = { name = mnt_wealth_is_player value = 0 }
+	if = {
+		limit = { owner ?= { is_human = yes } }
+		set_local_variable = { name = mnt_wealth_is_player value = 1 }
+	}
+
+	if = {
+		limit = {
+			local_var:mnt_wealth_is_player = 1
+			local_var:mnt_wealth_ready_monthly = 1
+		}
+		trigger_event_silently = { on_action = mnt_monthly_location_pulse }
+		mnt_wealth_record_location_monthly = yes
+	}
+
+	set_local_variable = { name = mnt_wealth_surveyed value = 0 }
+
+	if = {
+		limit = { local_var:mnt_wealth_ready_five_yearly = 1 }
+		trigger_event_silently = { on_action = mnt_five_yearly_location_pulse }
+		mnt_wealth_record_location_five_yearly = yes
+		set_local_variable = { name = mnt_wealth_surveyed value = 1 }
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_ready_yearly = 1 }
+		trigger_event_silently = { on_action = mnt_yearly_location_pulse }
+		mnt_wealth_record_location_yearly = yes
+		set_local_variable = { name = mnt_wealth_surveyed value = 1 }
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_surveyed = 1 }
+		mnt_wealth_resurvey_estate_data = yes
+		mnt_wealth_invalidate_estate_set = yes
+	}
+
+	# Both read the survey the step above refreshed.
+	if = {
+		limit = { local_var:mnt_wealth_ready_yearly = 1 }
+		calc_location_center_scores = yes
+		epbm_price_location_buildings = yes
+	}
+
+	mnt_wealth_write_location_next_service = yes
+}
+
+# Scope: market. Run once by a worker on each market the selection pass handed it.
+
+mnt_wealth_service_market = {
+	mnt_wealth_read_market_rates = yes
+
+	if = {
+		limit = { local_var:mnt_wealth_ready_monthly = 1 }
+		trigger_event_silently = { on_action = mnt_monthly_market_pulse }
+		mnt_wealth_record_market_monthly = yes
+	}
+
+	mnt_wealth_write_market_next_service = yes
+}
+
+# ── BATCH BUILDERS ──
+# Each rebuilds its data set's batch from scratch, longest wait first, up to the
+# set's cap. Anything left over stays ready and sorts ahead of the rest on the
+# following month.
+
+mnt_wealth_build_location_batch = {
+	clear_global_variable_map = mnt_wealth_location_batch
+	set_global_variable = { name = mnt_wealth_location_batch_count value = 0 }
+
+	ordered_ownable_location = {
+		limit = {
+			exists = owner
+			mnt_wealth_location_needs_service = yes
+		}
+		order_by = mnt_wealth_location_months_waiting
+		max = mnt_wealth_location_batch_cap
+		check_range_bounds = no
+
+		save_temporary_scope_as = mnt_wealth_batch_entry
+
+		add_to_global_variable_map = {
+			name = mnt_wealth_location_batch
+			key = global_var:mnt_wealth_location_batch_count
+			value = scope:mnt_wealth_batch_entry
+		}
+		change_global_variable = { name = mnt_wealth_location_batch_count add = 1 }
+	}
+}
+
+mnt_wealth_build_market_batch = {
+	clear_global_variable_map = mnt_wealth_market_batch
+	set_global_variable = { name = mnt_wealth_market_batch_count value = 0 }
+
+	ordered_market_in_world = {
+		limit = { mnt_wealth_market_needs_service = yes }
+		order_by = mnt_wealth_market_months_waiting
+		max = mnt_wealth_market_batch_cap
+		check_range_bounds = no
+
+		save_temporary_scope_as = mnt_wealth_batch_entry
+
+		add_to_global_variable_map = {
+			name = mnt_wealth_market_batch
+			key = global_var:mnt_wealth_market_batch_count
+			value = scope:mnt_wealth_batch_entry
+		}
+		change_global_variable = { name = mnt_wealth_market_batch_count add = 1 }
+	}
+}

@@ -168,3 +168,29 @@ mnt_wealth_owned_raw_power_sum = {
 		add = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_audit_estate)"
 	}
 }
+
+# How many months past its next-service month an entity is, used as the sort key
+# of the batch builders so the longest wait is served first. An entity with no
+# schedule yet reads as the whole campaign, which puts it at the front.
+
+mnt_wealth_location_months_waiting = {
+	value = global_var:mnt_wealth_months_elapsed
+
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_location_next_service target = this } }
+		subtract = "global_variable_map(mnt_wealth_location_next_service|this)"
+	}
+
+	min = 0
+}
+
+mnt_wealth_market_months_waiting = {
+	value = global_var:mnt_wealth_months_elapsed
+
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_market_next_service target = this } }
+		subtract = "global_variable_map(mnt_wealth_market_next_service|this)"
+	}
+
+	min = 0
+}

@@ -1,5 +1,5 @@
 ﻿# ── ECONOMY INITIALIZATION ──
-# Called by the mnt_wealth_initialize_economy on_action at game start.
+# Called by the mnt_on_game_start_after_lobby on_action at game start.
 
 # Scope: none. Seeds the global constants the wealth system reads: the map
 # mode wealth bands, each estate's power per pop, and each estate's short key.
@@ -81,20 +81,38 @@ mnt_wealth_seed_economy_constants = {
 		value = flag:cossacks
 	}
 	mnt_wealth_build_good_classification_map = yes
+	mnt_wealth_build_days_in_month_map = yes
+}
+
+# Scope: none. Days per calendar month, read by the spread lane to bound a
+# location's delay to the month it is dispatched in.
+
+mnt_wealth_build_days_in_month_map = {
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 1  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 2  value = 28 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 3  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 4  value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 5  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 6  value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 7  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 8  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 9  value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 10 value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 11 value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 12 value = 31 }
 }
 
 # Scope: none. Zeroes location wealth system variables on every ownable location
-# and indexes the owned ones for the load balancer.
+# and gives the owned ones their opening schedule.
 
-mnt_wealth_index_owned_locations = {
+mnt_wealth_seed_owned_locations = {
+	set_global_variable = { name = mnt_wealth_location_serial value = 0 }
+
 	every_ownable_location = {
 		mnt_wealth_zero_location = yes
 		if = {
-			limit = {
-				exists = owner
-				NOT = { has_variable = mnt_wealth_location_id }
-			}
-			mnt_wealth_index_location = yes
+			limit = { exists = owner }
+			mnt_wealth_seed_location_schedule = yes
 		}
 	}
 }
@@ -124,7 +142,7 @@ mnt_wealth_initialize_country = {
 	mnt_wealth_set_national_savings_valves = yes
 }
 
-# Scope: country (the one being annexed). Called by mnt_wealth_on_country_annexed.
+# Scope: country (the one being annexed). Called by mnt_on_annexed.
 # Country variables outlive the country, so a tag that is released again later
 # comes back holding the totals it died with. Its national flow would then be
 # computed against a treasury and a raw power total that no longer exist.
@@ -312,8 +330,9 @@ mnt_wealth_build_estate_set = {
 	}
 }
 
-# Scope: location. Replays the cached set, rebuilding it when the stamp is
-# missing or belongs to another location. An unindexed location stamps -1.
+# Scope: location. Replays the cached set, rebuilding it when the recorded
+# owner id is missing or belongs to another location. A location with no id
+# records -1.
 
 mnt_wealth_for_each_cached_estate = {
 	set_local_variable = { name = mnt_wealth_estate_set_hit value = 0 }
@@ -352,6 +371,9 @@ mnt_wealth_for_each_cached_estate = {
 # Human locations run the full estate loop every month. AI locations skip
 # it and receive a closed-form yearly equivalent instead. Basically player locations
 # use exact values, AI locations guess a year at a time.
+#
+# The scheduler in mnt_wealth_schedule.txt decides which of these a location is
+# ready for and fires the matching pulse.
 
 # Scope: location. Records when this location was last reviewed, so the display
 # can project an AI location's guess forward from that point.
@@ -369,7 +391,7 @@ mnt_wealth_estate_month = {
 	mnt_wealth_resolve_estate_monthly_income = yes
 }
 
-# Scope: location (human-owned, load balanced).
+# Scope: location (human-owned). Body of mnt_monthly_location_pulse.
 # The full monthly cycle for one human location: set wages, loop each
 # estate for income, add income to the pool, then spend on investment.
 
@@ -405,8 +427,7 @@ mnt_wealth_location_month = {
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
 }
 
-# Scope: location (load balanced, all locations).
-# load balancing means this is run monthly but hits each location every 12 months
+# Scope: location. Body of mnt_yearly_location_pulse.
 # The yearly review handles work too expensive or infrequent for the monthly
 # loop: settling accumulated investment into per-estate modifiers, recomputing
 # investment levels, drifting wealth shares toward current power, and
@@ -438,74 +459,4 @@ mnt_wealth_location_year = {
 	}
 
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
-	# No resurvey here. mnt_wealth_location_registry runs one after every entry
-	# that came due, so a location due for this and the GDP refresh in the same
-	# month is surveyed once, after both.
-}
-
-# Scope: location (load balanced, all locations).
-# The wealth yearly tick, centers of importance scoring, and AI building
-# maintenance pricing share one balanced sweep of the location index.
-
-# ── LOCATION REGISTRY ──
-# Runs once per location that came due this month. Every entry names its own
-# cycle; the sweep that calls this must run at the greatest common divisor of
-# them all, or entries on the other cycles are never reached. Cycles taken from
-# the divisors of 60 keep that divisor equal to the smallest cycle, which costs
-# no wasted visits.
-#
-# Entries run in the order written. The resurvey runs once, after all of them,
-# because each entry mutates state the survey has to read back.
-
-mnt_wealth_location_registry = {
-	mnt_wealth_registry_due = { CYCLE = mnt_wealth_gdp_cycle_months NAME = gdp }
-	mnt_wealth_registry_due = { CYCLE = mnt_wealth_year_cycle_months NAME = year }
-
-	set_local_variable = { name = mnt_wealth_registry_ran value = 0 }
-
-	if = {
-		limit = { local_var:mnt_wealth_registry_due_gdp = 1 }
-		mnt_wealth_update_local_gdp = yes
-		set_local_variable = { name = mnt_wealth_registry_ran value = 1 }
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_registry_due_year = 1 }
-		mnt_wealth_location_year = yes
-		set_local_variable = { name = mnt_wealth_registry_ran value = 1 }
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_registry_ran = 1 }
-		mnt_wealth_resurvey_estate_data = yes # raw power, relative power, desired wealth
-		mnt_wealth_invalidate_estate_set = yes
-	}
-
-	# These read the survey, so they follow it rather than sitting with the rest
-	# of the yearly work.
-	if = {
-		limit = { local_var:mnt_wealth_registry_due_year = 1 }
-		calc_location_center_scores = yes
-		epbm_price_location_buildings = yes
-	}
-}
-
-# Scope: location. Sets mnt_wealth_registry_due_$NAME$ when this location's slot
-# is the one CYCLE has come round to.
-
-mnt_wealth_registry_due = {
-	set_local_variable = {
-		name = mnt_wealth_registry_slot
-		value = { value = var:mnt_wealth_location_id modulo = $CYCLE$ }
-	}
-	set_local_variable = {
-		name = mnt_wealth_registry_month
-		value = { value = global_var:mnt_wealth_months_elapsed modulo = $CYCLE$ }
-	}
-
-	set_local_variable = { name = mnt_wealth_registry_due_$NAME$ value = 0 }
-	if = {
-		limit = { local_var:mnt_wealth_registry_slot = local_var:mnt_wealth_registry_month }
-		set_local_variable = { name = mnt_wealth_registry_due_$NAME$ value = 1 }
-	}
 }

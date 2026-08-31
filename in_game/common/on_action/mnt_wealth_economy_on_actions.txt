@@ -3,10 +3,10 @@
 
 # Scope: none. Fires once at game start after the lobby via CMF.
 
-mnt_wealth_initialize_economy = {
+mnt_on_game_start_after_lobby = {
 	effect = {
 		mnt_wealth_seed_economy_constants = yes
-		mnt_wealth_index_owned_locations = yes
+		mnt_wealth_seed_owned_locations = yes
 		mnt_wealth_initialize_countries = yes
 		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
 	}
@@ -14,16 +14,25 @@ mnt_wealth_initialize_economy = {
 
 # Scope: none (weather_monthly_pulse).
 
-mnt_wealth_weather_monthly_pulse = {
+mnt_on_weather_monthly_pulse = {
 	effect = {
 		mnt_wealth_log_weather_pulse_month = yes
 		mnt_wealth_maintain_building_produced_goods_cache = yes
+		mnt_wealth_begin_month = yes
+		mnt_wealth_load_balance_this_effect = {
+			DATA_SET = location
+			EFFECT = mnt_wealth_route_location
+		}
+		mnt_wealth_load_balance_this_effect = {
+			DATA_SET = market
+			EFFECT = mnt_wealth_service_market
+		}
 	}
 }
 
-# Scope: country. Measured serial across countries, not parallel.
+# Scope: country.
 
-mnt_wealth_monthly_country_pulse = {
+mnt_on_monthly_country_pulse = {
 	# Index 0 fires once a month; the marker pairs with the weather pulse.
 	effect = {
 		if = {
@@ -37,8 +46,6 @@ mnt_wealth_monthly_country_pulse = {
 
 	events = {
 		mnt_wealth_economy.10       # estate treasury flow valves
-		mnt_wealth_economy.21       # monthly location tick: wages, income, investment
-		mnt_wealth_economy.22       # yearly rates and GDP survey
 	}
 }
 
@@ -46,7 +53,7 @@ mnt_wealth_monthly_country_pulse = {
 # The engine splits capture by fort: a location without one changes hands here,
 # a location with one through on_siege_won below. Both are looted the same way.
 
-mnt_wealth_on_location_occupied = {
+mnt_on_location_occupied = {
 	effect = {
 		mnt_wealth_loot_captured_location = yes
 	}
@@ -55,7 +62,7 @@ mnt_wealth_on_location_occupied = {
 # Scope: country (occupier). scope:target is the location taken.
 # A location with a fort changes hands here instead, once its siege ends.
 
-mnt_wealth_on_siege_won = {
+mnt_on_siege_won = {
 	effect = {
 		mnt_wealth_loot_captured_location = yes
 	}
@@ -63,7 +70,7 @@ mnt_wealth_on_siege_won = {
 
 # Scope: country (root = the newly formed country).
 
-mnt_wealth_on_new_country_formed = {
+mnt_on_new_country_formed = {
 	effect = {
 		mnt_wealth_initialize_country = yes
 	}
@@ -73,7 +80,7 @@ mnt_wealth_on_new_country_formed = {
 # was annexed. Fires after the annexation, so its locations have already moved
 # their totals across.
 
-mnt_wealth_on_country_annexed = {
+mnt_on_annexed = {
 	effect = {
 		scope:target ?= { mnt_wealth_clear_annexed_country = yes }
 	}
@@ -83,7 +90,7 @@ mnt_wealth_on_country_annexed = {
 # scope:target is the annexed country. Maps reset at civil war resolution,
 # so the raw power totals are gone; rebuild recounts them from owned locations.
 
-mnt_wealth_on_country_civil_war_annexed = {
+mnt_on_civil_war_annexed = {
 	effect = {
 		scope:target ?= { mnt_wealth_clear_annexed_country = yes }
 		mnt_wealth_rebuild_national_estate_raw_power = yes
@@ -95,7 +102,7 @@ mnt_wealth_on_country_civil_war_annexed = {
 # power totals kept during the war are gone; count them again from the
 # locations the winner holds now.
 
-mnt_wealth_on_civil_war_won = {
+mnt_on_civil_war_won = {
 	effect = {
 		mnt_wealth_rebuild_national_estate_raw_power = yes
 	}
@@ -107,7 +114,7 @@ mnt_wealth_on_civil_war_won = {
 # rebuild done here, so the winner also recounts one day later through
 # mnt_wealth_economy.31, once the reset is over.
 
-mnt_wealth_on_civil_war_lost = {
+mnt_on_civil_war_lost = {
 	effect = {
 		scope:winner ?= {
 			mnt_wealth_rebuild_national_estate_raw_power = yes
@@ -119,9 +126,7 @@ mnt_wealth_on_civil_war_lost = {
 # Scope: location. scope:winner is the new owner, scope:loser is the
 # old owner (either may not exist for colonization/decolonization).
 
-mnt_wealth_on_location_changed_owner = {
-	on_actions = { mnt_wealth_on_location_colonized mnt_wealth_on_location_decolonized }
-
+mnt_on_location_changed_owner = {
 	effect = {
 		mnt_wealth_transfer_location_between_owners = yes
 	}
@@ -130,22 +135,57 @@ mnt_wealth_on_location_changed_owner = {
 	events = { delay = { days = 1 } mnt_wealth_economy.30 }
 }
 
-# Fires when a location gains its first owner (no scope:loser).
+# ── SERVICE LANES ──
+# Both fire for every location in the month's batch. Register work on whichever
+# suits it; the two carry nothing in common.
 
-mnt_wealth_on_location_colonized = {
-	trigger = { NOT = { exists = scope:loser } }
+# Scope: location. Always runs on the month tick, no delay.
 
+mnt_instant_location_pulse = {
+}
+
+# Scope: location. Runs on a day of the month picked from the location, or on
+# the month tick for the share named by @mnt_wealth_month_tick_share.
+
+mnt_spread_location_pulse = {
 	effect = {
-		if = { limit = { NOT = { has_variable = mnt_wealth_location_id } } mnt_wealth_index_location = yes }
+		mnt_wealth_service_location = yes
 	}
 }
 
-# Fires when a location loses its last owner (no scope:winner).
+# ── SCHEDULED PULSES ──
+# Fired by the dispatchers in mnt_wealth_schedule.txt on the entity that came
+# ready. One per rate, so each shows up on its own in a profiling run.
 
-mnt_wealth_on_location_decolonized = {
-	trigger = { NOT = { exists = scope:winner } }
+# Scope: location (player-owned).
 
+mnt_monthly_location_pulse = {
 	effect = {
-		if = { limit = { has_variable = mnt_wealth_location_id } mnt_wealth_unindex_location = yes }
+		mnt_wealth_location_month = yes
+	}
+}
+
+# Scope: location.
+
+mnt_yearly_location_pulse = {
+	effect = {
+		mnt_wealth_location_year = yes
+	}
+}
+
+# Scope: location.
+
+mnt_five_yearly_location_pulse = {
+	effect = {
+		mnt_wealth_update_local_gdp = yes
+	}
+}
+
+# Scope: market.
+
+mnt_monthly_market_pulse = {
+	effect = {
+		apply_cost_of_the_court_demand = yes
+		apply_diplomatic_spending_demand = yes
 	}
 }

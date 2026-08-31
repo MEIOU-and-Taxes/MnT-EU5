@@ -17,6 +17,7 @@ mnt_wealth_economy.30 = {
 		mnt_wealth_set_review_month = yes
 		mnt_wealth_resurvey_estate_data = yes
 		mnt_wealth_invalidate_estate_set = yes
+		mnt_wealth_require_location_service = yes
 	}
 }
 
@@ -40,46 +41,4 @@ mnt_wealth_economy.10 = {
 	title = empty_text
 	trigger = { num_locations > 0 }
 	immediate = { mnt_wealth_set_national_savings_valves = yes }
-}
-
-# Monthly: runs the full monthly tick on each human-owned location
-# via the load balancer.
-
-mnt_wealth_economy.21 = {
-	type = country_event
-	hidden = yes
-	title = empty_text
-	# No trigger and no index guard, for the same reason as mnt_wealth_economy.22
-	# below: the balancer reindexes before it reads the index, and any entry
-	# condition the reindex does not share drops that worker's slice.
-
-	immediate = {
-		mnt_wealth_load_balance_this_effect = {
-			DATA_SET = human_location
-			CYCLE = 1
-			EFFECT = mnt_wealth_location_month
-		}
-	}
-}
-
-# Monthly: runs the GDP survey rotation and the yearly location review
-# via the load balancer across all locations (human and AI).
-
-mnt_wealth_economy.22 = {
-	type = country_event
-	hidden = yes
-	title = empty_text
-	# No trigger: workers are threads sweeping the global location index, so a
-	# worker's own holdings are irrelevant. Any condition here that the
-	# balancer's reindex does not share drops that worker's slice of the chunk.
-
-	immediate = {
-		# One sweep at the greatest common divisor of every cycle in
-		# mnt_wealth_location_registry, which decides for itself what is due.
-		mnt_wealth_load_balance_this_effect = {
-			DATA_SET = location
-			CYCLE = mnt_wealth_year_cycle_months
-			EFFECT = mnt_wealth_location_registry
-		}
-	}
 }
