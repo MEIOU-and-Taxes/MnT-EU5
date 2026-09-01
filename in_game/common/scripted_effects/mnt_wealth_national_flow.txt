@@ -3,12 +3,62 @@
 # One signed number per estate carries both directions: above its savings goal
 # an estate sends gold down to its locations, below it takes gold back out.
 
+# ── TREASURY DRIP ──
+
+# Scope: country. Called monthly for AI through the EPBM loop. Combines the
+# EPBM building maintenance charge and the savings valve flow into one gold
+# move per estate, so AI treasuries change every month instead of in yearly
+# lumps.
+#
+# Sign: delta = -(epbm_pay) - (flow_rate).
+# Positive flow = payout = treasury drains; negative = seizure = treasury gains.
+
+mnt_change_estate_gold = {
+	set_local_variable = { name = mnt_wealth_drip_net value = 0 }
+
+	# EPBM building maintenance.
+	if = {
+		limit = {
+			has_variable = epbm_pay_$estate$
+			var:epbm_pay_$estate$ > 0
+		}
+		change_local_variable = { name = mnt_wealth_drip_net subtract = var:epbm_pay_$estate$ }
+	}
+
+	# Savings valve flow rate (per month). The key goes through a local
+	# because macros do not expand inside quoted calls.
+	set_local_variable = { name = mnt_wealth_drip_key value = estate_type:$estate$_estate }
+	if = {
+		limit = {
+			is_key_in_variable_map = {
+				name = mnt_wealth_estate_flow
+				target = local_var:mnt_wealth_drip_key
+			}
+		}
+		change_local_variable = {
+			name = mnt_wealth_drip_net
+			subtract = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_drip_key)"
+		}
+	}
+
+	if = {
+		limit = {
+			local_var:mnt_wealth_drip_net != 0
+			any_estate = { estate_type = estate_type:$estate$_estate }
+		}
+		add_gold_to_estate = {
+			estate_type = estate_type:$estate$_estate
+			value = local_var:mnt_wealth_drip_net
+		}
+	}
+}
+
 # ── NATIONAL SAVINGS VALVES ──
 
 # Scope: country. MONTHS = 1 for the monthly player path, 12 for the yearly AI path.
 # Computes each estate's savings gap and writes the per-month flow rate to the
-# mnt_wealth_estate_flow map. The treasury application is scaled by MONTHS so
-# AI countries process a full year in one pass.
+# mnt_wealth_estate_flow map. Gold moves to the estate treasury on the player
+# path only; AI treasuries are handled by the monthly drip in mnt_change_estate_gold.
 
 mnt_wealth_set_national_savings_valves = {
 	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
@@ -119,10 +169,14 @@ mnt_wealth_set_national_savings_valves = {
 				value = local_var:mnt_wealth_estate_monthly_flow
 			}
 
-			# The treasury moves opposite to the period total.
-			add_gold_to_estate = {
-				estate_type = scope:mnt_wealth_current_estate.estate_type
-				value = { value = local_var:mnt_wealth_estate_period_total multiply = -1 }
+			# Player path applies gold here; AI treasuries move through the
+			# monthly drip (mnt_change_estate_gold) instead.
+			if = {
+				limit = { local_var:mnt_wealth_valve_months = 1 }
+				add_gold_to_estate = {
+					estate_type = scope:mnt_wealth_current_estate.estate_type
+					value = { value = local_var:mnt_wealth_estate_period_total multiply = -1 }
+				}
 			}
 		}
 	}
@@ -244,17 +298,14 @@ mnt_wealth_apply_estate_flow = {
 	}
 	else = {
 		set_local_variable = { name = mnt_wealth_seizing value = { value = local_var:mnt_wealth_gold_returned multiply = -1 } }
-		# No percentage entry means no liquid share to seize from.
+		# The estate's liquid wealth caps what can be seized from it.
 		set_local_variable = { name = mnt_wealth_own_liquid value = 0 }
 
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 			set_local_variable = {
 				name = mnt_wealth_own_liquid
-				value = {
-					value = var:mnt_wealth_pool
-					multiply = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
-				}
+				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 			}
 		}
 
@@ -299,10 +350,26 @@ mnt_wealth_resolve_estate_monthly_income = {
 		}
 	}
 
-	add_to_local_variable_map = {
-		name = mnt_wealth_arriving
+	# Write directly to the estate wealth map.
+	set_local_variable = { name = mnt_wealth_arriving_current value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_arriving_current
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_arriving_updated
+		value = { value = local_var:mnt_wealth_arriving_current add = local_var:mnt_wealth_estate_arriving }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_estate_wealth
 		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_estate_arriving
+		value = local_var:mnt_wealth_arriving_updated
 	}
 
 	change_local_variable = { name = mnt_wealth_arriving_running_total add = local_var:mnt_wealth_estate_arriving }
@@ -323,10 +390,26 @@ mnt_wealth_apply_national_flow_to_location = {
 
 	mnt_wealth_apply_estate_flow = yes
 
-	add_to_local_variable_map = {
-		name = mnt_wealth_arriving
+	# Write directly to the estate wealth map.
+	set_local_variable = { name = mnt_wealth_arriving_current value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_arriving_current
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_arriving_updated
+		value = { value = local_var:mnt_wealth_arriving_current add = local_var:mnt_wealth_pool_delta }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_estate_wealth
 		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_pool_delta
+		value = local_var:mnt_wealth_arriving_updated
 	}
 
 	change_local_variable = { name = mnt_wealth_arriving_running_total add = local_var:mnt_wealth_pool_delta }

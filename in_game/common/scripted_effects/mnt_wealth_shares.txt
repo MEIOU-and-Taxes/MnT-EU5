@@ -1,231 +1,96 @@
-﻿# GDP and Wages: estate wealth pool ownership and shares.
+﻿# GDP and Wages: per-estate absolute wealth and the pool cache.
 #
-# Each estate owns a percentage of the location's wealth pool.
-# Gold arriving for an estate increases its share; the percentages
-# slowly trend toward actual estate power over time.
+# Each estate's wealth at a location is stored as absolute gold in
+# the mnt_wealth_estate_wealth variable map. The pool variable is a
+# cached total: pool = sum of map values.
 
-# ── WEALTH PERCENTAGE SEEDING ──
+# ── ESTATE WEALTH SEEDING ──
 
-# Scope: location. Seeds each estate's wealth percentage from its relative estate power.
+# Scope: location. Seeds one estate's wealth from the starting pool
+# and its relative power. The caller sets local_var:mnt_wealth_starting_pool
+# and accumulates local_var:mnt_wealth_seed_running_total.
 
-mnt_wealth_seed_local_wealth_share = {
-	set_local_variable = { name = mnt_wealth_seed_percentage value = 0 }
+mnt_wealth_seed_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_seed_amount value = 0 }
 
 	if = {
 		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
-			name = mnt_wealth_seed_percentage
-			value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			name = mnt_wealth_seed_amount
+			value = {
+				value = local_var:mnt_wealth_starting_pool
+				multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			}
 		}
 	}
 
 	add_to_variable_map = {
-		name = mnt_wealth_local_wealth_share
+		name = mnt_wealth_estate_wealth
 		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_seed_percentage
+		value = local_var:mnt_wealth_seed_amount
 	}
+
+	change_local_variable = { name = mnt_wealth_seed_running_total add = local_var:mnt_wealth_seed_amount }
 }
 
-# ── ARRIVING WEALTH ──
 
-# Scope: location. Adds arriving gold to the wealth pool and recomputes
-# ownership shares. Three passes: snapshot, merge arrivals, write percentages.
+# ── ESTATE WEALTH DRIFT ──
 
-mnt_wealth_apply_arriving_wealth = {
-	set_local_variable = { name = mnt_wealth_pool_before_arrival value = var:mnt_wealth_pool }
+# Scope: location. Called yearly through mnt_wealth_for_each_cached_estate.
+# Moves each estate's absolute wealth toward pool * relative_power.
+# Accumulates the net delta in local_var:mnt_wealth_drift_running_total
+# for the caller to adjust the pool.
 
-	set_variable = {
-		name = mnt_wealth_pool
-		value = { value = var:mnt_wealth_pool add = local_var:mnt_wealth_arriving_running_total }
-	}
+mnt_wealth_drift_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_current_wealth value = 0 }
 
 	if = {
-		limit = { var:mnt_wealth_pool > 0 }
-		clear_local_variable_map = mnt_wealth_new_holdings
-		# Pass 1: snapshot current holdings.
-		every_key_in_variable_map = {
-			variable = mnt_wealth_local_wealth_share
-			save_temporary_scope_as = mnt_wealth_share_key
-
-			prev = {
-				set_local_variable = {
-					name = mnt_wealth_snapshot_holdings
-					value = {
-						value = local_var:mnt_wealth_pool_before_arrival
-						multiply = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_share_key)"
-					}
-				}
-				add_to_local_variable_map = {
-					name = mnt_wealth_new_holdings
-					key = scope:mnt_wealth_share_key
-					value = local_var:mnt_wealth_snapshot_holdings
-				}
-			}
-		}
-
-		# Pass 2: merge arriving gold into the snapshot.
-		every_key_in_local_variable_map = {
-			variable = mnt_wealth_arriving
-			save_temporary_scope_as = mnt_wealth_arriving_key
-
-			prev = {
-				set_local_variable = {
-					name = mnt_wealth_merged_holdings
-					value = "local_variable_map(mnt_wealth_arriving|scope:mnt_wealth_arriving_key)"
-				}
-
-				if = {
-					limit = { is_key_in_local_variable_map = { name = mnt_wealth_new_holdings target = scope:mnt_wealth_arriving_key } }
-					change_local_variable = {
-						name = mnt_wealth_merged_holdings
-						add = "local_variable_map(mnt_wealth_new_holdings|scope:mnt_wealth_arriving_key)"
-					}
-				}
-
-				add_to_local_variable_map = {
-					name = mnt_wealth_new_holdings
-					key = scope:mnt_wealth_arriving_key
-					value = local_var:mnt_wealth_merged_holdings
-				}
-			}
-		}
-
-		# Pass 3: write new percentages from holdings. The percentages divide by
-		# the holdings total rather than the pool: the two only disagree through
-		# rounding and old drift, and dividing by the pool multiplies that
-		# disagreement every time a settle shrinks the pool.
-		set_local_variable = { name = mnt_wealth_holdings_total value = 0 }
-
-		every_key_in_local_variable_map = {
-			variable = mnt_wealth_new_holdings
-			save_temporary_scope_as = mnt_wealth_holdings_key
-
-			prev = {
-				change_local_variable = {
-					name = mnt_wealth_holdings_total
-					add = "local_variable_map(mnt_wealth_new_holdings|scope:mnt_wealth_holdings_key)"
-				}
-			}
-		}
-
-		# A settle that seizes the whole pool leaves nothing to split, so the
-		# old percentages stand until gold arrives again.
-		if = {
-			limit = { local_var:mnt_wealth_holdings_total > 0 }
-			every_key_in_local_variable_map = {
-				variable = mnt_wealth_new_holdings
-				save_temporary_scope_as = mnt_wealth_holdings_key
-
-				prev = {
-					set_local_variable = {
-						name = mnt_wealth_holdings_value
-						value = "local_variable_map(mnt_wealth_new_holdings|scope:mnt_wealth_holdings_key)"
-					}
-					set_local_variable = {
-						name = mnt_wealth_new_percentage
-						value = { value = local_var:mnt_wealth_holdings_value divide = local_var:mnt_wealth_holdings_total }
-					}
-
-					add_to_variable_map = {
-						name = mnt_wealth_local_wealth_share
-						key = scope:mnt_wealth_holdings_key
-						value = local_var:mnt_wealth_new_percentage
-					}
-				}
-			}
-		}
-	}
-
-	mnt_wealth_set_local_wealth_share_sum = yes
-}
-
-mnt_wealth_set_local_wealth_share_sum = {
-	set_variable = { name = mnt_wealth_local_wealth_share_sum value = mnt_wealth_local_wealth_share_total }
-	# Shares above one whole pool over-claim it, so they are
-	# scaled down to split exactly one pool. Sums below one are left alone: at
-	# game start the missing remainder belongs to estates the owner has not
-	# established yet.
-	if = {
-		limit = { var:mnt_wealth_local_wealth_share_sum > 1.01 }
-		save_temporary_scope_as = mnt_wealth_share_scale_location
-
-		every_key_in_variable_map = {
-			variable = mnt_wealth_local_wealth_share
-			save_temporary_scope_as = mnt_wealth_share_scale_key
-
-			scope:mnt_wealth_share_scale_location = {
-				set_local_variable = {
-					name = mnt_wealth_rescaled_share
-					value = {
-						value = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_share_scale_key)"
-						divide = var:mnt_wealth_local_wealth_share_sum
-					}
-				}
-				add_to_variable_map = {
-					name = mnt_wealth_local_wealth_share
-					key = scope:mnt_wealth_share_scale_key
-					value = local_var:mnt_wealth_rescaled_share
-				}
-			}
-		}
-
-		set_variable = { name = mnt_wealth_local_wealth_share_sum value = mnt_wealth_local_wealth_share_total }
-	}
-}
-
-mnt_wealth_clear_arriving_wealth = {
-	set_local_variable = { name = mnt_wealth_arriving_running_total value = 0 }
-	clear_local_variable_map = mnt_wealth_arriving
-}
-
-# ── WEALTH PERCENTAGE TREND ──
-
-# Scope: location. Called yearly by mnt_wealth_location_year through
-# mnt_wealth_for_each_cached_estate.
-# Slowly moves each estate's wealth percentage toward its actual power
-# percentage, so changes in estate composition are reflected over time
-# rather than all at once.
-
-mnt_wealth_drift_local_wealth_share = {
-	# New estates drift up from a zero share.
-	set_local_variable = { name = mnt_wealth_current_percentage value = 0 }
-
-	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
-			name = mnt_wealth_current_percentage
-			value = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+			name = mnt_wealth_current_wealth
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 		}
 	}
 
-	# No power entry is no power, so the share drifts toward zero.
-	set_local_variable = { name = mnt_wealth_target_percentage value = 0 }
+	# Target wealth = pool * relative power; no power drifts to zero.
+	set_local_variable = { name = mnt_wealth_target_wealth value = 0 }
 
 	if = {
 		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
-			name = mnt_wealth_target_percentage
-			value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			name = mnt_wealth_target_wealth
+			value = {
+				value = var:mnt_wealth_pool
+				multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			}
 		}
 	}
 
 	set_local_variable = {
-		name = mnt_wealth_drifted_percentage
+		name = mnt_wealth_drifted_wealth
 		value = {
-			value = local_var:mnt_wealth_current_percentage
+			value = local_var:mnt_wealth_current_wealth
 			add = {
-				value = local_var:mnt_wealth_target_percentage
-				subtract = local_var:mnt_wealth_current_percentage
+				value = local_var:mnt_wealth_target_wealth
+				subtract = local_var:mnt_wealth_current_wealth
 				multiply = mnt_wealth_local_wealth_share_trend_rate
+				multiply = local_var:mnt_wealth_drift_age_factor
 			}
 		}
 	}
 
 	add_to_variable_map = {
-		name = mnt_wealth_local_wealth_share
+		name = mnt_wealth_estate_wealth
 		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_drifted_percentage
+		value = local_var:mnt_wealth_drifted_wealth
 	}
+
+	# Track the net change so the caller can adjust the pool.
+	set_local_variable = {
+		name = mnt_wealth_drift_delta
+		value = { value = local_var:mnt_wealth_drifted_wealth subtract = local_var:mnt_wealth_current_wealth }
+	}
+	change_local_variable = { name = mnt_wealth_drift_running_total add = local_var:mnt_wealth_drift_delta }
 }
 
 # ── ESTATE WEALTH HELPERS ──
@@ -234,29 +99,37 @@ mnt_wealth_set_local_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_local_estate_wealth value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_local_estate_wealth
-			value = {
-				value = var:mnt_wealth_pool
-				multiply = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
-			}
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 		}
 	}
 }
 
-# Scope: location. Adds $AMOUNT$ gold to the wealth pool and attributes
-# it to one estate, updating ownership shares.
+# Scope: location. Adds $AMOUNT$ gold to one estate and the pool.
 
 mnt_wealth_credit_estate_wealth = {
-	mnt_wealth_clear_arriving_wealth = yes
+	set_local_variable = { name = mnt_wealth_credit_current value = 0 }
 
-	add_to_local_variable_map = {
-		name = mnt_wealth_arriving
-		key = local_var:mnt_wealth_estate_key
-		value = $AMOUNT$
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_credit_current
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
 	}
 
-	set_local_variable = { name = mnt_wealth_arriving_running_total value = $AMOUNT$ }
-	mnt_wealth_apply_arriving_wealth = yes
+	set_local_variable = {
+		name = mnt_wealth_credit_new
+		value = { value = local_var:mnt_wealth_credit_current add = $AMOUNT$ }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_estate_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_credit_new
+	}
+
+	change_variable = { name = mnt_wealth_pool add = $AMOUNT$ }
 }

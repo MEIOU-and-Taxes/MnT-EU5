@@ -545,7 +545,7 @@ template mnt_wealth_investment_spending_tooltip {
 						mnt_wealth_formula_row = {
 							blockoverride "row_attributes" {
 								tooltipwidget = { using = mnt_wealth_estate_invested_row }
-								visible = "[GreaterThan_float(DCLocationMapFloat('mnt_wealth_local_wealth_share'), '(float)0')]"
+								visible = "[GreaterThan_float(DCDisplayedEstateWealth(), '(float)0')]"
 							}
 							blockoverride "row_icon" {
 								icon = {
@@ -580,7 +580,7 @@ template mnt_wealth_estate_invested_row {
 				mnt_wealth_formula_row = {
 					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
 					blockoverride "row_label" { raw_text = "× [Estate.GetType.GetNameWithNoTooltip] Wealth Share" }
-					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_local_wealth_share')|%1]" }
+					blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCEstateWealthFraction())|%1]" }
 				}
 				mnt_wealth_formula_row = {
 					blockoverride "row_label" { raw_text = "× #explanation_link [Concept('mnt_wealth_investment_rate','Investment Rate')]#!" }
@@ -847,12 +847,12 @@ template mnt_wealth_estate_wealth_tooltip {
 template mnt_wealth_estate_wealth_tooltip_bound {
 	using = mnt_wealth_estate_wealth_tooltip
 	blockoverride "local_estate_wealth_tooltip" { tooltipwidget = { using = mnt_wealth_local_estate_wealth_tooltip } }
-	blockoverride "local_estate_wealth" { raw_text = "#bold [FixedPointToFloat(DCEstateWealth())|2]#!@gold!" }
+	blockoverride "local_estate_wealth" { raw_text = "#bold [DCDisplayedEstateWealth()|2]#!@gold!" }
 	blockoverride "wealth_share_tooltip" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
 	blockoverride "wealth_share_drift_tooltip" { tooltipwidget = { using = mnt_wealth_drift_gold_tooltip } }
 	blockoverride "wealth_share_drift_gold" { raw_text = "[DCWealthShareDriftGold()|2+=]@gold!" }
 	blockoverride "wealth_share_display" {
-		raw_text = "([FixedPointToFloat(DCWealthShareDrift())|%2+=]) [DCLocationMapFloat('mnt_wealth_local_wealth_share')|%0]"
+		raw_text = "([FixedPointToFloat(DCWealthShareDrift())|%2+=]) [FixedPointToFloat(DCEstateWealthFraction())|%0]"
 	}
 	blockoverride "wage_residual_tooltip" { tooltipwidget = { using = mnt_wealth_estate_wage_residual_tooltip } }
 	blockoverride "wage_residual_value" { raw_text = "[DCEstateIncome()|2+=]@gold!" }
@@ -860,7 +860,7 @@ template mnt_wealth_estate_wealth_tooltip_bound {
 	blockoverride "estate_investment_value" { raw_text = "[DCEstateLocalFlow()|2+=]@gold!" }
 	blockoverride "invested_outflow_tooltip" { tooltipwidget = { using = mnt_wealth_estate_invested_row } }
 	blockoverride "invested_outflow_value" { raw_text = "[Subtract_float('(float)0', DCEstateInvestedGold())|2+=]@gold!" }
-	blockoverride "wealth_change" { raw_text = "([DCEstateWealthChange()|2+=]) #bold [FixedPointToFloat(DCEstateWealth())|2]#!@gold!" }
+	blockoverride "wealth_change" { raw_text = "([DCEstateWealthChange()|2+=]) #bold [DCDisplayedEstateWealth()|2]#!@gold!" }
 	blockoverride "desired_wealth_tooltipwidget" { tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip } }
 	blockoverride "desired_wealth_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Investment Upkeep" }
 	blockoverride "desired_wealth_value" { raw_text = "[DCMonthlyUpkeep()|2]@gold!" }
@@ -881,7 +881,7 @@ template mnt_wealth_share_drift_tooltip {
 				}
 				mnt_wealth_formula_row = {
 					blockoverride "row_label" { raw_text = "- Local [Estate.GetType.GetNameWithNoTooltip] Wealth Share" }
-					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_local_wealth_share')|%1]" }
+					blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCEstateWealthFraction())|%1]" }
 				}
 				mnt_wealth_formula_row = {
 					blockoverride "row_label" { raw_text = "× Drift Rate per Month" }
@@ -918,14 +918,14 @@ template mnt_wealth_local_estate_wealth_tooltip {
 				mnt_wealth_formula_row = {
 					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_share_drift_tooltip } }
 					blockoverride "row_label" { raw_text = "× [Estate.GetType.GetNameWithNoTooltip] Wealth Share" }
-					blockoverride "row_value" { raw_text = "[DCLocationMapFloat('mnt_wealth_local_wealth_share')|%1]" }
+					blockoverride "row_value" { raw_text = "[FixedPointToFloat(DCEstateWealthFraction())|%1]" }
 				}
 
 				divider_solid_gold = {  }
 
 				mnt_wealth_formula_row = {
 					blockoverride "row_label" { raw_text = "= Local [Estate.GetType.GetNameWithNoTooltip] Wealth" }
-					blockoverride "row_value" { raw_text = "#bold [FixedPointToFloat(DCEstateWealth())|2]#!@gold!" }
+					blockoverride "row_value" { raw_text = "#bold [DCDisplayedEstateWealth()|2]#!@gold!" }
 				}
 			}
 		}
@@ -1183,7 +1183,7 @@ template mnt_wealth_estate_investment_tooltip {
 					blockoverride "tooltip_content" {
 						using = mnt_wealth_investment_rows
 						blockoverride "investment_wealth_tooltip" { tooltipwidget = { using = mnt_wealth_estate_wealth_tooltip_bound } }
-						blockoverride "investment_estate_wealth_value" { raw_text = "[FixedPointToFloat(DCEstateWealth())|2]@gold!" }
+						blockoverride "investment_estate_wealth_value" { raw_text = "[DCDisplayedEstateWealth()|2]@gold!" }
 						blockoverride "investment_monthly_bold_value" { raw_text = "#bold [DCMonthlyInvestment()|2+=]#!@gold!" }
 					}
 				}

@@ -1,75 +1,168 @@
-﻿# Load balancer: sweeps a DATA_SET's batch once a month.
-# The batch is rebuilt at the head of each sweep by the scheduler in
-# mnt_wealth_schedule.txt and holds only the entries that are ready, so every
-# entry handed out is worked. A new DATA_SET needs four names:
-#
-#   mnt_wealth_<DATA_SET>_batch           - global variable map (key:int, value:scope)
-#   mnt_wealth_<DATA_SET>_batch_count     - entry count
-#   mnt_wealth_<DATA_SET>_batch_accessor  - scripted effect: scopes to the cursor's entry
-#   mnt_wealth_build_<DATA_SET>_batch     - scripted effect: rebuilds the batch
+﻿# Monthly dispatch: walk the current month's service bucket and fire the balanced
+# service for every location whose service month has arrived. AI locations smear across the
+# month's days by their id; player locations run on the month tick so income
+# lands in the right month. Markets are few and run every month on the tick.
 
-# ── MAIN DISPATCHER ──
-# Scope: none. DATA_SET selects which batch to sweep. Legal values:
-#   location  - locations that are ready (mnt_wealth_location_batch)
-#   market    - markets that are ready (mnt_wealth_market_batch)
-# EFFECT runs once per entry.
-#
-# EFFECT must never rewrite the batch it is sweeping.
+# ── MONTHLY DISPATCH ──
+# Scope: none. Runs once a month from the weather pulse.
 
-mnt_wealth_load_balance_this_effect = {
-	mnt_wealth_build_$DATA_SET$_batch = yes
-
-	set_local_variable = { name = mnt_wealth_load_balance_cursor value = 0 }
+mnt_dispatch_location_and_market_on_actions = {
+	# This month's bucket: months mod twelve, one-based. Every periodic
+	# cadence is a multiple of twelve months, so nothing outside this bucket
+	# can be ready, and the other eleven maps are not walked at all.
 	set_local_variable = {
-		name = mnt_wealth_load_balance_count
-		value = global_var:mnt_wealth_$DATA_SET$_batch_count
+		name = mnt_wealth_walk_bucket
+		value = { value = global_var:mnt_wealth_months_elapsed modulo = 12 add = 1 }
 	}
 
 	if = {
-		limit = { local_var:mnt_wealth_load_balance_count > 0 }
-		while = {
-			count = local_var:mnt_wealth_load_balance_count
-			mnt_wealth_$DATA_SET$_batch_accessor = { EFFECT = $EFFECT$ }
-			change_local_variable = { name = mnt_wealth_load_balance_cursor add = 1 }
+		limit = { local_var:mnt_wealth_walk_bucket = 1 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_1
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_1|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
 		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 2 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_2
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_2|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 3 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_3
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_3|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 4 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_4
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_4|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 5 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_5
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_5|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 6 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_6
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_6|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 7 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_7
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_7|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 8 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_8
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_8|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 9 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_9
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_9|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 10 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_10
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_10|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_walk_bucket = 11 }
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_11
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_11|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+	else = {
+		every_key_in_global_variable_map = {
+			variable = mnt_wealth_service_bucket_12
+			limit = {
+				"global_variable_map(mnt_wealth_service_bucket_12|this)" <= global_var:mnt_wealth_months_elapsed
+				exists = owner
+			}
+			mnt_wealth_dispatch_location = yes
+		}
+	}
+
+	# Markets: no schedule, no smearing, every one runs on the tick.
+	every_market_in_world = {
+		trigger_event_silently = { on_action = mnt_monthly_instant_market_pulse }
 	}
 }
 
-# ── LANE ROUTING ──
-# Every batch entry fires both lanes. What each lane does is decided by the
-# effects registered on its on_action, not here.
-#
-# Share of the spread lane's fires that land on the month tick instead of a day
-# tick. Raising it moves work off the days and onto the month without touching
-# what either lane runs. At 1 the spread lane behaves like the instant one.
+# Scope: location, scheduled for this month. Picks the day and fires the service.
 
-@mnt_wealth_month_tick_share = 0.1
-
-# Scope: location. Run once per batch entry. The batch is ordered longest wait
-# first, so the share that skips the delay is the most overdue. Player-owned
-# locations also skip it, since their monthly income cannot land in the wrong
-# month.
-
-mnt_wealth_route_location = {
-	trigger_event_silently = { on_action = mnt_instant_location_pulse }
-
-	set_local_variable = {
-		name = mnt_wealth_route_month_tick_count
-		value = {
-			value = global_var:mnt_wealth_location_batch_count
-			multiply = @mnt_wealth_month_tick_share
-			ceiling = yes
-		}
-	}
-
-	set_local_variable = { name = mnt_wealth_route_day value = 0 }
+mnt_wealth_dispatch_location = {
+	# AI work smears across the month by location id; the player's runs on
+	# the tick.
+	set_local_variable = { name = mnt_wealth_dispatch_day value = 0 }
 	if = {
-		limit = {
-			local_var:mnt_wealth_load_balance_cursor >= local_var:mnt_wealth_route_month_tick_count
-			NOT = { owner ?= { is_human = yes } }
-		}
+		limit = { NOT = { owner ?= { is_human = yes } } }
 		set_local_variable = {
-			name = mnt_wealth_route_day
+			name = mnt_wealth_dispatch_day
 			value = {
 				value = var:mnt_wealth_location_id
 				modulo = global_var:mnt_wealth_current_days_in_month
@@ -78,14 +171,14 @@ mnt_wealth_route_location = {
 	}
 
 	trigger_event_silently = {
-		on_action = mnt_spread_location_pulse
-		days = local_var:mnt_wealth_route_day
+		on_action = mnt_balanced_location_pulse
+		days = local_var:mnt_wealth_dispatch_day
 	}
 }
 
 # ── MONTH SETUP ──
-# Scope: none. Runs at the head of the month, before any sweep reads the month,
-# the day count or the country index.
+# Scope: none. Runs at the head of the month, before any sweep reads the month
+# or the day count.
 
 mnt_wealth_begin_month = {
 	set_global_variable = {
@@ -93,7 +186,6 @@ mnt_wealth_begin_month = {
 		value = mnt_wealth_months_since_campaign_start
 	}
 	mnt_wealth_set_days_in_month = yes
-	mnt_wealth_create_country_index = yes
 }
 
 # Scope: none. Resolves this calendar month's length once, so the routing reads
@@ -121,28 +213,4 @@ mnt_wealth_set_days_in_month = {
 		name = mnt_wealth_current_days_in_month
 		value = local_var:mnt_wealth_month_days
 	}
-}
-
-# ── COUNTRY INDEX ──
-# Numbers every country so the food rotation and the pulse marker can stagger
-# themselves. The sweeps do not read it.
-
-mnt_wealth_create_country_index = {
-	set_global_variable = { name = mnt_wealth_country_count value = 0 }
-
-	every_country = {
-		set_variable = { name = mnt_wealth_country_index value = global_var:mnt_wealth_country_count }
-		change_global_variable = { name = mnt_wealth_country_count add = 1 }
-	}
-}
-
-# ── BATCH ACCESSORS ──
-# Each of these runs EFFECT on the entry the cursor is currently sitting on.
-
-mnt_wealth_location_batch_accessor = {
-	"global_variable_map(mnt_wealth_location_batch|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
-}
-
-mnt_wealth_market_batch_accessor = {
-	"global_variable_map(mnt_wealth_market_batch|local_var:mnt_wealth_load_balance_cursor)" = { $EFFECT$ = yes }
 }

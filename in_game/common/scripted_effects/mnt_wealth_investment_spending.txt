@@ -48,26 +48,49 @@ mnt_wealth_set_investment_progress_change = {
 
 # Scope: location. Called by mnt_wealth_location_month through
 # mnt_wealth_for_each_cached_estate.
-# Takes one estate's share of the wealth pool, subtracts the upkeep needed
-# to maintain the current investment level, and adds the net result to the
-# since-review accumulator.
+# Takes a fraction of this estate's wealth as investment, subtracts
+# upkeep, and banks the net as progress.
 
 mnt_wealth_invest_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_estate_paid value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_estate_paid
 			value = {
-				value = local_var:mnt_wealth_pool_before_investment
-				multiply = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 				multiply = local_var:mnt_wealth_cached_investment_rate
 			}
 		}
 	}
 
 	change_local_variable = { name = mnt_wealth_invested_running_total add = local_var:mnt_wealth_estate_paid }
+
+	# Subtract the spent amount from this estate's wealth map entry.
+	if = {
+		limit = { local_var:mnt_wealth_estate_paid > 0 }
+		set_local_variable = { name = mnt_wealth_invest_current value = 0 }
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = {
+				name = mnt_wealth_invest_current
+				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_invest_after
+			value = { value = local_var:mnt_wealth_invest_current subtract = local_var:mnt_wealth_estate_paid }
+		}
+
+		add_to_variable_map = {
+			name = mnt_wealth_estate_wealth
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_invest_after
+		}
+	}
 
 	mnt_wealth_compute_estate_upkeep = {
 		ESTATE_KEY = local_var:mnt_wealth_estate_key
@@ -139,9 +162,9 @@ mnt_wealth_settle_investment_accumulators = {
 			OR = { var:mnt_wealth_investment_paid_total != 0 var:mnt_wealth_investment_rate_total != 0 }
 		}
 		# The two halves write different maps, so one walk covers both.
-		mnt_wealth_clear_arriving_wealth = yes
+		set_local_variable = { name = mnt_wealth_arriving_running_total value = 0 }
 		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_settle_estate_progress_and_flow }
-		mnt_wealth_apply_arriving_wealth = yes
+		change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_arriving_running_total }
 		set_variable = { name = mnt_wealth_investment_paid_total value = 0 }
 		set_variable = { name = mnt_wealth_investment_rate_total value = 0 }
 		set_variable = { name = mnt_wealth_investment_months     value = 0 }
@@ -156,12 +179,10 @@ mnt_wealth_settle_estate_progress_and_flow = {
 }
 
 # Scope: location. Called by mnt_wealth_settle_estate_progress_and_flow.
-# Yearly equivalent of mnt_wealth_invest_estate_wealth: applies the full year's
-# paid total to one estate's investment progress.
+# Yearly equivalent of mnt_wealth_invest_estate_wealth: distributes
+# the year's paid total to one estate by its wealth fraction.
 
 mnt_wealth_set_estate_investment_progress = {
-	# Upkeep decays the invested pool; no ownership share means it paid nothing
-	# this year. compute_estate_upkeep self-gates on a positive pool.
 	mnt_wealth_compute_estate_upkeep = {
 		ESTATE_KEY = local_var:mnt_wealth_estate_key
 		MONTHS = var:mnt_wealth_investment_months
@@ -170,12 +191,23 @@ mnt_wealth_set_estate_investment_progress = {
 	set_local_variable = { name = mnt_wealth_estate_paid value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+		limit = {
+			var:mnt_wealth_pool > 0
+			is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key }
+		}
+		set_local_variable = {
+			name = mnt_wealth_settle_fraction
+			value = {
+				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+				divide = var:mnt_wealth_pool
+			}
+		}
+
 		set_local_variable = {
 			name = mnt_wealth_estate_paid
 			value = {
 				value = var:mnt_wealth_investment_paid_total
-				multiply = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+				multiply = local_var:mnt_wealth_settle_fraction
 			}
 		}
 	}
@@ -184,29 +216,36 @@ mnt_wealth_set_estate_investment_progress = {
 }
 
 # Scope: location (AI-owned). Called by mnt_wealth_location_year.
-# Solves 12 months of income-then-invest as a geometric series instead
-# of running 12 monthly ticks for generally over 90% of locations.
+# Solves the elapsed months of income-then-invest as a geometric series
+# instead of running individual monthly ticks.
 
 mnt_wealth_set_ai_yearly_investment = {
 	set_local_variable = { name = mnt_wealth_cached_investment_rate value = mnt_wealth_investment_rate }
 	set_local_variable = { name = mnt_wealth_monthly_income         value = var:mnt_wealth_kept_income_total }
-	# The series divides by the spend rate, so it is the rate itself that decides
-	# whether the series can run, not the two factors it is built from.
-	set_local_variable = {
-		name = mnt_wealth_spend_rate
-		value = { value = local_var:mnt_wealth_cached_investment_rate multiply = var:mnt_wealth_local_wealth_share_sum }
-	}
+	set_local_variable = { name = mnt_wealth_spend_rate             value = local_var:mnt_wealth_cached_investment_rate }
+
+	# Save pool before the series so we can scale the map afterward.
+	set_local_variable = { name = mnt_wealth_ai_old_pool value = var:mnt_wealth_pool }
 
 	if = {
-		limit = { local_var:mnt_wealth_spend_rate > 0 }
+		limit = { local_var:mnt_wealth_spend_rate > 0 var:mnt_wealth_pool > 0 }
 		set_local_variable = { name = mnt_wealth_decay         value = { value = 1 subtract = local_var:mnt_wealth_spend_rate } }
 		set_local_variable = { name = mnt_wealth_decay_twelfth value = mnt_wealth_decay_twelfth_power }
+		# decay^age: for a 24-month cycle, square the twelfth power.
+		set_local_variable = { name = mnt_wealth_decay_age value = local_var:mnt_wealth_decay_twelfth }
+		if = {
+			limit = { var:mnt_wealth_service_months > 12 }
+			set_local_variable = {
+				name = mnt_wealth_decay_age
+				value = { value = local_var:mnt_wealth_decay_twelfth multiply = local_var:mnt_wealth_decay_twelfth }
+			}
+		}
 
 		set_local_variable = {
 			name = mnt_wealth_effective_months
 			value = {
 				value = 1
-				subtract = local_var:mnt_wealth_decay_twelfth
+				subtract = local_var:mnt_wealth_decay_age
 				divide = local_var:mnt_wealth_spend_rate
 			}
 		}
@@ -224,7 +263,7 @@ mnt_wealth_set_ai_yearly_investment = {
 
 				add = {
 					value = local_var:mnt_wealth_monthly_income
-					multiply = { value = 12 subtract = local_var:mnt_wealth_effective_months }
+					multiply = { value = var:mnt_wealth_service_months subtract = local_var:mnt_wealth_effective_months }
 					divide = local_var:mnt_wealth_spend_rate
 				}
 
@@ -236,24 +275,65 @@ mnt_wealth_set_ai_yearly_investment = {
 			name = mnt_wealth_pool
 			value = {
 				value = local_var:mnt_wealth_pool_plus_income
-				multiply = local_var:mnt_wealth_decay_twelfth
+				multiply = local_var:mnt_wealth_decay_age
 
 				add = {
 					value = local_var:mnt_wealth_monthly_income
-					multiply = { value = local_var:mnt_wealth_decay subtract = local_var:mnt_wealth_decay_twelfth }
+					multiply = { value = local_var:mnt_wealth_decay subtract = local_var:mnt_wealth_decay_age }
 					divide = local_var:mnt_wealth_spend_rate
 				}
 			}
 		}
 	}
 	else = {
-		change_variable = { name = mnt_wealth_pool add = { value = local_var:mnt_wealth_monthly_income multiply = 12 } }
+		change_variable = { name = mnt_wealth_pool add = { value = local_var:mnt_wealth_monthly_income multiply = var:mnt_wealth_service_months } }
 		set_variable = { name = mnt_wealth_investment_paid_total value = 0 }
+	}
+
+	# Bring the map to the new pool. Income and spending were pool-level
+	# and proportional, so each estate keeps its fraction of the total.
+	if = {
+		limit = { local_var:mnt_wealth_ai_old_pool > 0 }
+		set_local_variable = {
+			name = mnt_wealth_ai_scale_factor
+			value = { value = var:mnt_wealth_pool divide = local_var:mnt_wealth_ai_old_pool }
+		}
+
+		save_temporary_scope_as = mnt_wealth_ai_scale_loc
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_estate_wealth
+			save_temporary_scope_as = mnt_wealth_ai_scale_key
+
+			scope:mnt_wealth_ai_scale_loc = {
+				set_local_variable = {
+					name = mnt_wealth_ai_scaled_value
+					value = {
+						value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_ai_scale_key)"
+						multiply = local_var:mnt_wealth_ai_scale_factor
+					}
+				}
+
+				add_to_variable_map = {
+					name = mnt_wealth_estate_wealth
+					key = scope:mnt_wealth_ai_scale_key
+					value = local_var:mnt_wealth_ai_scaled_value
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { var:mnt_wealth_pool > 0 }
+		# Income grew an empty pool: distribute it by relative power.
+		set_local_variable = { name = mnt_wealth_starting_pool value = var:mnt_wealth_pool }
+		set_local_variable = { name = mnt_wealth_seed_running_total value = 0 }
+		mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_estate_wealth }
+		set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_seed_running_total }
 	}
 
 	set_variable = {
 		name = mnt_wealth_investment_rate_total
-		value = { value = local_var:mnt_wealth_cached_investment_rate multiply = 12 }
+		value = { value = local_var:mnt_wealth_cached_investment_rate multiply = var:mnt_wealth_service_months }
 	}
-	set_variable = { name = mnt_wealth_investment_months value = 12 }
+	set_variable = { name = mnt_wealth_investment_months value = var:mnt_wealth_service_months }
 }

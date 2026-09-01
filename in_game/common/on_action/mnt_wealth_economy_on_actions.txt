@@ -19,41 +19,7 @@ mnt_on_weather_monthly_pulse = {
 		mnt_wealth_log_weather_pulse_month = yes
 		mnt_wealth_maintain_building_produced_goods_cache = yes
 		mnt_wealth_begin_month = yes
-		mnt_wealth_load_balance_this_effect = {
-			DATA_SET = location
-			EFFECT = mnt_wealth_route_location
-		}
-		mnt_wealth_load_balance_this_effect = {
-			DATA_SET = market
-			EFFECT = mnt_wealth_service_market
-		}
-	}
-}
-
-# Scope: country. AI countries run the valve yearly.
-
-mnt_on_yearly_country_pulse = {
-	events = {
-		mnt_wealth_economy.11       # AI estate treasury flow valves (yearly)
-	}
-}
-
-# Scope: country.
-
-mnt_on_monthly_country_pulse = {
-	# Index 0 fires once a month; the marker pairs with the weather pulse.
-	effect = {
-		if = {
-			limit = { has_variable = mnt_wealth_country_index }
-			if = {
-				limit = { var:mnt_wealth_country_index = 0 }
-				mnt_wealth_log_country_pulse_month = yes
-			}
-		}
-	}
-
-	events = {
-		mnt_wealth_economy.10       # estate treasury flow valves
+		mnt_dispatch_location_and_market_on_actions = yes
 	}
 }
 
@@ -137,6 +103,16 @@ mnt_on_civil_war_lost = {
 mnt_on_location_changed_owner = {
 	effect = {
 		mnt_wealth_transfer_location_between_owners = yes
+
+		# Decolonization: no new owner, so remove this location from its service
+		# bucket so the dispatch walk never picks it up.
+		if = {
+			limit = { NOT = { exists = scope:winner } }
+			mnt_wealth_unschedule_location = yes
+
+			save_temporary_scope_as = mnt_wealth_decolonize_loc
+			remove_from_global_variable_map = { name = mnt_wealth_location_last_service key = scope:mnt_wealth_decolonize_loc }
+		}
 	}
 
 	# Delayed one day because new countries have no estate data on their formation frame.
@@ -144,18 +120,17 @@ mnt_on_location_changed_owner = {
 }
 
 # ── SERVICE LANES ──
-# Both fire for every location in the month's batch. Register work on whichever
-# suits it; the two carry nothing in common.
 
-# Scope: location. Always runs on the month tick, no delay.
+# Scope: location. Always runs on the month tick, no delay. Kept for future
+# use; nothing dispatches it since the monthly dispatch rework.
 
-mnt_instant_location_pulse = {
-}
+#mnt_monthly_instant_location_pulse = {
+#}
 
 # Scope: location. Runs on a day of the month picked from the location, or on
-# the month tick for the share named by @mnt_wealth_month_tick_share.
+# the month tick for player-owned locations.
 
-mnt_spread_location_pulse = {
+mnt_balanced_location_pulse = {
 	effect = {
 		mnt_wealth_service_location = yes
 	}
@@ -167,23 +142,24 @@ mnt_spread_location_pulse = {
 
 # Scope: location (player-owned).
 
-mnt_monthly_location_pulse = {
+mnt_monthly_balanced_location_pulse = {
 	effect = {
 		mnt_wealth_location_month = yes
 	}
 }
 
-# Scope: location.
+# Scope: location. The deep review: every 12 months for players, every 24 for
+# AI, paced by the service cycle counter.
 
-mnt_yearly_location_pulse = {
+mnt_biyearly_balanced_location_pulse = {
 	effect = {
 		mnt_wealth_location_year = yes
 	}
 }
 
-# Scope: location. Fires after the yearly pulse and resurvey complete.
+# Scope: location. True yearly for every location, AI included.
 
-mnt_yearly_location_post_survey = {
+mnt_yearly_balanced_location_pulse = {
 	effect = {
 		calc_location_center_scores = yes
 		epbm_price_location_buildings = yes
@@ -192,7 +168,7 @@ mnt_yearly_location_post_survey = {
 
 # Scope: location.
 
-mnt_five_yearly_location_pulse = {
+mnt_five_yearly_balanced_location_pulse = {
 	effect = {
 		mnt_wealth_update_local_gdp = yes
 	}
@@ -200,7 +176,7 @@ mnt_five_yearly_location_pulse = {
 
 # Scope: market.
 
-mnt_monthly_market_pulse = {
+mnt_monthly_instant_market_pulse = {
 	effect = {
 		apply_cost_of_the_court_demand = yes
 		apply_diplomatic_spending_demand = yes

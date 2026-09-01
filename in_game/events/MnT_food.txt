@@ -26,10 +26,6 @@ mnt_food.1 = {
     }
 }
 
-# Fires monthly, one day after the pulse so the balancer's monthly setup has
-# already refreshed the country indices. Each country acts once every 12
-# months, staggered by its country index, so the food checks spread across
-# the year instead of every AI country firing at once.
 mnt_food.2 = {
 	type = country_event
 	title = hidden_event.t
@@ -37,24 +33,17 @@ mnt_food.2 = {
 	trigger = {
 		country_exists_and_can_own_locations = yes
 		is_ai = yes
-	}
-
-	hidden = yes
-
-	immediate = {
-		set_local_variable = {
-			name = mnt_food_stagger_month
-			value = {
-				value = var:mnt_wealth_country_index
-				add = global_var:mnt_wealth_months_elapsed
-				modulo = 12
-			}
+		any_market_present_in_country = {
+			market_monthly_food_balance < 0
+			market_food_percentage < 80 #a check to make sure this isn't just a monthly weird war spike.
 		}
+	}
+	
+	hidden = yes
+	
+	immediate = {
 		if = {
-			limit = {
-				local_var:mnt_food_stagger_month = 0
-				monthly_income_total > 15
-			}
+			limit = { monthly_income_total > 15 }
 			every_market_present_in_country = {
 				limit  = { 
 					market_monthly_food_balance < 0
@@ -93,15 +82,14 @@ mnt_food.2 = {
 				}
 			}
 		}
-		else_if = {
-			limit = { local_var:mnt_food_stagger_month = 0 }
+		else = {
 			every_market_present_in_country = {
-				limit  = {
+				limit  = { 
 					market_monthly_food_balance < 0
 					market_food_percentage < 80
 				}
 				random_location_in_market = {
-					limit  = {
+					limit  = { 
 						owner ?= root
 						can_build_building = building_type:farming_village
 						location_unemployed_population_for_building_type = {
@@ -121,32 +109,20 @@ mnt_food.2 = {
 }
 
 #This event looks for markets with large amounts of food and frees up peasants in a random location without a large peasant surplus. This leaves the peasants free to migrate, be employed in other places, etc.
-# Fires monthly, one day after the pulse. Each country acts once every 24
-# months, staggered by its country index, matching the old biyearly cadence.
 mnt_food.3 = {
 	type = country_event
 	title = hidden_event.t
 	desc = hidden_event.d
-
+	
 	trigger = {
 		country_exists_and_can_own_locations = yes
 		is_ai = yes
 	}
-
+	
 	hidden = yes
-
+	
 	immediate = {
-		set_local_variable = {
-			name = mnt_food_stagger_month
-			value = {
-				value = var:mnt_wealth_country_index
-				add = global_var:mnt_wealth_months_elapsed
-				modulo = 24
-			}
-		}
-		if = {
-			limit = { local_var:mnt_food_stagger_month = 0 }
-			every_market_present_in_country = {
+		every_market_present_in_country = {
 			limit  = { market_monthly_food_balance > 500 } #much safer check, since there are never positive spikes of food, only negative.
 			random_location_in_market = {
 				limit = {
@@ -168,9 +144,8 @@ mnt_food.3 = {
 						value < 2000
 					}
 				}
-					destroy_building = "building(building_type:farming_village|owner)"
-				}
+				destroy_building = "building(building_type:farming_village|owner)"
 			}
-		}
+		}	
 	}
 }

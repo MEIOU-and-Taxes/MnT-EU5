@@ -123,15 +123,24 @@ mnt_wealth_estate_flow_total = {
 	}
 }
 
-# --- per-location sums ---
+# --- per-estate wealth fraction ---
 
-mnt_wealth_local_wealth_share_total = {
+# Map value / pool, 0 when pool is 0. Callers hand the location and
+# estate in as scope:mnt_wealth_location and scope:mnt_wealth_estate,
+# matching the other estate display values.
+
+mnt_wealth_local_estate_wealth_fraction = {
 	value = 0
 
-	every_key_in_variable_map = {
-		variable = mnt_wealth_local_wealth_share
-		save_temporary_scope_as = mnt_wealth_iter_key
-		prev = { add = "variable_map(mnt_wealth_local_wealth_share|scope:mnt_wealth_iter_key)" }
+	scope:mnt_wealth_location = {
+		if = {
+			limit = {
+				var:mnt_wealth_pool > 0
+				is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate }
+			}
+			add = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_estate)"
+			divide = var:mnt_wealth_pool
+		}
 	}
 }
 
@@ -167,30 +176,4 @@ mnt_wealth_owned_raw_power_sum = {
 		limit = { is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_audit_estate } }
 		add = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_audit_estate)"
 	}
-}
-
-# How many months past its next-service month an entity is, used as the sort key
-# of the batch builders so the longest wait is served first. An entity with no
-# schedule yet reads as the whole campaign, which puts it at the front.
-
-mnt_wealth_location_months_waiting = {
-	value = global_var:mnt_wealth_months_elapsed
-
-	if = {
-		limit = { is_key_in_global_variable_map = { name = mnt_wealth_location_next_service target = this } }
-		subtract = "global_variable_map(mnt_wealth_location_next_service|this)"
-	}
-
-	min = 0
-}
-
-mnt_wealth_market_months_waiting = {
-	value = global_var:mnt_wealth_months_elapsed
-
-	if = {
-		limit = { is_key_in_global_variable_map = { name = mnt_wealth_market_next_service target = this } }
-		subtract = "global_variable_map(mnt_wealth_market_next_service|this)"
-	}
-
-	min = 0
 }

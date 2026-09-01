@@ -91,25 +91,62 @@ mnt_wealth_set_loot_resistance = {
 
 # ── LIQUID WEALTH ──
 
-# Scope: location. Loots the national share of the wealth pool, reduced by
+# Scope: location. Loots a fraction of each estate's wealth, reduced by
 # resistance. The kept share becomes gold for the occupier; the rest is destroyed.
 
 mnt_wealth_seize_liquid_wealth = {
+	# Compute the loot fraction once.
 	set_local_variable = {
-		name = mnt_wealth_loot_liquid_taken
+		name = mnt_wealth_loot_fraction
 		value = {
-			value = var:mnt_wealth_pool
-			multiply = scope:mnt_wealth_stance_wealth
+			value = scope:mnt_wealth_stance_wealth
 			multiply = { value = 1 subtract = local_var:mnt_wealth_loot_resistance }
 			min = 0
-			max = var:mnt_wealth_pool
+			max = 1
 		}
 	}
 
-	set_variable = {
-		name = mnt_wealth_pool
-		value = { value = var:mnt_wealth_pool subtract = local_var:mnt_wealth_loot_liquid_taken }
+	set_local_variable = { name = mnt_wealth_loot_liquid_taken value = 0 }
+
+	save_temporary_scope_as = mnt_wealth_loot_loc
+
+	every_key_in_variable_map = {
+		variable = mnt_wealth_estate_wealth
+		save_temporary_scope_as = mnt_wealth_loot_key
+
+		scope:mnt_wealth_loot_loc = {
+			set_local_variable = {
+				name = mnt_wealth_loot_estate_val
+				value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_loot_key)"
+			}
+
+			set_local_variable = {
+				name = mnt_wealth_loot_estate_take
+				value = {
+					value = local_var:mnt_wealth_loot_estate_val
+					multiply = local_var:mnt_wealth_loot_fraction
+					min = 0
+					max = local_var:mnt_wealth_loot_estate_val
+				}
+			}
+
+			set_local_variable = {
+				name = mnt_wealth_loot_estate_remain
+				value = { value = local_var:mnt_wealth_loot_estate_val subtract = local_var:mnt_wealth_loot_estate_take }
+			}
+
+			add_to_variable_map = {
+				name = mnt_wealth_estate_wealth
+				key = scope:mnt_wealth_loot_key
+				value = local_var:mnt_wealth_loot_estate_remain
+			}
+
+			change_local_variable = { name = mnt_wealth_loot_liquid_taken add = local_var:mnt_wealth_loot_estate_take }
+		}
 	}
+
+	# Adjust pool by the total taken.
+	change_variable = { name = mnt_wealth_pool subtract = local_var:mnt_wealth_loot_liquid_taken }
 
 	set_local_variable = {
 		name = mnt_wealth_loot_liquid_captured

@@ -135,9 +135,15 @@ macro = {
 }
 
 macro = {
-	description = "The estate's local wealth in gold from the variable maps"
+	description = "The estate's local wealth in gold from the variable map"
 	definition = "DCEstateWealth()"
-	replace_with = "Multiply_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), DCLocationMap('mnt_wealth_local_wealth_share'))"
+	replace_with = "DCLocationMap('mnt_wealth_estate_wealth')"
+}
+
+macro = {
+	description = "The estate's share of the displayed (projected) wealth pool: the stored value runs a year ahead for AI, so the live figure comes from the replayed pool in script"
+	definition = "DCDisplayedEstateWealth()"
+	replace_with = "FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_estate_wealth'))"
 }
 
 macro = {
@@ -207,9 +213,9 @@ macro = {
 }
 
 macro = {
-	description = "Gold torn out of this location's invested wealth by a national seizure this month: the part of a negative estate flow that exceeds the estate's liquid share of the pool. Zero when the estate is investing or when its liquid share covers the whole seizure"
+	description = "Gold torn out of this location's invested wealth by a national seizure this month: the part of a negative estate flow that exceeds the estate's projected liquid share. Zero when the estate is investing or while its liquid share still covers the seizure; as the projected liquid drains through the year, the overflow into investments appears"
 	definition = "DCSeizureFromInvested()"
-	replace_with = "Max_float('(float)0', Subtract_float(Subtract_float('(float)0', DCEstateLocalFlow()), FixedPointToFloat(DCEstateWealth())))"
+	replace_with = "Max_float('(float)0', Subtract_float(Subtract_float('(float)0', DCEstateLocalFlow()), DCDisplayedEstateWealth()))"
 }
 
 macro = {
@@ -225,9 +231,9 @@ macro = {
 }
 
 macro = {
-	description = "Gold invested from local wealth for the estate per month"
+	description = "Gold invested from the estate's projected wealth per month. The rate floors at zero: a negative rate spends nothing, matching the simulation's paid-only-when-positive guard"
 	definition = "DCEstateInvestedGold()"
-	replace_with = "Multiply_float(Multiply_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_local_wealth_total')), DCLocationMapFloat('mnt_wealth_local_wealth_share')), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate')))"
+	replace_with = "Multiply_float(DCDisplayedEstateWealth(), Max_float(FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate')), '(float)0'))"
 }
 
 macro = {
@@ -237,9 +243,15 @@ macro = {
 }
 
 macro = {
-	description = "The estate's monthly wealth percentage drift"
+	description = "The estate's wealth fraction: map value divided by pool"
+	definition = "DCEstateWealthFraction()"
+	replace_with = "GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_local_estate_wealth_fraction')"
+}
+
+macro = {
+	description = "The estate's monthly wealth fraction drift"
 	definition = "DCWealthShareDrift()"
-	replace_with = "Multiply_CFixedPoint(Subtract_CFixedPoint(DCLocationMap('mnt_wealth_cached_local_relative_estate_power'), DCLocationMap('mnt_wealth_local_wealth_share')), LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_share_monthly_trend_rate'))"
+	replace_with = "Multiply_CFixedPoint(Subtract_CFixedPoint(DCLocationMap('mnt_wealth_cached_local_relative_estate_power'), DCEstateWealthFraction()), LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_share_monthly_trend_rate'))"
 }
 
 macro = {
@@ -249,15 +261,15 @@ macro = {
 }
 
 macro = {
-	description = "Total monthly change to the estate's local wealth"
+	description = "Total monthly change to the estate's local wealth. The flow term is the liquid-capped seizure, not the raw flow: once the liquid share is gone the seizure hits investments, not this number"
 	definition = "DCEstateWealthChange()"
-	replace_with = "Add_float(Add_float(Subtract_float(DCEstateIncome(), DCEstateInvestedGold()), DCEstateLocalFlow()), DCWealthShareDriftGold())"
+	replace_with = "Add_float(Add_float(Subtract_float(DCEstateIncome(), DCEstateInvestedGold()), DCSeizedFromWealth()), DCWealthShareDriftGold())"
 }
 
 macro = {
-	description = "Monthly investment progress: estate wealth times the investment rate, scaled by investment efficiency"
+	description = "Monthly investment progress: the estate's projected wealth times the investment rate, scaled by investment efficiency"
 	definition = "DCMonthlyInvestment()"
-	replace_with = "Multiply_float(Multiply_float(FixedPointToFloat(DCEstateWealth()), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_efficiency_multiplier')))"
+	replace_with = "Multiply_float(Multiply_float(DCDisplayedEstateWealth(), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_rate'))), FixedPointToFloat(LocationScriptValue('mnt_wealth_investment_efficiency_multiplier')))"
 }
 
 macro = {

@@ -6,14 +6,13 @@
 
 # ── INVESTMENT LEVEL UPDATE ──
 
-# Scope: location. Called by mnt_wealth_location_year and mnt_on_location_changed_owner.
-# Releases departed estates, rebuilds the cached power maps, redistributes their
-# investment, recalculates present levels.
+# Scope: location. Releases departed estates, rebuilds the cached power
+# maps, and redistributes their investment and wealth.
 
-mnt_wealth_update_investment_levels = {
-	set_local_variable = { name = mnt_wealth_freed_investment         value = 0 }
-	set_local_variable = { name = mnt_wealth_freed_local_wealth_share value = 0 }
-	set_local_variable = { name = mnt_wealth_estate_departed          value = 0 }
+mnt_wealth_reconcile_departed_estates = {
+	set_local_variable = { name = mnt_wealth_freed_investment    value = 0 }
+	set_local_variable = { name = mnt_wealth_freed_estate_wealth value = 0 }
+	set_local_variable = { name = mnt_wealth_estate_departed     value = 0 }
 	# Pass 1: collect keys whose estate is gone (cannot remove mid-iteration).
 	clear_local_variable_list = mnt_wealth_stale_estates
 
@@ -29,11 +28,10 @@ mnt_wealth_update_investment_levels = {
 		}
 	}
 
-	# A wealth share can outlive its estate without ever having an investment
-	# level. The drift pass never visits these, so they must be collected for
-	# release here.
+	# An estate wealth entry can outlive its estate without ever having
+	# investment. Collect those for release too.
 	every_key_in_variable_map = {
-		variable = mnt_wealth_local_wealth_share
+		variable = mnt_wealth_estate_wealth
 		save_temporary_scope_as = mnt_wealth_level_key
 
 		prev = {
@@ -54,21 +52,24 @@ mnt_wealth_update_investment_levels = {
 		prev = { mnt_wealth_release_absent_estate = yes }
 	}
 
-	# The cached power maps are a year old and still list the estate that just
-	# left. Rebuild them before the redistribution below uses them.
+	# Rebuild power maps before redistribution.
 	if = {
 		limit = { local_var:mnt_wealth_estate_departed = 1 }
 		mnt_wealth_resurvey_estate_data = yes
-		# Power cache was rewritten; the captured estate set is stale.
 		mnt_wealth_invalidate_estate_set = yes
 	}
 
 	if = {
-		limit = { OR = { local_var:mnt_wealth_freed_investment > 0 local_var:mnt_wealth_freed_local_wealth_share > 0 } }
+		limit = { OR = { local_var:mnt_wealth_freed_investment > 0 local_var:mnt_wealth_freed_estate_wealth > 0 } }
 		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
-		mnt_wealth_set_local_wealth_share_sum = yes
 	}
+}
 
+# Scope: location. Called by mnt_wealth_location_year and mnt_on_location_changed_owner.
+# Reconciles departed estates, then recalculates present levels.
+
+mnt_wealth_update_investment_levels = {
+	mnt_wealth_reconcile_departed_estates = yes
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_update_estate_investment_level }
 }
 
@@ -363,9 +364,8 @@ mnt_wealth_apply_estate_neglect_modifier = {
 
 # ── ABSENT ESTATE RELEASE ──
 
-# Scope: location. Frees a departed estate's investment and wealth percentage
-# for redistribution. Saves local_var:mnt_wealth_freed_investment,
-# local_var:mnt_wealth_freed_local_wealth_share and local_var:mnt_wealth_estate_departed.
+# Scope: location. Frees a departed estate's investment and wealth
+# for redistribution. Pool stays constant across a redistribution.
 
 mnt_wealth_release_absent_estate = {
 	set_local_variable = { name = mnt_wealth_estate_key      value = scope:mnt_wealth_stale_key }
@@ -390,28 +390,26 @@ mnt_wealth_release_absent_estate = {
 	}
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 
 		set_local_variable = {
-			name = mnt_wealth_released_percentage
-			value = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+			name = mnt_wealth_released_gold
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 		}
 
 		if = {
-			limit = { local_var:mnt_wealth_released_percentage > 0 }
-			change_local_variable = { name = mnt_wealth_freed_local_wealth_share add = local_var:mnt_wealth_released_percentage }
+			limit = { local_var:mnt_wealth_released_gold > 0 }
+			change_local_variable = { name = mnt_wealth_freed_estate_wealth add = local_var:mnt_wealth_released_gold }
 		}
 
-		remove_from_variable_map = { name = mnt_wealth_local_wealth_share key = local_var:mnt_wealth_estate_key }
+		remove_from_variable_map = { name = mnt_wealth_estate_wealth key = local_var:mnt_wealth_estate_key }
 	}
 
 	remove_from_variable_map = { name = mnt_wealth_invested_since_review key = local_var:mnt_wealth_estate_key }
 }
 
-# Scope: location. Called by mnt_wealth_update_investment_levels through
-# mnt_wealth_for_each_cached_estate.
-# Distributes the freed investment and wealth percentage from absent
-# estates to present estates in proportion to their power.
+# Scope: location. Distributes freed investment and estate wealth
+# from absent estates to present estates by power.
 
 mnt_wealth_redistribute_to_estate = {
 	set_local_variable = {
@@ -450,30 +448,29 @@ mnt_wealth_redistribute_to_estate = {
 	}
 
 	if = {
-		limit = { local_var:mnt_wealth_freed_local_wealth_share > 0 }
-		# A newly present estate may not have a percentage entry yet.
-		set_local_variable = { name = mnt_wealth_existing_percentage value = 0 }
+		limit = { local_var:mnt_wealth_freed_estate_wealth > 0 }
+		set_local_variable = { name = mnt_wealth_existing_gold value = 0 }
 
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_local_wealth_share target = local_var:mnt_wealth_estate_key } }
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 			set_local_variable = {
-				name = mnt_wealth_existing_percentage
-				value = "variable_map(mnt_wealth_local_wealth_share|local_var:mnt_wealth_estate_key)"
+				name = mnt_wealth_existing_gold
+				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 			}
 		}
 
 		set_local_variable = {
-			name = mnt_wealth_new_percentage
+			name = mnt_wealth_new_estate_gold
 			value = {
-				value = local_var:mnt_wealth_existing_percentage
-				add = { value = local_var:mnt_wealth_freed_local_wealth_share multiply = local_var:mnt_wealth_relative_power }
+				value = local_var:mnt_wealth_existing_gold
+				add = { value = local_var:mnt_wealth_freed_estate_wealth multiply = local_var:mnt_wealth_relative_power }
 			}
 		}
 
 		add_to_variable_map = {
-			name = mnt_wealth_local_wealth_share
+			name = mnt_wealth_estate_wealth
 			key = local_var:mnt_wealth_estate_key
-			value = local_var:mnt_wealth_new_percentage
+			value = local_var:mnt_wealth_new_estate_gold
 		}
 	}
 }

@@ -248,9 +248,8 @@ mnt_wealth_collect_building_goods = {
 # ── ESTATE POWER ──
 
 # Scope: location. Counts every pop into the estate that actually holds it and
-# files the totals in mnt_estate_pops, with pops x power per pop in
-# mnt_estate_raw_power. Membership is per pop, not per
-# pop type: dhimmi and cossacks divert pops out of their usual estate.
+# computes raw power (pops x power per pop) in mnt_estate_raw_power.
+# Membership is per pop: dhimmi and cossacks divert pops out of their usual estate.
 
 mnt_wealth_count_estate_pops = {
 	mnt_wealth_clear_pop_counts = yes
@@ -362,15 +361,13 @@ mnt_wealth_clear_pop_counts = {
 	set_local_variable = { name = mnt_wealth_pops_cossacks value = 0 }
 }
 
-# Scope: location. Files one estate's pops and raw power. Skips an estate with
-# no pops here, or one the owner does not hold, so the maps list only estates
-# that are both present in the location and part of the country.
+# Scope: location. Files one estate's raw power from its pop count. Skips an
+# estate with no pops.
 
 mnt_wealth_store_estate_pops = {
 	if = {
 		limit = {
 			local_var:mnt_wealth_pops_$ESTATE$ > 0
-			owner = { country_has_estate = estate_type:$ESTATE$_estate }
 		}
 		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
 		set_local_variable = {
@@ -386,11 +383,6 @@ mnt_wealth_store_estate_pops = {
 			}
 		}
 
-		add_to_variable_map = {
-			name = mnt_estate_pops
-			key = local_var:mnt_wealth_pops_key
-			value = local_var:mnt_wealth_pops_$ESTATE$
-		}
 		add_to_variable_map = {
 			name = mnt_estate_raw_power
 			key = local_var:mnt_wealth_pops_key
@@ -475,17 +467,12 @@ mnt_wealth_count_pops_full = {
 	}
 }
 
-# Scope: location. Clears and rebuilds the full estate survey: raw power,
-# cached relative power, expected wealth, base desired wealth, and desired
-# total. Also seeds investment level for estates arriving at this location
-# for the first time.
-#
-# ITERATOR selects the estate iterator: mnt_wealth_for_all_estate_types at game start
-# (because the cache does not exist yet), mnt_wealth_for_each_national_estate at runtime.
+# Scope: location. Full survey (five-yearly): pops, raw power, and relative
+# cache. ITERATOR selects the estate iterator: mnt_wealth_for_all_estate_types
+# at game start, mnt_wealth_for_each_national_estate at runtime.
 
 mnt_wealth_survey_estate_data = {
 	save_temporary_scope_as = mnt_wealth_survey_location
-	clear_variable_map = mnt_estate_pops
 	clear_variable_map = mnt_estate_raw_power
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
 
@@ -494,10 +481,10 @@ mnt_wealth_survey_estate_data = {
 		mnt_wealth_count_estate_pops = yes
 
 		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_survey_results }
-		# Estates holding a wealth share or pops can be missing from the owner's
+		# Estates holding wealth or pops can be missing from the owner's
 		# list. Pick up any the iterator did not reach.
 		every_key_in_variable_map = {
-			variable = mnt_wealth_local_wealth_share
+			variable = mnt_wealth_estate_wealth
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
 			scope:mnt_wealth_survey_location = {
@@ -512,7 +499,7 @@ mnt_wealth_survey_estate_data = {
 		}
 
 		every_key_in_variable_map = {
-			variable = mnt_estate_pops
+			variable = mnt_estate_raw_power
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
 			scope:mnt_wealth_survey_location = {
@@ -600,9 +587,9 @@ mnt_wealth_update_local_gdp = {
 
 # ── ESTATE POWER RESURVEY ──
 
-# Scope: location. Rebuilds all survey data for this location and keeps the
-# owner's national raw power map correct: subtract the old power, run a
-# full survey, then add the new power back.
+# Scope: location. Five-yearly full resurvey: rebuilds pops, raw power, and
+# relative cache, keeping the national raw power map correct by subtracting
+# the old values before the survey and adding the new values after.
 
 mnt_wealth_resurvey_estate_data = {
 	if = {
@@ -617,6 +604,51 @@ mnt_wealth_resurvey_estate_data = {
 		limit = { exists = owner }
 		owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
 		mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
+	}
+}
+
+# Scope: location. Yearly-lite resurvey: rebuilds the relative power cache
+# without touching pops or raw power. Reuses the same store logic and
+# leftover walks as the full survey.
+
+mnt_wealth_refresh_relative_power = {
+	save_temporary_scope_as = mnt_wealth_survey_location
+	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
+
+	if = {
+		limit = { exists = owner }
+
+		mnt_wealth_for_each_national_estate = { EFFECT = mnt_wealth_store_estate_survey_results }
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_estate_wealth
+			save_temporary_scope_as = mnt_wealth_leftover_key
+
+			scope:mnt_wealth_survey_location = {
+				if = {
+					limit = {
+						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+					}
+					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
+					mnt_wealth_store_estate_survey_results = yes
+				}
+			}
+		}
+
+		every_key_in_variable_map = {
+			variable = mnt_estate_raw_power
+			save_temporary_scope_as = mnt_wealth_leftover_key
+
+			scope:mnt_wealth_survey_location = {
+				if = {
+					limit = {
+						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+					}
+					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
+					mnt_wealth_store_estate_survey_results = yes
+				}
+			}
+		}
 	}
 }
 
