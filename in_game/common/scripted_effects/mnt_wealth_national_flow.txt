@@ -5,21 +5,14 @@
 
 # ── NATIONAL SAVINGS VALVES ──
 
-# Scope: country. Called monthly by mnt_wealth_economy.10.
-# For each estate, compares its treasury gold to a savings goal based on the
-# country's economic size and the estate's power share, then sets a single
-# signed flow between the treasury and the estate's locations. Above the goal
-# the flow is positive: the estate pays gold into its locations as national
-# investment. Below the goal it is negative: the estate seizes gold out of its
-# locations to cover the shortfall. The locations apply the flow later, in
-# mnt_wealth_resolve_estate_monthly_income and mnt_wealth_apply_national_flow_to_location.
-#
-# EPBM's building maintenance (epbm_charge_estates) debits the same estate
-# treasury this valve reads. A maintenance-drained estate shows a larger gold
-# gap here, so building costs flow through into seizure demand on their own.
+# Scope: country. MONTHS = 1 for the monthly player path, 12 for the yearly AI path.
+# Computes each estate's savings gap and writes the per-month flow rate to the
+# mnt_wealth_estate_flow map. The treasury application is scaled by MONTHS so
+# AI countries process a full year in one pass.
 
 mnt_wealth_set_national_savings_valves = {
 	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
+	set_local_variable = { name = mnt_wealth_valve_months value = $MONTHS$ }
 
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
@@ -36,9 +29,7 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			# Last month's flow for this estate. Negative means the estate was
-			# seizing: that seized gold inflated the treasury, so subtracting
-			# it raises the effective goal to where income alone would land.
+			# Last flow for this estate, scaled by the pass length.
 			set_local_variable = { name = mnt_wealth_last_flow value = 0 }
 
 			if = {
@@ -49,29 +40,28 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			# How far under its effective goal the treasury is. The effective
-			# goal during seizure is savings_goal + seized, so the gap stays
-			# positive until organic income alone would cover the goal.
+			set_local_variable = {
+				name = mnt_wealth_last_flow_scaled
+				value = { value = local_var:mnt_wealth_last_flow min = 0 multiply = local_var:mnt_wealth_valve_months }
+			}
+
+			# How far under its effective goal the treasury is.
 			set_local_variable = {
 				name = mnt_wealth_estate_gold_gap
 				value = {
 					value = local_var:mnt_wealth_national_savings_goal
 					subtract = scope:mnt_wealth_current_estate.estate_gold
-					subtract = { value = local_var:mnt_wealth_last_flow min = 0 }
+					subtract = local_var:mnt_wealth_last_flow_scaled
 				}
 			}
 
-			mnt_wealth_update_estate_seizure_demand = yes
-			# One twelfth of the gap each month, capped so neither direction moves
-			# too fast. The payout cap is a share of the whole economic base, so a
-			# numerous but powerless estate is not throttled by the little political
-			# weight it carries.
+			mnt_wealth_update_estate_seizure_demand = { MONTHS = $MONTHS$ }
+
 			set_local_variable = {
 				name = mnt_wealth_payout_cap
 				value = { value = local_var:mnt_wealth_country_economical_base multiply = mnt_wealth_national_investment_limit_factor }
 			}
 
-			# The seizure cap carries the estate's standing demand on top of the base limit.
 			set_local_variable = {
 				name = mnt_wealth_seizure_cap
 				value = {
@@ -81,54 +71,58 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			# Zero when the estate has no raw power anywhere (no locations to pay out to).
-			set_local_variable = { name = mnt_wealth_estate_monthly_flow value = 0 }
+			# Period total: the full amount moved this pass, clamped once.
+			set_local_variable = { name = mnt_wealth_estate_period_total value = 0 }
 
 			if = {
 				limit = {
 					is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = local_var:mnt_wealth_estate_key }
 					"variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)" > 0
 				}
-				# Clamp the seizure to the actual shortfall, so the estate never
-				# takes more gold than it is missing.
 				if = {
 					limit = { local_var:mnt_wealth_estate_gold_gap > 0 }
 					set_local_variable = {
-						name = mnt_wealth_estate_monthly_flow
+						name = mnt_wealth_estate_period_total
 						value = {
 							value = local_var:mnt_wealth_estate_gold_gap
+							multiply = $MONTHS$
 							divide = 12
 							multiply = { value = 1 add = local_var:mnt_wealth_seizure_demand }
 							max = local_var:mnt_wealth_estate_gold_gap
+							max = { value = local_var:mnt_wealth_seizure_cap multiply = $MONTHS$ }
 							multiply = -1
-							min = { value = local_var:mnt_wealth_seizure_cap multiply = -1 }
 						}
 					}
 				}
 				else = {
 					set_local_variable = {
-						name = mnt_wealth_estate_monthly_flow
+						name = mnt_wealth_estate_period_total
 						value = {
 							value = local_var:mnt_wealth_estate_gold_gap
 							multiply = -1
+							multiply = $MONTHS$
 							divide = 12
-							max = local_var:mnt_wealth_payout_cap
+							max = { value = local_var:mnt_wealth_payout_cap multiply = $MONTHS$ }
 						}
 					}
 				}
 			}
 
+			# The map holds the per-month rate.
+			set_local_variable = {
+				name = mnt_wealth_estate_monthly_flow
+				value = { value = local_var:mnt_wealth_estate_period_total divide = $MONTHS$ }
+			}
 			add_to_variable_map = {
 				name = mnt_wealth_estate_flow
 				key = local_var:mnt_wealth_estate_key
 				value = local_var:mnt_wealth_estate_monthly_flow
 			}
 
-			# The treasury moves opposite to the flow: it loses what it pays out
-			# and gains what it seizes.
+			# The treasury moves opposite to the period total.
 			add_gold_to_estate = {
 				estate_type = scope:mnt_wealth_current_estate.estate_type
-				value = { value = local_var:mnt_wealth_estate_monthly_flow multiply = -1 }
+				value = { value = local_var:mnt_wealth_estate_period_total multiply = -1 }
 			}
 		}
 	}
@@ -155,13 +149,23 @@ mnt_wealth_update_estate_seizure_demand = {
 		limit = { local_var:mnt_wealth_estate_gold_gap > 0 }
 		change_local_variable = {
 			name = mnt_wealth_seizure_demand
-			add = { value = local_var:mnt_wealth_estate_gold_gap divide = local_var:mnt_wealth_national_savings_goal }
+			add = {
+				value = local_var:mnt_wealth_estate_gold_gap
+				divide = local_var:mnt_wealth_national_savings_goal
+				multiply = $MONTHS$
+			}
 		}
 	}
 	else = {
+		# Monthly and yearly passes each have their own decay tuning value.
+		set_local_variable = { name = mnt_wealth_demand_decay value = mnt_wealth_seizure_demand_decay }
+		if = {
+			limit = { local_var:mnt_wealth_valve_months > 1 }
+			set_local_variable = { name = mnt_wealth_demand_decay value = mnt_wealth_seizure_demand_decay_yearly }
+		}
 		set_local_variable = {
 			name = mnt_wealth_seizure_demand
-			value = { value = local_var:mnt_wealth_seizure_demand multiply = mnt_wealth_seizure_demand_decay }
+			value = { value = local_var:mnt_wealth_seizure_demand multiply = local_var:mnt_wealth_demand_decay }
 		}
 	}
 
