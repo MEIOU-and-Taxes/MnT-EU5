@@ -14,41 +14,45 @@
 # Positive flow = payout = treasury drains; negative = seizure = treasury gains.
 
 mnt_change_estate_gold = {
-	set_local_variable = { name = mnt_wealth_drip_net value = 0 }
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = mnt_wealth_drip_estate
 
-	# EPBM building maintenance.
-	if = {
-		limit = {
-			has_variable = epbm_pay_$estate$
-			var:epbm_pay_$estate$ > 0
-		}
-		change_local_variable = { name = mnt_wealth_drip_net subtract = var:epbm_pay_$estate$ }
-	}
+		prev = {
+			set_local_variable = { name = mnt_wealth_drip_net value = 0 }
 
-	# Savings valve flow rate (per month). The key goes through a local
-	# because macros do not expand inside quoted calls.
-	set_local_variable = { name = mnt_wealth_drip_key value = estate_type:$estate$_estate }
-	if = {
-		limit = {
-			is_key_in_variable_map = {
-				name = mnt_wealth_estate_flow
-				target = local_var:mnt_wealth_drip_key
+			# EPBM building maintenance from the pay variable map.
+			if = {
+				limit = {
+					has_variable_map = epbm_pay
+					is_key_in_variable_map = { name = epbm_pay target = scope:mnt_wealth_drip_estate }
+					"variable_map(epbm_pay|scope:mnt_wealth_drip_estate)" > 0
+				}
+				set_local_variable = { name = mnt_wealth_drip_epbm value = "variable_map(epbm_pay|scope:mnt_wealth_drip_estate)" }
+				change_local_variable = { name = mnt_wealth_drip_net subtract = local_var:mnt_wealth_drip_epbm }
 			}
-		}
-		change_local_variable = {
-			name = mnt_wealth_drip_net
-			subtract = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_drip_key)"
-		}
-	}
 
-	if = {
-		limit = {
-			local_var:mnt_wealth_drip_net != 0
-			any_estate = { estate_type = estate_type:$estate$_estate }
-		}
-		add_gold_to_estate = {
-			estate_type = estate_type:$estate$_estate
-			value = local_var:mnt_wealth_drip_net
+			# Savings valve flow rate (per month). The map is keyed by
+			# estate_type, so the key goes through a local.
+			set_local_variable = { name = mnt_wealth_drip_key value = scope:mnt_wealth_drip_estate.estate_type }
+			if = {
+				limit = {
+					is_key_in_variable_map = {
+						name = mnt_wealth_estate_flow
+						target = local_var:mnt_wealth_drip_key
+					}
+				}
+				set_local_variable = { name = mnt_wealth_drip_flow value = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_drip_key)" }
+				change_local_variable = { name = mnt_wealth_drip_net subtract = local_var:mnt_wealth_drip_flow }
+			}
+
+			if = {
+				limit = { local_var:mnt_wealth_drip_net != 0 }
+				add_gold_to_estate = {
+					estate_type = scope:mnt_wealth_drip_estate.estate_type
+					value = local_var:mnt_wealth_drip_net
+				}
+			}
 		}
 	}
 }

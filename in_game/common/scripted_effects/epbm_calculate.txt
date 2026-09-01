@@ -1,6 +1,7 @@
 ﻿# Three loops: the engine exposes estate, domestic, and foreign buildings
 # through separate iterators that don't overlap. Estate buildings route
-# costs to their owning estate; the other two route to crown or shared pool.
+# costs to their owning estate via variable map; all other non-blacklisted
+# buildings go into a shared pool split by estate power.
 #
 # The player path uses this effect directly every month. The AI path splits
 # the work: location pricing runs on the balanced sweep, estate and foreign
@@ -9,13 +10,14 @@
 
 epbm_calculate_maintenance = {
 	set_local_variable = { name = epbm_total_cost value = 0 }
-	set_local_variable = { name = epbm_crown_total_cost value = 0 }
 
-	epbm_for_each_estate = { effect = epbm_init_estate_var }
+	if = { limit = { has_variable_map = epbm_estate_costs } clear_variable_map = epbm_estate_costs }
 
+	# Estate buildings: iterate per estate, accumulate cost per estate into variable map.
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
-		save_temporary_scope_as = epbm_cur_estate
+		save_scope_as = epbm_cur_estate
+		set_local_variable = { name = epbm_cur_estate_cost value = 0 }
 
 		every_building_owned_by_estate = {
 			save_temporary_scope_as = epbm_bldg
@@ -24,10 +26,25 @@ epbm_calculate_maintenance = {
 
 			epbm_price_building = yes
 
-			if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_estate_building_cost = yes }
+			if = {
+				limit = { local_var:epbm_bldg_cost > 0 }
+				change_local_variable = { name = epbm_cur_estate_cost add = local_var:epbm_bldg_cost }
+			}
+		}
+
+		if = {
+			limit = { local_var:epbm_cur_estate_cost > 0 }
+			prev = {
+				add_to_variable_map = {
+					name = epbm_estate_costs
+					key = scope:epbm_cur_estate
+					value = local_var:epbm_cur_estate_cost
+				}
+			}
 		}
 	}
 
+	# Non-estate buildings: all go to shared pool.
 	every_owned_building = {
 		limit = {
 			is_opened = yes
@@ -43,7 +60,7 @@ epbm_calculate_maintenance = {
 
 		epbm_price_building = yes
 
-		if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_building_cost = yes }
+		if = { limit = { local_var:epbm_bldg_cost > 0 } change_local_variable = { name = epbm_total_cost add = local_var:epbm_bldg_cost } }
 	}
 
 	every_owned_foreign_building = {
@@ -61,59 +78,42 @@ epbm_calculate_maintenance = {
 
 		epbm_price_building = yes
 
-		if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_building_cost = yes }
+		if = { limit = { local_var:epbm_bldg_cost > 0 } change_local_variable = { name = epbm_total_cost add = local_var:epbm_bldg_cost } }
 	}
 
 	epbm_split_and_scale_costs = yes
 }
 
 # Scope: country. The post-iteration phase shared by epbm_calculate_maintenance
-# and epbm_aggregate_maintenance. Expects local variables epbm_total_cost,
-# epbm_crown_total_cost, and epbm_estate_<estate> to be populated by the caller.
+# and epbm_aggregate_maintenance. Expects local_var:epbm_total_cost and a
+# populated epbm_estate_costs variable map.
 
 epbm_split_and_scale_costs = {
-	if = {
-		limit = { local_var:epbm_total_cost > 0 }
-		set_local_variable = {
-			name = epbm_shared_fraction
-			value = {
-				value = local_var:epbm_total_cost
-				divide = { value = local_var:epbm_total_cost add = local_var:epbm_crown_total_cost }
-			}
-		}
-	}
-	else = { set_local_variable = { name = epbm_shared_fraction value = 0 } }
-
 	epbm_for_each_estate = { effect = epbm_compute_modifier_scale }
 
 	set_variable = { name = epbm_charge_factor value = { value = epbm_cost_share multiply = epbm_inflation_factor } }
 
 	change_local_variable = { name = epbm_total_cost multiply = var:epbm_charge_factor }
 
-	epbm_split_by_estate_power = yes
-	epbm_add_estate_building_costs = yes
+	epbm_split_by_estate_power_dynamic = yes
+	epbm_add_estate_building_costs_dynamic = yes
 
 	set_variable = {
 		name = epbm_crown_pool_cost
 		value = { value = local_var:epbm_total_cost multiply = "estate_power(estate_type:crown_estate)" }
 	}
-	set_variable = {
-		name = epbm_crown_bldg_cost
-		value = { value = local_var:epbm_crown_total_cost multiply = var:epbm_charge_factor }
-	}
 }
 
 # Scope: location (AI-owned). Prices every non-estate, non-blacklisted,
-# owner-domestic building in this location and stores the totals as
-# persistent location variables. The balanced sweep calls this once per
+# owner-domestic building in this location and stores the total as a
+# persistent location variable. The balanced sweep calls this once per
 # location per year; game-start seeding calls it once for every AI location.
 
 epbm_price_location_buildings = {
 	if = {
 		limit = { owner = { is_ai = yes } }
 
-		set_variable = { name = epbm_loc_shared_cost value = 0 }
-		set_variable = { name = epbm_loc_crown_cost value = 0 }
+		set_variable = { name = epbm_loc_cost value = 0 }
 
 		every_buildings_in_location = {
 			limit = {
@@ -133,27 +133,22 @@ epbm_price_location_buildings = {
 
 			if = {
 				limit = { local_var:epbm_bldg_cost > 0 }
-				location = {
-					if = {
-						limit = { prev = { building_category = government_category } }
-						change_variable = { name = epbm_loc_crown_cost add = local_var:epbm_bldg_cost }
-					}
-					else = { change_variable = { name = epbm_loc_shared_cost add = local_var:epbm_bldg_cost } }
-				}
+				location = { change_variable = { name = epbm_loc_cost add = local_var:epbm_bldg_cost } }
 			}
 		}
 	}
 }
 
 # Scope: country (AI). Prices estate-owned and foreign buildings, storing
-# the results in persistent country variables. Runs yearly via epbm.2.
+# the results in variable maps / country variables. Runs yearly via epbm.2.
 
 epbm_calculate_estate_and_foreign = {
-	epbm_for_each_estate = { effect = epbm_init_estate_var }
+	if = { limit = { has_variable_map = epbm_estate_costs } clear_variable_map = epbm_estate_costs }
 
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
-		save_temporary_scope_as = epbm_cur_estate
+		save_scope_as = epbm_cur_estate
+		set_local_variable = { name = epbm_cur_estate_cost value = 0 }
 
 		every_building_owned_by_estate = {
 			save_temporary_scope_as = epbm_bldg
@@ -162,15 +157,25 @@ epbm_calculate_estate_and_foreign = {
 
 			epbm_price_building = yes
 
-			if = { limit = { local_var:epbm_bldg_cost > 0 } epbm_route_estate_building_cost = yes }
+			if = {
+				limit = { local_var:epbm_bldg_cost > 0 }
+				change_local_variable = { name = epbm_cur_estate_cost add = local_var:epbm_bldg_cost }
+			}
+		}
+
+		if = {
+			limit = { local_var:epbm_cur_estate_cost > 0 }
+			prev = {
+				add_to_variable_map = {
+					name = epbm_estate_costs
+					key = scope:epbm_cur_estate
+					value = local_var:epbm_cur_estate_cost
+				}
+			}
 		}
 	}
 
-	# Store per-estate costs as persistent country variables
-	epbm_for_each_estate = { effect = epbm_store_estate_cost }
-
-	set_variable = { name = epbm_foreign_shared_cost value = 0 }
-	set_variable = { name = epbm_foreign_crown_cost value = 0 }
+	set_variable = { name = epbm_foreign_cost value = 0 }
 
 	every_owned_foreign_building = {
 		limit = {
@@ -189,50 +194,30 @@ epbm_calculate_estate_and_foreign = {
 
 		if = {
 			limit = { local_var:epbm_bldg_cost > 0 }
-			owner = {
-				if = {
-					limit = { prev = { building_category = government_category } }
-					change_variable = { name = epbm_foreign_crown_cost add = local_var:epbm_bldg_cost }
-				}
-				else = { change_variable = { name = epbm_foreign_shared_cost add = local_var:epbm_bldg_cost } }
-			}
+			owner = { change_variable = { name = epbm_foreign_cost add = local_var:epbm_bldg_cost } }
 		}
 	}
 }
 
 # Scope: country (AI). Monthly aggregation: sums the location-level costs
-# written by the balanced sweep, adds the yearly estate and foreign costs,
-# then runs the shared post-iteration phase to set pay/pool/crown vars.
+# written by the balanced sweep, adds the yearly foreign costs, then runs
+# the shared post-iteration phase. The epbm_estate_costs map persists from
+# the yearly pass and is read directly by the tail.
 
 epbm_aggregate_maintenance = {
-	# Sum location costs across all owned locations
 	set_local_variable = { name = epbm_total_cost value = 0 }
-	set_local_variable = { name = epbm_crown_total_cost value = 0 }
 
 	every_owned_location = {
 		if = {
-			limit = { has_variable = epbm_loc_shared_cost }
-			change_local_variable = { name = epbm_total_cost add = var:epbm_loc_shared_cost }
-		}
-		if = {
-			limit = { has_variable = epbm_loc_crown_cost }
-			change_local_variable = { name = epbm_crown_total_cost add = var:epbm_loc_crown_cost }
+			limit = { has_variable = epbm_loc_cost }
+			change_local_variable = { name = epbm_total_cost add = var:epbm_loc_cost }
 		}
 	}
 
-	# Add foreign building costs
 	if = {
-		limit = { has_variable = epbm_foreign_shared_cost }
-		change_local_variable = { name = epbm_total_cost add = var:epbm_foreign_shared_cost }
+		limit = { has_variable = epbm_foreign_cost }
+		change_local_variable = { name = epbm_total_cost add = var:epbm_foreign_cost }
 	}
-	if = {
-		limit = { has_variable = epbm_foreign_crown_cost }
-		change_local_variable = { name = epbm_crown_total_cost add = var:epbm_foreign_crown_cost }
-	}
-
-	# Load per-estate costs from the yearly pass into the locals the
-	# shared phase expects
-	epbm_for_each_estate = { effect = epbm_load_estate_cost }
 
 	epbm_split_and_scale_costs = yes
 }
@@ -306,13 +291,6 @@ epbm_price_building = {
 							key = scope:epbm_bt
 							value = local_var:epbm_per_level
 						}
-
-						# variable maps don't overwrite; must remove before re-adding
-						if = {
-							limit = { is_key_in_variable_map = { name = epbm_bt_display target = scope:epbm_bt } }
-							remove_from_variable_map = { name = epbm_bt_display key = scope:epbm_bt }
-						}
-
 						add_to_variable_map = {
 							name = epbm_bt_display
 							key = scope:epbm_bt
@@ -334,28 +312,4 @@ epbm_price_building = {
 			}
 		}
 	}
-}
-epbm_route_building_cost = {
-	if = {
-		limit = { building_category = government_category }
-		change_local_variable = { name = epbm_crown_total_cost add = local_var:epbm_bldg_cost }
-	}
-	else = { change_local_variable = { name = epbm_total_cost add = local_var:epbm_bldg_cost } }
-}
-epbm_route_estate_building_cost = {
-	epbm_for_each_estate = { effect = epbm_route_to_cur_estate }
-}
-
-epbm_route_to_cur_estate = {
-	if = {
-		limit = { scope:epbm_cur_estate = { estate_type = estate_type:$estate$_estate } }
-		change_local_variable = { name = epbm_estate_$estate$ add = local_var:epbm_bldg_cost }
-	}
-}
-epbm_split_by_estate_power = {
-	if = { limit = { local_var:epbm_total_cost > 0 } epbm_for_each_estate = { effect = epbm_set_pay_from_power } }
-	else = { epbm_for_each_estate = { effect = epbm_zero_pay } }
-}
-epbm_add_estate_building_costs = {
-	epbm_for_each_estate = { effect = epbm_add_estate_cost }
 }

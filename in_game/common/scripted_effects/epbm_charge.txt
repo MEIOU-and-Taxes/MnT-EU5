@@ -2,32 +2,30 @@
 # savings valves read (mnt_wealth_set_national_savings_valves), so maintenance
 # costs raise an estate's seizure demand on its locations by themselves.
 epbm_charge_estates = {
-	epbm_for_each_estate = { effect = epbm_charge_estate_pay }
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = epbm_est
+
+		prev = {
+			if = {
+				limit = {
+					has_variable_map = epbm_pay
+					is_key_in_variable_map = { name = epbm_pay target = scope:epbm_est }
+					"variable_map(epbm_pay|scope:epbm_est)" > 0
+				}
+				add_gold_to_estate = {
+					estate_type = scope:epbm_est.estate_type
+					value = { value = "variable_map(epbm_pay|scope:epbm_est)" multiply = -1 }
+				}
+			}
+		}
+	}
 }
 
-# Copies pay vars to show vars so tooltips display last month's values.
+# Copies pay vars to show/prev vars so tooltips display last month's values.
+# Crown display reads epbm_crown_pool_cost live; only estate maps need snapshot.
 epbm_snapshot_for_display = {
-	if = {
-		limit = { has_variable = epbm_show_crown_pool }
-		set_variable = { name = epbm_prev_crown_pool value = var:epbm_show_crown_pool }
-	}
-
-	if = {
-		limit = { has_variable = epbm_show_crown_bldg }
-		set_variable = { name = epbm_prev_crown_bldg value = var:epbm_show_crown_bldg }
-	}
-
-	epbm_for_each_estate = { effect = epbm_snapshot_estate }
-
-	if = {
-		limit = { has_variable = epbm_crown_pool_cost }
-		set_variable = { name = epbm_show_crown_pool value = var:epbm_crown_pool_cost }
-	}
-
-	if = {
-		limit = { has_variable = epbm_crown_bldg_cost }
-		set_variable = { name = epbm_show_crown_bldg value = var:epbm_crown_bldg_cost }
-	}
+	epbm_snapshot_estates_dynamic = yes
 
 	epbm_for_each_estate = { effect = epbm_snapshot_mod }
 }

@@ -1,7 +1,8 @@
 ﻿
 namespace = epbm
 
-# AI monthly: aggregate location and estate costs, then apply the combined
+# AI monthly: aggregate location and estate costs, copy mod scales for
+# refund (AI charges and calcs same tick), then apply the combined
 # EPBM + savings-valve drip so AI treasuries move every month.
 
 epbm.1 = {
@@ -14,7 +15,8 @@ epbm.1 = {
 
 	immediate = {
 		epbm_aggregate_maintenance = yes
-		epbm_for_each_estate = { effect = mnt_change_estate_gold }
+		epbm_for_each_estate = { effect = epbm_snapshot_mod }
+		mnt_change_estate_gold = yes
 	}
 
 	option = { name = "OK" }
@@ -63,51 +65,6 @@ epbm.100 = {
 	trigger = { always = no }
 
 	immediate = {
-		change_variable = { name = epbm_show_nobles multiply = 1 }
-		change_variable = { name = epbm_show_clergy multiply = 1 }
-		change_variable = { name = epbm_show_burghers multiply = 1 }
-		change_variable = { name = epbm_show_peasants multiply = 1 }
-		change_variable = { name = epbm_show_dhimmi multiply = 1 }
-		change_variable = { name = epbm_show_tribes multiply = 1 }
-		change_variable = { name = epbm_show_cossacks multiply = 1 }
-
-		change_variable = { name = epbm_show_pool_nobles multiply = 1 }
-		change_variable = { name = epbm_show_pool_clergy multiply = 1 }
-		change_variable = { name = epbm_show_pool_burghers multiply = 1 }
-		change_variable = { name = epbm_show_pool_peasants multiply = 1 }
-		change_variable = { name = epbm_show_pool_dhimmi multiply = 1 }
-		change_variable = { name = epbm_show_pool_tribes multiply = 1 }
-		change_variable = { name = epbm_show_pool_cossacks multiply = 1 }
-
-		change_variable = { name = epbm_show_assigned_nobles multiply = 1 }
-		change_variable = { name = epbm_show_assigned_clergy multiply = 1 }
-		change_variable = { name = epbm_show_assigned_burghers multiply = 1 }
-		change_variable = { name = epbm_show_assigned_peasants multiply = 1 }
-		change_variable = { name = epbm_show_assigned_dhimmi multiply = 1 }
-		change_variable = { name = epbm_show_assigned_tribes multiply = 1 }
-		change_variable = { name = epbm_show_assigned_cossacks multiply = 1 }
-
-		change_variable = { name = epbm_pool_nobles multiply = 1 }
-		change_variable = { name = epbm_pool_clergy multiply = 1 }
-		change_variable = { name = epbm_pool_burghers multiply = 1 }
-		change_variable = { name = epbm_pool_peasants multiply = 1 }
-		change_variable = { name = epbm_pool_dhimmi multiply = 1 }
-		change_variable = { name = epbm_pool_tribes multiply = 1 }
-		change_variable = { name = epbm_pool_cossacks multiply = 1 }
-
-		change_variable = { name = epbm_assigned_nobles multiply = 1 }
-		change_variable = { name = epbm_assigned_clergy multiply = 1 }
-		change_variable = { name = epbm_assigned_burghers multiply = 1 }
-		change_variable = { name = epbm_assigned_peasants multiply = 1 }
-		change_variable = { name = epbm_assigned_dhimmi multiply = 1 }
-		change_variable = { name = epbm_assigned_tribes multiply = 1 }
-		change_variable = { name = epbm_assigned_cossacks multiply = 1 }
-
-		change_variable = { name = epbm_show_crown_pool multiply = 1 }
-		change_variable = { name = epbm_show_crown_bldg multiply = 1 }
-		change_variable = { name = epbm_crown_pool_cost multiply = 1 }
-		change_variable = { name = epbm_crown_bldg_cost multiply = 1 }
-		change_variable = { name = epbm_charge_factor multiply = 1 }
 		change_variable = { name = epbm_mod_nobles multiply = 1 }
 		change_variable = { name = epbm_mod_clergy multiply = 1 }
 		change_variable = { name = epbm_mod_burghers multiply = 1 }
@@ -124,29 +81,8 @@ epbm.100 = {
 		change_variable = { name = epbm_show_mod_dhimmi multiply = 1 }
 		change_variable = { name = epbm_show_mod_cossacks multiply = 1 }
 
-		change_variable = { name = epbm_prev_nobles multiply = 1 }
-		change_variable = { name = epbm_prev_clergy multiply = 1 }
-		change_variable = { name = epbm_prev_burghers multiply = 1 }
-		change_variable = { name = epbm_prev_peasants multiply = 1 }
-		change_variable = { name = epbm_prev_tribes multiply = 1 }
-		change_variable = { name = epbm_prev_dhimmi multiply = 1 }
-		change_variable = { name = epbm_prev_cossacks multiply = 1 }
-		change_variable = { name = epbm_prev_pool_nobles multiply = 1 }
-		change_variable = { name = epbm_prev_pool_clergy multiply = 1 }
-		change_variable = { name = epbm_prev_pool_burghers multiply = 1 }
-		change_variable = { name = epbm_prev_pool_peasants multiply = 1 }
-		change_variable = { name = epbm_prev_pool_tribes multiply = 1 }
-		change_variable = { name = epbm_prev_pool_dhimmi multiply = 1 }
-		change_variable = { name = epbm_prev_pool_cossacks multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_nobles multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_clergy multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_burghers multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_peasants multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_tribes multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_dhimmi multiply = 1 }
-		change_variable = { name = epbm_prev_assigned_cossacks multiply = 1 }
-		change_variable = { name = epbm_prev_crown_pool multiply = 1 }
-		change_variable = { name = epbm_prev_crown_bldg multiply = 1 }
+		change_variable = { name = epbm_charge_factor multiply = 1 }
+		change_variable = { name = epbm_crown_pool_cost multiply = 1 }
 	}
 
 	option = { name = "OK" }

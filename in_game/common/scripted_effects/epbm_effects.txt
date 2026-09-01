@@ -7,62 +7,6 @@
 	$effect$ = { estate = dhimmi }
 	$effect$ = { estate = cossacks }
 }
-epbm_init_estate_var = {
-	set_local_variable = { name = epbm_estate_$estate$ value = 0 }
-}
-
-epbm_store_estate_cost = {
-	set_variable = { name = epbm_estate_cost_$estate$ value = local_var:epbm_estate_$estate$ }
-}
-
-epbm_load_estate_cost = {
-	if = {
-		limit = { has_variable = epbm_estate_cost_$estate$ }
-		set_local_variable = { name = epbm_estate_$estate$ value = var:epbm_estate_cost_$estate$ }
-	}
-	else = { set_local_variable = { name = epbm_estate_$estate$ value = 0 } }
-}
-
-epbm_set_pay_from_power = {
-	set_local_variable = { name = est value = estate_type:$estate$_estate }
-
-	if = {
-		limit = { country_has_estate = local_var:est }
-
-		set_variable = {
-			name = epbm_pay_$estate$
-			value = { value = local_var:epbm_total_cost multiply = "estate_power(local_var:est)" }
-		}
-		set_variable = { name = epbm_pool_$estate$ value = var:epbm_pay_$estate$ }
-	}
-}
-
-epbm_zero_pay = {
-	if = {
-		limit = { country_has_estate = estate_type:$estate$_estate }
-		set_variable = { name = epbm_pay_$estate$ value = 0 }
-		set_variable = { name = epbm_pool_$estate$ value = 0 }
-		set_variable = { name = epbm_assigned_$estate$ value = 0 }
-	}
-}
-
-epbm_add_estate_cost = {
-	if = {
-		limit = { local_var:epbm_estate_$estate$ > 0 }
-
-		if = {
-			limit = { NOT = { has_variable = epbm_pay_$estate$ } }
-			set_variable = { name = epbm_pay_$estate$ value = 0 }
-		}
-
-		set_variable = {
-			name = epbm_assigned_$estate$
-			value = { value = local_var:epbm_estate_$estate$ multiply = var:epbm_charge_factor }
-		}
-
-		change_variable = { name = epbm_pay_$estate$ add = var:epbm_assigned_$estate$ }
-	}
-}
 
 epbm_init_modifier_scale = {
 	set_variable = { name = epbm_mod_$estate$ value = 0 }
@@ -85,7 +29,6 @@ epbm_compute_modifier_scale = {
 			name = epbm_mod_$estate$
 			value = {
 				value = "estate_power(local_var:est)"
-				multiply = local_var:epbm_shared_fraction
 				multiply = epbm_cost_share
 				multiply = epbm_inflation_factor
 			}
@@ -94,54 +37,183 @@ epbm_compute_modifier_scale = {
 	else = { set_variable = { name = epbm_mod_$estate$ value = 0 } }
 }
 
-epbm_charge_estate_pay = {
-	if = {
-		limit = {
-			any_estate = { estate_type = estate_type:$estate$_estate }
-			has_variable = epbm_pay_$estate$
-			var:epbm_pay_$estate$ > 0
-		}
-		add_gold_to_estate = {
-			estate_type = estate_type:$estate$_estate
-			value = { value = var:epbm_pay_$estate$ multiply = -1 }
-		}
-	}
-}
+# Variable map operations. All use every_estate with estate
+# scope as map key. Scope: country.
 
-epbm_snapshot_estate = {
-	if = {
-		limit = { country_has_estate = estate_type:$estate$_estate }
+epbm_split_by_estate_power_dynamic = {
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = epbm_est
 
-		if = {
-			limit = { has_variable = epbm_show_$estate$ }
-			set_variable = { name = epbm_prev_$estate$ value = var:epbm_show_$estate$ }
-		}
+		prev = {
+			set_local_variable = {
+				name = epbm_est_share
+				value = { value = local_var:epbm_total_cost multiply = "estate_power(scope:epbm_est.estate_type)" }
+			}
 
-		if = {
-			limit = { has_variable = epbm_show_pool_$estate$ }
-			set_variable = { name = epbm_prev_pool_$estate$ value = var:epbm_show_pool_$estate$ }
-		}
-
-		if = {
-			limit = { has_variable = epbm_show_assigned_$estate$ }
-			set_variable = { name = epbm_prev_assigned_$estate$ value = var:epbm_show_assigned_$estate$ }
-		}
-
-		set_variable = { name = epbm_show_$estate$ value = var:epbm_pay_$estate$ }
-
-		if = {
-			limit = { has_variable = epbm_pool_$estate$ }
-			set_variable = { name = epbm_show_pool_$estate$ value = var:epbm_pool_$estate$ }
-		}
-
-		if = {
-			limit = { has_variable = epbm_assigned_$estate$ }
-			set_variable = { name = epbm_show_assigned_$estate$ value = var:epbm_assigned_$estate$ }
+			add_to_variable_map = {
+				name = epbm_pay
+				key = scope:epbm_est
+				value = local_var:epbm_est_share
+			}
+			add_to_variable_map = {
+				name = epbm_pool
+				key = scope:epbm_est
+				value = local_var:epbm_est_share
+			}
+			# Fresh base each cycle; estates with building costs are
+			# overwritten by epbm_add_estate_building_costs_dynamic.
+			add_to_variable_map = {
+				name = epbm_assigned
+				key = scope:epbm_est
+				value = 0
+			}
 		}
 	}
 }
 
-@epbm_rebuild_version = 410
+epbm_zero_pay_dynamic = {
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = epbm_est
+
+		prev = {
+			add_to_variable_map = {
+				name = epbm_pay
+				key = scope:epbm_est
+				value = 0
+			}
+			add_to_variable_map = {
+				name = epbm_pool
+				key = scope:epbm_est
+				value = 0
+			}
+			add_to_variable_map = {
+				name = epbm_assigned
+				key = scope:epbm_est
+				value = 0
+			}
+		}
+	}
+}
+
+epbm_add_estate_building_costs_dynamic = {
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = epbm_est
+
+		prev = {
+			if = {
+				limit = {
+					has_variable_map = epbm_estate_costs
+					is_key_in_variable_map = { name = epbm_estate_costs target = scope:epbm_est }
+				}
+
+				set_local_variable = { name = epbm_est_raw value = "variable_map(epbm_estate_costs|scope:epbm_est)" }
+
+				if = {
+					limit = { local_var:epbm_est_raw > 0 }
+
+					set_local_variable = {
+						name = epbm_est_scaled
+						value = { value = local_var:epbm_est_raw multiply = var:epbm_charge_factor }
+					}
+
+					add_to_variable_map = {
+						name = epbm_assigned
+						key = scope:epbm_est
+						value = local_var:epbm_est_scaled
+					}
+
+					if = {
+						limit = { has_variable_map = epbm_pay is_key_in_variable_map = { name = epbm_pay target = scope:epbm_est } }
+						set_local_variable = { name = epbm_existing_pay value = "variable_map(epbm_pay|scope:epbm_est)" }
+					}
+					else = { set_local_variable = { name = epbm_existing_pay value = 0 } }
+
+					set_local_variable = {
+						name = epbm_est_total_pay
+						value = { value = local_var:epbm_existing_pay add = local_var:epbm_est_scaled }
+					}
+
+					add_to_variable_map = {
+						name = epbm_pay
+						key = scope:epbm_est
+						value = local_var:epbm_est_total_pay
+					}
+				}
+			}
+		}
+	}
+}
+
+epbm_snapshot_estates_dynamic = {
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = epbm_est
+
+		prev = {
+			if = {
+				limit = { has_variable_map = epbm_show is_key_in_variable_map = { name = epbm_show target = scope:epbm_est } }
+				add_to_variable_map = {
+					name = epbm_prev
+					key = scope:epbm_est
+					value = "variable_map(epbm_show|scope:epbm_est)"
+				}
+			}
+
+			if = {
+				limit = { has_variable_map = epbm_show_pool is_key_in_variable_map = { name = epbm_show_pool target = scope:epbm_est } }
+				add_to_variable_map = {
+					name = epbm_prev_pool
+					key = scope:epbm_est
+					value = "variable_map(epbm_show_pool|scope:epbm_est)"
+				}
+			}
+
+			if = {
+				limit = {
+					has_variable_map = epbm_show_assigned
+					is_key_in_variable_map = { name = epbm_show_assigned target = scope:epbm_est }
+				}
+				add_to_variable_map = {
+					name = epbm_prev_assigned
+					key = scope:epbm_est
+					value = "variable_map(epbm_show_assigned|scope:epbm_est)"
+				}
+			}
+
+			if = {
+				limit = { has_variable_map = epbm_pay is_key_in_variable_map = { name = epbm_pay target = scope:epbm_est } }
+				add_to_variable_map = {
+					name = epbm_show
+					key = scope:epbm_est
+					value = "variable_map(epbm_pay|scope:epbm_est)"
+				}
+			}
+
+			if = {
+				limit = { has_variable_map = epbm_pool is_key_in_variable_map = { name = epbm_pool target = scope:epbm_est } }
+				add_to_variable_map = {
+					name = epbm_show_pool
+					key = scope:epbm_est
+					value = "variable_map(epbm_pool|scope:epbm_est)"
+				}
+			}
+
+			if = {
+				limit = { has_variable_map = epbm_assigned is_key_in_variable_map = { name = epbm_assigned target = scope:epbm_est } }
+				add_to_variable_map = {
+					name = epbm_show_assigned
+					key = scope:epbm_est
+					value = "variable_map(epbm_assigned|scope:epbm_est)"
+				}
+			}
+		}
+	}
+}
+
+@epbm_rebuild_version = 500
 epbm_initialize = {
 	epbm_init_blacklist = yes
 	epbm_full_rebuild = yes
@@ -241,13 +313,14 @@ epbm_full_rebuild = {
 		epbm_price_location_buildings = yes
 	}
 
-	# AI countries: price estate and foreign buildings, then aggregate
-	# and charge in one shot so costs are ready from month one.
+	# AI countries: price estate and foreign buildings, aggregate, charge,
+	# then copy mod scales to show so AI gets upkeep refund from game start.
 	every_country = {
 		limit = { is_real_country = yes is_ai = yes any_active_estate = { exists = yes } }
 		epbm_calculate_estate_and_foreign = yes
 		epbm_aggregate_maintenance = yes
 		epbm_charge_estates = yes
+		epbm_for_each_estate = { effect = epbm_snapshot_mod }
 	}
 
 	# Player countries: the full three-loop calculation and immediate
@@ -256,7 +329,7 @@ epbm_full_rebuild = {
 		limit = { is_real_country = yes is_ai = no any_active_estate = { exists = yes } }
 		epbm_calculate_maintenance = yes
 		epbm_charge_estates = yes
-		epbm_for_each_estate = { effect = epbm_zero_pay }
+		epbm_zero_pay_dynamic = yes
 	}
 }
 # snapshot first: prev vars must capture last month before recalc overwrites them
