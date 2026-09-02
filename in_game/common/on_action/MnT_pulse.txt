@@ -1,5 +1,6 @@
 ﻿on_game_start = {
 	on_actions = {
+		mnt_rgo_seed_eligibility
 		on_game_start_MnT
 		hide_buildings_on_start
 		epbm_on_initialize
@@ -9,11 +10,36 @@
 	}
 }
 
+#Seed RGO eligibility cache before on_game_start_MnT: rgo_removal.01 builds RGOs that read the cache.
+mnt_rgo_seed_eligibility = {
+	effect = {
+		set_global_variable = mnt_rgo_eligibility_initialized
+		every_ownable_location = {
+			mnt_rgo_refresh_eligibility = yes
+		}
+	}
+}
+
 weather_monthly_pulse = {
 	on_actions = {
 		epbm_on_global_monthly
-		aut_init_check 
+		aut_init_check
 		aut_monthly_update
+		mnt_rgo_eligibility_init_check
+	}
+}
+
+#Save-compat init: seeds the eligibility cache once if the marker is missing.
+mnt_rgo_eligibility_init_check = {
+	trigger = {
+		NOT = { has_global_variable = mnt_rgo_eligibility_initialized }
+	}
+
+	effect = {
+		set_global_variable = mnt_rgo_eligibility_initialized
+		every_ownable_location = {
+			mnt_rgo_refresh_eligibility = yes
+		}
 	}
 }
 
@@ -223,4 +249,10 @@ hide_buildings_on_start = {
 
 on_location_changed_owner = {
 	on_actions = { aut_on_location_conquered }
+}
+
+on_raw_material_changed = {
+	effect = {
+		mnt_rgo_refresh_eligibility = yes
+	}
 }
