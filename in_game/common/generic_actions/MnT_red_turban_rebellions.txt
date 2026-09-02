@@ -1,0 +1,95 @@
+﻿#changed to affect provinces, much cheaper, less benefits.
+REPLACE:rtr_rein_in_area = {
+	icon = rein_in_burghers
+	type = situation
+	potential = {
+		scope:actor = {
+			is_member_of_international_organization = international_organization:red_turban_rebels
+		}
+	}
+
+	ai_tick = monthly
+	ai_tick_frequency = 1
+	automation_tick = never
+	automation_tick_frequency = 12
+	price = price:rtr_rein_in_area_price
+	
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = {
+			data = name
+		}
+		visible = {
+			situation:red_turban_rebellions = this
+			situation_is_active = yes
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = province
+		source = actor
+		target_flag = target
+		name = "rtr_rein_in_area_select_area_title"
+		none_available_msg_key = "rtr_rein_in_area_no_areas"
+		column = { data = name }
+		visible = {
+			any_location_in_province = {
+				owner ?= scope:actor
+				percent >= 0.5
+			}
+			any_location_in_province = {
+				integration_level = conquered
+				NOT = { is_core_of = scope:actor }
+			}
+		}
+	}
+	effect = {
+		scope:actor = {
+			if = {
+				limit = { modifier:allow_righteousness = yes }
+				add_righteousness = 5
+			}
+		}
+		if = {
+			limit = { exists = scope:target }
+			scope:target ?= {
+				custom_tooltip = {
+					text = rtr_rein_in_area_tt
+					every_location_in_province = {
+						limit = {
+							has_owner = yes
+							owner = scope:actor
+							integration_level = conquered
+							NOT = { is_core_of = scope:actor }
+						}
+						change_integration_level = integrated
+					}
+				}
+			}
+		}
+		else = {
+			custom_tooltip = rtr_rein_in_area_at
+		}
+	}
+	ai_will_do = {
+		add = 100
+#		add = {
+#			if = {
+#				limit = {
+#					scope:actor = {
+#						gold >= {
+#							value = monthly_income_trade_and_tax
+#							multiply = 8
+#						}
+#					}
+#				}
+#				value = 100
+#			}
+#		}
+	}
+}

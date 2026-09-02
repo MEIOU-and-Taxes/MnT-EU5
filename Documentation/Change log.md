@@ -605,12 +605,13 @@ Date: 21/05/2026
 
 ##### M&T v0.2.9
 
+
 ### Balance
 - Disable selling Works of Art to either other Nations or Estates
   - Too exploitative for the player
+- Adjusted red turban situation integration action, ensuring China has some possibility of unifying.  
 
 ### Fixes
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
 - Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
 - Fix errors on startup that about too many farming villages in Locations
- 
