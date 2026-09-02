@@ -602,3 +602,4 @@ Date: 21/05/2026
 
 ##### M&T v0.2.9
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
+- Adjusted red turban situation integration action, ensuring China has some possibility of unifying.
