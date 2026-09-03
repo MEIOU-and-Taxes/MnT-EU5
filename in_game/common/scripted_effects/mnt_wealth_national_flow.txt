@@ -3,54 +3,74 @@
 # One signed number per estate carries both directions: above its savings goal
 # an estate sends gold down to its locations, below it takes gold back out.
 
-# ── TREASURY DRIP ──
+# ── ESTATE GOLD SETTLE ──
 
-# Scope: country. Called monthly for AI through the EPBM loop. Combines the
-# EPBM building maintenance charge and the savings valve flow into one gold
-# move per estate, so AI treasuries change every month instead of in yearly
-# lumps.
+# Scope: country. The only monthly add_gold_to_estate in the mod. Runs for
+# every country with an active estate, AI and player, from epbm.1.
 #
-# Sign: delta = -(epbm_pay) - (flow_rate).
+# Each system writes its own per-estate monthly amount and never moves gold:
+#   epbm_maintenance_charge   EPBM building maintenance (monthly)
+#   mnt_wealth_estate_flow    savings valve flow rate (monthly, land owners only)
+# A source that arrives as a yearly amount is divided by 12 here and nowhere else.
+#
+# Before the charge, the EPBM display tiers shift so tooltips show the bill
+# just paid: two_months_ago <- last_month <- charge.
+#
+# Sign: delta = -(maintenance charge) - (flow rate).
 # Positive flow = payout = treasury drains; negative = seizure = treasury gains.
 
 mnt_change_estate_gold = {
+	epbm_snapshot_estates_dynamic = yes
+
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
-		save_scope_as = mnt_wealth_drip_estate
+		save_scope_as = mnt_estate_gold_estate
 
 		prev = {
-			set_local_variable = { name = mnt_wealth_drip_net value = 0 }
+			set_local_variable = { name = mnt_estate_gold_net value = 0 }
 
-			# EPBM building maintenance from the pay variable map.
 			if = {
 				limit = {
-					has_variable_map = epbm_pay
-					is_key_in_variable_map = { name = epbm_pay target = scope:mnt_wealth_drip_estate }
-					"variable_map(epbm_pay|scope:mnt_wealth_drip_estate)" > 0
+					has_variable_map = epbm_maintenance_charge
+					is_key_in_variable_map = { name = epbm_maintenance_charge target = scope:mnt_estate_gold_estate }
+					"variable_map(epbm_maintenance_charge|scope:mnt_estate_gold_estate)" > 0
 				}
-				set_local_variable = { name = mnt_wealth_drip_epbm value = "variable_map(epbm_pay|scope:mnt_wealth_drip_estate)" }
-				change_local_variable = { name = mnt_wealth_drip_net subtract = local_var:mnt_wealth_drip_epbm }
+				set_local_variable = { name = mnt_estate_gold_maintenance value = "variable_map(epbm_maintenance_charge|scope:mnt_estate_gold_estate)" }
+				change_local_variable = { name = mnt_estate_gold_net subtract = local_var:mnt_estate_gold_maintenance }
 			}
 
-			# Savings valve flow rate (per month). The map is keyed by
-			# estate_type, so the key goes through a local.
-			set_local_variable = { name = mnt_wealth_drip_key value = scope:mnt_wealth_drip_estate.estate_type }
+			set_local_variable = { name = mnt_estate_gold_flow value = 0 }
 			if = {
 				limit = {
 					is_key_in_variable_map = {
 						name = mnt_wealth_estate_flow
-						target = local_var:mnt_wealth_drip_key
+						target = scope:mnt_estate_gold_estate.estate_type
 					}
 				}
-				set_local_variable = { name = mnt_wealth_drip_flow value = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_drip_key)" }
-				change_local_variable = { name = mnt_wealth_drip_net subtract = local_var:mnt_wealth_drip_flow }
+				set_local_variable = { name = mnt_estate_gold_flow value = "variable_map(mnt_wealth_estate_flow|scope:mnt_estate_gold_estate.estate_type)" }
+				change_local_variable = { name = mnt_estate_gold_net subtract = local_var:mnt_estate_gold_flow }
+			}
+
+			# Flow display tiers, same shape as the EPBM ones, keyed by estate_type.
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow_charged_last_month target = scope:mnt_estate_gold_estate.estate_type } }
+				add_to_variable_map = {
+					name = mnt_wealth_estate_flow_charged_two_months_ago
+					key = scope:mnt_estate_gold_estate.estate_type
+					value = "variable_map(mnt_wealth_estate_flow_charged_last_month|scope:mnt_estate_gold_estate.estate_type)"
+				}
+			}
+			add_to_variable_map = {
+				name = mnt_wealth_estate_flow_charged_last_month
+				key = scope:mnt_estate_gold_estate.estate_type
+				value = local_var:mnt_estate_gold_flow
 			}
 
 			if = {
-				limit = { local_var:mnt_wealth_drip_net != 0 }
+				limit = { local_var:mnt_estate_gold_net != 0 }
 				add_gold_to_estate = {
-					estate_type = scope:mnt_wealth_drip_estate.estate_type
-					value = local_var:mnt_wealth_drip_net
+					estate_type = scope:mnt_estate_gold_estate.estate_type
+					value = local_var:mnt_estate_gold_net
 				}
 			}
 		}
@@ -61,8 +81,8 @@ mnt_change_estate_gold = {
 
 # Scope: country. MONTHS = 1 for the monthly player path, 12 for the yearly AI path.
 # Computes each estate's savings gap and writes the per-month flow rate to the
-# mnt_wealth_estate_flow map. Gold moves to the estate treasury on the player
-# path only; AI treasuries are handled by the monthly drip in mnt_change_estate_gold.
+# mnt_wealth_estate_flow map. No gold moves here; mnt_change_estate_gold charges
+# the rate every month for both paths.
 
 mnt_wealth_set_national_savings_valves = {
 	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
@@ -171,16 +191,6 @@ mnt_wealth_set_national_savings_valves = {
 				name = mnt_wealth_estate_flow
 				key = local_var:mnt_wealth_estate_key
 				value = local_var:mnt_wealth_estate_monthly_flow
-			}
-
-			# Player path applies gold here; AI treasuries move through the
-			# monthly drip (mnt_change_estate_gold) instead.
-			if = {
-				limit = { local_var:mnt_wealth_valve_months = 1 }
-				add_gold_to_estate = {
-					estate_type = scope:mnt_wealth_current_estate.estate_type
-					value = { value = local_var:mnt_wealth_estate_period_total multiply = -1 }
-				}
 			}
 		}
 	}

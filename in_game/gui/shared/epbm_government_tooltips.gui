@@ -72,16 +72,55 @@ template Estate_tooltip {
 				### EPBM: Building maintenance line. Dynamic: works for any estate.
 				### Script value reads variable map via estate -> owner -> prev chain.
 				TooltipManualTableField = {
-					visible = "[GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('epbm_estate_pay_display'), '(CFixedPoint)0')]"
+					visible = "[GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('epbm_maintenance_charged_two_months_ago_display'), '(CFixedPoint)0')]"
 					text_single = {
-						text = "EPBM_ESTATE_MAINT_LABEL"
+						text = " - From [epbm_estate_building_maintenance|E]"
 					}
 					expand = {}
 					text_single = {
-						raw_text = "#R -[Estate.MakeScope.ScriptValue('epbm_estate_pay_display')|2]@gold!#!"
+						raw_text = "#R -[Estate.MakeScope.ScriptValue('epbm_maintenance_charged_two_months_ago_display')|2]@gold!#!"
 					}
 				}
 				### End EPBM
+				### Start Location Wealth
+				# Gold this estate paid into its locations this month, because its
+				# treasury is above its savings goal.
+				TooltipManualTableField = {
+					visible = "[GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_flow_charged_two_months_ago_display'), '(CFixedPoint)0')]"
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						raw_text = " - To Location #explanation_link [Concept('mnt_wealth_local_investment','Investment')]#!"
+					}
+					text_single = {
+						autoresize = yes
+						raw_text = "#R -[Estate.MakeScope.ScriptValue('mnt_wealth_estate_flow_charged_two_months_ago_display')|2]@gold!#!"
+					}
+
+					tooltipwidget = {
+						using = mnt_wealth_savings_percentage_tooltip
+					}
+				}
+
+				# Gold this estate seized out of its locations this month, because
+				# its treasury is below its savings goal.
+				TooltipManualTableField = {
+					visible = "[LessThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_flow_charged_two_months_ago_display'), '(CFixedPoint)0')]"
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						raw_text = " - From #explanation_link [Concept('mnt_wealth_asset_seizure','Asset Seizure')]#!"
+					}
+					text_single = {
+						autoresize = yes
+						raw_text = "[Multiply_float(FixedPointToFloat(Estate.MakeScope.ScriptValue('mnt_wealth_estate_flow_charged_two_months_ago_display')), '(float)-1')|+=2]@gold!"
+					}
+
+					tooltipwidget = {
+						using = mnt_wealth_savings_percentage_tooltip
+					}
+				}
+				### End Location Wealth
 
 				TooltipManualTableField = {
 					visible = "[Not(Estate.GetType.IsAlwaysLoyal)]"
@@ -97,44 +136,6 @@ template Estate_tooltip {
 						using = estate_expense_tooltip
 					}
 
-				}
-
-				# Gold this estate paid into its locations this month, because its
-				# treasury is above its savings goal.
-				TooltipManualTableField = {
-					visible = "[GreaterThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_location_investment'), '(CFixedPoint)0')]"
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						autoresize = no
-						raw_text = " - To Location #explanation_link [Concept('mnt_wealth_local_investment','Investment')]#!"
-					}
-					text_single = {
-						autoresize = yes
-						raw_text = "#R -[Estate.MakeScope.ScriptValue('mnt_wealth_estate_location_investment')|2]@gold!#!"
-					}
-
-					tooltipwidget = {
-						using = mnt_wealth_savings_percentage_tooltip
-					}
-				}
-
-				# Gold this estate seized out of its locations this month, because
-				# its treasury is below its savings goal.
-				TooltipManualTableField = {
-					visible = "[LessThan_CFixedPoint(Estate.MakeScope.ScriptValue('mnt_wealth_estate_location_investment'), '(CFixedPoint)0')]"
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						autoresize = no
-						raw_text = " - From #explanation_link [Concept('mnt_wealth_asset_seizure','Asset Seizure')]#!"
-					}
-					text_single = {
-						autoresize = yes
-						raw_text = "[Multiply_float(FixedPointToFloat(Estate.MakeScope.ScriptValue('mnt_wealth_estate_location_investment')), '(float)-1')|+=2]@gold!"
-					}
-
-					tooltipwidget = {
-						using = mnt_wealth_savings_percentage_tooltip
-					}
 				}
 
 				TooltipManualTableField = {

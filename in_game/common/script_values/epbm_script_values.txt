@@ -13,63 +13,98 @@ epbm_inflation_factor = {
 	add = inflation
 }
 
-# Read from show_ vars: charge and recalc are offset by one month,
-# so the auto_modifier must match the amount actually charged
+# The auto_modifiers read the last_month scale, copied at the moment of the
+# charge, so the refund matches the bill the estates actually paid. The map is
+# keyed by estate_type; an estate the country lacks has no key and reads 0.
 
 epbm_nobles_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_nobles } value = var:epbm_show_mod_nobles }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:nobles_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:nobles_estate)"
+	}
 }
 
 epbm_clergy_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_clergy } value = var:epbm_show_mod_clergy }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:clergy_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:clergy_estate)"
+	}
 }
 
 epbm_burghers_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_burghers } value = var:epbm_show_mod_burghers }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:burghers_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:burghers_estate)"
+	}
 }
 
 epbm_peasants_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_peasants } value = var:epbm_show_mod_peasants }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:peasants_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:peasants_estate)"
+	}
 }
 
 epbm_tribes_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_tribes } value = var:epbm_show_mod_tribes }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:tribes_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:tribes_estate)"
+	}
 }
 
 epbm_dhimmi_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_dhimmi } value = var:epbm_show_mod_dhimmi }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:dhimmi_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:dhimmi_estate)"
+	}
 }
 
 epbm_cossacks_upkeep_scale = {
-	if = { limit = { has_variable = epbm_show_mod_cossacks } value = var:epbm_show_mod_cossacks }
+	if = {
+		limit = { is_key_in_variable_map = { name = epbm_upkeep_scale_last_month target = estate_type:cossacks_estate } }
+		value = "variable_map(epbm_upkeep_scale_last_month|estate_type:cossacks_estate)"
+	}
 }
 
 # GUI display script values. Evaluated from estate scope:
 # estate -> owner (country) -> read variable map with prev (estate) as key.
+#
+# The estate tooltip sits beside vanilla's "Events and other sources", which
+# reports the tick before last, so it reads the two_months_ago tier. The
+# economic balance breakdown reports the last tick, so it reads last_month.
 
-epbm_estate_pay_display = {
+epbm_maintenance_charged_last_month_display = {
 	owner = {
 		if = {
-			limit = { has_variable_map = epbm_prev is_key_in_variable_map = { name = epbm_prev target = prev } }
-			value = "variable_map(epbm_prev|prev)"
+			limit = { has_variable_map = epbm_maintenance_charged_last_month is_key_in_variable_map = { name = epbm_maintenance_charged_last_month target = prev } }
+			value = "variable_map(epbm_maintenance_charged_last_month|prev)"
 		}
 	}
 }
 
-epbm_estate_pool_display = {
+epbm_maintenance_charged_two_months_ago_display = {
 	owner = {
 		if = {
-			limit = { has_variable_map = epbm_prev_pool is_key_in_variable_map = { name = epbm_prev_pool target = prev } }
-			value = "variable_map(epbm_prev_pool|prev)"
+			limit = { has_variable_map = epbm_maintenance_charged_two_months_ago is_key_in_variable_map = { name = epbm_maintenance_charged_two_months_ago target = prev } }
+			value = "variable_map(epbm_maintenance_charged_two_months_ago|prev)"
 		}
 	}
 }
 
-epbm_estate_assigned_display = {
+epbm_shared_charged_last_month_display = {
 	owner = {
 		if = {
-			limit = { has_variable_map = epbm_prev_assigned is_key_in_variable_map = { name = epbm_prev_assigned target = prev } }
-			value = "variable_map(epbm_prev_assigned|prev)"
+			limit = { has_variable_map = epbm_shared_charged_last_month is_key_in_variable_map = { name = epbm_shared_charged_last_month target = prev } }
+			value = "variable_map(epbm_shared_charged_last_month|prev)"
+		}
+	}
+}
+
+epbm_estate_building_charged_last_month_display = {
+	owner = {
+		if = {
+			limit = { has_variable_map = epbm_estate_building_charged_last_month is_key_in_variable_map = { name = epbm_estate_building_charged_last_month target = prev } }
+			value = "variable_map(epbm_estate_building_charged_last_month|prev)"
 		}
 	}
 }

@@ -1,9 +1,10 @@
 ﻿
 namespace = epbm
 
-# AI monthly: aggregate location and estate costs, copy mod scales for
-# refund (AI charges and calcs same tick), then apply the combined
-# EPBM + savings-valve drip so AI treasuries move every month.
+# Monthly, every country with an active estate. AI aggregates its cached
+# costs first and pays the fresh bill; the player pays last month's
+# calculation and recalculates after. mnt_change_estate_gold is the only
+# place estate gold moves.
 
 epbm.1 = {
 	type = country_event
@@ -11,12 +12,10 @@ epbm.1 = {
 	hidden = yes
 	outcome = neutral
 
-	trigger = { is_ai = yes }
-
 	immediate = {
-		epbm_aggregate_maintenance = yes
-		epbm_for_each_estate = { effect = epbm_snapshot_mod }
+		if = { limit = { is_ai = yes } epbm_aggregate_maintenance = yes }
 		mnt_change_estate_gold = yes
+		if = { limit = { is_ai = no } epbm_calculate_maintenance = yes }
 	}
 
 	option = { name = "OK" }
@@ -37,21 +36,6 @@ epbm.2 = {
 	option = { name = "OK" }
 }
 
-# Player monthly: snapshot, charge, recalculate.
-
-epbm.3 = {
-	type = country_event
-	title = epbm_hidden_event.t
-	hidden = yes
-	outcome = neutral
-
-	trigger = { is_ai = no }
-
-	immediate = { epbm_collect_maintenance = yes }
-
-	option = { name = "OK" }
-}
-
 # Silence "set but never used" warnings for variables read only via GUI.
 
 epbm.100 = {
@@ -65,22 +49,6 @@ epbm.100 = {
 	trigger = { always = no }
 
 	immediate = {
-		change_variable = { name = epbm_mod_nobles multiply = 1 }
-		change_variable = { name = epbm_mod_clergy multiply = 1 }
-		change_variable = { name = epbm_mod_burghers multiply = 1 }
-		change_variable = { name = epbm_mod_peasants multiply = 1 }
-		change_variable = { name = epbm_mod_tribes multiply = 1 }
-		change_variable = { name = epbm_mod_dhimmi multiply = 1 }
-		change_variable = { name = epbm_mod_cossacks multiply = 1 }
-
-		change_variable = { name = epbm_show_mod_nobles multiply = 1 }
-		change_variable = { name = epbm_show_mod_clergy multiply = 1 }
-		change_variable = { name = epbm_show_mod_burghers multiply = 1 }
-		change_variable = { name = epbm_show_mod_peasants multiply = 1 }
-		change_variable = { name = epbm_show_mod_tribes multiply = 1 }
-		change_variable = { name = epbm_show_mod_dhimmi multiply = 1 }
-		change_variable = { name = epbm_show_mod_cossacks multiply = 1 }
-
 		change_variable = { name = epbm_charge_factor multiply = 1 }
 		change_variable = { name = epbm_crown_pool_cost multiply = 1 }
 	}
