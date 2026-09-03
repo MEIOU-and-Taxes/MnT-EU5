@@ -1,0 +1,37 @@
+﻿# Scope: location. Moves $amount$ pop units (thousands, same as pop_size)
+# out of every $from$ pop into $to$ pops by splitting each source pop by the
+# same fraction, so the mix of culture and religion is kept. Capped at 1.
+#
+# mnt_promote_pops = { from = pop_type:peasants to = pop_type:laborers amount = 1 }
+mnt_promote_pops = {
+	set_local_variable = { name = mnt_promote_source_size value = 0 }
+	every_pop = {
+		limit = { pop_type = $from$ }
+		change_local_variable = { name = mnt_promote_source_size add = pop_size }
+	}
+
+	set_local_variable = { name = mnt_promote_fraction value = 0 }
+	if = {
+		limit = { local_var:mnt_promote_source_size > 0 }
+		set_local_variable = {
+			name = mnt_promote_fraction
+			value = {
+				value = $amount$
+				divide = local_var:mnt_promote_source_size
+				max = 1
+			}
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_promote_fraction > 0 }
+		save_temporary_scope_value_as = { name = mnt_promote_fraction value = local_var:mnt_promote_fraction }
+		every_pop = {
+			limit = { pop_type = $from$ }
+			split_pop = {
+				fraction = scope:mnt_promote_fraction
+				type = $to$
+			}
+		}
+	}
+}
