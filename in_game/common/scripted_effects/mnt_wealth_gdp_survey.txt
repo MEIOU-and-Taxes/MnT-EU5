@@ -1,6 +1,6 @@
-﻿# GDP and Wages: GDP survey pipeline.
+﻿# Gross Output and Wages: gross output survey pipeline.
 #
-# Prices every good a location produces to compute its GDP,
+# Prices every good a location produces to compute its gross output,
 # and computes each estate's raw power and desired wealth. The survey
 # runs on a multi-month rotation via the load balancer so not every
 # location is surveyed every month.
@@ -26,18 +26,6 @@ mnt_wealth_add_raw_material_good = {
 	}
 }
 
-mnt_wealth_set_goods_list = {
-	clear_variable_list = mnt_wealth_goods_list
-
-	every_in_local_list = {
-		variable = mnt_wealth_found_goods_list
-		save_temporary_scope_as = mnt_wealth_current_good
-
-		scope:mnt_wealth_gdp_location ?= {
-			add_to_variable_list = { name = mnt_wealth_goods_list target = scope:mnt_wealth_current_good }
-		}
-	}
-}
 
 # Classify every trade good as urban (manufactured) or rural (raw).
 
@@ -123,60 +111,64 @@ mnt_wealth_build_good_classification_map = {
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wool value = flag:rural }
 }
 
-# ── LOCAL GDP ──
+# ── LOCAL gross output ──
 
-# Scope: location. Calculates this location's GDP: the market value of
-# every good it produces, summed up.
+# Scope: location. Calculates this location's gross output: the market value of
+# every good it produces, summed up. Each good's value is also kept in the
+# mnt_wealth_goods_value map, which the national per-good figures read.
 
-mnt_wealth_calculate_local_gdp = {
-	set_variable = { name = mnt_wealth_local_gdp value = 0 }
-	set_variable = { name = mnt_wealth_local_rural_gdp value = 0 }
-	set_variable = { name = mnt_wealth_local_urban_gdp value = 0 }
+mnt_wealth_calculate_local_gross_output = {
+	set_variable = { name = mnt_wealth_local_gross_output value = 0 }
+	set_variable = { name = mnt_wealth_local_rural_gross_output value = 0 }
+	set_variable = { name = mnt_wealth_local_urban_gross_output value = 0 }
+	clear_variable_map = mnt_wealth_goods_value
 
-	every_in_list = {
-		variable = mnt_wealth_goods_list
+	every_in_local_list = {
+		variable = mnt_wealth_found_goods_list
 		save_temporary_scope_as = mnt_wealth_current_good
-		set_local_variable = { name = mnt_wealth_current_price value = "price_in_market(scope:mnt_wealth_gdp_location.market)" }
+		set_local_variable = { name = mnt_wealth_current_price value = "price_in_market(scope:mnt_wealth_gross_output_location.market)" }
 
-		scope:mnt_wealth_gdp_location = {
+		scope:mnt_wealth_gross_output_location = {
 			set_local_variable = {
 				name = mnt_wealth_good_value
 				value = { value = "goods_output(scope:mnt_wealth_current_good)" multiply = local_var:mnt_wealth_current_price }
 			}
 
-			change_variable = { name = mnt_wealth_local_gdp add = local_var:mnt_wealth_good_value }
+			add_to_variable_map = { name = mnt_wealth_goods_value key = scope:mnt_wealth_current_good value = local_var:mnt_wealth_good_value }
+			change_variable = { name = mnt_wealth_local_gross_output add = local_var:mnt_wealth_good_value }
 
 			if = {
 				limit = { "global_variable_map(mnt_wealth_good_classification|scope:mnt_wealth_current_good)" = flag:urban }
-				change_variable = { name = mnt_wealth_local_urban_gdp add = local_var:mnt_wealth_good_value }
+				change_variable = { name = mnt_wealth_local_urban_gross_output add = local_var:mnt_wealth_good_value }
 			}
 			else = {
-				change_variable = { name = mnt_wealth_local_rural_gdp add = local_var:mnt_wealth_good_value }
+				change_variable = { name = mnt_wealth_local_rural_gross_output add = local_var:mnt_wealth_good_value }
 			}
 		}
 	}
 }
 
-# Scope: location. Sums each building's profit to get the urban net
-# domestic product.
+# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
+# # Scope: location. Sums each building's profit to get the urban net
+# # domestic product.
 
-mnt_wealth_calculate_local_urban_ndp = {
-	set_variable = { name = mnt_wealth_local_urban_ndp value = 0 }
-	every_buildings_in_location = {
-		scope:mnt_wealth_gdp_location = {
-			change_variable = {
-				name = mnt_wealth_local_urban_ndp
-				add = prev.building_profit
-			}
-		}
-	}
-}
+# mnt_wealth_calculate_local_urban_gdp = {
+# 	set_variable = { name = mnt_wealth_local_urban_gdp value = 0 }
+# 	every_buildings_in_location = {
+# 		scope:mnt_wealth_gross_output_location = {
+# 			change_variable = {
+# 				name = mnt_wealth_local_urban_gdp
+# 				add = prev.building_profit
+# 			}
+# 		}
+# 	}
+# }
 
 # ── BUILDING CLASSIFICATION ──
 
 # Scope: none (fired from weather_monthly_pulse).
 # Rebuilds the building-type lookup table when it expires. The table
-# caches which building types produce goods so the GDP survey does
+# caches which building types produce goods so the gross output survey does
 # not have to check every building every time.
 
 mnt_wealth_maintain_building_produced_goods_cache = {
@@ -616,7 +608,7 @@ mnt_wealth_store_estate_survey_results = {
 # at game start so locations that already have data are not resurveyed.
 
 mnt_wealth_ensure_survey_data = {
-	if = { limit = { var:mnt_wealth_local_gdp = 0 } mnt_wealth_update_local_gdp = yes }
+	if = { limit = { var:mnt_wealth_local_gross_output = 0 } mnt_wealth_update_local_gross_output = yes }
 
 	if = {
 		limit = {
@@ -629,20 +621,26 @@ mnt_wealth_ensure_survey_data = {
 	}
 }
 
-# Scope: location. Recomputes this location's GDP from the goods it
-# produces, and keeps the owner's national GDP total correct by removing
+# Scope: location. Recomputes this location's gross output from the goods it
+# produces, and keeps the owner's national gross output total correct by removing
 # the old value before the recompute and adding the new value after.
 
-mnt_wealth_update_local_gdp = {
-	save_scope_as = mnt_wealth_gdp_location
-	mnt_wealth_remove_local_gdp_from_national_total = yes
+mnt_wealth_update_local_gross_output = {
+	save_scope_as = mnt_wealth_gross_output_location
+	mnt_wealth_remove_local_gross_output_from_national_total = yes
 	mnt_wealth_clear_found_goods = yes
 	every_buildings_in_location         = { mnt_wealth_check_building = yes }
 	every_foreign_buildings_in_location = { mnt_wealth_check_building = yes }
-	mnt_wealth_set_goods_list = yes
-	mnt_wealth_calculate_local_gdp = yes
-	mnt_wealth_calculate_local_urban_ndp = yes
-	mnt_wealth_add_local_gdp_to_national_total = yes
+	mnt_wealth_calculate_local_gross_output = yes
+	# mnt_wealth_calculate_local_urban_gdp = yes
+	# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
+# 	# Gross domestic product: rural goods value plus urban net profit.
+# 	set_variable = {
+# 		name = mnt_wealth_local_gdp
+# 		value = { value = var:mnt_wealth_local_rural_gross_output add = var:mnt_wealth_local_urban_gdp }
+# 	}
+	mnt_wealth_raise_gross_output_map_mode_ceilings = yes
+	mnt_wealth_add_local_gross_output_to_national_total = yes
 }
 
 # ── ESTATE POWER RESURVEY ──

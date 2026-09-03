@@ -864,14 +864,14 @@ types LocationWindowTypes
 											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_pool')|6]" }
 										}
 										mnt_wealth_formula_row = {
-											blockoverride "row_label" { raw_text = "Live GDP" }
+											blockoverride "row_label" { raw_text = "Live Gross Output" }
 											blockoverride "row_value_attributes" { min_width = 130 }
-											blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_live_gdp'))|6]" }
+											blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_live_gross_output'))|6]" }
 										}
 										mnt_wealth_formula_row = {
 											blockoverride "row_label" { raw_text = "Goods Value" }
 											blockoverride "row_value_attributes" { min_width = 130 }
-											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_local_gdp')|6]" }
+											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_local_gross_output')|6]" }
 										}
 										mnt_wealth_formula_row = {
 											blockoverride "row_label" { raw_text = "Wage Pool" }
@@ -889,10 +889,10 @@ types LocationWindowTypes
 											blockoverride "row_value" { raw_text = "[LocationVariableFloat('mnt_wealth_review_month')|6]" }
 										}
 										mnt_wealth_formula_row = {
-											blockoverride "row_label" { raw_text = "National GDP" }
+											blockoverride "row_label" { raw_text = "National Gross Output" }
 											blockoverride "row_value_attributes" { min_width = 130 }
 											blockoverride "row_value" {
-												raw_text = "[FixedPointToFloat(LocationView.GetLocation.GetOwner.MakeScope.GetVariable('mnt_wealth_national_gdp_total').GetValue)|6]"
+												raw_text = "[FixedPointToFloat(LocationView.GetLocation.GetOwner.MakeScope.GetVariable('mnt_wealth_national_gross_output').GetValue)|6]"
 											}
 										}
 									}
@@ -1306,9 +1306,9 @@ types LocationWindowTypes
 								text_single = {
 									align = nobaseline
 									max_update_rate = 4
-									visible = "[LocationView.GetLocation.HasOwner]"
-									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_live_gdp')|2]@gold!"
-									tooltipwidget = { using = mnt_wealth_gdp_header_tooltip }
+									visible = "[Location.HasOwner]"
+									raw_text = "[Location.MakeScope.ScriptValue('mnt_wealth_live_gross_output')|2]@gold!"
+									tooltipwidget = { using = mnt_wealth_gross_output_header_tooltip }
 								}
 							}
 						}
@@ -5390,7 +5390,13 @@ lateralview = {
 																	parentanchor = center
 																	blockoverride "PieSize_bckg" {}
 																	blockoverride "PieSize" { size = { 39 39 } }
-																	blockoverride "pie_datamodel" { datamodel = "[DataModelSkipFirst(Location.GetOwner.GetGovernment.GetEstates, '(int32)1')]" }
+																	# The chart alone hides without an owner: no estates means skipping one
+																	# entry of an empty list, which logs a negative count every frame.
+																	# The frame and the wealth icon stay.
+																	blockoverride "pie_datamodel" {
+																		visible = "[Location.HasOwner]"
+																		datamodel = "[DataModelSkipFirst(Location.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
+																	}
 
 																	blockoverride "pieslice_item" {
 																		pieslice_no_highlight = {

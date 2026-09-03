@@ -111,8 +111,8 @@ mnt_wealth_displayed_estate_wealth = {
 }
 
 mnt_wealth_baseline = {
-	value = var:mnt_wealth_local_gdp
-	multiply = mnt_wealth_starting_gdp_months
+	value = var:mnt_wealth_local_gross_output
+	multiply = mnt_wealth_starting_gross_output_months
 }
 
 # Zero when there is no desired wealth to measure against, which means no estate
@@ -137,8 +137,8 @@ mnt_wealth_band = {
 
 # --- economy ---
 
-mnt_wealth_local_gdp_value = {
-	value = var:mnt_wealth_local_gdp
+mnt_wealth_local_gross_output_value = {
+	value = var:mnt_wealth_local_gross_output
 }
 
 mnt_wealth_local_wage_pool = {
@@ -165,14 +165,14 @@ mnt_wealth_wage_mapmode_fraction = {
 	divide = scope:mnt_wealth_wage_ceiling
 }
 
-mnt_wealth_live_gdp = {
+mnt_wealth_live_gross_output = {
 	value = 0
 
 	if = {
 		limit = { exists = market }
 		every_goods = {
-			save_temporary_scope_as = mnt_wealth_live_gdp_good
-			add = { value = "prev.goods_output(scope:mnt_wealth_live_gdp_good)" multiply = "price_in_market(prev.market)" }
+			save_temporary_scope_as = mnt_wealth_live_gross_output_good
+			add = { value = "prev.goods_output(scope:mnt_wealth_live_gross_output_good)" multiply = "price_in_market(prev.market)" }
 		}
 	}
 }
@@ -901,4 +901,72 @@ mnt_wealth_estate_location_investment = {
 			add = "variable_map(mnt_wealth_estate_flow|prev.estate_type)"
 		}
 	}
+}
+
+# Flow rate charged at the tick before last, for the estate tooltip beside
+# vanilla's "Events and other sources". Written by mnt_change_estate_gold.
+mnt_wealth_estate_flow_charged_two_months_ago_display = {
+	value = 0
+
+	owner = {
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow_charged_two_months_ago target = prev.estate_type } }
+			add = "variable_map(mnt_wealth_estate_flow_charged_two_months_ago|prev.estate_type)"
+		}
+	}
+}
+
+# --- gross output map mode tooltips ---
+# Scope: location. The survey's gross output figures, 0 until surveyed.
+
+mnt_wealth_local_gross_output_display = {
+	value = 0
+	if = { limit = { has_variable = mnt_wealth_local_gross_output } add = var:mnt_wealth_local_gross_output }
+}
+
+mnt_wealth_local_urban_gross_output_display = {
+	value = 0
+	if = { limit = { has_variable = mnt_wealth_local_urban_gross_output } add = var:mnt_wealth_local_urban_gross_output }
+}
+
+mnt_wealth_local_rural_gross_output_display = {
+	value = 0
+	if = { limit = { has_variable = mnt_wealth_local_rural_gross_output } add = var:mnt_wealth_local_rural_gross_output }
+}
+
+# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
+# # --- value added map mode tooltips ---
+# # Scope: location. The survey's gross domestic product figures, 0 until surveyed.
+
+# mnt_wealth_local_gdp_display = {
+# 	value = 0
+# 	if = { limit = { has_variable = mnt_wealth_local_gdp } add = var:mnt_wealth_local_gdp }
+# }
+
+# mnt_wealth_local_urban_gdp_display = {
+# 	value = 0
+# 	if = { limit = { has_variable = mnt_wealth_local_urban_gdp } add = var:mnt_wealth_local_urban_gdp }
+# }
+
+# mnt_wealth_local_rural_gdp_display = {
+# 	value = 0
+# 	if = { limit = { has_variable = mnt_wealth_local_rural_gross_output } add = var:mnt_wealth_local_rural_gross_output }
+# }
+
+# --- economy view header and goods breakdown ---
+# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
+# # Scope: country. Gross domestic product: urban net profit plus rural goods value.
+
+# mnt_wealth_national_gdp_display = {
+# 	value = 0
+# 	if = { limit = { has_variable = mnt_wealth_national_urban_gdp } add = var:mnt_wealth_national_urban_gdp }
+# 	if = { limit = { has_variable = mnt_wealth_national_rural_gross_output } add = var:mnt_wealth_national_rural_gross_output }
+# }
+
+# Scope: goods. 1 for a manufactured good, 0 for a raw one, so the breakdown
+# rows can sort themselves into the urban and rural lists.
+
+mnt_wealth_good_is_urban = {
+	value = 0
+	if = { limit = { "global_variable_map(mnt_wealth_good_classification|this)" = flag:urban } add = 1 }
 }

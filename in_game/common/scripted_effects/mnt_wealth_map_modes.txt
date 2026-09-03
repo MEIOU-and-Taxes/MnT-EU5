@@ -1,4 +1,4 @@
-﻿# GDP and Wages: the wealth map mode's colour scale.
+﻿# Gross Output and Wages: the wealth map mode's colour scale.
 #
 # The scale spreads five colour thresholds across a ceiling that rises as the
 # richest location gets richer, so locations stay spread across the colours
@@ -42,5 +42,37 @@ mnt_wealth_raise_wealth_map_mode_ceiling = {
 		limit = { var:mnt_wealth_pool > global_var:mnt_wealth_map_mode_max_wealth_pool }
 		change_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool add = 500 }
 		mnt_wealth_set_wealth_map_mode_bands = yes
+	}
+}
+
+# Scope: none. Rebuilds the five band thresholds of one gross output map mode
+# from its ceiling, at one sixth to five sixths. $MODE$ is total, urban or rural.
+
+mnt_wealth_set_gross_output_map_mode_bands = {
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_1 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ divide = 6 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_2 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ divide = 3 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_3 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ divide = 2 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_4 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ multiply = 2 divide = 3 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_5 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ multiply = 5 divide = 6 } }
+}
+
+# Scope: location. After the gross output survey, bumps any gross output ceiling this
+# location has outgrown so the map color scales stay spread out.
+
+mnt_wealth_raise_gross_output_map_mode_ceilings = {
+	if = {
+		limit = { var:mnt_wealth_local_gross_output > global_var:mnt_wealth_map_mode_max_gross_output_total }
+		change_global_variable = { name = mnt_wealth_map_mode_max_gross_output_total add = 50 }
+		mnt_wealth_set_gross_output_map_mode_bands = { MODE = total }
+	}
+	if = {
+		limit = { var:mnt_wealth_local_urban_gross_output > global_var:mnt_wealth_map_mode_max_gross_output_urban }
+		change_global_variable = { name = mnt_wealth_map_mode_max_gross_output_urban add = 50 }
+		mnt_wealth_set_gross_output_map_mode_bands = { MODE = urban }
+	}
+	if = {
+		limit = { var:mnt_wealth_local_rural_gross_output > global_var:mnt_wealth_map_mode_max_gross_output_rural }
+		change_global_variable = { name = mnt_wealth_map_mode_max_gross_output_rural add = 50 }
+		mnt_wealth_set_gross_output_map_mode_bands = { MODE = rural }
 	}
 }

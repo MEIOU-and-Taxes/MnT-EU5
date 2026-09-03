@@ -7,6 +7,13 @@
 mnt_wealth_seed_economy_constants = {
 	set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = 500 }
 	mnt_wealth_set_wealth_map_mode_bands = yes
+	# Value added map modes: one ceiling each, raised as locations outgrow it.
+	set_global_variable = { name = mnt_wealth_map_mode_max_gross_output_total value = 50 }
+	set_global_variable = { name = mnt_wealth_map_mode_max_gross_output_urban value = 50 }
+	set_global_variable = { name = mnt_wealth_map_mode_max_gross_output_rural value = 50 }
+	mnt_wealth_set_gross_output_map_mode_bands = { MODE = total }
+	mnt_wealth_set_gross_output_map_mode_bands = { MODE = urban }
+	mnt_wealth_set_gross_output_map_mode_bands = { MODE = rural }
 	# These are just political power in map form so I can grab them at runtime more easily
 	add_to_global_variable_map = {
 		name = mnt_wealth_power_per_pop
@@ -134,11 +141,12 @@ mnt_wealth_initialize_countries = {
 # recounted here from the locations the country owns now.
 
 mnt_wealth_initialize_country = {
-	set_variable = { name = mnt_wealth_national_gdp_total value = mnt_wealth_owned_local_gdp_sum }
-	set_variable = { name = mnt_wealth_national_rural_gdp value = mnt_wealth_owned_local_rural_gdp_sum }
-	set_variable = { name = mnt_wealth_national_urban_gdp value = mnt_wealth_owned_local_urban_gdp_sum }
-	set_variable = { name = mnt_wealth_national_urban_ndp value = mnt_wealth_owned_local_urban_ndp_sum }
+	set_variable = { name = mnt_wealth_national_gross_output value = mnt_wealth_owned_local_gross_output_sum }
+	set_variable = { name = mnt_wealth_national_rural_gross_output value = mnt_wealth_owned_local_rural_gross_output_sum }
+	set_variable = { name = mnt_wealth_national_urban_gross_output value = mnt_wealth_owned_local_urban_gross_output_sum }
+	# set_variable = { name = mnt_wealth_national_urban_gdp value = mnt_wealth_owned_local_urban_gdp_sum }
 	mnt_wealth_rebuild_national_estate_raw_power = yes
+	mnt_wealth_rebuild_national_goods = yes
 	mnt_wealth_set_national_savings_valves = { MONTHS = 1 }
 }
 
@@ -148,10 +156,11 @@ mnt_wealth_initialize_country = {
 # computed against a treasury and a raw power total that no longer exist.
 
 mnt_wealth_clear_annexed_country = {
-	remove_variable = mnt_wealth_national_gdp_total
-	remove_variable = mnt_wealth_national_rural_gdp
-	remove_variable = mnt_wealth_national_urban_gdp
-	remove_variable = mnt_wealth_national_urban_ndp
+	remove_variable = mnt_wealth_national_gross_output
+	remove_variable = mnt_wealth_national_rural_gross_output
+	remove_variable = mnt_wealth_national_urban_gross_output
+	# remove_variable = mnt_wealth_national_urban_gdp
+	mnt_wealth_clear_national_goods = yes
 	clear_variable_map = mnt_wealth_national_estate_raw_power
 	clear_variable_map = mnt_wealth_estate_flow
 	clear_variable_map = mnt_wealth_estate_seizure_demand
@@ -164,21 +173,23 @@ mnt_wealth_clear_annexed_country = {
 
 mnt_wealth_zero_location = {
 	set_variable = { name = mnt_wealth_pool                   value = 0 }
-	set_variable = { name = mnt_wealth_local_gdp              value = 0 }
-	set_variable = { name = mnt_wealth_local_rural_gdp          value = 0 }
-	set_variable = { name = mnt_wealth_local_urban_gdp          value = 0 }
-	set_variable = { name = mnt_wealth_local_urban_ndp           value = 0 }
+	set_variable = { name = mnt_wealth_local_gross_output              value = 0 }
+	set_variable = { name = mnt_wealth_local_rural_gross_output          value = 0 }
+	set_variable = { name = mnt_wealth_local_urban_gross_output          value = 0 }
+	# set_variable = { name = mnt_wealth_local_urban_gdp           value = 0 }
+	# set_variable = { name = mnt_wealth_local_gdp                value = 0 }
 	set_variable = { name = mnt_wealth_local_wages            value = 0 }
 	set_variable = { name = mnt_wealth_current_wage_rate      value = 0 }
 	set_variable = { name = mnt_wealth_kept_income_total      value = 0 }
 	set_variable = { name = mnt_wealth_review_month           value = 0 }
+	clear_variable_map = mnt_wealth_goods_value
 	clear_variable_map = mnt_wealth_estate_wealth
 	clear_variable_map = mnt_wealth_invested_since_review
 	clear_variable_map = mnt_wealth_invested_wealth
 }
 
 # Scope: location. Sets up a location for the wealth system: surveys
-# its goods and estate data, seeds per-estate wealth from GDP, and
+# its goods and estate data, seeds per-estate wealth from gross output, and
 # sets initial wage rates.
 #
 # Estate data is unreliable during on_game_start but tolerable and
@@ -186,10 +197,10 @@ mnt_wealth_zero_location = {
 
 mnt_wealth_setup_location = {
 	mnt_wealth_ensure_survey_data = yes
-	# Seed each estate's wealth from GDP, then set the pool to the total.
+	# Seed each estate's wealth from gross output, then set the pool to the total.
 	set_local_variable = {
 		name = mnt_wealth_starting_pool
-		value = { value = var:mnt_wealth_local_gdp multiply = mnt_wealth_starting_gdp_months }
+		value = { value = var:mnt_wealth_local_gross_output multiply = mnt_wealth_starting_gross_output_months }
 	}
 	set_local_variable = { name = mnt_wealth_seed_running_total value = 0 }
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_estate_wealth }

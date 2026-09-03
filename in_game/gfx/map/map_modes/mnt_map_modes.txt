@@ -100,29 +100,67 @@
 @data_after_lighting_blend = 			@flatmap_far_after_lighting_blend
 
 goods_value = {
-	map_color = {	
-	 	if = {
-	 		limit = {
-	 			has_owner = yes
-	 			owner = {
-					is_ai = no
-					has_variable = mnt_top_total_value_1
-					var:mnt_top_total_value_1 > 0
-				}
-	 			OR = {
-					has_variable = mnt_loc_building_profit
-					has_variable = mnt_rural_goods_value
-				}
-	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
-
-				factor = {
-					value = mnt_location_total_goods_value
-					divide = owner.var:mnt_top_total_value_1 # scale relative to top total producer in owner
+	map_color = {
+		if = {
+			limit = { is_land = no }
+			value = hsv { 0.58 0.50 0.52 }
+		}
+		else_if = {
+			limit = { NOT = { exists = owner } }
+			value = rgb { 50 50 50 }
+		}
+		else_if = {
+			limit = { has_variable = mnt_wealth_local_gross_output global_var:mnt_wealth_map_mode_max_gross_output_total > 0 }
+			if = {
+				limit = { var:mnt_wealth_local_gross_output >= global_var:mnt_wealth_gross_output_band_total_5 }
+				lerp = {
+					min_color = rgb { 0 255 240 }
+					max_color = rgb { 255 255 255 }
+					factor = { value = var:mnt_wealth_local_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_total subtract = 0.833 multiply = 6 min = 0 max = 1 }
 				}
 			}
+			else_if = {
+				limit = { var:mnt_wealth_local_gross_output >= global_var:mnt_wealth_gross_output_band_total_4 }
+				lerp = {
+					min_color = rgb { 36 255 0 }
+					max_color = rgb { 0 255 240 }
+					factor = { value = var:mnt_wealth_local_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_total subtract = 0.667 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_gross_output >= global_var:mnt_wealth_gross_output_band_total_3 }
+				lerp = {
+					min_color = rgb { 255 255 0 }
+					max_color = rgb { 36 255 0 }
+					factor = { value = var:mnt_wealth_local_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_total subtract = 0.5 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_gross_output >= global_var:mnt_wealth_gross_output_band_total_2 }
+				lerp = {
+					min_color = rgb { 255 128 0 }
+					max_color = rgb { 255 255 0 }
+					factor = { value = var:mnt_wealth_local_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_total subtract = 0.333 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_gross_output >= global_var:mnt_wealth_gross_output_band_total_1 }
+				lerp = {
+					min_color = rgb { 255 0 0 }
+					max_color = rgb { 255 128 0 }
+					factor = { value = var:mnt_wealth_local_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_total subtract = 0.167 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else = {
+				lerp = {
+					min_color = rgb { 0 0 0 }
+					max_color = rgb { 255 0 0 }
+					factor = { value = var:mnt_wealth_local_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_total multiply = 6 min = 0 max = 1 }
+				}
+			}
+		}
+		else = {
+			value = rgb { 0 0 0 }
 		}
 	}
 
@@ -162,31 +200,73 @@ goods_value = {
 		after_lighting_blend =		@data_after_lighting_blend
 	}
 
+	refresh_colors_on_selection_change = yes
 	color_refresh_counters = { Month }
 	color_and_names_refresh_counters = { LocationPopulationChanged LocationOwnerChanged }
 }
 
 goods_value_urban = {
 	map_color = {
-	 	if = {
-	 		limit = {
-	 			has_owner = yes
-	 			owner = {
-					is_ai = no
-					has_variable = mnt_top_urban_value_1
-					var:mnt_top_urban_value_1 > 0
-				}
-				has_variable = mnt_loc_building_profit
-	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
-
-				factor = {
-					value = mnt_location_urban_goods_value
-					divide = owner.var:mnt_top_urban_value_1 # scale relative to top urban producer in owner
+		if = {
+			limit = { is_land = no }
+			value = hsv { 0.58 0.50 0.52 }
+		}
+		else_if = {
+			limit = { NOT = { exists = owner } }
+			value = rgb { 50 50 50 }
+		}
+		else_if = {
+			limit = { has_variable = mnt_wealth_local_urban_gross_output global_var:mnt_wealth_map_mode_max_gross_output_urban > 0 }
+			if = {
+				limit = { var:mnt_wealth_local_urban_gross_output >= global_var:mnt_wealth_gross_output_band_urban_5 }
+				lerp = {
+					min_color = rgb { 0 255 240 }
+					max_color = rgb { 255 255 255 }
+					factor = { value = var:mnt_wealth_local_urban_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_urban subtract = 0.833 multiply = 6 min = 0 max = 1 }
 				}
 			}
+			else_if = {
+				limit = { var:mnt_wealth_local_urban_gross_output >= global_var:mnt_wealth_gross_output_band_urban_4 }
+				lerp = {
+					min_color = rgb { 36 255 0 }
+					max_color = rgb { 0 255 240 }
+					factor = { value = var:mnt_wealth_local_urban_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_urban subtract = 0.667 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_urban_gross_output >= global_var:mnt_wealth_gross_output_band_urban_3 }
+				lerp = {
+					min_color = rgb { 255 255 0 }
+					max_color = rgb { 36 255 0 }
+					factor = { value = var:mnt_wealth_local_urban_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_urban subtract = 0.5 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_urban_gross_output >= global_var:mnt_wealth_gross_output_band_urban_2 }
+				lerp = {
+					min_color = rgb { 255 128 0 }
+					max_color = rgb { 255 255 0 }
+					factor = { value = var:mnt_wealth_local_urban_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_urban subtract = 0.333 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_urban_gross_output >= global_var:mnt_wealth_gross_output_band_urban_1 }
+				lerp = {
+					min_color = rgb { 255 0 0 }
+					max_color = rgb { 255 128 0 }
+					factor = { value = var:mnt_wealth_local_urban_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_urban subtract = 0.167 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else = {
+				lerp = {
+					min_color = rgb { 0 0 0 }
+					max_color = rgb { 255 0 0 }
+					factor = { value = var:mnt_wealth_local_urban_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_urban multiply = 6 min = 0 max = 1 }
+				}
+			}
+		}
+		else = {
+			value = rgb { 0 0 0 }
 		}
 	}
 
@@ -226,31 +306,73 @@ goods_value_urban = {
 		after_lighting_blend =		@data_after_lighting_blend
 	}
 
+	refresh_colors_on_selection_change = yes
 	color_refresh_counters = { Month }
 	color_and_names_refresh_counters = { LocationPopulationChanged LocationOwnerChanged }
 }
 
 goods_value_rural = {
 	map_color = {
-	 	if = {
-	 		limit = {
-	 			has_owner = yes
-	 			owner = {
-					is_ai = no
-					has_variable = mnt_top_rural_value_1
-					var:mnt_top_rural_value_1 > 0
-				}
-				has_variable = mnt_rural_goods_value
-	 		}
-			lerp = {
-				min_color = define:NMapColors|MAP_COLOR_LOW
-				max_color = define:NMapColors|MAP_COLOR_HIGH
-
-				factor = {
-					value = mnt_location_rural_goods_value
-					divide = owner.var:mnt_top_rural_value_1 # scale relative to top rural producer in owner
+		if = {
+			limit = { is_land = no }
+			value = hsv { 0.58 0.50 0.52 }
+		}
+		else_if = {
+			limit = { NOT = { exists = owner } }
+			value = rgb { 50 50 50 }
+		}
+		else_if = {
+			limit = { has_variable = mnt_wealth_local_rural_gross_output global_var:mnt_wealth_map_mode_max_gross_output_rural > 0 }
+			if = {
+				limit = { var:mnt_wealth_local_rural_gross_output >= global_var:mnt_wealth_gross_output_band_rural_5 }
+				lerp = {
+					min_color = rgb { 0 255 240 }
+					max_color = rgb { 255 255 255 }
+					factor = { value = var:mnt_wealth_local_rural_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_rural subtract = 0.833 multiply = 6 min = 0 max = 1 }
 				}
 			}
+			else_if = {
+				limit = { var:mnt_wealth_local_rural_gross_output >= global_var:mnt_wealth_gross_output_band_rural_4 }
+				lerp = {
+					min_color = rgb { 36 255 0 }
+					max_color = rgb { 0 255 240 }
+					factor = { value = var:mnt_wealth_local_rural_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_rural subtract = 0.667 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_rural_gross_output >= global_var:mnt_wealth_gross_output_band_rural_3 }
+				lerp = {
+					min_color = rgb { 255 255 0 }
+					max_color = rgb { 36 255 0 }
+					factor = { value = var:mnt_wealth_local_rural_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_rural subtract = 0.5 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_rural_gross_output >= global_var:mnt_wealth_gross_output_band_rural_2 }
+				lerp = {
+					min_color = rgb { 255 128 0 }
+					max_color = rgb { 255 255 0 }
+					factor = { value = var:mnt_wealth_local_rural_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_rural subtract = 0.333 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else_if = {
+				limit = { var:mnt_wealth_local_rural_gross_output >= global_var:mnt_wealth_gross_output_band_rural_1 }
+				lerp = {
+					min_color = rgb { 255 0 0 }
+					max_color = rgb { 255 128 0 }
+					factor = { value = var:mnt_wealth_local_rural_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_rural subtract = 0.167 multiply = 6 min = 0 max = 1 }
+				}
+			}
+			else = {
+				lerp = {
+					min_color = rgb { 0 0 0 }
+					max_color = rgb { 255 0 0 }
+					factor = { value = var:mnt_wealth_local_rural_gross_output divide = global_var:mnt_wealth_map_mode_max_gross_output_rural multiply = 6 min = 0 max = 1 }
+				}
+			}
+		}
+		else = {
+			value = rgb { 0 0 0 }
 		}
 	}
 
@@ -290,6 +412,7 @@ goods_value_rural = {
 		after_lighting_blend =		@data_after_lighting_blend
 	}
 	
+	refresh_colors_on_selection_change = yes
 	color_refresh_counters = { Month }
 	color_and_names_refresh_counters = { LocationPopulationChanged LocationOwnerChanged }
 }
