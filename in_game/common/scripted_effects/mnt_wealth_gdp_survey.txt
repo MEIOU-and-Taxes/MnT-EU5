@@ -481,8 +481,11 @@ mnt_wealth_survey_estate_data = {
 		mnt_wealth_count_estate_pops = yes
 
 		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_survey_results }
-		# Estates holding wealth or pops can be missing from the owner's
-		# list. Pick up any the iterator did not reach.
+		# Estates holding wealth, investment or pops can be missing from the
+		# owner's list. Pick up any the iterator did not reach, and note the
+		# ones that have no power left here at all.
+		clear_local_variable_list = mnt_wealth_departed_estates
+
 		every_key_in_variable_map = {
 			variable = mnt_wealth_estate_wealth
 			save_temporary_scope_as = mnt_wealth_leftover_key
@@ -494,6 +497,39 @@ mnt_wealth_survey_estate_data = {
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
 					mnt_wealth_store_estate_survey_results = yes
+
+					# Still off the roll with the live figures in: the estate has left.
+					if = {
+						limit = {
+							NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+							NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key } }
+						}
+						add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key }
+					}
+				}
+			}
+		}
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_invested_wealth
+			save_temporary_scope_as = mnt_wealth_leftover_key
+
+			scope:mnt_wealth_survey_location = {
+				if = {
+					limit = {
+						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+					}
+					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
+					mnt_wealth_store_estate_survey_results = yes
+
+					# Still off the roll with the live figures in: the estate has left.
+					if = {
+						limit = {
+							NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+							NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key } }
+						}
+						add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key }
+					}
 				}
 			}
 		}
@@ -509,8 +545,32 @@ mnt_wealth_survey_estate_data = {
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
 					mnt_wealth_store_estate_survey_results = yes
+
+					# Still off the roll with the live figures in: the estate has left.
+					if = {
+						limit = {
+							NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
+							NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key } }
+						}
+						add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key }
+					}
 				}
 			}
+		}
+
+		# An estate that has left keeps nothing here: its modifiers come off and
+		# its gold goes to the estates on the roll, by the cache just built.
+		set_local_variable = { name = mnt_wealth_freed_investment    value = 0 }
+		set_local_variable = { name = mnt_wealth_freed_estate_wealth value = 0 }
+		every_in_local_list = {
+			variable = mnt_wealth_departed_estates
+			save_temporary_scope_as = mnt_wealth_stale_key
+			prev = { mnt_wealth_release_absent_estate = yes }
+		}
+		if = {
+			limit = { OR = { local_var:mnt_wealth_freed_investment > 0 local_var:mnt_wealth_freed_estate_wealth > 0 } }
+			mnt_wealth_invalidate_estate_set = yes
+			mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
 		}
 	}
 }

@@ -124,9 +124,9 @@ types MnTWealthBaseTypes
 					blockoverride "row_value" { block "investment_monthly_value" { raw_text = "" } }
 				}
 				mnt_wealth_formula_row = {
-					blockoverride "row_attributes" { block "upkeep_tooltip" {  } }
-					blockoverride "row_label" { raw_text = "+ Monthly Upkeep" }
-					blockoverride "row_value" { block "upkeep_monthly_value" { raw_text = "" } }
+					blockoverride "row_attributes" { block "decay_tooltip" {  } }
+					blockoverride "row_label" { raw_text = "+ Monthly Decay" }
+					blockoverride "row_value" { block "decay_monthly_value" { raw_text = "" } }
 				}
 
 				mnt_wealth_formula_row = {
@@ -172,7 +172,7 @@ template mnt_wealth_desired_wealth_tooltip {
 		blockoverride "title_icon" {
 			icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_expected_wealth')]" }
 		}
-		blockoverride "title_text" { raw_text = "#T Investment Upkeep#!" }
+		blockoverride "title_text" { raw_text = "#T Investment Decay#!" }
 		blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
 
 		blockoverride "tooltip_content" {
@@ -185,7 +185,7 @@ template mnt_wealth_desired_wealth_tooltip {
 						mnt_wealth_formula_row = {
 							blockoverride "row_attributes" {
 								tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip }
-								visible = "[GreaterThan_float(DCMonthlyUpkeep(), '(float)0')]"
+								visible = "[GreaterThan_float(DCMonthlyDecay(), '(float)0')]"
 							}
 							blockoverride "row_icon" {
 								icon = {
@@ -195,7 +195,7 @@ template mnt_wealth_desired_wealth_tooltip {
 								}
 							}
 							blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip]" }
-							blockoverride "row_value" { raw_text = "[DCMonthlyUpkeep()|2]@gold!" }
+							blockoverride "row_value" { raw_text = "[DCMonthlyDecay()|2]@gold!" }
 						}
 					}
 				}
@@ -207,7 +207,7 @@ template mnt_wealth_desired_wealth_tooltip {
 template mnt_wealth_estate_desired_wealth_tooltip {
 	ContextualTooltipType = {
 		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
-		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Investment Upkeep#!" }
+		blockoverride "title_text" { raw_text = "#T [Estate.GetType.GetNameWithNoTooltip] Investment Decay#!" }
 		blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
 
 		blockoverride "tooltip_content" {
@@ -228,8 +228,8 @@ template mnt_wealth_estate_desired_wealth_tooltip {
 				divider_solid_gold = {  }
 
 				mnt_wealth_formula_row = {
-					blockoverride "row_label" { raw_text = "= Monthly Upkeep" }
-					blockoverride "row_value" { raw_text = "#bold [DCMonthlyUpkeep()|2]#!@gold!" }
+					blockoverride "row_label" { raw_text = "= Monthly Decay" }
+					blockoverride "row_value" { raw_text = "#bold [DCMonthlyDecay()|2]#!@gold!" }
 				}
 			}
 		}
@@ -800,7 +800,7 @@ template mnt_wealth_estate_wealth_tooltip {
 				}
 				mnt_wealth_formula_row = {
 					blockoverride "row_attributes" { block "desired_wealth_tooltipwidget" {  } }
-					blockoverride "row_label" { block "desired_wealth_label" { raw_text = "#explanation_link [Concept('mnt_wealth_expected_wealth','Investment Upkeep')]#!" } }
+					blockoverride "row_label" { block "desired_wealth_label" { raw_text = "#explanation_link [Concept('mnt_wealth_expected_wealth','Investment Decay')]#!" } }
 					blockoverride "row_value" { block "desired_wealth_value" { raw_text = "" } }
 				}
 			}
@@ -862,8 +862,8 @@ template mnt_wealth_estate_wealth_tooltip_bound {
 	blockoverride "invested_outflow_value" { raw_text = "[Subtract_float('(float)0', DCEstateInvestedGold())|2+=]@gold!" }
 	blockoverride "wealth_change" { raw_text = "([DCEstateWealthChange()|2+=]) #bold [DCDisplayedEstateWealth()|2]#!@gold!" }
 	blockoverride "desired_wealth_tooltipwidget" { tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip } }
-	blockoverride "desired_wealth_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Investment Upkeep" }
-	blockoverride "desired_wealth_value" { raw_text = "[DCMonthlyUpkeep()|2]@gold!" }
+	blockoverride "desired_wealth_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip] Investment Decay" }
+	blockoverride "desired_wealth_value" { raw_text = "[DCMonthlyDecay()|2]@gold!" }
 }
 
 template mnt_wealth_share_drift_tooltip {
@@ -1036,14 +1036,14 @@ template mnt_wealth_investment_rows {
 	}
 }
 
-template mnt_wealth_upkeep_rows {
+template mnt_wealth_decay_rows {
 	TooltipListBase = {
 		blockoverride "block_title" { visible = no }
 
 		mnt_wealth_formula_row = {
 			blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip } }
 			blockoverride "row_label" { raw_text = "Invested Wealth" }
-			blockoverride "row_value" { block "upkeep_desired_wealth_value" { raw_text = "" } }
+			blockoverride "row_value" { block "decay_invested_value" { raw_text = "" } }
 		}
 		mnt_wealth_formula_row = {
 			blockoverride "row_label" { raw_text = "× Decay Rate / Month" }
@@ -1053,26 +1053,26 @@ template mnt_wealth_upkeep_rows {
 			blockoverride "row_attributes" {
 				tooltipwidget = {
 					ContextualTooltipType = {
-						blockoverride "title_text" { raw_text = "#T Upkeep Efficiency#!" }
+						blockoverride "title_text" { raw_text = "#T Decay Resistance#!" }
 						blockoverride "tooltip_content" {
 							TooltipStringPairList = {
 								layoutpolicy_horizontal = expanding
-								textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_upkeep_efficiency')]"
+								textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_decay_resistance')]"
 							}
 							TooltipStringPairList = {
 								layoutpolicy_horizontal = expanding
-								textcontext = "[LocationView.GetLocation.GetOwner.GetDescriptionFor('mnt_wealth_global_upkeep_efficiency')]"
+								textcontext = "[LocationView.GetLocation.GetOwner.GetDescriptionFor('mnt_wealth_global_decay_resistance')]"
 							}
 						}
 					}
 				}
 			}
-			blockoverride "row_label" { raw_text = "× #explanation_link Upkeep Efficiency#!" }
-			blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_efficiency_multiplier'))|2]" }
+			blockoverride "row_label" { raw_text = "× #explanation_link Decay Resistance#!" }
+			blockoverride "row_value" { raw_text = "[FixedPointToFloat(LocationScriptValue('mnt_wealth_decay_resistance_multiplier'))|2]" }
 		}
 		mnt_wealth_formula_row = {
-			blockoverride "row_label" { raw_text = "= Monthly Upkeep" }
-			blockoverride "row_value" { block "upkeep_monthly_bold_value" { raw_text = "" } }
+			blockoverride "row_label" { raw_text = "= Monthly Decay" }
+			blockoverride "row_value" { block "decay_monthly_bold_value" { raw_text = "" } }
 		}
 	}
 }
@@ -1226,20 +1226,20 @@ template mnt_wealth_estate_investment_tooltip {
 				}
 			}
 		}
-		blockoverride "upkeep_monthly_value" { raw_text = "[Subtract_float('(float)0', DCMonthlyUpkeep())|2+=]@gold!" }
+		blockoverride "decay_monthly_value" { raw_text = "[Subtract_float('(float)0', DCMonthlyDecay())|2+=]@gold!" }
 		blockoverride "seizure_monthly_value" { raw_text = "[Subtract_float('(float)0', DCSeizureFromInvested())|2+=]@gold!" }
-		blockoverride "upkeep_tooltip" {
+		blockoverride "decay_tooltip" {
 			tooltipwidget = {
 				ContextualTooltipType = {
 					blockoverride "title_icon" {
 						icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_investment_rate')]" }
 					}
-					blockoverride "title_text" { raw_text = "#T Monthly Upkeep#!" }
+					blockoverride "title_text" { raw_text = "#T Monthly Decay#!" }
 					blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
 					blockoverride "tooltip_content" {
-						using = mnt_wealth_upkeep_rows
-						blockoverride "upkeep_desired_wealth_value" { raw_text = "[DCInvestedWealth()|2]@gold!" }
-						blockoverride "upkeep_monthly_bold_value" { raw_text = "#bold [Subtract_float('(float)0', DCMonthlyUpkeep())|2+=]#!@gold!" }
+						using = mnt_wealth_decay_rows
+						blockoverride "decay_invested_value" { raw_text = "[DCInvestedWealth()|2]@gold!" }
+						blockoverride "decay_monthly_bold_value" { raw_text = "#bold [Subtract_float('(float)0', DCMonthlyDecay())|2+=]#!@gold!" }
 					}
 				}
 			}

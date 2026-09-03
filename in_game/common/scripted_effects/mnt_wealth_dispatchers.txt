@@ -171,9 +171,6 @@ mnt_wealth_zero_location = {
 	set_variable = { name = mnt_wealth_local_wages            value = 0 }
 	set_variable = { name = mnt_wealth_current_wage_rate      value = 0 }
 	set_variable = { name = mnt_wealth_kept_income_total      value = 0 }
-	set_variable = { name = mnt_wealth_investment_paid_total  value = 0 }
-	set_variable = { name = mnt_wealth_investment_rate_total  value = 0 }
-	set_variable = { name = mnt_wealth_investment_months      value = 0 }
 	set_variable = { name = mnt_wealth_review_month           value = 0 }
 	clear_variable_map = mnt_wealth_estate_wealth
 	clear_variable_map = mnt_wealth_invested_since_review
@@ -198,7 +195,8 @@ mnt_wealth_setup_location = {
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_estate_wealth }
 	set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_seed_running_total }
 	mnt_wealth_set_location_rates = yes
-	mnt_wealth_set_review_month = yes
+	# The review month is the campaign start, so the first service covers the
+	# months that have passed since it.
 }
 
 mnt_wealth_set_location_rates = {
@@ -361,23 +359,19 @@ mnt_wealth_for_each_cached_estate = {
 
 # ── LOCATION PASSES ──
 #
-# Human locations run the full estate loop every month. AI locations skip
-# it and receive a closed-form yearly equivalent instead. Basically player locations
-# use exact values, AI locations guess a year at a time.
-#
-# The scheduler in mnt_wealth_schedule.txt decides which of these a location is
-# ready for and fires the matching pulse.
+# Player locations run the estate loop every month. AI locations get the
+# closed-form advance at their review. The scheduler fires the matching pulse.
 
-# Scope: location. Records when this location was last reviewed, so the display
-# can project an AI location's guess forward from that point.
+# Scope: location. The review month is the first month still to apply to the
+# stored state. The advance and the display both count months from it. The
+# monthly loop records the month after the one it just applied.
 
 mnt_wealth_set_review_month = {
-	set_variable = { name = mnt_wealth_review_month value = mnt_wealth_months_since_campaign_start }
+	set_variable = { name = mnt_wealth_review_month value = global_var:mnt_wealth_months_elapsed }
 }
 
-# Scope: location. One estate's monthly tick: computes this estate's wage
-# balance (what the estate pays minus what it earns from wages), then
-# collects income into the arriving wealth map.
+# Scope: location. One estate's monthly income: its share of the kept
+# wages, then the arriving income with the national flow.
 
 mnt_wealth_estate_month = {
 	mnt_wealth_set_estate_wage_balance = yes
@@ -385,10 +379,13 @@ mnt_wealth_estate_month = {
 }
 
 # Scope: location (human-owned). Body of mnt_monthly_balanced_location_pulse.
-# The full monthly cycle for one human location: set wages, loop each
-# estate for income, add income to the pool, then spend on investment.
+# The full monthly cycle: advance to now, set wages, invest each estate,
+# then collect each estate's income.
 
 mnt_wealth_location_month = {
+	# Apply any months still owed, such as those before the first service or
+	# under a previous AI owner. In the usual month there are none.
+	mnt_wealth_advance_location_to_now = yes
 	# Frozen for the month so mid-loop estate changes do not shift the rate.
 	# For if investment rate modifiers are added as investment/neglect modifiers
 	set_local_variable = { name = mnt_wealth_cached_investment_rate value = mnt_wealth_investment_rate }
@@ -400,39 +397,32 @@ mnt_wealth_location_month = {
 	# Wage rates have to be set before the estate loop because each
 	# estate's income depends on the location's total wages.
 	mnt_wealth_set_location_wages = yes
-	# Each estate earns its share of local wages and collects any
-	# national payout the country is sending back. We only care about
-	# national estates with power, any other cached power is transient
-	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_estate_month }
-	# The gold each estate collected goes into the wealth pool.
-	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_arriving_running_total }
-	# Each estate spends from its wealth on investment progress.
+	# Each estate first invests from the wealth it holds, the figure the
+	# window shows, then the month's income lands.
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_invest_estate_wealth }
-	# Subtract the total invested from the pool.
 	change_variable = { name = mnt_wealth_pool subtract = local_var:mnt_wealth_invested_running_total }
+	# Each estate earns its share of local wages and collects any national
+	# flow the country sends.
+	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_estate_month }
+	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_arriving_running_total }
 
 	set_variable = { name = mnt_wealth_kept_income_total value = local_var:mnt_wealth_kept_income_running_total }
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
+	# This month is applied; the next one is the first still to apply.
+	set_variable = {
+		name = mnt_wealth_review_month
+		value = { value = global_var:mnt_wealth_months_elapsed add = 1 }
+	}
 }
 
 # Scope: location. Body of mnt_biyearly_balanced_location_pulse.
-# The yearly review handles work too expensive or infrequent for the monthly
-# loop: settling accumulated investment, recomputing investment levels, and
-# drifting wealth shares toward current power.
+# The yearly review: advance to now, recompute investment levels, and
+# drift wealth shares toward current power.
 
 mnt_wealth_location_year = {
-	mnt_wealth_set_review_month = yes
-	# AI locations do not run the monthly loop, so they need their
-	# wages and investment computed here in bulk.
-	if = {
-		limit = { owner ?= { is_ai = yes } }
-		mnt_wealth_set_location_wages = yes
-		set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
-		mnt_wealth_set_ai_yearly_investment = yes
-	}
+	# Advance stored state to now on the current wages, before anything else.
+	mnt_wealth_advance_location_to_now = yes
 
-	# Convert accumulated investment totals into per-estate progress.
-	mnt_wealth_settle_investment_accumulators = yes
 	# Per-estate pass: investment levels and wealth drift.
 	# Scale the drift step by age/12 so the monthly drift rate holds regardless
 	# of whether the yearly review fires every 12 or 24 months.
@@ -443,6 +433,13 @@ mnt_wealth_location_year = {
 	set_local_variable = { name = mnt_wealth_drift_running_total value = 0 }
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_location_year_estate_pass }
 	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_drift_running_total }
+
+	# AI locations set their wages and kept income for the coming period.
+	if = {
+		limit = { owner ?= { is_ai = yes } }
+		mnt_wealth_set_location_wages = yes
+		set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
+	}
 
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
 }

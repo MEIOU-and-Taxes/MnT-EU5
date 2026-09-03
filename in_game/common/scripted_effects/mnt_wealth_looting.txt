@@ -18,20 +18,18 @@ mnt_wealth_loot_captured_location = {
 # ── OCCUPATION ──
 
 # Scope: location (the occupied location), with scope:mnt_wealth_occupier saved as the
-# occupying country. Settles pending AI investment, loots the liquid and invested
+# occupying country. Brings the location up to date, loots the liquid and invested
 # wealth pools, then pays the captured gold to the occupier's estates and treasury.
 
 mnt_wealth_loot_occupied_location = {
-	# Settle pending AI investment before looting.
-	mnt_wealth_settle_investment_accumulators = yes
+	# Apply the months since the review first, so the loot comes out of the
+	# pool as it stands now and the projection restarts from the looted pool.
+	mnt_wealth_advance_location_to_now = yes
 	mnt_wealth_set_loot_resistance = yes
 	# Loot both pools, accumulating the gold the occupier keeps.
 	set_local_variable = { name = mnt_wealth_loot_captured_total value = 0 }
 	mnt_wealth_seize_liquid_wealth = yes
 	mnt_wealth_seize_invested_wealth = yes
-	# Reset the review month so the location window's forward projection starts
-	# from the post-loot pool.
-	mnt_wealth_set_review_month = yes
 	set_variable = { name = mnt_wealth_loot_amount value = local_var:mnt_wealth_loot_captured_total }
 
 	save_temporary_scope_value_as = {
@@ -225,7 +223,7 @@ mnt_wealth_loot_estate_investment = {
 		}
 
 		# Recompute level and modifiers immediately.
-		mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_recompute_estate_investment }
+		mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_recompute_estate_investment_level }
 	}
 }
 

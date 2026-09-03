@@ -1,23 +1,52 @@
 ﻿
 namespace = mnt_wealth_economy
 
-# Fired one day after a location changes owner. Settles estate accounting
-# under the new owner once it has finished forming.
+# Fired one day after a location changes owner. New colonies are initialized;
+# existing locations are advanced to now and resurveyed.
 
 mnt_wealth_economy.30 = {
 	type = location_event
 	hidden = yes
 	title = empty_text
 	trigger = { has_owner = yes }
-	# Same order as mnt_wealth_location_year: the update reads the cached survey data,
-	# then the resurvey refreshes the caches for next time.
 	immediate = {
-		mnt_wealth_settle_investment_accumulators = yes
-		mnt_wealth_update_investment_levels = yes
-		mnt_wealth_set_review_month = yes
-		mnt_wealth_resurvey_estate_data = yes
-		mnt_wealth_invalidate_estate_set = yes
-		mnt_wealth_require_location_service = yes
+		save_temporary_scope_as = mnt_wealth_transfer_loc
+		if = {
+			limit = {
+				NOT = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = scope:mnt_wealth_transfer_loc } }
+			}
+			# New colony: initialize from scratch, no opening pool. The resurvey
+			# counts the estates into the owner's national raw power.
+			mnt_wealth_update_local_gdp = yes
+			mnt_wealth_resurvey_estate_data = yes
+			mnt_wealth_invalidate_estate_set = yes
+			mnt_wealth_set_location_rates = yes
+			mnt_wealth_set_review_month = yes
+			# Seed the service cycle from the id, last service = now with no backdate.
+			mnt_wealth_ensure_location_id = yes
+			set_local_variable = { name = mnt_wealth_last_service value = global_var:mnt_wealth_months_elapsed }
+			save_temporary_scope_as = mnt_wealth_seed_location
+			add_to_global_variable_map = {
+				name = mnt_wealth_location_last_service
+				key = scope:mnt_wealth_seed_location
+				value = local_var:mnt_wealth_last_service
+			}
+			set_local_variable = {
+				name = mnt_wealth_seed_cycle
+				value = { value = var:mnt_wealth_location_id modulo = 10 }
+			}
+			set_variable = { name = mnt_wealth_service_cycle value = local_var:mnt_wealth_seed_cycle }
+			set_local_variable = { name = mnt_wealth_is_player value = 0 }
+			mnt_wealth_write_location_next_service = yes
+		}
+		else = {
+			# Existing land: advance to now and resurvey under the new owner.
+			mnt_wealth_advance_location_to_now = yes
+			mnt_wealth_update_investment_levels = yes
+			mnt_wealth_resurvey_estate_data = yes
+			mnt_wealth_invalidate_estate_set = yes
+			mnt_wealth_require_location_service = yes
+		}
 	}
 }
 

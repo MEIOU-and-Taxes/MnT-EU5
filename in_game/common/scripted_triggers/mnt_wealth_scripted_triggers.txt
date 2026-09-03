@@ -8,17 +8,3 @@
 mnt_wealth_estate_is_present = {
 	is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = $KEY$ }
 }
-
-# An estate has departed a location only when two readings agree it is gone:
-# the roll (last survey's snapshot, up to a year old) does not list it, and
-# the engine's live power for it is zero. Off the roll alone is not enough:
-# an estate whose power arrived or returned since the last survey is not on
-# the roll yet, and releasing it would confiscate a living estate's wealth.
-# Slave-only estates keep raw power on the roll, so they never count as
-# departed. Reads the estate key from scope:mnt_wealth_level_key, saved by the
-# release collection passes; call in location scope.
-
-mnt_wealth_estate_has_departed = {
-	NOT = { "local_relative_estate_power(scope:mnt_wealth_level_key)" > 0 }
-	NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_level_key } }
-}

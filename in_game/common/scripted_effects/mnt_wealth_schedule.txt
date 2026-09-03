@@ -199,13 +199,12 @@ mnt_wealth_write_location_next_service = {
 
 # Scope: location. Brings the next service forward to next month, so the next
 # dispatch picks the location up and rebuilds its schedule against its new
-# owner. Reads the campaign clock, not the sweep's cached month, because it
-# runs from an owner-change hook.
+# owner.
 
 mnt_wealth_require_location_service = {
 	set_local_variable = {
 		name = mnt_wealth_next_service
-		value = { value = mnt_wealth_months_since_campaign_start add = 1 }
+		value = { value = global_var:mnt_wealth_months_elapsed add = 1 }
 	}
 	mnt_wealth_schedule_next_service = yes
 }
@@ -378,7 +377,6 @@ mnt_wealth_service_location = {
 	if = {
 		limit = { local_var:mnt_wealth_surveyed_full = 1 }
 		mnt_wealth_resurvey_estate_data = yes
-		mnt_wealth_reconcile_departed_estates = yes
 	}
 	# Yearly lite: relative cache only, when the full path did not fire.
 	else_if = {

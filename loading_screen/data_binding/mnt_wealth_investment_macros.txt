@@ -1,8 +1,6 @@
 ﻿# Investment display macros. The level comes from a persistent gold pool
-# measured against a fixed cost base.
-#
-# AI locations do a year of work in one tick, so the DC macros below project
-# from the wealth pool monthly to keep display values smooth.
+# measured against a fixed cost base. The DC macros project from the review
+# month so the window matches what the next advance will write.
 
 # --- accessors ---
 
@@ -141,7 +139,7 @@ macro = {
 }
 
 macro = {
-	description = "The estate's share of the displayed (projected) wealth pool: the stored value runs a year ahead for AI, so the live figure comes from the replayed pool in script"
+	description = "The estate's projected wealth at this location, replayed from the review month in script"
 	definition = "DCDisplayedEstateWealth()"
 	replace_with = "FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_estate_wealth'))"
 }
@@ -153,9 +151,9 @@ macro = {
 }
 
 macro = {
-	description = "The estate's invested wealth pool in gold, from the variable map"
+	description = "The estate's invested wealth pool in gold, projected forward from the review state"
 	definition = "DCInvestedWealth()"
-	replace_with = "DCLocationMapFloat('mnt_wealth_invested_wealth')"
+	replace_with = "FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_invested_wealth'))"
 }
 
 macro = {
@@ -273,19 +271,19 @@ macro = {
 }
 
 macro = {
-	description = "Monthly upkeep, matching mnt_wealth_compute_estate_upkeep: the estate's invested wealth decayed at its live per-estate rate, scaled by upkeep efficiency"
-	definition = "DCMonthlyUpkeep()"
-	replace_with = "Multiply_float(FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_monthly_upkeep')), FixedPointToFloat(LocationScriptValue('mnt_wealth_upkeep_efficiency_multiplier')))"
+	description = "Monthly decay, matching mnt_wealth_compute_estate_decay: the estate's invested wealth decayed at its live per-estate rate, scaled by decay resistance"
+	definition = "DCMonthlyDecay()"
+	replace_with = "Multiply_float(FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_monthly_decay')), FixedPointToFloat(LocationScriptValue('mnt_wealth_decay_resistance_multiplier')))"
 }
 
 macro = {
-	description = "Monthly net: investment minus upkeep before the progress modifier"
+	description = "Monthly net: investment minus decay before the progress modifier"
 	definition = "DCMonthlyNet()"
-	replace_with = "Subtract_float(DCMonthlyInvestment(), DCMonthlyUpkeep())"
+	replace_with = "Subtract_float(DCMonthlyInvestment(), DCMonthlyDecay())"
 }
 
 macro = {
-	description = "Monthly change to investment progress: the net of efficiency-scaled investment minus efficiency-scaled upkeep"
+	description = "Monthly change to investment progress: the net of efficiency-scaled investment minus resistance-scaled decay"
 	definition = "DCMonthlyChange()"
 	replace_with = "DCMonthlyNet()"
 }
