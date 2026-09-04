@@ -6,7 +6,7 @@ build_time_RGO = 365
 #  Ideal area multiplier: local_raw_material_output in the same file (2.0 = x3 where the raw material matches).
 #  Bog iron ceiling: bog_iron_cap_level in country_base_values, in_game/common/auto_modifiers/MnT_country.txt; advances add to it.
 #  Which locations qualify for a building: can_build_*_RGO in in_game/common/scripted_triggers/MnT_RGO_substitution.txt. These are now cached into location variables for a few of the more complex triggers.
-#  Adding a category modifier: modifier type in main_menu/common/modifier_type_definitions/mnt_modifier_types.txt, icon, loc, then a row in mnt_location_max_rgo_building_level.
+#  I want to specifically change one RGO limit. Add a new modifier for it here: modifier type in main_menu/common/modifier_type_definitions/mnt_modifier_types.txt, icon, loc, then a row in mnt_location_max_rgo_building_level. Then use that number however you want in the specific limits you're looking at. And add it to an INJECT/REPLACE on any systems you want it to scale with.
 
 #The following is used to calculate starting building levels.
 
@@ -139,122 +139,92 @@ rgo_conversion_sheep_farms = {
 }
 
 # Max level calculation for the RGO replacement buildings.
-# Every good adds mnt_rgo_base_size; categories add their mnt_rgo_*_size delta on top. Both set in main_menu/common/static_modifiers/MnT_location.txt. The only categories left are horses and mining atm.
-# The ideal area row (local_raw_material_output) applies where the raw material matches; bad buildings never match, so the same value serves both.
+# The whole base is one breakdown row: mnt_rgo_base_size, plus mnt_rgo_mining_size for mining goods, multiplied by the ideal area bonus where the location's raw material matches the building's good.
+# Its label spells out that arithmetic, so every row under it is plainly a percentage of the number the base row shows. Base size modifiers are set in main_menu/common/static_modifiers/MnT_location.txt.
+# The ideal rows are written out rather than factored into a shared value. A script value whose own root level ends in multiply breaks the breakdown when it is read from one of these rows, so the flat base is saved and multiplied back in place.
 # Unowned locations return 0. Final value floors at 1 where the raw material matches and at 0 elsewhere.
 
-# Mainly farming goods only buildable on their raw material.
+# Local, national and settlement rank size modifiers. All are percentages of scope:base_value, which already includes the ideal area bonus.
+mnt_rgo_size_modifiers = {
+	if = {
+		limit = { modifier:local_max_rgo_size_modifier != 0 }
+		add = { desc = "LOCAL_MAX_RGO"
+			value = scope:base_value
+			multiply = modifier:local_max_rgo_size_modifier
+		}
+	}
+	if = {
+		limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
+		add = { desc = "GLOBAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier
+		}
+	}
+	if = {
+		limit = {
+			location_rank = location_rank:rural_settlement
+			owner.modifier:global_max_rgo_size_modifier_in_rural != 0
+		}
+		add = { desc = "RURAL_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
+		}
+	}
+	else_if = {
+		limit = {
+			NOT = { location_rank = location_rank:rural_settlement }
+			owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
+		}
+		add = { desc = "URBAN_MAX_RGO"
+			value = scope:base_value
+			multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
+		}
+	}
+}
+
+# Goods whose RGO building can only stand on its own raw material, so the ideal area bonus always applies.
 rgo_standard_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
+		add = { desc = "MNT_RGO_BASE_IDEAL"
 			value = modifier:mnt_rgo_base_size
+			save_temporary_value_as = base_before_ideal
+			value = 1
+			add = modifier:local_raw_material_output
+			add = owner.modifier:global_raw_material_output
+			multiply = scope:base_before_ideal
 		}
 		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-			value = scope:base_value
-			multiply = modifier:local_raw_material_output
-		}
-		if = {
-			limit = { owner.modifier:global_raw_material_output != 0 }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-				value = scope:base_value
-				multiply = owner.modifier:global_raw_material_output
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
+		add = mnt_rgo_size_modifiers
 		min = 1
 	}
 }
 
+# Goods whose RGO building can also stand off its raw material. The gate splits ideal from non-ideal.
+
 rgo_beeswax_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:beeswax }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -263,58 +233,26 @@ rgo_beeswax_max_level = {
 rgo_clay_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:clay }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -323,58 +261,26 @@ rgo_clay_max_level = {
 rgo_fruit_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:fruit }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -383,58 +289,26 @@ rgo_fruit_max_level = {
 rgo_livestock_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:livestock }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -443,58 +317,26 @@ rgo_livestock_max_level = {
 rgo_lumber_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:lumber }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -503,58 +345,26 @@ rgo_lumber_max_level = {
 rgo_wheat_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:wheat }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -563,58 +373,26 @@ rgo_wheat_max_level = {
 rgo_wild_game_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:wild_game }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -623,306 +401,142 @@ rgo_wild_game_max_level = {
 rgo_wool_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:wool }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
 }
 
-#Mining goods: coal, copper, gems, goods_gold, iron, lead, salt, silver, tin, mercury, alum.
+# Mining goods: coal, copper, gems, goods_gold, iron, lead, salt, silver, tin, mercury, alum. All carry mnt_rgo_mining_size on top of the base.
 rgo_mining_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
+		add = { desc = "MNT_RGO_BASE_MINING_IDEAL"
 			value = modifier:mnt_rgo_base_size
-		}
-		add = { desc = "MNT_RGO_SIZE_MINING"
-			value = modifier:mnt_rgo_mining_size
+			add = modifier:mnt_rgo_mining_size
+			save_temporary_value_as = base_before_ideal
+			value = 1
+			add = modifier:local_raw_material_output
+			add = owner.modifier:global_raw_material_output
+			multiply = scope:base_before_ideal
 		}
 		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
+		add = mnt_rgo_size_modifiers
 		min = 1
 	}
 }
 
-
 rgo_fish_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
-		if = {
-			limit = {
-				has_river = yes
-				NOT = { raw_material = goods:fish }
-			}
-			#River-only locations without fish as raw material cap at level 1.
-			max = { desc = "BUILDING_LEVEL_FISH_RIVER_LIMITS_MAXIMUM_LEVEL"
-				value = 1
-			}
-		}
 		if = {
 			limit = { raw_material = goods:fish }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
+			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
+				limit = { has_river = yes }
+				#River-only locations without fish as raw material cap at level 1.
+				max = { desc = "BUILDING_LEVEL_FISH_RIVER_LIMITS_MAXIMUM_LEVEL"
+					value = 1
 				}
 			}
-			min = 1
 		}
 		min = 0
 	}
 }
-
 
 rgo_stone_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:stone }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
 }
 
-
 rgo_iron_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
 		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
+			limit = { raw_material = goods:iron }
+			add = { desc = "MNT_RGO_BASE_MINING_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				add = modifier:mnt_rgo_mining_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
+			min = 1
 		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
+		else = {
+			add = { desc = "MNT_RGO_BASE_MINING"
+				value = modifier:mnt_rgo_base_size
+				add = modifier:mnt_rgo_mining_size
 			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
-		if = {
-			limit = { NOT = { raw_material = goods:iron } }
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			#Ceiling comes from the owner: 2 from country_base_values, advances add to it.
 			max = { desc = "BUILDING_LEVEL_IRON_IMPURE_ORE"
 				value = owner.modifier:bog_iron_cap_level
 			}
-		}
-		else = {
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
-			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
-			min = 1
 		}
 		min = 0
 	}
@@ -931,58 +545,28 @@ rgo_iron_max_level = {
 rgo_salt_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:salt }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_MINING_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				add = modifier:mnt_rgo_mining_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_MINING"
+				value = modifier:mnt_rgo_base_size
+				add = modifier:mnt_rgo_mining_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -991,58 +575,26 @@ rgo_salt_max_level = {
 rgo_sand_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:sand }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -1051,61 +603,26 @@ rgo_sand_max_level = {
 rgo_horses_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		add = { desc = "MNT_RGO_SIZE_HORSES"
-			value = modifier:mnt_rgo_horses_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:horses }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
@@ -1114,58 +631,26 @@ rgo_horses_max_level = {
 rgo_fiber_crops_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_SIZE"
-			value = modifier:mnt_rgo_base_size
-		}
-		save_temporary_value_as = base_value
-		if = {
-			limit = { modifier:local_max_rgo_size_modifier != 0 }
-			add = { desc = "LOCAL_MAX_RGO"
-				value = scope:base_value
-				multiply = modifier:local_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = { owner.modifier:global_max_rgo_size_modifier != 0 }
-			add = { desc = "GLOBAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier
-			}
-		}
-		if = {
-			limit = {
-				location_rank = location_rank:rural_settlement
-				owner.modifier:global_max_rgo_size_modifier_in_rural != 0
-			}
-			add = { desc = "RURAL_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_rural
-			}
-		}
-		else_if = {
-			limit = {
-				NOT = { location_rank = location_rank:rural_settlement }
-				owner.modifier:global_max_rgo_size_modifier_in_non_rural != 0
-			}
-			add = { desc = "URBAN_MAX_RGO"
-				value = scope:base_value
-				multiply = owner.modifier:global_max_rgo_size_modifier_in_non_rural
-			}
-		}
 		if = {
 			limit = { raw_material = goods:fiber_crops }
-			add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_LOCAL"
-				value = scope:base_value
-				multiply = modifier:local_raw_material_output
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
 			}
-			if = {
-				limit = { owner.modifier:global_raw_material_output != 0 }
-				add = { desc = "BUILDING_LEVEL_RAW_MATERIALS_BONUS_GLOBAL"
-					value = scope:base_value
-					multiply = owner.modifier:global_raw_material_output
-				}
-			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
 		}
 		min = 0
 	}
