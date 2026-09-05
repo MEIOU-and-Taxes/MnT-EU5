@@ -1,8 +1,9 @@
 ﻿# Gross Output and Wages: the gold an estate spends on investment.
 #
 # Each month an estate invests the rate from the wealth it holds, then its
-# income lands, and its invested wealth decays toward zero. The advance applies
-# that month step in closed form for the months since the review.
+# income lands, and its invested wealth decays toward zero and pays its share
+# of the location's flat maintenance. The advance applies that month step in
+# closed form for the months since the review.
 
 # Scope: location. Adds local_var:mnt_wealth_investment_change to this estate's
 # since-review progress.
@@ -26,8 +27,9 @@ mnt_wealth_add_investment_progress = {
 }
 
 # Scope: location. Banks one estate's progress: paid times investment
-# efficiency, less decay times decay resistance. Reads
-# local_var:mnt_wealth_estate_paid and local_var:mnt_wealth_estate_decay.
+# efficiency, less decay times decay resistance, less its maintenance share.
+# Reads local_var:mnt_wealth_estate_paid, local_var:mnt_wealth_estate_decay
+# and local_var:mnt_wealth_estate_maintenance.
 
 mnt_wealth_set_investment_progress_change = {
 	set_local_variable = {
@@ -36,18 +38,50 @@ mnt_wealth_set_investment_progress_change = {
 			value = local_var:mnt_wealth_estate_paid
 			multiply = mnt_wealth_investment_efficiency_multiplier
 			subtract = { value = local_var:mnt_wealth_estate_decay multiply = mnt_wealth_decay_resistance_multiplier }
+			subtract = local_var:mnt_wealth_estate_maintenance
 		}
 	}
 
 	mnt_wealth_add_investment_progress = yes
 }
 
+# Scope: location. One estate's share of the location's Local Investment
+# Maintenance: the flat monthly cost split by the estate's share of the
+# location's raw power. Saves local_var:mnt_wealth_estate_maintenance.
+
+mnt_wealth_set_estate_maintenance = {
+	set_local_variable = { name = mnt_wealth_estate_maintenance_share value = 0 }
+
+	if = {
+		limit = {
+			var:mnt_wealth_local_raw_power_total > 0
+			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
+		}
+		set_local_variable = {
+			name = mnt_wealth_estate_maintenance_share
+			value = {
+				value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
+				divide = var:mnt_wealth_local_raw_power_total
+			}
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_estate_maintenance
+		value = {
+			value = modifier:mnt_wealth_local_investment_maintenance
+			multiply = local_var:mnt_wealth_estate_maintenance_share
+		}
+	}
+}
+
 # ── MONTHLY INVESTMENT ──
 
 # Scope: location. One estate's monthly investment: spends the rate from
-# its wealth, computes its decay, and banks the progress.
+# its wealth, computes its decay and maintenance share, and banks the progress.
 
 mnt_wealth_invest_estate_wealth = {
+	mnt_wealth_set_estate_maintenance = yes
 	set_local_variable = { name = mnt_wealth_estate_paid value = 0 }
 
 	if = {
@@ -151,7 +185,8 @@ mnt_wealth_read_estate_decay_rate = {
 
 # Scope: location. Advances the stored state from the review month to now in
 # closed form. Per estate: invests the rate from its wealth, then income lands,
-# while invested wealth decays. Moves the review month forward.
+# while invested wealth decays and pays its maintenance share. Moves the
+# review month forward.
 
 mnt_wealth_advance_location_to_now = {
 	set_local_variable = {
@@ -328,12 +363,6 @@ mnt_wealth_advance_estate = {
 				name = mnt_wealth_advance_national_raw_power
 				value = "variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)"
 			}
-			# The national total already counts this location, so it can never be
-			# smaller than this location's share.
-			if = {
-				limit = { local_var:mnt_wealth_advance_raw_power > local_var:mnt_wealth_advance_national_raw_power }
-				error_log = "MNT_WEALTH-INVARIANT national estate raw power is smaller than this one location's share local=[SCOPE.GetLocalVariable('mnt_wealth_advance_raw_power').GetValue|4] national=[SCOPE.GetLocalVariable('mnt_wealth_advance_national_raw_power').GetValue|4]"
-			}
 			set_local_variable = {
 				name = mnt_wealth_advance_flow_share
 				value = {
@@ -344,6 +373,9 @@ mnt_wealth_advance_estate = {
 			}
 		}
 	}
+
+	# The estate's maintenance share, from its raw power fraction.
+	mnt_wealth_set_estate_maintenance = yes
 
 	# Monthly income: the wage share plus the flow share.
 	set_local_variable = {
@@ -470,7 +502,8 @@ mnt_wealth_advance_estate = {
 	# Each month invests the rate times the wealth on hand: a flat part, the
 	# income, plus a part that slopes with the wealth as it is spent down.
 	# Both are summed over the period with the decay each month's investment
-	# has suffered since.
+	# has suffered since. Maintenance is a flat monthly charge summed the same
+	# way as the flat part.
 	set_local_variable = { name = mnt_wealth_advance_flat_inflow_sum value = local_var:mnt_wealth_advance_months }
 	set_local_variable = {
 		name = mnt_wealth_advance_invested_pool_change
@@ -537,6 +570,10 @@ mnt_wealth_advance_estate = {
 					multiply = local_var:mnt_wealth_advance_sloped_inflow_sum
 				}
 				multiply = mnt_wealth_investment_efficiency_multiplier
+			}
+			subtract = {
+				value = local_var:mnt_wealth_estate_maintenance
+				multiply = local_var:mnt_wealth_advance_flat_inflow_sum
 			}
 		}
 	}

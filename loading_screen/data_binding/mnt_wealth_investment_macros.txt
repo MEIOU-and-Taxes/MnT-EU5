@@ -247,6 +247,12 @@ macro = {
 }
 
 macro = {
+	description = "The estate's share of the location's raw power: its raw power over the location total the survey cached"
+	definition = "DCRawPowerShare()"
+	replace_with = "GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_local_estate_raw_power_fraction')"
+}
+
+macro = {
 	description = "The estate's monthly wealth fraction drift"
 	definition = "DCWealthShareDrift()"
 	replace_with = "Multiply_CFixedPoint(Subtract_CFixedPoint(DCLocationMap('mnt_wealth_cached_local_relative_estate_power'), DCEstateWealthFraction()), LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_share_monthly_trend_rate'))"
@@ -277,9 +283,21 @@ macro = {
 }
 
 macro = {
-	description = "Monthly net: investment minus decay before the progress modifier"
+	description = "The estate's share of the location's monthly Local Investment Maintenance: the flat cost split by the estate's share of local raw power, resolved in script"
+	definition = "DCMonthlyMaintenance()"
+	replace_with = "FixedPointToFloat(GuiScope.AddScope('mnt_wealth_location', LocationView.GetLocation.MakeScope).AddScope('mnt_wealth_estate', Estate.GetType.MakeScope).ScriptValue('mnt_wealth_displayed_estate_maintenance'))"
+}
+
+macro = {
+	description = "The location's whole monthly Local Investment Maintenance as a float"
+	definition = "LocalMaintenance()"
+	replace_with = "LocalModifierFloat('mnt_wealth_local_investment_maintenance')"
+}
+
+macro = {
+	description = "Monthly net: investment minus decay and the maintenance share, before the progress modifier"
 	definition = "DCMonthlyNet()"
-	replace_with = "Subtract_float(DCMonthlyInvestment(), DCMonthlyDecay())"
+	replace_with = "Subtract_float(Subtract_float(DCMonthlyInvestment(), DCMonthlyDecay()), DCMonthlyMaintenance())"
 }
 
 macro = {

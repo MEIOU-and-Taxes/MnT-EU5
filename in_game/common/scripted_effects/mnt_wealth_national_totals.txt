@@ -119,7 +119,7 @@ mnt_wealth_apply_national_goods = {
 				add_to_variable_map = { name = mnt_wealth_national_goods_value key = scope:mnt_wealth_goods_key value = local_var:mnt_wealth_goods_running }
 				add_to_variable_map = { name = mnt_wealth_national_goods_locations key = scope:mnt_wealth_goods_key value = local_var:mnt_wealth_goods_count }
 				if = {
-					limit = { NOT = { is_key_in_variable_list = { name = mnt_wealth_national_goods target = scope:mnt_wealth_goods_key } } }
+					limit = { NOT = { is_target_in_variable_list = { name = mnt_wealth_national_goods target = scope:mnt_wealth_goods_key } } }
 					add_to_variable_list = { name = mnt_wealth_national_goods target = scope:mnt_wealth_goods_key }
 				}
 			}
@@ -147,6 +147,17 @@ mnt_wealth_clear_national_goods = {
 	clear_variable_map = mnt_wealth_national_goods_value
 	clear_variable_map = mnt_wealth_national_goods_locations
 	clear_variable_list = mnt_wealth_national_goods
+}
+mnt_wealth_ensure_country_id = {
+	if = {
+		limit = { NOT = { has_variable = mnt_wealth_country_id } }
+		if = {
+			limit = { NOT = { has_global_variable = mnt_wealth_country_serial } }
+			set_global_variable = { name = mnt_wealth_country_serial value = 0 }
+		}
+		change_global_variable = { name = mnt_wealth_country_serial add = 1 }
+		set_variable = { name = mnt_wealth_country_id value = global_var:mnt_wealth_country_serial }
+	}
 }
 
 # ── NATIONAL ESTATE RAW POWER ──

@@ -128,6 +128,11 @@ types MnTWealthBaseTypes
 					blockoverride "row_label" { raw_text = "+ Monthly Decay" }
 					blockoverride "row_value" { block "decay_monthly_value" { raw_text = "" } }
 				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_attributes" { block "maintenance_tooltip" {  } visible = "[GreaterThan_float(DCMonthlyMaintenance(), '(float)0')]" }
+					blockoverride "row_label" { raw_text = "+ Investment Maintenance" }
+					blockoverride "row_value" { block "maintenance_monthly_value" { raw_text = "" } }
+				}
 
 				mnt_wealth_formula_row = {
 					blockoverride "row_attributes" { visible = "[GreaterThan_float(DCSeizureFromInvested(), '(float)0')]" }
@@ -1240,6 +1245,52 @@ template mnt_wealth_estate_investment_tooltip {
 						using = mnt_wealth_decay_rows
 						blockoverride "decay_invested_value" { raw_text = "[DCInvestedWealth()|2]@gold!" }
 						blockoverride "decay_monthly_bold_value" { raw_text = "#bold [Subtract_float('(float)0', DCMonthlyDecay())|2+=]#!@gold!" }
+					}
+				}
+			}
+		}
+		blockoverride "maintenance_monthly_value" { raw_text = "[Subtract_float('(float)0', DCMonthlyMaintenance())|2+=]@gold!" }
+		blockoverride "maintenance_tooltip" {
+			tooltipwidget = {
+				ContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_investment_rate')]" }
+					}
+					blockoverride "title_text" { raw_text = "#T Investment Maintenance#!" }
+					blockoverride "concept_link" { text = "[mnt_wealth_local_investment|E]" }
+					blockoverride "tooltip_content" {
+						TooltipListBase = {
+							blockoverride "block_title" { visible = no }
+
+							mnt_wealth_formula_row = {
+								blockoverride "row_attributes" {
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_text" { raw_text = "#T Local Investment Maintenance#!" }
+											blockoverride "tooltip_content" {
+												TooltipStringPairList = {
+													layoutpolicy_horizontal = expanding
+													textcontext = "[LocationView.GetLocation.GetDescriptionFor('mnt_wealth_local_investment_maintenance')]"
+												}
+											}
+										}
+									}
+								}
+								blockoverride "row_label" { raw_text = "Location Maintenance" }
+								blockoverride "row_value" { raw_text = "[LocalMaintenance()|2]@gold!" }
+							}
+							mnt_wealth_formula_row = {
+								blockoverride "row_label" { raw_text = "× Share of Local Raw Power" }
+								blockoverride "row_value" { raw_text = "[Multiply_float(FixedPointToFloat(DCRawPowerShare()), '(float)100')|2]%" }
+							}
+
+							divider_solid_gold = {  }
+
+							mnt_wealth_formula_row = {
+								blockoverride "row_label" { raw_text = "= Monthly Maintenance" }
+								blockoverride "row_value" { raw_text = "#bold [Subtract_float('(float)0', DCMonthlyMaintenance())|2+=]#!@gold!" }
+							}
+						}
 					}
 				}
 			}

@@ -153,23 +153,25 @@ mnt_dispatch_location_and_market_on_actions = {
 	}
 }
 
-# Scope: location, scheduled for this month. Picks the day and fires the service.
+# Scope: location, scheduled for this month. Fires both lanes; each lane's
+# effect keeps only the locations it owns.
 
 mnt_wealth_dispatch_location = {
-	# AI work smears across the month by location id; the player's runs on
-	# the tick.
-	set_local_variable = { name = mnt_wealth_dispatch_day value = 0 }
-	if = {
-		limit = { NOT = { owner ?= { is_human = yes } } }
-		set_local_variable = {
-			name = mnt_wealth_dispatch_day
-			value = {
-				value = var:mnt_wealth_location_id
-				modulo = global_var:mnt_wealth_current_days_in_month
-			}
+	# The smear day. Every location in this month's bucket shares an id mod
+	# twelve, so their ids step by twelve. Dividing that step back out turns
+	# them into consecutive numbers, which spread evenly over a month of any
+	# length; the raw id would only ever reach five days of a thirty-day month.
+	set_local_variable = {
+		name = mnt_wealth_dispatch_day
+		value = {
+			value = var:mnt_wealth_location_id
+			divide = 12
+			floor = yes
+			modulo = global_var:mnt_wealth_current_days_in_month
 		}
 	}
 
+	trigger_event_silently = { on_action = mnt_monthly_instant_location_pulse }
 	trigger_event_silently = {
 		on_action = mnt_balanced_location_pulse
 		days = local_var:mnt_wealth_dispatch_day

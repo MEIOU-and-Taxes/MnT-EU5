@@ -89,6 +89,39 @@ mnt_wealth_projected_estate_income = {
 	}
 }
 
+# One estate's share of the location's raw power: its raw power over the
+# location total the survey cached. Reads scope:mnt_wealth_location and
+# scope:mnt_wealth_estate.
+
+mnt_wealth_local_estate_raw_power_fraction = {
+	value = 0
+
+	scope:mnt_wealth_location = {
+		if = {
+			limit = {
+				var:mnt_wealth_local_raw_power_total > 0
+				is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_estate }
+			}
+			add = {
+				value = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_estate)"
+				divide = var:mnt_wealth_local_raw_power_total
+			}
+		}
+	}
+}
+
+# One estate's share of the location's Local Investment Maintenance: the flat
+# monthly cost split by the estate's share of the location's raw power.
+# Reads scope:mnt_wealth_location and scope:mnt_wealth_estate.
+
+mnt_wealth_displayed_estate_maintenance = {
+	value = mnt_wealth_local_estate_raw_power_fraction
+
+	scope:mnt_wealth_location = {
+		multiply = modifier:mnt_wealth_local_investment_maintenance
+	}
+}
+
 # One estate's wealth now: the estate's own run of the pool series.
 
 mnt_wealth_displayed_estate_wealth = {
@@ -293,20 +326,24 @@ mnt_wealth_equilibrium_seizure_from_invested = {
 	min = 0
 }
 
-# The wealth the equilibrium is measured from: estate wealth scaled by investment
-# efficiency, minus any seized invested wealth converted back to its wealth cost,
-# all divided by decay resistance.
+# The invested wealth an estate settles at: where a month's progress is zero.
+# Spending at the rate, scaled by efficiency, less the seizure and the
+# maintenance share, over the decay it pays per gold held. Negative when the
+# charges outrun the spending: the estate settles at a neglect level. A
+# negative rate spends nothing.
 
-mnt_wealth_equilibrium_wealth = {
-	value = mnt_wealth_equilibrium_estate_wealth
-	multiply = mnt_wealth_investment_efficiency_multiplier
+mnt_wealth_equilibrium_invested_wealth = {
+	value = 0
 
 	if = {
-		limit = { mnt_wealth_investment_rate > 0 }
-		subtract = { value = mnt_wealth_equilibrium_seizure_from_invested divide = mnt_wealth_investment_rate }
+		limit = { mnt_wealth_estate_decay_rate > 0 }
+		value = mnt_wealth_equilibrium_estate_wealth
+		multiply = { value = mnt_wealth_investment_rate min = 0 }
+		multiply = mnt_wealth_investment_efficiency_multiplier
+		subtract = mnt_wealth_equilibrium_seizure_from_invested
+		subtract = mnt_wealth_displayed_estate_maintenance
+		divide = { value = mnt_wealth_estate_decay_rate multiply = mnt_wealth_decay_resistance_multiplier }
 	}
-
-	divide = mnt_wealth_decay_resistance_multiplier
 }
 
 # The per-estate monthly decay rate: local plus national modifier. Resolved by
@@ -352,24 +389,28 @@ mnt_wealth_estate_decay_rate = {
 	}
 }
 
-# The level an estate settles at: where monthly investment spending exactly pays
-# the monthly decay. Invested wealth settles at spending / decay, and the level
-# is the unchanged square-root curve over that pool.
+# The level an estate settles at: the square-root curve over the equilibrium
+# invested wealth, run on the magnitude and signed, so a neglect equilibrium
+# reads negative. Zero is skipped because the engine's pow returns 1 for a
+# zero base.
 
 mnt_wealth_investment_equilibrium_level = {
-	value = 0
+	value = mnt_wealth_equilibrium_invested_wealth
+	divide = mnt_wealth_investment_level_cost_base
+	save_temporary_value_as = mnt_wealth_equilibrium_level_ratio
 
+	value = 0
 	if = {
-		limit = {
-			mnt_wealth_equilibrium_wealth > 0
-			mnt_wealth_estate_decay_rate > 0
-		}
-		value = mnt_wealth_equilibrium_wealth
-		multiply = mnt_wealth_investment_rate
-		divide = mnt_wealth_estate_decay_rate
-		divide = mnt_wealth_investment_level_cost_base
+		limit = { scope:mnt_wealth_equilibrium_level_ratio > 0 }
+		value = scope:mnt_wealth_equilibrium_level_ratio
 		pow = 0.5
-		min = 0
+	}
+	else_if = {
+		limit = { scope:mnt_wealth_equilibrium_level_ratio < 0 }
+		value = scope:mnt_wealth_equilibrium_level_ratio
+		multiply = -1
+		pow = 0.5
+		multiply = -1
 	}
 }
 
@@ -489,11 +530,13 @@ mnt_wealth_monthly_estate_progress = {
 
 	multiply = mnt_wealth_investment_efficiency_multiplier
 	subtract = { value = mnt_wealth_monthly_estate_decay multiply = mnt_wealth_decay_resistance_multiplier }
+	subtract = mnt_wealth_displayed_estate_maintenance
 }
 
 # One estate's invested wealth projected forward from the review: what it
-# held decays, and each month's investment lands and decays from then on.
-# Runs in location scope with scope:mnt_wealth_estate set.
+# held decays, each month's investment lands and decays from then on, and
+# each month's maintenance share is taken. Runs in location scope with
+# scope:mnt_wealth_estate set.
 
 mnt_wealth_projected_invested_wealth = {
 	value = 0
@@ -533,6 +576,8 @@ mnt_wealth_projected_invested_wealth = {
 	save_temporary_value_as = mnt_wealth_wealth_at_review
 	value = mnt_wealth_projected_estate_income
 	save_temporary_value_as = mnt_wealth_estate_income
+	value = mnt_wealth_displayed_estate_maintenance
+	save_temporary_value_as = mnt_wealth_estate_maintenance
 
 	# The share of invested wealth left after a month's decay, and after the
 	# period. Decay is toward zero for either sign.
@@ -597,6 +642,10 @@ mnt_wealth_projected_invested_wealth = {
 			multiply = scope:mnt_wealth_sloped_inflow_sum
 		}
 		multiply = mnt_wealth_investment_efficiency_multiplier
+	}
+	subtract = {
+		value = scope:mnt_wealth_estate_maintenance
+		multiply = scope:mnt_wealth_flat_inflow_sum
 	}
 }
 

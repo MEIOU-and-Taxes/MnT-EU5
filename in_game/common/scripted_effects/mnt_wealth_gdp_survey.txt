@@ -240,7 +240,8 @@ mnt_wealth_collect_building_goods = {
 # ── ESTATE POWER ──
 
 # Scope: location. Counts every pop into the estate that actually holds it and
-# computes raw power (pops x power per pop) in mnt_estate_raw_power.
+# computes raw power (pops x power per pop) in mnt_estate_raw_power, with the
+# location total in var:mnt_wealth_local_raw_power_total.
 # Membership is per pop: dhimmi and cossacks divert pops out of their usual estate.
 
 mnt_wealth_count_estate_pops = {
@@ -332,6 +333,8 @@ mnt_wealth_count_estate_pops = {
 		}
 	}
 
+	set_local_variable = { name = mnt_wealth_pops_raw_total value = 0 }
+
 	mnt_wealth_store_estate_pops = { ESTATE = nobles }
 	mnt_wealth_store_estate_pops = { ESTATE = clergy }
 	mnt_wealth_store_estate_pops = { ESTATE = burghers }
@@ -339,6 +342,8 @@ mnt_wealth_count_estate_pops = {
 	mnt_wealth_store_estate_pops = { ESTATE = dhimmi }
 	mnt_wealth_store_estate_pops = { ESTATE = tribes }
 	mnt_wealth_store_estate_pops = { ESTATE = cossacks }
+
+	set_variable = { name = mnt_wealth_local_raw_power_total value = local_var:mnt_wealth_pops_raw_total }
 }
 
 # Scope: location. Resets the per-estate pop counters.
@@ -353,8 +358,8 @@ mnt_wealth_clear_pop_counts = {
 	set_local_variable = { name = mnt_wealth_pops_cossacks value = 0 }
 }
 
-# Scope: location. Files one estate's raw power from its pop count. Skips an
-# estate with no pops.
+# Scope: location. Files one estate's raw power from its pop count and adds it
+# to local_var:mnt_wealth_pops_raw_total. Skips an estate with no pops.
 
 mnt_wealth_store_estate_pops = {
 	if = {
@@ -380,6 +385,8 @@ mnt_wealth_store_estate_pops = {
 			key = local_var:mnt_wealth_pops_key
 			value = local_var:mnt_wealth_pops_raw
 		}
+
+		change_local_variable = { name = mnt_wealth_pops_raw_total add = local_var:mnt_wealth_pops_raw }
 	}
 }
 
@@ -467,6 +474,7 @@ mnt_wealth_survey_estate_data = {
 	save_temporary_scope_as = mnt_wealth_survey_location
 	clear_variable_map = mnt_estate_raw_power
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
+	set_variable = { name = mnt_wealth_local_raw_power_total value = 0 }
 
 	if = {
 		limit = { exists = owner }

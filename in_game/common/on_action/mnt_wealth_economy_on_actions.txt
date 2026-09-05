@@ -19,7 +19,6 @@ mnt_on_game_start_after_lobby = {
 
 mnt_on_weather_monthly_pulse = {
 	effect = {
-		mnt_wealth_log_weather_pulse_month = yes
 		mnt_wealth_maintain_building_produced_goods_cache = yes
 		mnt_wealth_begin_month = yes
 		mnt_dispatch_location_and_market_on_actions = yes
@@ -74,22 +73,16 @@ mnt_on_civil_war_annexed = {
 	}
 }
 
-# Scope: country (root = the country that won its civil war). Winning resets
-# the winner's variable maps while its plain variables survive, so the raw
-# power totals kept during the war are gone; count them again from the
-# locations the winner holds now.
+# Scope: country (root = the winner). Both hooks report the same scopes, so
+# neither is assumed to identify the rebel. The winner recounts a day later,
+# once the resolution has settled.
 
 mnt_on_civil_war_won = {
 	effect = {
 		mnt_wealth_rebuild_national_estate_raw_power = yes
+		trigger_event_silently = { id = mnt_wealth_economy.32 days = 1 }
 	}
 }
-
-# Scope: country (root = the country that lost its civil war to the rebels).
-# scope:winner is the rebel country. The rebel-won resolution never fires
-# on_civil_war_won, and its map reset lands after every hook, wiping even a
-# rebuild done here, so the winner also recounts one day later through
-# mnt_wealth_economy.31, once the reset is over.
 
 mnt_on_civil_war_lost = {
 	effect = {
@@ -119,23 +112,32 @@ mnt_on_location_changed_owner = {
 	}
 
 	# Delayed one day because new countries have no estate data on their formation frame.
-	events = { delay = { days = 1 } mnt_wealth_economy.30 }
+	events = { mnt_wealth_economy.30 }
 }
 
 # ── SERVICE LANES ──
 
-# Scope: location. Always runs on the month tick, no delay. Kept for future
-# use; nothing dispatches it since the monthly dispatch rework.
+# Scope: location. The player's lane: runs on the month tick, no delay, so
+# income lands in the right month.
 
-#mnt_monthly_instant_location_pulse = {
-#}
+mnt_monthly_instant_location_pulse = {
+	effect = {
+		if = {
+			limit = { owner = { is_human = yes } }
+			mnt_wealth_service_location = yes
+		}
+	}
+}
 
-# Scope: location. Runs on a day of the month picked from the location, or on
-# the month tick for player-owned locations.
+# Scope: location. The AI's lane: runs on a day of the month picked from the
+# location.
 
 mnt_balanced_location_pulse = {
 	effect = {
-		mnt_wealth_service_location = yes
+		if = {
+			limit = { owner = { is_ai = yes } }
+			mnt_wealth_service_location = yes
+		}
 	}
 }
 
