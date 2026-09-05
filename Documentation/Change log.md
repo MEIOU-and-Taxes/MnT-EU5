@@ -608,3 +608,4 @@ Date: 21/05/2026
 - Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
 - Fix errors on startup that about too many farming villages in Locations
 - Fix army movement speed being overridden by the Faster Universalis defines
+- Fix plague spread threshold being reduced in locations without roads
