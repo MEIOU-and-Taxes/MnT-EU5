@@ -17,8 +17,8 @@ mnt_wealth_seed_economy_constants = {
 	mnt_wealth_build_good_classification_map = yes
 }
 
-# Every ownable location gets its variables zeroed, and owned ones get their schedule slot and first census.
-# Walking ownable locations keeps the location ids in map order, which the schedule cohorts depend on.
+# Zero every ownable location; owned ones also get a schedule slot and first census.
+# Iterates ownable locations to keep location ids in map order for the schedule cohorts.
 
 mnt_wealth_seed_owned_locations = {
 	set_global_variable = { name = mnt_wealth_location_serial value = 0 }
@@ -78,9 +78,7 @@ mnt_wealth_zero_location = {
 }
 
 mnt_wealth_setup_location = {
-	# Estate data is unreliable during on_game_start, so the census checks every estate type
-	# unconditionally instead of trusting the owner's estate list. Whatever it gets wrong
-	# self-corrects at the location's first service.
+	# Estate data is unreliable during on_game_start; self-corrects at first service.
 	mnt_wealth_ensure_census_data = yes
 	# Seed each estate's wealth from gross output, then set the pool to the total.
 	set_local_variable = {
@@ -89,18 +87,16 @@ mnt_wealth_setup_location = {
 	}
 	set_local_variable = { name = mnt_wealth_seed_running_total value = 0 }
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_estate_wealth }
-	# The pool uses the running total instead of starting_pool because rounding in seed_estate_wealth can leave a gap.
+	# Running total avoids rounding gaps from seed_estate_wealth.
 	set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_seed_running_total }
 	mnt_wealth_set_location_wages = yes
-	# Kept income is each estate's share of the wage bill, and the shares sum to the whole bill,
-	# so the total is just the wages. No estate loop needed here.
+	# Shares sum to the whole bill, so kept income total = wages.
 	set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
 	# The review month stays at zero, the campaign start, so the first service covers every month since.
 }
 
-# Walks every estate the owner has nationally, whether or not this location has pops in it.
-# The census and the relative power refresh use it because they are what decide which estates are present here.
-# Saves mnt_wealth_location and mnt_wealth_estate, and the display script values read both by name.
+# Iterates the owner's national estates, including those with no pops here.
+# Used by the census and power refresh, which decide which estates are present.
 
 mnt_wealth_for_each_national_estate = {
 	save_temporary_scope_as = mnt_wealth_location
@@ -115,8 +111,7 @@ mnt_wealth_for_each_national_estate = {
 	}
 }
 
-# Walks the hardcoded estate list. Game start only: the power cache does not exist yet
-# and every_estate is unreliable until tick one, so this is how the first census is taken.
+# Hardcoded estate list. Game start only: every_estate is unreliable until tick one.
 
 mnt_wealth_for_all_estate_types = {
 	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:nobles_estate }
@@ -135,8 +130,7 @@ mnt_wealth_for_all_estate_types = {
 	$EFFECT$ = yes
 }
 
-# Walks the keys of the location's own power cache instead of the owner's estates.
-# Setup only: the first census has just built the cache, and every_estate is still unreliable at game start.
+# Iterates the location's power cache keys. Setup only: every_estate is unreliable at game start.
 
 mnt_wealth_for_each_estate_in_power_cache = {
 	save_temporary_scope_as = mnt_wealth_cached_power_location
@@ -152,8 +146,7 @@ mnt_wealth_for_each_estate_in_power_cache = {
 	}
 }
 
-# Walks the owner's national estates, restricted to those present in this location's power cache.
-# Looting uses it directly; the monthly and yearly passes replay the same set from the location estate list below.
+# National estates filtered to those present in this location's power cache.
 
 mnt_wealth_for_each_national_estate_in_power_cache = {
 	save_temporary_scope_as = mnt_wealth_location
@@ -171,8 +164,7 @@ mnt_wealth_for_each_national_estate_in_power_cache = {
 	}
 }
 
-# Builds the set from the iterator above into a local list, tagged with the location id,
-# so a pass can replay it without walking the owner's estates every time.
+# Caches the filtered estate set as a local list so passes can replay without re-iterating.
 
 mnt_wealth_build_location_estate_list = {
 	clear_local_variable_list = mnt_wealth_location_estate_list
@@ -195,19 +187,18 @@ mnt_wealth_build_location_estate_list = {
 		}
 	}
 
-	# The iterator compares this id against the location's to tell whether the list was built for it.
+	# Tag the list with this location's id so the iterator knows when to rebuild.
 	mnt_wealth_ensure_location_id = yes
 	set_local_variable = { name = mnt_wealth_location_estate_list_location_id value = var:mnt_wealth_location_id }
 	set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = no }
 }
 
-# The standard iterator for the monthly and yearly passes. Replays the location estate list,
-# rebuilding it first when the list belongs to another location or a census set the rebuild flag.
+# Standard estate iterator. Replays the cached list, rebuilding if stale or from another location.
 
 mnt_wealth_for_each_cached_estate = {
 	if = {
 		limit = {
-			# Existence is checked first: an absent local reads as 0, and location id 0 exists.
+			# Check existence first: an absent local reads as 0, and location id 0 exists.
 			has_local_variable = mnt_wealth_location_estate_list_location_id
 			local_var:mnt_wealth_rebuild_location_estate_list = no
 			has_variable = mnt_wealth_location_id
@@ -244,8 +235,7 @@ mnt_wealth_earn_estate_monthly_income = {
 	mnt_wealth_resolve_estate_monthly_income = yes
 }
 
-# One estate's review. The investment level updates before drift, so the level reads the investment banked
-# since the last review before drift pulls the estate's wealth toward its share of the pool.
+# One estate's review. Level updates before drift so the level reads progress first.
 
 mnt_wealth_review_estate = {
 	mnt_wealth_update_estate_investment_level = yes
@@ -253,42 +243,36 @@ mnt_wealth_review_estate = {
 }
 
 # Player-owned locations, every month.
-#
-# Order of operations for every pass: first bring the location's stored state (pool, estate wealth,
-# kept income) up to now under the modifiers it was last computed with, then change the modifiers
-# that drive it (wages, investment rate). The location window projects forward from stored state plus 
-# current modifiers, so the state has to be current before the modifiers move or the display is wrong.
+# Order: apply stored state under old modifiers first, then update modifiers (wages, investment rate).
 
 mnt_wealth_human_location_month = {
-	# Apply any months still owed, such as those before the first service or under a previous AI owner.
-	# In the usual month there are none.
+	# Apply any owed months (e.g. before first service or under a previous AI owner).
 	mnt_wealth_advance_location_to_now = yes
-	# Read the investment rate once before the estate loop, so a modifier change mid-loop cannot give estates different rates.
+	# Cache the rate so a modifier change mid-loop cannot give estates different rates.
 	set_local_variable = { name = mnt_wealth_cached_investment_rate value = mnt_wealth_investment_rate }
 	# Running totals for the estate loops below.
 	set_local_variable = { name = mnt_wealth_kept_income_running_total value = 0 }
 	set_local_variable = { name = mnt_wealth_invested_running_total    value = 0 }
 	set_local_variable = { name = mnt_wealth_income_running_total      value = 0 }
-	# Wage rates have to be set before the estate loop because each estate's income depends on the location's total wages.
+	# Wages must be set before the estate loop; each estate's income depends on them.
 	mnt_wealth_set_location_wages = yes
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_invest_estate_wealth }
-	# Investment comes off the pool before income lands, so spending is based on the wealth the window showed.
+	# Investment comes off the pool before income lands.
 	change_variable = { name = mnt_wealth_pool subtract = local_var:mnt_wealth_invested_running_total }
-	# Each estate earns its share of local wages and collects any national flow the country sends.
+	# Each estate earns its wage share and collects any national flow.
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_earn_estate_monthly_income }
 
 	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_income_running_total }
 	set_variable = { name = mnt_wealth_kept_income_total value = local_var:mnt_wealth_kept_income_running_total }
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
-	# This month is applied now, so the next unapplied month is the following one.
+	# This month is applied; the next unapplied month is the following one.
 	set_variable = { name = mnt_wealth_review_month value = { value = global_var:mnt_wealth_months_elapsed add = 1 } }
 }
 
-# Every location at its review: yearly for players, every second year for AI.
-# Same order of operations as the monthly pass: stored state first, then the modifiers.
+# Location review: yearly for players, every second year for AI. Same order as the monthly pass.
 
 mnt_wealth_location_year = {
-	# Bring stored state up to now on the wages still in force, before anything below changes them.
+	# Apply stored state under current wages before anything below changes them.
 	mnt_wealth_advance_location_to_now = yes
 	# Drift is tuned per year, so scale it by how many years this review covers.
 	set_local_variable = { name = mnt_wealth_drift_age_factor    value = { value = var:mnt_wealth_service_months divide = 12 } }
@@ -296,8 +280,7 @@ mnt_wealth_location_year = {
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_review_estate }
 
 	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_drift_running_total }
-	# Wages are normally set by the monthly pass. AI locations, and player locations on the slow census frequency,
-	# have no monthly pass, so their wages only move here.
+	# AI and slow-census player locations have no monthly pass; their wages only move here.
 	if = {
 		limit = { owner ?= { OR = { is_ai = yes mnt_wealth_census_frequency_is_slow = yes } } }
 		mnt_wealth_set_location_wages = yes

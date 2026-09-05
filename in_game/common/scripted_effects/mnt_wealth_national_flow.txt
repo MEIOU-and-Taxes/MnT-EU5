@@ -60,8 +60,7 @@ mnt_change_estate_gold = {
 	}
 }
 
-# Writes mnt_wealth_estate_flow; no gold moves. The flow is sized to the months until the country's next
-# refresh: one for players, who refresh monthly, and twelve for AI, who refresh yearly.
+# Writes mnt_wealth_estate_flow; no gold moves. Sized to one month for players, twelve for AI.
 
 mnt_wealth_set_national_savings_valves = {
 	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
@@ -83,7 +82,7 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			# Last flow for this estate, scaled by the pass length.
+			# Last flow, scaled by the pass length.
 			set_local_variable = { name = mnt_wealth_last_flow value = 0 }
 
 			if = {
@@ -99,7 +98,7 @@ mnt_wealth_set_national_savings_valves = {
 				value = { value = local_var:mnt_wealth_last_flow min = 0 multiply = local_var:mnt_wealth_valve_months }
 			}
 
-			# How far under its effective goal the treasury is.
+			# Shortfall from the effective goal.
 			set_local_variable = {
 				name = mnt_wealth_estate_gold_gap
 				value = {
@@ -125,7 +124,7 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			# Period total: the full amount moved this pass, clamped once.
+			# Full amount moved this pass, clamped once.
 			set_local_variable = { name = mnt_wealth_estate_period_total value = 0 }
 
 			if = {
@@ -200,7 +199,7 @@ mnt_wealth_update_estate_seizure_demand = {
 		}
 	}
 	else = {
-		# Monthly and yearly passes each have their own decay tuning value.
+		# Monthly and yearly passes use different decay tuning values.
 		set_local_variable = { name = mnt_wealth_demand_decay value = mnt_wealth_seizure_demand_decay }
 		if = {
 			limit = { local_var:mnt_wealth_valve_months > 1 }
@@ -221,7 +220,7 @@ mnt_wealth_update_estate_seizure_demand = {
 
 mnt_wealth_compute_location_share_of_estate_flow = {
 	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
-	# This location's raw power for the estate.
+	# This location's raw power for the estate, used to split the national flow.
 	set_local_variable = { name = mnt_wealth_local_raw_power value = 0 }
 
 	if = {
@@ -265,7 +264,7 @@ mnt_wealth_distribute_estate_flow_to_wealth = {
 	}
 	else = {
 		set_local_variable = { name = mnt_wealth_seizing value = { value = local_var:mnt_wealth_local_flow_share multiply = -1 } }
-		# The estate's liquid wealth caps what can be seized from it.
+		# Liquid wealth caps how much can be seized.
 		set_local_variable = { name = mnt_wealth_own_liquid value = 0 }
 
 		if = {
@@ -281,7 +280,7 @@ mnt_wealth_distribute_estate_flow_to_wealth = {
 			value = { value = local_var:mnt_wealth_seizing max = local_var:mnt_wealth_own_liquid }
 		}
 		set_local_variable = { name = mnt_wealth_liquid_wealth_change value = { value = local_var:mnt_wealth_from_liquid multiply = -1 } }
-		# What the liquid share could not cover comes out of invested wealth.
+		# Remainder comes out of invested wealth.
 		set_local_variable = {
 			name = mnt_wealth_from_invested
 			value = { value = local_var:mnt_wealth_seizing subtract = local_var:mnt_wealth_from_liquid }

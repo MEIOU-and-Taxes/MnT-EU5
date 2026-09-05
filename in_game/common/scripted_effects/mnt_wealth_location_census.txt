@@ -202,17 +202,14 @@ mnt_wealth_count_estate_pops = {
 
 	mnt_wealth_count_pops_by_type = yes
 
-	# Dhimmi can take a pop of any type, so its presence forces the full walk, which refiles every pop.
-	# Every pop type common/pop_types defines is listed in mnt_wealth_count_pops_by_type; a new one would need adding there.
+	# Dhimmi can take any pop type, so its presence forces the full pop iteration.
 	if = {
 		limit = { "local_estate_power(estate_type:dhimmi_estate)" > 0 }
 		mnt_wealth_clear_pop_counts = yes
 		mnt_wealth_count_pops_full = yes
 	}
 	else = {
-		# Slaves carry no power, so a dhimmi estate made only of them reads as
-		# absent above. Zero dhimmi power means no pop that carries power is
-		# dhimmi, which leaves the slaves as the only ones that can be hidden.
+		# Slaves carry no power, so a dhimmi estate of only slaves reads as absent above.
 		if = {
 			limit = {
 				local_var:mnt_wealth_pops_slaves > 0
@@ -355,9 +352,7 @@ mnt_wealth_census_estate_data = {
 		mnt_wealth_count_estate_pops = yes
 
 		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_census_results }
-		# Estates holding wealth, investment or pops can be missing from the
-		# owner's list. Pick up any the iterator did not reach, and note the
-		# ones that have no power left here at all.
+		# Pick up estates the iterator missed and note any with no power left.
 		clear_local_variable_list = mnt_wealth_departed_estates
 
 		every_key_in_variable_map = {
@@ -432,8 +427,7 @@ mnt_wealth_census_estate_data = {
 			}
 		}
 
-		# An estate that has left keeps nothing here: its modifiers come off and
-		# its gold goes to the estates on the roll, by the cache just built.
+		# Departed estates: strip modifiers, redistribute gold to remaining estates.
 		set_local_variable = { name = mnt_wealth_freed_investment    value = 0 }
 		set_local_variable = { name = mnt_wealth_freed_estate_wealth value = 0 }
 		every_in_local_list = {
@@ -449,10 +443,8 @@ mnt_wealth_census_estate_data = {
 	}
 }
 
-# Census: an estate the location no longer has. Strips its modifiers, folds its invested wealth and estate
-# wealth into the freed totals the census initialized, then drops its map entries. Neglect debt is folded in
-# too, so the remaining estates absorb it; nothing is written off. The totals accumulate across every
-# departing estate before redistribution runs.
+# Strips a departed estate's modifiers and accumulates its wealth (including neglect debt) into the freed
+# totals. Nothing is written off; redistribution runs after all departures.
 
 mnt_wealth_release_absent_estate = {
 	set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_stale_key }

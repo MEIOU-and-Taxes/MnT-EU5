@@ -11,23 +11,17 @@ mnt_wealth_update_estate_investment_level = {
 mnt_wealth_update_estate_investment_level_by_name = {
 	mnt_wealth_add_progress_to_invested_wealth = yes
 
-	# add_progress leaves the since-review amount it just merged in this local. Looting and the census
-	# write invested wealth directly and recompute on their own, so a zero here means nothing moved.
+	# Only recompute if invested wealth changed since last review.
 	if = {
 		limit = { local_var:mnt_wealth_current_since_review != 0 }
 		mnt_wealth_recompute_estate_investment_level = { ESTATE = $ESTATE$ }
 	}
 }
 
-# Whole level N costs cost_base * N^2; fraction toward next is linear.
+# Each level of investment(I) costs cost_base * I^2
 
 mnt_wealth_recompute_estate_investment_level = {
-	# Start from the level the modifier is applied at now, signed. The square root further down is one of
-	# the most expensive single lines in the system. Checking this level against its boundaries costs a
-	# twelfth of that and holds 98% of the time, so the root only runs when the investment pool has
-	# actually crossed a level boundary.
-	# The applied variable holds the modifier multiple in rounding-factor steps, so sizes stay consistent
-	# no matter what fractional level they were applied at. Scale it back to a level here.
+	# pow = 0.5 is expensive; only recalculate if the level changes.
 	set_local_variable = { name = mnt_wealth_investment_level_now value = 0 }
 	if = {
 		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_$ESTATE$ }
@@ -51,7 +45,7 @@ mnt_wealth_recompute_estate_investment_level = {
 		}
 	}
 
-	# The investment pool as a sign and a magnitude: neglect uses the same curve.
+	# Negative invested wealth = neglect. Level uses absolute value; sign is restored at the end.
 	set_local_variable = { name = mnt_wealth_level_cost_base value = mnt_wealth_investment_level_cost_base }
 	set_local_variable = { name = mnt_wealth_investment_pool_value      value = 0 }
 	if = {

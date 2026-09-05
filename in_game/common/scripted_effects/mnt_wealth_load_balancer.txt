@@ -31,8 +31,7 @@ mnt_wealth_set_days_in_month = {
 	}
 }
 
-# One service bucket map per month of the year, walked only in its month, so the monthly walk covers a twelfth of
-# the world. There are twelve maps and twelve-way chains below because a map name cannot be built from a variable.
+# One service bucket per month of the year; twelve maps because map names cannot be computed.
 
 mnt_dispatch_location_and_market_on_actions = {
 	# This month's bucket: months mod twelve, one-based.
@@ -173,8 +172,7 @@ mnt_dispatch_location_and_market_on_actions = {
 		}
 	}
 
-	# Player locations: monthly work on the tick from the country list.
-	# A country at the slow census frequency runs at the AI pace, so its locations skip the monthly pass.
+	# Player locations get a monthly pass unless on slow census frequency.
 	every_in_global_list = {
 		variable = mnt_wealth_player_countries
 		limit = { NOT = { mnt_wealth_census_frequency_is_slow = yes } }
@@ -387,7 +385,7 @@ mnt_wealth_seed_location_schedule = {
 	mnt_wealth_write_location_schedule = yes
 }
 
-# Records local mnt_wealth_last_service as the location's last service, picks its census cohort by id, and queues the next service.
+# Records last service, picks census cohort by id, and queues the next service.
 
 mnt_wealth_write_location_schedule = {
 	mnt_wealth_ensure_location_id = yes
@@ -411,7 +409,7 @@ mnt_wealth_write_location_schedule = {
 mnt_wealth_service_location = {
 	mnt_wealth_ensure_location_id = yes
 
-	# The owner's census frequency only matters for players: 0 fast, 1 default, 2 slow. Default when unset.
+	# Census frequency: 0 fast, 1 default, 2 slow. Only matters for players.
 	set_local_variable = { name = mnt_wealth_is_player        value = 0 }
 	set_local_variable = { name = mnt_wealth_census_frequency value = 1 }
 	owner ?= {
@@ -434,8 +432,7 @@ mnt_wealth_service_location = {
 	set_local_variable = { name = mnt_wealth_censused_full value = 0 }
 	set_local_variable = { name = mnt_wealth_censused_yearly value = 0 }
 
-	# The periodic ladder: only when a full year has passed. An owner-change
-	# requeue arrives early, skips it, and keeps its old rhythm.
+	# Only run when a full year has passed; an owner-change requeue arrives early and skips this.
 	if = {
 		limit = { local_var:mnt_wealth_service_age >= 12 }
 
@@ -447,10 +444,8 @@ mnt_wealth_service_location = {
 		}
 		change_variable = { name = mnt_wealth_review_backlog add = local_var:mnt_wealth_service_age }
 
-		# Which of the gross output census and the review run this service.
-		# AI, and players on slow: the census every fifth service, the review every second.
-		# Players on default: both every service. Players on fast: both every month from the human pulse, so neither runs here.
-		# The first service runs both, except on fast, where the monthly pulse has the same month covered.
+		# AI/slow: census every 5th, review every 2nd. Default: both every service. Fast: runs from monthly pulse instead.
+		# First service always runs both (except fast).
 		set_local_variable = { name = mnt_wealth_census_phase value = { value = var:mnt_wealth_service_cycle modulo = 5 } }
 		set_local_variable = { name = mnt_wealth_review_phase   value = { value = var:mnt_wealth_service_cycle modulo = 2 } }
 		if = {
@@ -518,9 +513,7 @@ mnt_wealth_service_location = {
 	mnt_wealth_write_location_next_service = yes
 }
 
-# Fast census frequency: the owner wants the census and the review every month, so the human monthly pulse
-# runs here what the yearly service would otherwise run, in the same order. Runs after the monthly pass, so the
-# month's state is applied before the census changes the data the next month reads.
+# Fast census: runs the yearly census and review every month from the human pulse.
 
 mnt_wealth_monthly_human_census = {
 	set_variable = { name = mnt_wealth_service_months value = 1 }
