@@ -157,7 +157,14 @@ mnt_wealth_add_local_estate_wealth = {
 
 mnt_wealth_remove_local_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:$ESTATE$_estate }
-	mnt_wealth_set_local_estate_wealth = yes
+	set_local_variable = { name = mnt_wealth_local_estate_wealth value = 0 }
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_local_estate_wealth
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
 
 	# Clamp at estate's value. max = is a CEILING.
 	set_local_variable = {

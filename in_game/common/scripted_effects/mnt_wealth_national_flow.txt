@@ -1,7 +1,4 @@
 ﻿# Gross Output and Wages: gold moving between estate treasuries and their locations.
-#
-# One signed number per estate carries both directions: above its savings goal
-# an estate sends gold down to its locations, below it takes gold back out.
 
 # ── ESTATE GOLD SETTLE ──
 
@@ -182,7 +179,6 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			# The map holds the per-month rate.
 			set_local_variable = {
 				name = mnt_wealth_estate_monthly_flow
 				value = { value = local_var:mnt_wealth_estate_period_total divide = $MONTHS$ }
@@ -246,14 +242,12 @@ mnt_wealth_update_estate_seizure_demand = {
 
 # ── ONE LOCATION'S SHARE ──
 
-# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income and
-# mnt_wealth_apply_national_flow_to_location.
-# Saves local_var:mnt_wealth_gold_returned: one month of the estate's national flow at
-# this location, the estate's payout split by this location's share of the
-# estate's national raw power. Reads local_var:mnt_wealth_estate_key set by the caller.
+# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income.
+# Saves local_var:mnt_wealth_local_flow_share: one month of the estate's national flow at
+# this location, split by this location's share of the estate's national raw power.
 
-mnt_wealth_set_estate_national_flow_share = {
-	set_local_variable = { name = mnt_wealth_gold_returned value = 0 }
+mnt_wealth_compute_location_share_of_estate_flow = {
+	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
 	# This location's raw power for the estate.
 	set_local_variable = { name = mnt_wealth_local_raw_power value = 0 }
 
@@ -278,7 +272,7 @@ mnt_wealth_set_estate_national_flow_share = {
 			}
 
 			set_local_variable = {
-				name = mnt_wealth_gold_returned
+				name = mnt_wealth_local_flow_share
 				value = {
 					value = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_estate_key)"
 					multiply = local_var:mnt_wealth_local_raw_power
@@ -289,22 +283,20 @@ mnt_wealth_set_estate_national_flow_share = {
 	}
 }
 
-# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income and
-# mnt_wealth_apply_national_flow_to_location.
+# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income.
 # Applies one estate's signed flow for this location. Reads
-# local_var:mnt_wealth_gold_returned (positive invests, negative seizes) and saves
-# local_var:mnt_wealth_pool_delta, the gold to add to or take from the pool.
-# When seizing, the estate's own liquid pool wealth is taken first; whatever
-# that cannot cover is ripped out of its invested wealth, which lowers its
-# investment level toward neglect.
+# local_var:mnt_wealth_local_flow_share (positive invests, negative seizes) and saves
+# local_var:mnt_wealth_liquid_wealth_change, the gold to add to or take from the wealth.
+# When seizing, the estate's liquid wealth is taken first; whatever that
+# cannot cover comes out of its invested wealth toward neglect.
 
-mnt_wealth_apply_estate_flow = {
+mnt_wealth_distribute_estate_flow_to_wealth = {
 	if = {
-		limit = { local_var:mnt_wealth_gold_returned >= 0 }
-		set_local_variable = { name = mnt_wealth_pool_delta value = local_var:mnt_wealth_gold_returned }
+		limit = { local_var:mnt_wealth_local_flow_share >= 0 }
+		set_local_variable = { name = mnt_wealth_liquid_wealth_change value = local_var:mnt_wealth_local_flow_share }
 	}
 	else = {
-		set_local_variable = { name = mnt_wealth_seizing value = { value = local_var:mnt_wealth_gold_returned multiply = -1 } }
+		set_local_variable = { name = mnt_wealth_seizing value = { value = local_var:mnt_wealth_local_flow_share multiply = -1 } }
 		# The estate's liquid wealth caps what can be seized from it.
 		set_local_variable = { name = mnt_wealth_own_liquid value = 0 }
 
@@ -320,7 +312,7 @@ mnt_wealth_apply_estate_flow = {
 			name = mnt_wealth_from_liquid
 			value = { value = local_var:mnt_wealth_seizing max = local_var:mnt_wealth_own_liquid }
 		}
-		set_local_variable = { name = mnt_wealth_pool_delta value = { value = local_var:mnt_wealth_from_liquid multiply = -1 } }
+		set_local_variable = { name = mnt_wealth_liquid_wealth_change value = { value = local_var:mnt_wealth_from_liquid multiply = -1 } }
 		# What the liquid share could not cover comes out of invested wealth.
 		set_local_variable = {
 			name = mnt_wealth_from_invested
@@ -338,47 +330,45 @@ mnt_wealth_apply_estate_flow = {
 
 # ── APPLYING THE FLOW ──
 
-# Scope: location. Called by mnt_wealth_estate_month through
-# mnt_wealth_for_each_cached_estate.
+# Scope: location. Called from the monthly estate loop.
 # Gold arriving for one estate this month: the kept wages from
-# mnt_wealth_set_estate_wage_balance plus this location's share of the estate's
+# mnt_wealth_compute_estate_kept_wages plus this location's share of the estate's
 # national flow (negative when the estate is seizing).
 
 mnt_wealth_resolve_estate_monthly_income = {
 	# One month of the estate's national flow at this location.
-	mnt_wealth_set_estate_national_flow_share = yes
-	mnt_wealth_apply_estate_flow = yes
+	mnt_wealth_compute_location_share_of_estate_flow = yes
+	mnt_wealth_distribute_estate_flow_to_wealth = yes
 
 	set_local_variable = {
-		name = mnt_wealth_estate_arriving
+		name = mnt_wealth_estate_monthly_income
 		value = {
 			value = "local_variable_map(mnt_wealth_kept_wages|local_var:mnt_wealth_estate_key)"
-			add = local_var:mnt_wealth_pool_delta
+			add = local_var:mnt_wealth_liquid_wealth_change
 		}
 	}
 
-	# Write directly to the estate wealth map.
-	set_local_variable = { name = mnt_wealth_arriving_current value = 0 }
+	set_local_variable = { name = mnt_wealth_estate_wealth_before value = 0 }
 
 	if = {
 		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
-			name = mnt_wealth_arriving_current
+			name = mnt_wealth_estate_wealth_before
 			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 		}
 	}
 
 	set_local_variable = {
-		name = mnt_wealth_arriving_updated
-		value = { value = local_var:mnt_wealth_arriving_current add = local_var:mnt_wealth_estate_arriving }
+		name = mnt_wealth_estate_wealth_after
+		value = { value = local_var:mnt_wealth_estate_wealth_before add = local_var:mnt_wealth_estate_monthly_income }
 	}
 
 	add_to_variable_map = {
 		name = mnt_wealth_estate_wealth
 		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_arriving_updated
+		value = local_var:mnt_wealth_estate_wealth_after
 	}
 
-	change_local_variable = { name = mnt_wealth_arriving_running_total add = local_var:mnt_wealth_estate_arriving }
+	change_local_variable = { name = mnt_wealth_income_running_total add = local_var:mnt_wealth_estate_monthly_income }
 }
 

@@ -9,7 +9,7 @@
 #                                       service
 #   var:mnt_wealth_service_bucket         - which bucket this location is filed in
 #   var:mnt_wealth_service_cycle      - completed periodic services, drives the
-#                                       deep review and the gross output survey
+#                                       deep review and the gross output census
 #
 # The monthly dispatch walks only the current month's bucket, so the walk
 # scales with the work that is ready, not with the world. Every periodic cadence is a
@@ -210,7 +210,7 @@ mnt_wealth_require_location_service = {
 }
 
 # ── LOCATION IDENTITY ──
-# A serial number the estate-set cache, the smearing and the logs use to tell
+# A serial number the estate-set cache, the day spread, and the logs use to tell
 # locations apart.
 
 mnt_wealth_ensure_location_id = {
@@ -250,8 +250,7 @@ mnt_wealth_seed_location_schedule = {
 		value = local_var:mnt_wealth_last_service
 	}
 
-	# Cycle phase 0..9 spreads the deep review (even counts) and the gross output
-	# survey (counts divisible by five) across the cohorts.
+	# Spread the deep review and gross output census across cohorts.
 	set_local_variable = {
 		name = mnt_wealth_seed_cycle
 		value = { value = var:mnt_wealth_location_id modulo = 10 }
@@ -265,8 +264,8 @@ mnt_wealth_seed_location_schedule = {
 # ── THE SERVICE ──
 
 # Scope: location. Run once by the dispatch on each location whose service month arrived. The pulses run in the order the work depends on: the gross output refresh and
-# the deep review both feed the resurvey, and the scoring pulse reads what the
-# resurvey produced.
+# the deep review both feed the census, and the scoring pulse reads what the
+# census produced.
 
 mnt_wealth_service_location = {
 	mnt_wealth_ensure_location_id = yes
@@ -294,8 +293,8 @@ mnt_wealth_service_location = {
 		trigger_event_silently = { on_action = mnt_monthly_balanced_location_pulse }
 	}
 
-	set_local_variable = { name = mnt_wealth_surveyed_full value = 0 }
-	set_local_variable = { name = mnt_wealth_surveyed_yearly value = 0 }
+	set_local_variable = { name = mnt_wealth_censused_full value = 0 }
+	set_local_variable = { name = mnt_wealth_censused_yearly value = 0 }
 
 	# The periodic ladder: only when a full year has passed. An owner-change
 	# requeue arrives early, skips it, and keeps its old rhythm.
@@ -320,21 +319,21 @@ mnt_wealth_service_location = {
 		}
 		change_variable = { name = mnt_wealth_review_backlog add = local_var:mnt_wealth_service_age }
 
-		# Gross output survey: every fifth service is five years, since services are
-		# yearly. A never-serviced location surveys immediately.
+		# Gross output census: every fifth service is five years, since services are
+		# yearly. A never-serviced location is censused immediately.
 		set_local_variable = {
-			name = mnt_wealth_survey_phase
+			name = mnt_wealth_census_phase
 			value = { value = var:mnt_wealth_service_cycle modulo = 5 }
 		}
 		if = {
 			limit = {
 				OR = {
-					local_var:mnt_wealth_survey_phase = 0
+					local_var:mnt_wealth_census_phase = 0
 					local_var:mnt_wealth_first_service = 1
 				}
 			}
 			trigger_event_silently = { on_action = mnt_five_yearly_balanced_location_pulse }
-			set_local_variable = { name = mnt_wealth_surveyed_full value = 1 }
+			set_local_variable = { name = mnt_wealth_censused_full value = 1 }
 		}
 
 		# Deep review: players every year, AI every second year, and always on
@@ -360,7 +359,7 @@ mnt_wealth_service_location = {
 			}
 			set_variable = { name = mnt_wealth_review_backlog value = 0 }
 			trigger_event_silently = { on_action = mnt_biyearly_balanced_location_pulse }
-			set_local_variable = { name = mnt_wealth_surveyed_yearly value = 1 }
+			set_local_variable = { name = mnt_wealth_censused_yearly value = 1 }
 		}
 
 		# Record this pass; the next service month builds on it.
@@ -373,19 +372,19 @@ mnt_wealth_service_location = {
 		}
 	}
 
-	# Full survey: pops, raw power, relative cache, and departure reconcile.
+	# Full census: pops, raw power, relative cache, and departure reconcile.
 	if = {
-		limit = { local_var:mnt_wealth_surveyed_full = 1 }
-		mnt_wealth_resurvey_estate_data = yes
+		limit = { local_var:mnt_wealth_censused_full = 1 }
+		mnt_wealth_retake_estate_census = yes
 	}
 	# Yearly lite: relative cache only, when the full path did not fire.
 	else_if = {
-		limit = { local_var:mnt_wealth_surveyed_yearly = 1 }
+		limit = { local_var:mnt_wealth_censused_yearly = 1 }
 		mnt_wealth_refresh_relative_power = yes
 	}
 
 	if = {
-		limit = { OR = { local_var:mnt_wealth_surveyed_full = 1 local_var:mnt_wealth_surveyed_yearly = 1 } }
+		limit = { OR = { local_var:mnt_wealth_censused_full = 1 local_var:mnt_wealth_censused_yearly = 1 } }
 		mnt_wealth_invalidate_estate_set = yes
 	}
 

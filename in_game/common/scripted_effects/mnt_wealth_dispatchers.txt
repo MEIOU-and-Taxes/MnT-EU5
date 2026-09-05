@@ -169,7 +169,7 @@ mnt_wealth_clear_annexed_country = {
 # ── LOCATION SETUP ──
 
 # Scope: location. Zeroes the wealth variables and maps this location owns, so
-# later reads can count on them existing. The gdp survey owns the power maps.
+# later reads can count on them existing. The census owns the power maps.
 
 mnt_wealth_zero_location = {
 	set_variable = { name = mnt_wealth_pool                   value = 0 }
@@ -188,7 +188,7 @@ mnt_wealth_zero_location = {
 	clear_variable_map = mnt_wealth_invested_wealth
 }
 
-# Scope: location. Sets up a location for the wealth system: surveys
+# Scope: location. Sets up a location for the wealth system: censuses
 # its goods and estate data, seeds per-estate wealth from gross output, and
 # sets initial wage rates.
 #
@@ -196,7 +196,7 @@ mnt_wealth_zero_location = {
 # self-correcting, so no separate rebuild pass is needed.
 
 mnt_wealth_setup_location = {
-	mnt_wealth_ensure_survey_data = yes
+	mnt_wealth_ensure_census_data = yes
 	# Seed each estate's wealth from gross output, then set the pool to the total.
 	set_local_variable = {
 		name = mnt_wealth_starting_pool
@@ -205,12 +205,12 @@ mnt_wealth_setup_location = {
 	set_local_variable = { name = mnt_wealth_seed_running_total value = 0 }
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_estate_wealth }
 	set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_seed_running_total }
-	mnt_wealth_set_location_rates = yes
+	mnt_wealth_set_location_wages_and_income = yes
 	# The review month is the campaign start, so the first service covers the
 	# months that have passed since it.
 }
 
-mnt_wealth_set_location_rates = {
+mnt_wealth_set_location_wages_and_income = {
 	mnt_wealth_set_location_wages = yes
 	set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
 }
@@ -218,7 +218,7 @@ mnt_wealth_set_location_rates = {
 # ── ESTATE ITERATORS ──
 
 # Scope: location. Iterates the owner's live estate list. Used by the
-# resurvey, which needs the country's current estates regardless of what the
+# census, which needs the country's current estates regardless of what the
 # power cache holds.
 
 mnt_wealth_for_each_national_estate = {
@@ -235,7 +235,7 @@ mnt_wealth_for_each_national_estate = {
 }
 
 # Scope: caller's scope. Hardcoded list of all seven non-crown estate types.
-# Used by the survey to build the estate power cache. The survey has to iterate every
+# Used by the census to build the estate power cache. The census has to iterate every
 # estate type to initialize a location because the cache does not exist yet and every_estate
 # is unreliable until the first tick.
 
@@ -257,19 +257,19 @@ mnt_wealth_for_all_estate_types = {
 }
 
 # Scope: location. Iterates the keys of mnt_wealth_cached_local_relative_estate_power
-# directly. Used by game-start setup to read the cache the survey just built,
+# directly. Used by game-start setup to read the cache the census just built,
 # visiting only estates that actually have power here. Also useful to identify
 # estates that may have cached data but are no longer present, potentially post-conquest.
 
 mnt_wealth_for_each_estate_in_power_cache = {
-	save_temporary_scope_as = mnt_wealth_surveyed_location
+	save_temporary_scope_as = mnt_wealth_cached_power_location
 
 	every_key_in_variable_map = {
 		variable = mnt_wealth_cached_local_relative_estate_power
-		save_temporary_scope_as = mnt_wealth_surveyed_key
+		save_temporary_scope_as = mnt_wealth_cached_power_key
 
-		scope:mnt_wealth_surveyed_location = {
-			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_surveyed_key }
+		scope:mnt_wealth_cached_power_location = {
+			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_cached_power_key }
 			$EFFECT$ = yes
 		}
 	}
@@ -381,14 +381,6 @@ mnt_wealth_set_review_month = {
 	set_variable = { name = mnt_wealth_review_month value = global_var:mnt_wealth_months_elapsed }
 }
 
-# Scope: location. One estate's monthly income: its share of the kept
-# wages, then the arriving income with the national flow.
-
-mnt_wealth_estate_month = {
-	mnt_wealth_set_estate_wage_balance = yes
-	mnt_wealth_resolve_estate_monthly_income = yes
-}
-
 # Scope: location (human-owned). Body of mnt_monthly_balanced_location_pulse.
 # The full monthly cycle: advance to now, set wages, invest each estate,
 # then collect each estate's income.
@@ -397,14 +389,13 @@ mnt_wealth_location_month = {
 	# Apply any months still owed, such as those before the first service or
 	# under a previous AI owner. In the usual month there are none.
 	mnt_wealth_advance_location_to_now = yes
-	# Frozen for the month so mid-loop estate changes do not shift the rate.
-	# For if investment rate modifiers are added as investment/neglect modifiers
+	# Cache before the estate loop so modifier changes mid-loop don't drift it.
 	set_local_variable = { name = mnt_wealth_cached_investment_rate value = mnt_wealth_investment_rate }
 	# Accumulate each estate's kept income and investment spending across the
 	# loop, then write the totals to variables and subtract from the pool.
 	set_local_variable = { name = mnt_wealth_kept_income_running_total value = 0 }
 	set_local_variable = { name = mnt_wealth_invested_running_total    value = 0 }
-	set_local_variable = { name = mnt_wealth_arriving_running_total value = 0 }
+	set_local_variable = { name = mnt_wealth_income_running_total value = 0 }
 	# Wage rates have to be set before the estate loop because each
 	# estate's income depends on the location's total wages.
 	mnt_wealth_set_location_wages = yes
@@ -414,8 +405,8 @@ mnt_wealth_location_month = {
 	change_variable = { name = mnt_wealth_pool subtract = local_var:mnt_wealth_invested_running_total }
 	# Each estate earns its share of local wages and collects any national
 	# flow the country sends.
-	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_estate_month }
-	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_arriving_running_total }
+	mnt_wealth_for_each_cached_estate = { EFFECT = "mnt_wealth_compute_estate_kept_wages = yes mnt_wealth_resolve_estate_monthly_income = yes" }
+	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_income_running_total }
 
 	set_variable = { name = mnt_wealth_kept_income_total value = local_var:mnt_wealth_kept_income_running_total }
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
@@ -442,7 +433,7 @@ mnt_wealth_location_year = {
 		value = { value = var:mnt_wealth_service_months divide = 12 }
 	}
 	set_local_variable = { name = mnt_wealth_drift_running_total value = 0 }
-	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_location_year_estate_pass }
+	mnt_wealth_for_each_cached_estate = { EFFECT = "mnt_wealth_update_estate_investment_level = yes mnt_wealth_drift_estate_wealth = yes" }
 	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_drift_running_total }
 
 	# AI locations set their wages and kept income for the coming period.
@@ -453,11 +444,4 @@ mnt_wealth_location_year = {
 	}
 
 	mnt_wealth_raise_wealth_map_mode_ceiling = yes
-}
-
-# Scope: location. One estate's yearly pass: investment level and drift.
-
-mnt_wealth_location_year_estate_pass = {
-	mnt_wealth_update_estate_investment_level = yes
-	mnt_wealth_drift_estate_wealth = yes
 }

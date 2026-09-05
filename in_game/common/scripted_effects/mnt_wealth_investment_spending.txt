@@ -1,9 +1,4 @@
 ﻿# Gross Output and Wages: the gold an estate spends on investment.
-#
-# Each month an estate invests the rate from the wealth it holds, then its
-# income lands, and its invested wealth decays toward zero and pays its share
-# of the location's flat maintenance. The advance applies that month step in
-# closed form for the months since the review.
 
 # Scope: location. Adds local_var:mnt_wealth_investment_change to this estate's
 # since-review progress.
@@ -31,7 +26,7 @@ mnt_wealth_add_investment_progress = {
 # Reads local_var:mnt_wealth_estate_paid, local_var:mnt_wealth_estate_decay
 # and local_var:mnt_wealth_estate_maintenance.
 
-mnt_wealth_set_investment_progress_change = {
+mnt_wealth_bank_estate_investment_progress = {
 	set_local_variable = {
 		name = mnt_wealth_investment_change
 		value = {
@@ -127,7 +122,7 @@ mnt_wealth_invest_estate_wealth = {
 		MONTHS = 1
 	}
 
-	mnt_wealth_set_investment_progress_change = yes
+	mnt_wealth_bank_estate_investment_progress = yes
 }
 
 # Scope: location. One estate's decay for the period: the total invested
@@ -181,6 +176,74 @@ mnt_wealth_read_estate_decay_rate = {
 	}
 }
 
+# ── CACHED EXPONENTIATION ──
+
+# Scope: location. Raises local_var:$BASE$ to the power of
+# local_var:mnt_wealth_advance_months and writes the result into
+# local_var:$RESULT$, using a global cache keyed on the base and exponent.
+
+mnt_wealth_compute_retention_over_period = {
+	set_local_variable = {
+		name = mnt_wealth_retention_cache_key
+		value = {
+			value = local_var:mnt_wealth_advance_months
+			multiply = 10000000
+			add = { value = local_var:$BASE$ multiply = 1000000 }
+			floor = yes
+		}
+	}
+	if = {
+		limit = { is_key_in_global_variable_map = { name = mnt_wealth_power_cache target = local_var:mnt_wealth_retention_cache_key } }
+		set_local_variable = {
+			name = $RESULT$
+			value = "global_variable_map(mnt_wealth_power_cache|local_var:mnt_wealth_retention_cache_key)"
+		}
+	}
+	else = {
+		# Square the base five times: 2, 4, 8, 16.
+		set_local_variable = { name = mnt_wealth_power_base_to_2 value = { value = local_var:$BASE$ multiply = local_var:$BASE$ } }
+		set_local_variable = { name = mnt_wealth_power_base_to_4 value = { value = local_var:mnt_wealth_power_base_to_2 multiply = local_var:mnt_wealth_power_base_to_2 } }
+		set_local_variable = { name = mnt_wealth_power_base_to_8 value = { value = local_var:mnt_wealth_power_base_to_4 multiply = local_var:mnt_wealth_power_base_to_4 } }
+		set_local_variable = { name = mnt_wealth_power_base_to_16 value = { value = local_var:mnt_wealth_power_base_to_8 multiply = local_var:mnt_wealth_power_base_to_8 } }
+
+		# Read the exponent in binary, multiplying in the matching square for
+		# each set bit. Halving must floor since variables hold fractions.
+		set_local_variable = { name = $RESULT$ value = 1 }
+		set_local_variable = { name = mnt_wealth_power_exponent_halved value = local_var:mnt_wealth_advance_months }
+		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
+		if = {
+			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
+			change_local_variable = { name = $RESULT$ multiply = local_var:$BASE$ }
+		}
+		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
+		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
+		if = {
+			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
+			change_local_variable = { name = $RESULT$ multiply = local_var:mnt_wealth_power_base_to_2 }
+		}
+		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
+		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
+		if = {
+			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
+			change_local_variable = { name = $RESULT$ multiply = local_var:mnt_wealth_power_base_to_4 }
+		}
+		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
+		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
+		if = {
+			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
+			change_local_variable = { name = $RESULT$ multiply = local_var:mnt_wealth_power_base_to_8 }
+		}
+		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
+		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
+		if = {
+			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
+			change_local_variable = { name = $RESULT$ multiply = local_var:mnt_wealth_power_base_to_16 }
+		}
+
+		add_to_global_variable_map = { name = mnt_wealth_power_cache key = local_var:mnt_wealth_retention_cache_key value = local_var:$RESULT$ }
+	}
+}
+
 # ── ADVANCE LOCATION TO NOW ──
 
 # Scope: location. Advances the stored state from the review month to now in
@@ -213,87 +276,27 @@ mnt_wealth_advance_location_to_now = {
 		if = {
 			limit = { local_var:mnt_wealth_advance_investment_rate > 0 }
 			set_local_variable = {
-				name = mnt_wealth_advance_pool_remaining
+				name = mnt_wealth_monthly_retention
 				value = { value = 1 subtract = local_var:mnt_wealth_advance_investment_rate }
 			}
 
-			# The pool's remaining share to the power of the months, read from the
-			# global cache when seen before: rates take few distinct values and the
-			# exponent is nearly always twelve or twenty-four. The key is the exponent
-			# and the base's six decimals.
-			set_local_variable = {
-				name = mnt_wealth_power_key
-				value = {
-					value = local_var:mnt_wealth_advance_months
-					multiply = 10000000
-					add = { value = local_var:mnt_wealth_advance_pool_remaining multiply = 1000000 }
-					floor = yes
-				}
-			}
-			if = {
-				limit = { is_key_in_global_variable_map = { name = mnt_wealth_power_cache target = local_var:mnt_wealth_power_key } }
-				set_local_variable = {
-					name = mnt_wealth_advance_pool_remaining_over_period
-					value = "global_variable_map(mnt_wealth_power_cache|local_var:mnt_wealth_power_key)"
-				}
-			}
-			else = {
-				# The base to the 2, 4, 8 and 16, each the square of the one before.
-				set_local_variable = { name = mnt_wealth_power_base_to_2 value = { value = local_var:mnt_wealth_advance_pool_remaining multiply = local_var:mnt_wealth_advance_pool_remaining } }
-				set_local_variable = { name = mnt_wealth_power_base_to_4 value = { value = local_var:mnt_wealth_power_base_to_2 multiply = local_var:mnt_wealth_power_base_to_2 } }
-				set_local_variable = { name = mnt_wealth_power_base_to_8 value = { value = local_var:mnt_wealth_power_base_to_4 multiply = local_var:mnt_wealth_power_base_to_4 } }
-				set_local_variable = { name = mnt_wealth_power_base_to_16 value = { value = local_var:mnt_wealth_power_base_to_8 multiply = local_var:mnt_wealth_power_base_to_8 } }
-
-				# Read the exponent in binary, halving it once per digit. Each digit that
-				# is 1 multiplies in the matching square. Halving must floor, since
-				# variables hold fractions.
-				set_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period value = 1 }
-				set_local_variable = { name = mnt_wealth_power_exponent_halved value = local_var:mnt_wealth_advance_months }
-				set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-				if = {
-					limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-					change_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period multiply = local_var:mnt_wealth_advance_pool_remaining }
-				}
-				set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-				set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-				if = {
-					limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-					change_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_2 }
-				}
-				set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-				set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-				if = {
-					limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-					change_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_4 }
-				}
-				set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-				set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-				if = {
-					limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-					change_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_8 }
-				}
-				set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-				set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-				if = {
-					limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-					change_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_16 }
-				}
-
-				add_to_global_variable_map = { name = mnt_wealth_power_cache key = local_var:mnt_wealth_power_key value = local_var:mnt_wealth_advance_pool_remaining_over_period }
+			mnt_wealth_compute_retention_over_period = {
+				BASE = mnt_wealth_monthly_retention
+				RESULT = mnt_wealth_period_retention
 			}
 
 			set_local_variable = {
 				name = mnt_wealth_advance_income_over_period
 				value = {
 					value = 1
-					subtract = local_var:mnt_wealth_advance_pool_remaining_over_period
+					subtract = local_var:mnt_wealth_period_retention
 					divide = local_var:mnt_wealth_advance_investment_rate
 				}
 			}
 		}
 		else = {
-			set_local_variable = { name = mnt_wealth_advance_pool_remaining             value = 1 }
-			set_local_variable = { name = mnt_wealth_advance_pool_remaining_over_period value = 1 }
+			set_local_variable = { name = mnt_wealth_monthly_retention             value = 1 }
+			set_local_variable = { name = mnt_wealth_period_retention value = 1 }
 			set_local_variable = { name = mnt_wealth_advance_income_over_period         value = local_var:mnt_wealth_advance_months }
 		}
 
@@ -392,7 +395,7 @@ mnt_wealth_advance_estate = {
 		name = mnt_wealth_advance_wealth_now
 		value = {
 			value = local_var:mnt_wealth_advance_wealth_at_review
-			multiply = local_var:mnt_wealth_advance_pool_remaining_over_period
+			multiply = local_var:mnt_wealth_period_retention
 			add = {
 				value = local_var:mnt_wealth_advance_estate_income
 				multiply = local_var:mnt_wealth_advance_income_over_period
@@ -425,7 +428,7 @@ mnt_wealth_advance_estate = {
 		estate_type:cossacks_estate = { set_local_variable = { name = mnt_wealth_decay_rate value = { value = modifier:mnt_wealth_local_cossacks_investment_decay add = owner.modifier:mnt_wealth_global_cossacks_investment_decay } } }
 	}
 	set_local_variable = {
-		name = mnt_wealth_advance_invested_pool_remaining
+		name = mnt_wealth_invested_monthly_retention
 		value = {
 			value = 1
 			subtract = {
@@ -434,69 +437,9 @@ mnt_wealth_advance_estate = {
 			}
 		}
 	}
-	# The invested pool's remaining share to the power of the months, read from the
-	# global cache when seen before: rates take few distinct values and the
-	# exponent is nearly always twelve or twenty-four. The key is the exponent
-	# and the base's six decimals.
-	set_local_variable = {
-		name = mnt_wealth_power_key
-		value = {
-			value = local_var:mnt_wealth_advance_months
-			multiply = 10000000
-			add = { value = local_var:mnt_wealth_advance_invested_pool_remaining multiply = 1000000 }
-			floor = yes
-		}
-	}
-	if = {
-		limit = { is_key_in_global_variable_map = { name = mnt_wealth_power_cache target = local_var:mnt_wealth_power_key } }
-		set_local_variable = {
-			name = mnt_wealth_advance_invested_pool_remaining_over_period
-			value = "global_variable_map(mnt_wealth_power_cache|local_var:mnt_wealth_power_key)"
-		}
-	}
-	else = {
-		# The base to the 2, 4, 8 and 16, each the square of the one before.
-		set_local_variable = { name = mnt_wealth_power_base_to_2 value = { value = local_var:mnt_wealth_advance_invested_pool_remaining multiply = local_var:mnt_wealth_advance_invested_pool_remaining } }
-		set_local_variable = { name = mnt_wealth_power_base_to_4 value = { value = local_var:mnt_wealth_power_base_to_2 multiply = local_var:mnt_wealth_power_base_to_2 } }
-		set_local_variable = { name = mnt_wealth_power_base_to_8 value = { value = local_var:mnt_wealth_power_base_to_4 multiply = local_var:mnt_wealth_power_base_to_4 } }
-		set_local_variable = { name = mnt_wealth_power_base_to_16 value = { value = local_var:mnt_wealth_power_base_to_8 multiply = local_var:mnt_wealth_power_base_to_8 } }
-
-		# Read the exponent in binary, halving it once per digit. Each digit that
-		# is 1 multiplies in the matching square. Halving must floor, since
-		# variables hold fractions.
-		set_local_variable = { name = mnt_wealth_advance_invested_pool_remaining_over_period value = 1 }
-		set_local_variable = { name = mnt_wealth_power_exponent_halved value = local_var:mnt_wealth_advance_months }
-		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-		if = {
-			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-			change_local_variable = { name = mnt_wealth_advance_invested_pool_remaining_over_period multiply = local_var:mnt_wealth_advance_invested_pool_remaining }
-		}
-		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-		if = {
-			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-			change_local_variable = { name = mnt_wealth_advance_invested_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_2 }
-		}
-		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-		if = {
-			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-			change_local_variable = { name = mnt_wealth_advance_invested_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_4 }
-		}
-		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-		if = {
-			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-			change_local_variable = { name = mnt_wealth_advance_invested_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_8 }
-		}
-		set_local_variable = { name = mnt_wealth_power_exponent_halved value = { value = local_var:mnt_wealth_power_exponent_halved divide = 2 floor = yes } }
-		set_local_variable = { name = mnt_wealth_power_binary_digit value = { value = local_var:mnt_wealth_power_exponent_halved modulo = 2 } }
-		if = {
-			limit = { local_var:mnt_wealth_power_binary_digit = 1 }
-			change_local_variable = { name = mnt_wealth_advance_invested_pool_remaining_over_period multiply = local_var:mnt_wealth_power_base_to_16 }
-		}
-
-		add_to_global_variable_map = { name = mnt_wealth_power_cache key = local_var:mnt_wealth_power_key value = local_var:mnt_wealth_advance_invested_pool_remaining_over_period }
+	mnt_wealth_compute_retention_over_period = {
+		BASE = mnt_wealth_invested_monthly_retention
+		RESULT = mnt_wealth_invested_period_retention
 	}
 
 	# Each month invests the rate times the wealth on hand: a flat part, the
@@ -507,7 +450,7 @@ mnt_wealth_advance_estate = {
 	set_local_variable = { name = mnt_wealth_advance_flat_inflow_sum value = local_var:mnt_wealth_advance_months }
 	set_local_variable = {
 		name = mnt_wealth_advance_invested_pool_change
-		value = { value = 1 subtract = local_var:mnt_wealth_advance_invested_pool_remaining }
+		value = { value = 1 subtract = local_var:mnt_wealth_invested_monthly_retention }
 	}
 	if = {
 		limit = { NOT = { local_var:mnt_wealth_advance_invested_pool_change = 0 } }
@@ -515,7 +458,7 @@ mnt_wealth_advance_estate = {
 			name = mnt_wealth_advance_flat_inflow_sum
 			value = {
 				value = 1
-				subtract = local_var:mnt_wealth_advance_invested_pool_remaining_over_period
+				subtract = local_var:mnt_wealth_invested_period_retention
 				divide = local_var:mnt_wealth_advance_invested_pool_change
 			}
 		}
@@ -523,15 +466,15 @@ mnt_wealth_advance_estate = {
 
 	set_local_variable = {
 		name = mnt_wealth_advance_remaining_gap
-		value = { value = local_var:mnt_wealth_advance_invested_pool_remaining subtract = local_var:mnt_wealth_advance_pool_remaining }
+		value = { value = local_var:mnt_wealth_invested_monthly_retention subtract = local_var:mnt_wealth_monthly_retention }
 	}
 	if = {
 		limit = { NOT = { local_var:mnt_wealth_advance_remaining_gap = 0 } }
 		set_local_variable = {
 			name = mnt_wealth_advance_sloped_inflow_sum
 			value = {
-				value = local_var:mnt_wealth_advance_invested_pool_remaining_over_period
-				subtract = local_var:mnt_wealth_advance_pool_remaining_over_period
+				value = local_var:mnt_wealth_invested_period_retention
+				subtract = local_var:mnt_wealth_period_retention
 				divide = local_var:mnt_wealth_advance_remaining_gap
 			}
 		}
@@ -542,8 +485,8 @@ mnt_wealth_advance_estate = {
 			name = mnt_wealth_advance_sloped_inflow_sum
 			value = {
 				value = local_var:mnt_wealth_advance_months
-				multiply = local_var:mnt_wealth_advance_pool_remaining_over_period
-				divide = local_var:mnt_wealth_advance_pool_remaining
+				multiply = local_var:mnt_wealth_period_retention
+				divide = local_var:mnt_wealth_monthly_retention
 			}
 		}
 	}
@@ -561,7 +504,7 @@ mnt_wealth_advance_estate = {
 		name = mnt_wealth_advance_invested_pool_now
 		value = {
 			value = local_var:mnt_wealth_advance_invested_pool_at_review
-			multiply = local_var:mnt_wealth_advance_invested_pool_remaining_over_period
+			multiply = local_var:mnt_wealth_invested_period_retention
 			add = {
 				value = local_var:mnt_wealth_advance_estate_income
 				multiply = local_var:mnt_wealth_advance_flat_inflow_sum

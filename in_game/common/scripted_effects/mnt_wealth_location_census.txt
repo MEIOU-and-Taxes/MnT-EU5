@@ -1,9 +1,9 @@
-﻿# Gross Output and Wages: gross output survey pipeline.
+﻿# Gross Output and Wages: gross output census pipeline.
 #
 # Prices every good a location produces to compute its gross output,
-# and computes each estate's raw power and desired wealth. The survey
+# and computes each estate's raw power and desired wealth. The census
 # runs on a multi-month rotation via the load balancer so not every
-# location is surveyed every month.
+# location is censused every month.
 
 # ── GOODS DISCOVERY ──
 
@@ -148,7 +148,7 @@ mnt_wealth_calculate_local_gross_output = {
 	}
 }
 
-# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
+# GDP, inert: computed nothing reads. Kept for a future use; see the census.
 # # Scope: location. Sums each building's profit to get the urban net
 # # domestic product.
 
@@ -168,7 +168,7 @@ mnt_wealth_calculate_local_gross_output = {
 
 # Scope: none (fired from weather_monthly_pulse).
 # Rebuilds the building-type lookup table when it expires. The table
-# caches which building types produce goods so the gross output survey does
+# caches which building types produce goods so the gross output census does
 # not have to check every building every time.
 
 mnt_wealth_maintain_building_produced_goods_cache = {
@@ -275,11 +275,11 @@ mnt_wealth_count_estate_pops = {
 	set_local_variable = { name = mnt_wealth_pops_shortfall value = local_var:mnt_wealth_pops_unfiled }
 	# 0 by type, 1 unused (shortfall check disabled), 2 walked for dhimmi power,
 	# 3 tribesmen split, 4 slave split, 5 both splits.
-	set_local_variable = { name = mnt_wealth_pops_path value = 0 }
+	set_local_variable = { name = mnt_wealth_pop_count_strategy value = 0 }
 
 	# DISABLED. A shortfall against the location's own population would mean a pop
 	# reached no estate, and the walk would pick it up. It never once fired across
-	# 335,337 surveys in testing, so it is off for a small runtime saving. Turn it
+	# 335,337 censuss in testing, so it is off for a small runtime saving. Turn it
 	# back on if common/pop_types gains a type that mnt_wealth_count_pops_by_type
 	# does not list, which is the case it guards.
 	#
@@ -293,14 +293,14 @@ mnt_wealth_count_estate_pops = {
 	#if = {
 	#	limit = { local_var:mnt_wealth_pops_unfiled > 0.001 }
 	#	set_local_variable = { name = mnt_wealth_needs_pop_walk value = 1 }
-	#	set_local_variable = { name = mnt_wealth_pops_path value = 1 }
+	#	set_local_variable = { name = mnt_wealth_pop_count_strategy value = 1 }
 	#}
 
 	# Dhimmi can take a pop of any type, so its presence forces the full walk.
 	if = {
 		limit = { "local_estate_power(estate_type:dhimmi_estate)" > 0 }
 		set_local_variable = { name = mnt_wealth_needs_pop_walk value = 1 }
-		set_local_variable = { name = mnt_wealth_pops_path value = 2 }
+		set_local_variable = { name = mnt_wealth_pop_count_strategy value = 2 }
 	}
 
 	if = {
@@ -319,17 +319,17 @@ mnt_wealth_count_estate_pops = {
 				owner = { country_has_estate = estate_type:dhimmi_estate }
 			}
 			mnt_wealth_count_pops_slave_split = yes
-			set_local_variable = { name = mnt_wealth_pops_path value = 4 }
+			set_local_variable = { name = mnt_wealth_pop_count_strategy value = 4 }
 		}
 
 		if = {
 			limit = { "local_estate_power(estate_type:cossacks_estate)" > 0 }
 			mnt_wealth_count_pops_tribesmen_split = yes
 			if = {
-				limit = { local_var:mnt_wealth_pops_path = 4 }
-				set_local_variable = { name = mnt_wealth_pops_path value = 5 }
+				limit = { local_var:mnt_wealth_pop_count_strategy = 4 }
+				set_local_variable = { name = mnt_wealth_pop_count_strategy value = 5 }
 			}
-			else = { set_local_variable = { name = mnt_wealth_pops_path value = 3 } }
+			else = { set_local_variable = { name = mnt_wealth_pop_count_strategy value = 3 } }
 		}
 	}
 
@@ -466,12 +466,12 @@ mnt_wealth_count_pops_full = {
 	}
 }
 
-# Scope: location. Full survey (five-yearly): pops, raw power, and relative
+# Scope: location. Full census (five-yearly): pops, raw power, and relative
 # cache. ITERATOR selects the estate iterator: mnt_wealth_for_all_estate_types
 # at game start, mnt_wealth_for_each_national_estate at runtime.
 
-mnt_wealth_survey_estate_data = {
-	save_temporary_scope_as = mnt_wealth_survey_location
+mnt_wealth_census_estate_data = {
+	save_temporary_scope_as = mnt_wealth_census_location
 	clear_variable_map = mnt_estate_raw_power
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
 	set_variable = { name = mnt_wealth_local_raw_power_total value = 0 }
@@ -480,7 +480,7 @@ mnt_wealth_survey_estate_data = {
 		limit = { exists = owner }
 		mnt_wealth_count_estate_pops = yes
 
-		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_survey_results }
+		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_census_results }
 		# Estates holding wealth, investment or pops can be missing from the
 		# owner's list. Pick up any the iterator did not reach, and note the
 		# ones that have no power left here at all.
@@ -490,13 +490,13 @@ mnt_wealth_survey_estate_data = {
 			variable = mnt_wealth_estate_wealth
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
-			scope:mnt_wealth_survey_location = {
+			scope:mnt_wealth_census_location = {
 				if = {
 					limit = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_survey_results = yes
+					mnt_wealth_store_estate_census_results = yes
 
 					# Still off the roll with the live figures in: the estate has left.
 					if = {
@@ -514,13 +514,13 @@ mnt_wealth_survey_estate_data = {
 			variable = mnt_wealth_invested_wealth
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
-			scope:mnt_wealth_survey_location = {
+			scope:mnt_wealth_census_location = {
 				if = {
 					limit = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_survey_results = yes
+					mnt_wealth_store_estate_census_results = yes
 
 					# Still off the roll with the live figures in: the estate has left.
 					if = {
@@ -538,13 +538,13 @@ mnt_wealth_survey_estate_data = {
 			variable = mnt_estate_raw_power
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
-			scope:mnt_wealth_survey_location = {
+			scope:mnt_wealth_census_location = {
 				if = {
 					limit = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_survey_results = yes
+					mnt_wealth_store_estate_census_results = yes
 
 					# Still off the roll with the live figures in: the estate has left.
 					if = {
@@ -575,10 +575,10 @@ mnt_wealth_survey_estate_data = {
 	}
 }
 
-# Scope: location. Writes one estate's survey results: cached relative power and
+# Scope: location. Writes one estate's census results: cached relative power and
 # a starting investment level for an estate new to this location.
 
-mnt_wealth_store_estate_survey_results = {
+mnt_wealth_store_estate_census_results = {
 	set_local_variable = {
 		name = mnt_wealth_estate_relative_power
 		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
@@ -597,7 +597,7 @@ mnt_wealth_store_estate_survey_results = {
 
 	# Raw power and relative power can each exist without the other: an estate
 	# made entirely of slaves has raw power and no relative power. Either one
-	# makes the estate part of the survey.
+	# makes the estate part of the census.
 	if = {
 		limit = { OR = { local_var:mnt_wealth_estate_relative_power > 0 local_var:mnt_wealth_raw_power_for_one_estate > 0 } }
 
@@ -612,10 +612,10 @@ mnt_wealth_store_estate_survey_results = {
 # ── SURVEY ENTRY POINTS ──
 
 
-# Scope: location. Fills in survey data only if it is missing. Used
-# at game start so locations that already have data are not resurveyed.
+# Scope: location. Fills in census data only if it is missing. Used
+# at game start so locations that already have data are not recensused.
 
-mnt_wealth_ensure_survey_data = {
+mnt_wealth_ensure_census_data = {
 	if = { limit = { var:mnt_wealth_local_gross_output = 0 } mnt_wealth_update_local_gross_output = yes }
 
 	if = {
@@ -625,7 +625,7 @@ mnt_wealth_ensure_survey_data = {
 				has_variable_map = mnt_estate_raw_power
 			}
 		}
-		mnt_wealth_survey_estate_data = { ITERATOR = mnt_wealth_for_all_estate_types }
+		mnt_wealth_census_estate_data = { ITERATOR = mnt_wealth_for_all_estate_types }
 	}
 }
 
@@ -641,7 +641,7 @@ mnt_wealth_update_local_gross_output = {
 	every_foreign_buildings_in_location = { mnt_wealth_check_building = yes }
 	mnt_wealth_calculate_local_gross_output = yes
 	# mnt_wealth_calculate_local_urban_gdp = yes
-	# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
+	# GDP, inert: computed nothing reads. Kept for a future use; see the census.
 # 	# Gross domestic product: rural goods value plus urban net profit.
 # 	set_variable = {
 # 		name = mnt_wealth_local_gdp
@@ -653,18 +653,18 @@ mnt_wealth_update_local_gross_output = {
 
 # ── ESTATE POWER RESURVEY ──
 
-# Scope: location. Five-yearly full resurvey: rebuilds pops, raw power, and
+# Scope: location. Five-yearly full recensus: rebuilds pops, raw power, and
 # relative cache, keeping the national raw power map correct by subtracting
-# the old values before the survey and adding the new values after.
+# the old values before the census and adding the new values after.
 
-mnt_wealth_resurvey_estate_data = {
+mnt_wealth_retake_estate_census = {
 	if = {
 		limit = { exists = owner }
 		owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
 		mnt_wealth_apply_national_estate_raw_power = { SIGN = -1 }
 	}
 
-	mnt_wealth_survey_estate_data = { ITERATOR = mnt_wealth_for_each_national_estate }
+	mnt_wealth_census_estate_data = { ITERATOR = mnt_wealth_for_each_national_estate }
 
 	if = {
 		limit = { exists = owner }
@@ -673,30 +673,30 @@ mnt_wealth_resurvey_estate_data = {
 	}
 }
 
-# Scope: location. Yearly-lite resurvey: rebuilds the relative power cache
+# Scope: location. Yearly-lite recensus: rebuilds the relative power cache
 # without touching pops or raw power. Reuses the same store logic and
-# leftover walks as the full survey.
+# leftover walks as the full census.
 
 mnt_wealth_refresh_relative_power = {
-	save_temporary_scope_as = mnt_wealth_survey_location
+	save_temporary_scope_as = mnt_wealth_census_location
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
 
 	if = {
 		limit = { exists = owner }
 
-		mnt_wealth_for_each_national_estate = { EFFECT = mnt_wealth_store_estate_survey_results }
+		mnt_wealth_for_each_national_estate = { EFFECT = mnt_wealth_store_estate_census_results }
 
 		every_key_in_variable_map = {
 			variable = mnt_wealth_estate_wealth
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
-			scope:mnt_wealth_survey_location = {
+			scope:mnt_wealth_census_location = {
 				if = {
 					limit = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_survey_results = yes
+					mnt_wealth_store_estate_census_results = yes
 				}
 			}
 		}
@@ -705,13 +705,13 @@ mnt_wealth_refresh_relative_power = {
 			variable = mnt_estate_raw_power
 			save_temporary_scope_as = mnt_wealth_leftover_key
 
-			scope:mnt_wealth_survey_location = {
+			scope:mnt_wealth_census_location = {
 				if = {
 					limit = {
 						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
 					}
 					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_survey_results = yes
+					mnt_wealth_store_estate_census_results = yes
 				}
 			}
 		}
