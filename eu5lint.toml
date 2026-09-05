@@ -1,0 +1,134 @@
+# This is the single source of project-specific values that eu5lint actually reads.
+# Keep policy here: changing prose elsewhere does not change lint behavior.
+
+# The primary prefix of the tree being linted: `MnT_`, M&T's own ownership prefix.
+# The match is exact and case-sensitive: `mnt_` is a DIFFERENT prefix, handled under
+# [naming] because modifier_type_definitions/ requires an all-lowercase filename.
+# A filename that must sort specially gets a named [[prefix_exception]] below.
+[mod]
+prefix = "MnT_"
+
+[game]
+# Base-game install root. `$EU5_GAME` env var overrides this; `--game-root` overrides both.
+# Checks that need the base index degrade to a single advisory finding if it is absent.
+# Left blank on purpose: this is a per-machine path, like tools/shared/config.ini.
+# The naming checks do not need it -- they read the committed manifest below. The
+# checks that inspect the install are skipped with a notice when it is unset.
+# Set the EU5_GAME environment variable or pass --game-root to enable them.
+root = ""
+# Sub-roots inside `root` whose contents are mod-relative paths (mount order, later wins).
+mount_roots = ["clausewitz", "jomini", "game"]
+
+# BOM policy, first matching rule wins; `default` applies when nothing matches.
+# policy: "required" | "forbidden" | "warn_required" | "warn_only" | "ignore"
+#   required      -> blocking error if the BOM is missing
+#   forbidden     -> blocking error if a BOM is present
+#   warn_required -> advisory if the BOM is missing (base game itself has exceptions here)
+#   warn_only     -> advisory either way; never blocks
+#   ignore        -> no finding
+[bom]
+default = "ignore"
+rules = [
+  { glob = "main_menu/setup/start/**/*.txt",        policy = "forbidden" },
+  { glob = "main_menu/common/coat_of_arms/**/*.txt", policy = "forbidden" },
+  { glob = "main_menu/setup/templates/**/*.txt",    policy = "warn_required" },
+  { glob = "in_game/common/**/*.txt",               policy = "required" },
+  { glob = "in_game/events/**/*.txt",               policy = "required" },
+  { glob = "in_game/setup/**/*.txt",                policy = "required" },
+  { glob = "loading_screen/common/**/*.txt",        policy = "required" },
+  { glob = "**/localization/**/*.yml",              policy = "required" },
+  # Kept explicit rather than deleted, so a reader sees these were decided, not
+  # overlooked. "warn_only" reports every matching file with the same text
+  # whatever its state, which produced 22 warnings carrying no information --
+  # 21 of this mod's 23 .gui files, plus its one named_colors file. There is no
+  # convention to appeal to either: in_game/gui is 6 with a BOM against 9
+  # without, and vanilla's named_colors is 3 of 4 without. This repository's own
+  # CI already skips .gui for BOM checks.
+  { glob = "**/named_colors/**/*.txt",              policy = "ignore" },
+  { glob = "main_menu/common/**/*.txt",             policy = "required" },
+  { glob = "**/*.gui",                              policy = "ignore" },
+]
+
+# Whole-file overwrites of a base-game path. Every entry NEEDS a reason; an entry
+# without one, or one whose path is not actually a base path, is itself a finding.
+# [[overwrite]]
+# path = "in_game/gui/shared/aaa_epbm_expense_tooltip.gui"
+# reason = "full base copy, prefixed aaa_ to win first-definition-wins template precedence; re-sync after base updates"
+
+# Named exceptions to the exact prefix rule. Use only when a filename must sort a
+# particular way; every exception needs a real one-line reason.
+# [[prefix_exception]]
+# path = "in_game/gui/shared/aaa_epbm_expense_tooltip.gui"
+# reason = "full base copy, prefixed aaa_ to win first-definition-wins template precedence; re-sync after base updates"
+
+# Naming-convention policy. Two facts decide a payload filename: does it carry a prefix,
+# and does the base game ship a file at the same repo-relative path? Prefixed-and-shadowing
+# is the combination that fails silently, so it is the blocking one.
+[naming]
+# The ownership prefix. Defaults to mod.prefix; set it only to diverge deliberately.
+owner_prefix = "MnT_"
+# Additional prefixes this mod recognizes as owning a subsystem. Measured on this branch
+# over in_game/ main_menu/ loading_screen/: MnT_ 163, RGO_ 75, epbm_ 15, fum_ 14, mnt_ 5,
+# aut_ 5, SYS- 2, M&T_ 1 (on origin/develop: MnT_ 158, mnt_ 8, aut_ 4, the rest unchanged).
+# `mnt_` is deliberately NOT listed here: under modifier_type_definitions/ the engine
+# REQUIRES an all-lowercase filename, so `mnt_` is the correct form there and must not be
+# reported as a near miss of `MnT_`. The lowercase_dirs rule below handles that, rather
+# than a declaration here, so genuine casing drift outside those directories still gets
+# reported.
+# A prefix stacked on the owner prefix (`MnT_RGO_…`) is reported: one file has one owner.
+subsystem_prefixes = ["MnT_", "RGO_", "epbm_", "fum_", "aut_", "SYS-", "M&T_"]
+# Directories where the base game keeps every filename lowercase, so a capitalized name
+# silently fails to load. Measured on EU5 1.3.11 over the extensions this check sees:
+# 3/3 under modifier_type_definitions/ and 52/52 under cultures/ (cultures/ holds a 53rd
+# file, 00_cultures.info, which is not a checked extension). These are the defaults;
+# listing them keeps the rule visible.
+lowercase_dirs = ["**/modifier_type_definitions/**", "**/cultures/**"]
+# Committed manifest of vanilla overridable paths. Defaults to the packaged file, so the
+# check works from a fresh clone with no game installed. `--manifest` overrides it.
+manifest = "tools/eu5lint/data/vanilla_paths.txt"
+
+# Named exceptions to the naming rules above, for a file that deliberately breaks one.
+# Every entry needs a real one-line reason; a stale or unreasoned entry is itself a finding.
+# [[naming_exception]]
+# path = "in_game/events/destroy_invalid_buildings.txt"
+# reason = "mod-original helper deliberately left unprefixed; it has no vanilla counterpart"
+
+# Per-code severity override: "error" | "warn" | "off".
+# EU5050 (single-prefix required) and EU5030 (base overwrite must be allowlisted) encode
+# OUR conventions, not M&T's. M&T deliberately run a multi-prefix scheme and deliberately
+# ship whole-file vanilla overrides carrying the vanilla filename, so both rules fire on
+# correct files here — 205 of 212 findings in the 2026-09-05 measurement. Off, not deleted:
+# they are correct for a mod that owns exactly one prefix and declares each whole-file
+# overwrite, which is simply a different scheme from the one this repository runs.
+[severity]
+EU5050 = "off"
+EU5030 = "off"
+# EU5083 suggests an exact rename and is right when it speaks, but a wrong-cased
+# prefix still loads -- it only sorts into an odd slot. That is worth telling the
+# author about, not worth refusing the commit over. EU5082 stays an error on
+# purpose: in a lowercase-forced directory a capitalized file does not load at all.
+EU5083 = "warn"
+
+[[naming_exception]]
+path = "in_game/gfx/map/map_modes/mnt_map_modes.txt"
+reason = "lowercase kept deliberately: its goods modes share category=economy index=2 with vanilla net_building_profit, and whether the UI tie-breaks on load order is unverified, so renaming risks reordering buttons for no gain"
+
+[[naming_exception]]
+path = "in_game/common/levies/051_tribal_levies.txt"
+reason = "numeric prefix on purpose: it has to sort against the base game's own 00_-10_ levy files, which an alphabetic prefix could not do"
+
+[[naming_exception]]
+path = "in_game/gui/shared/aaa_epbm_expense_tooltip.gui"
+reason = "GUI templates are first-definition-wins, so this file is named to sort FIRST; line 7 of the file states the reason itself"
+
+[[naming_exception]]
+path = "in_game/common/script_values/MnT_RGO_removal.txt"
+reason = "RGO is the content topic here, not a stacked subsystem prefix: the file defines employment_size_RGO, build_time_RGO and similar"
+
+[[naming_exception]]
+path = "in_game/common/scripted_triggers/MnT_RGO_substitution.txt"
+reason = "RGO is the content topic here, not a stacked subsystem prefix: the file defines can_build_<goods>_RGO triggers"
+
+[[naming_exception]]
+path = "main_menu/common/static_modifiers/MnT_RGO_substitution.txt"
+reason = "RGO is the content topic here, not a stacked subsystem prefix: the static modifiers this file defines are the RGO substitution set"

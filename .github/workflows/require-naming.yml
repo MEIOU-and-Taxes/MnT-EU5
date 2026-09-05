@@ -1,0 +1,52 @@
+﻿name: EU5 - Naming (prefix and case)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+jobs:
+  naming-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The linter uses pathlib's full_match(), added in 3.13. The runner image's
+      # own python3 is older, so without this the job fails on an AttributeError
+      # before it checks anything.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Self-test the linter
+        shell: bash
+        run: python3 tools/eu5lint/tests/run_tests.py
+
+      - name: Validate filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="${GITHUB_BASE_REF:-}"
+          if [ -z "$base" ]; then
+            echo "No base ref; nothing to compare against."
+            exit 0
+          fi
+
+          # Only files this PR adds, modifies or renames, and only under the three
+          # mount roots the engine actually reads. Everything else -- tools, docs,
+          # workflows -- carries no naming rules.
+          mapfile -t changed < <(
+            git diff --name-only --diff-filter=ACMRT "origin/${base}...HEAD" \
+              | grep -E '^(in_game|main_menu|loading_screen)/' || true
+          )
+
+          if [ ${#changed[@]} -eq 0 ]; then
+            echo "No engine payload changed in this PR."
+            exit 0
+          fi
+
+          echo "Checking ${#changed[@]} changed payload file(s)."
+          python3 tools/eu5lint check --root . --config eu5lint.toml "${changed[@]}"
