@@ -1,20 +1,6 @@
-﻿# Gross Output and Wages: gold moving between estate treasuries and their locations.
+﻿# Gold moving between estate treasuries and their locations.
 
-# ── ESTATE GOLD SETTLE ──
-
-# Scope: country. The only monthly add_gold_to_estate in the mod. Runs for
-# every country with an active estate, AI and player, from epbm.1.
-#
-# Each system writes its own per-estate monthly amount and never moves gold:
-#   epbm_maintenance_charge   EPBM building maintenance (monthly)
-#   mnt_wealth_estate_flow    savings valve flow rate (monthly, land owners only)
-# A source that arrives as a yearly amount is divided by 12 here and nowhere else.
-#
-# Before the charge, the EPBM display tiers shift so tooltips show the bill
-# just paid: two_months_ago <- last_month <- charge.
-#
-# Sign: delta = -(maintenance charge) - (flow rate).
-# Positive flow = payout = treasury drains; negative = seizure = treasury gains.
+# Sign: delta = -(maintenance charge) - (flow rate). Positive flow = payout; negative = seizure.
 
 mnt_change_estate_gold = {
 	epbm_snapshot_estates_dynamic = yes
@@ -74,16 +60,13 @@ mnt_change_estate_gold = {
 	}
 }
 
-# ── NATIONAL SAVINGS VALVES ──
-
-# Scope: country. MONTHS = 1 for the monthly player path, 12 for the yearly AI path.
-# Computes each estate's savings gap and writes the per-month flow rate to the
-# mnt_wealth_estate_flow map. No gold moves here; mnt_change_estate_gold charges
-# the rate every month for both paths.
+# Writes mnt_wealth_estate_flow; no gold moves. The flow is sized to the months until the country's next
+# refresh: one for players, who refresh monthly, and twelve for AI, who refresh yearly.
 
 mnt_wealth_set_national_savings_valves = {
 	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
-	set_local_variable = { name = mnt_wealth_valve_months value = $MONTHS$ }
+	set_local_variable = { name = mnt_wealth_valve_months value = 1 }
+	if = { limit = { is_ai = yes } set_local_variable = { name = mnt_wealth_valve_months value = 12 } }
 
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
@@ -126,7 +109,7 @@ mnt_wealth_set_national_savings_valves = {
 				}
 			}
 
-			mnt_wealth_update_estate_seizure_demand = { MONTHS = $MONTHS$ }
+			mnt_wealth_update_estate_seizure_demand = yes
 
 			set_local_variable = {
 				name = mnt_wealth_payout_cap
@@ -156,11 +139,11 @@ mnt_wealth_set_national_savings_valves = {
 						name = mnt_wealth_estate_period_total
 						value = {
 							value = local_var:mnt_wealth_estate_gold_gap
-							multiply = $MONTHS$
+							multiply = local_var:mnt_wealth_valve_months
 							divide = 12
 							multiply = { value = 1 add = local_var:mnt_wealth_seizure_demand }
 							max = local_var:mnt_wealth_estate_gold_gap
-							max = { value = local_var:mnt_wealth_seizure_cap multiply = $MONTHS$ }
+							max = { value = local_var:mnt_wealth_seizure_cap multiply = local_var:mnt_wealth_valve_months }
 							multiply = -1
 						}
 					}
@@ -171,9 +154,9 @@ mnt_wealth_set_national_savings_valves = {
 						value = {
 							value = local_var:mnt_wealth_estate_gold_gap
 							multiply = -1
-							multiply = $MONTHS$
+							multiply = local_var:mnt_wealth_valve_months
 							divide = 12
-							max = { value = local_var:mnt_wealth_payout_cap multiply = $MONTHS$ }
+							max = { value = local_var:mnt_wealth_payout_cap multiply = local_var:mnt_wealth_valve_months }
 						}
 					}
 				}
@@ -181,7 +164,7 @@ mnt_wealth_set_national_savings_valves = {
 
 			set_local_variable = {
 				name = mnt_wealth_estate_monthly_flow
-				value = { value = local_var:mnt_wealth_estate_period_total divide = $MONTHS$ }
+				value = { value = local_var:mnt_wealth_estate_period_total divide = local_var:mnt_wealth_valve_months }
 			}
 			add_to_variable_map = {
 				name = mnt_wealth_estate_flow
@@ -192,11 +175,7 @@ mnt_wealth_set_national_savings_valves = {
 	}
 }
 
-# Scope: country. Called by mnt_wealth_set_national_savings_valves once per estate.
-# Tracks the estate's accumulated demand to seize, which grows each month the
-# treasury sits under its goal and decays once the treasury recovers.
-# Reads local_var:mnt_wealth_estate_gold_gap and local_var:mnt_wealth_national_savings_goal.
-# Saves local_var:mnt_wealth_seizure_demand.
+# Grows each month the treasury is under its goal; decays once recovered.
 
 mnt_wealth_update_estate_seizure_demand = {
 	set_local_variable = { name = mnt_wealth_seizure_demand value = 0 }
@@ -216,7 +195,7 @@ mnt_wealth_update_estate_seizure_demand = {
 			add = {
 				value = local_var:mnt_wealth_estate_gold_gap
 				divide = local_var:mnt_wealth_national_savings_goal
-				multiply = $MONTHS$
+				multiply = local_var:mnt_wealth_valve_months
 			}
 		}
 	}
@@ -239,12 +218,6 @@ mnt_wealth_update_estate_seizure_demand = {
 		value = local_var:mnt_wealth_seizure_demand
 	}
 }
-
-# ── ONE LOCATION'S SHARE ──
-
-# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income.
-# Saves local_var:mnt_wealth_local_flow_share: one month of the estate's national flow at
-# this location, split by this location's share of the estate's national raw power.
 
 mnt_wealth_compute_location_share_of_estate_flow = {
 	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
@@ -283,12 +256,7 @@ mnt_wealth_compute_location_share_of_estate_flow = {
 	}
 }
 
-# Scope: location. Called by mnt_wealth_resolve_estate_monthly_income.
-# Applies one estate's signed flow for this location. Reads
-# local_var:mnt_wealth_local_flow_share (positive invests, negative seizes) and saves
-# local_var:mnt_wealth_liquid_wealth_change, the gold to add to or take from the wealth.
-# When seizing, the estate's liquid wealth is taken first; whatever that
-# cannot cover comes out of its invested wealth toward neglect.
+# Positive flow invests; negative seizes from liquid first, then invested toward neglect.
 
 mnt_wealth_distribute_estate_flow_to_wealth = {
 	if = {
@@ -328,12 +296,7 @@ mnt_wealth_distribute_estate_flow_to_wealth = {
 	}
 }
 
-# ── APPLYING THE FLOW ──
-
-# Scope: location. Called from the monthly estate loop.
-# Gold arriving for one estate this month: the kept wages from
-# mnt_wealth_compute_estate_kept_wages plus this location's share of the estate's
-# national flow (negative when the estate is seizing).
+# Kept wages plus this location's share of the estate's national flow.
 
 mnt_wealth_resolve_estate_monthly_income = {
 	# One month of the estate's national flow at this location.

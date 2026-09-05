@@ -1,38 +1,40 @@
-﻿# Gross Output and Wages: national totals maintenance and owner-change transfer.
-#
-# A country carries two running sums: gross output as a single number, and raw power as
-# a map with one entry per estate. Every location adds its contribution exactly
-# once and takes it back off exactly once. The owner-change workers move both
-# totals between countries in the same tick.
+﻿# National running sums (gross output, raw power per estate) and owner-change transfers.
+# Add-once, remove-once: every location contributes exactly once and retracts exactly once.
 
-# ── NATIONAL gross output ──
+# SIGN = 1 adds the location's gross output to the country's totals, -1 removes it.
+# Country scope, with the location in scope:mnt_wealth_gross_output_total_location.
 
-# Scope: location. Takes this location's old gross output back off its owner's national
-# total, so the recompute that follows adds the new value to a clean total.
+mnt_wealth_change_national_gross_output = {
+	if = {
+		limit = { NOT = { has_variable = mnt_wealth_national_gross_output } }
+		set_variable = { name = mnt_wealth_national_gross_output value = 0 }
+		set_variable = { name = mnt_wealth_national_rural_gross_output value = 0 }
+		set_variable = { name = mnt_wealth_national_urban_gross_output value = 0 }
+		# set_variable = { name = mnt_wealth_national_urban_gdp value = 0 }
+	}
+	change_variable = {
+		name = mnt_wealth_national_gross_output
+		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_gross_output multiply = $SIGN$ }
+	}
+	change_variable = {
+		name = mnt_wealth_national_rural_gross_output
+		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_rural_gross_output multiply = $SIGN$ }
+	}
+	change_variable = {
+		name = mnt_wealth_national_urban_gross_output
+		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gross_output multiply = $SIGN$ }
+	}
+# 	change_variable = {
+# 		name = mnt_wealth_national_urban_gdp
+# 		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gdp multiply = $SIGN$ }
+# 	}
+}
 
 mnt_wealth_remove_local_gross_output_from_national_total = {
 	save_temporary_scope_as = mnt_wealth_gross_output_total_location
 
 	owner ?= {
-		if = {
-			limit = { has_variable = mnt_wealth_national_gross_output }
-			change_variable = {
-				name = mnt_wealth_national_gross_output
-				subtract = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_gross_output
-			}
-			change_variable = {
-				name = mnt_wealth_national_rural_gross_output
-				subtract = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_rural_gross_output
-			}
-			change_variable = {
-				name = mnt_wealth_national_urban_gross_output
-				subtract = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gross_output
-			}
-# 			change_variable = {
-# 				name = mnt_wealth_national_urban_gdp
-# 				subtract = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gdp
-# 			}
-		}
+		mnt_wealth_change_national_gross_output = { SIGN = -1 }
 		save_temporary_scope_as = mnt_wealth_goods_country
 	}
 	if = {
@@ -41,35 +43,11 @@ mnt_wealth_remove_local_gross_output_from_national_total = {
 	}
 }
 
-# Scope: location. Adds this location's fresh gross output to its owner's national total.
-
 mnt_wealth_add_local_gross_output_to_national_total = {
 	save_temporary_scope_as = mnt_wealth_gross_output_total_location
 
 	owner ?= {
-		if = {
-			limit = { NOT = { has_variable = mnt_wealth_national_gross_output } }
-			set_variable = { name = mnt_wealth_national_gross_output value = 0 }
-			set_variable = { name = mnt_wealth_national_rural_gross_output value = 0 }
-			set_variable = { name = mnt_wealth_national_urban_gross_output value = 0 }
-			# set_variable = { name = mnt_wealth_national_urban_gdp value = 0 }
-		}
-		change_variable = {
-			name = mnt_wealth_national_gross_output
-			add = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_gross_output
-		}
-		change_variable = {
-			name = mnt_wealth_national_rural_gross_output
-			add = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_rural_gross_output
-		}
-		change_variable = {
-			name = mnt_wealth_national_urban_gross_output
-			add = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gross_output
-		}
-# 		change_variable = {
-# 			name = mnt_wealth_national_urban_gdp
-# 			add = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gdp
-# 		}
+		mnt_wealth_change_national_gross_output = { SIGN = 1 }
 		save_temporary_scope_as = mnt_wealth_goods_country
 	}
 	if = {
@@ -78,20 +56,7 @@ mnt_wealth_add_local_gross_output_to_national_total = {
 	}
 }
 
-# ── NATIONAL PER-GOOD FIGURES ──
-#
-# Two country maps keyed by goods, mnt_wealth_national_goods_value and
-# mnt_wealth_national_goods_locations, hold the summed value and the number of
-# producing locations of every good the country makes. The country list
-# mnt_wealth_national_goods names those goods for the economy view rows. All
-# three follow the location's mnt_wealth_goods_value map with the same
-# add-once, remove-once discipline as the gross output totals.
-
-# Scope: location. scope:mnt_wealth_goods_country is the country whose figures
-# to change. Moves this location's per-good values into that country: SIGN = 1
-# adds them, SIGN = -1 takes them back out. A good whose producing-location
-# count reaches zero leaves the maps and the list.
-
+# SIGN = 1 adds, -1 removes. Goods whose location count hits zero leave all three structures.
 mnt_wealth_apply_national_goods = {
 	save_temporary_scope_as = mnt_wealth_goods_location
 	every_key_in_variable_map = {
@@ -132,47 +97,20 @@ mnt_wealth_apply_national_goods = {
 	}
 }
 
-# Scope: country. Fills the per-good figures from scratch across every owned
-# location. The mirror of mnt_wealth_clear_national_goods.
-
 mnt_wealth_rebuild_national_goods = {
 	mnt_wealth_clear_national_goods = yes
 	save_temporary_scope_as = mnt_wealth_goods_country
 	every_owned_location = { mnt_wealth_apply_national_goods = { SIGN = 1 } }
 }
 
-# Scope: country.
-
 mnt_wealth_clear_national_goods = {
 	clear_variable_map = mnt_wealth_national_goods_value
 	clear_variable_map = mnt_wealth_national_goods_locations
 	clear_variable_list = mnt_wealth_national_goods
 }
-mnt_wealth_ensure_country_id = {
-	if = {
-		limit = { NOT = { has_variable = mnt_wealth_country_id } }
-		if = {
-			limit = { NOT = { has_global_variable = mnt_wealth_country_serial } }
-			set_global_variable = { name = mnt_wealth_country_serial value = 0 }
-		}
-		change_global_variable = { name = mnt_wealth_country_serial add = 1 }
-		set_variable = { name = mnt_wealth_country_id value = global_var:mnt_wealth_country_serial }
-	}
-}
 
-# ── NATIONAL ESTATE RAW POWER ──
-#
-# mnt_wealth_national_estate_raw_power is a country map: per estate, the sum of that
-# estate's raw power across every owned location. National estate investment is
-# split across an estate's locations by each location's share of this total.
-
-# Scope: location. scope:mnt_wealth_raw_power_country is the country whose map to
-# change. Moves this location's per-estate raw power into that map: SIGN = 1
-# adds it, SIGN = -1 takes it back out.
-#
-# Every scope this reads is saved and named. prev is the scope this effect was
-# called from, which for anything reached through the load balancer is an
-# unrelated worker country, so it can never be used to get back to the location.
+# Callers reach here from the balancer's dispatch, where prev is the dispatching country and not the owner,
+# so the country comes in as scope:mnt_wealth_raw_power_country and the location as scope:mnt_wealth_raw_power_location.
 
 mnt_wealth_apply_national_estate_raw_power = {
 	save_temporary_scope_as = mnt_wealth_raw_power_location
@@ -190,7 +128,6 @@ mnt_wealth_apply_national_estate_raw_power = {
 				}
 			}
 
-			# A country that has never held this estate has no entry yet.
 			set_local_variable = { name = mnt_wealth_raw_power_running value = 0 }
 
 			if = {
@@ -214,29 +151,16 @@ mnt_wealth_apply_national_estate_raw_power = {
 	}
 }
 
-# Scope: country. Fills the map from scratch: one entry per estate, holding that
-# estate's raw power summed across every owned location.
-
 mnt_wealth_rebuild_national_estate_raw_power = {
 	clear_variable_map = mnt_wealth_national_estate_raw_power
 	save_temporary_scope_as = mnt_wealth_raw_power_country
 	every_owned_location = { mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 } }
 }
 
-# ── OWNER CHANGE ──
-#
-# The national totals are running sums, so a transfer takes this location off the
-# old owner and puts it on the new one in the same tick. The location's own
-# figures do not change in between, so both sides move the same numbers and the
-# totals stay exact. A new owner that forbids one of the estates keeps the old
-# owner's figures until its next census, which takes them off and puts its own on.
-
-# Scope: location. Moves this location's gross output and estate raw power off the old
-# owner and onto the new one. New land is zeroed first.
+# Transfer: subtract from old owner, add to new, same tick. Location figures unchanged.
 
 mnt_wealth_transfer_location_between_owners = {
-	# Unowned land is never visited by the yearly pass, so land gaining its
-	# first owner gets its full variable set here.
+	# New land: zero the variable set before adding to the new owner.
 	if = {
 		limit = { NOT = { exists = scope:loser } }
 		mnt_wealth_zero_location = yes
@@ -246,75 +170,21 @@ mnt_wealth_transfer_location_between_owners = {
 	mnt_wealth_move_location_estate_power_between_owners = yes
 }
 
-# Scope: location. Subtracts the location's gross output from the old owner and adds it
-# to the new owner.
-#
-# When a country is formed by this very transfer, the engine gives it locations
-# before mnt_wealth_initialize_country runs, so neither side has a total yet.
-# Both sides start at zero here; the full recount a moment later replaces them.
+# Country formation can fire before initialize_country; both sides start at zero.
 
 mnt_wealth_move_location_gross_output_between_owners = {
-	save_temporary_scope_as = mnt_wealth_moving_location
+	save_temporary_scope_as = mnt_wealth_gross_output_total_location
 	scope:loser ?= {
 		save_temporary_scope_as = mnt_wealth_goods_country
-		scope:mnt_wealth_moving_location = { mnt_wealth_apply_national_goods = { SIGN = -1 } }
+		scope:mnt_wealth_gross_output_total_location = { mnt_wealth_apply_national_goods = { SIGN = -1 } }
+		mnt_wealth_change_national_gross_output = { SIGN = -1 }
 	}
 	scope:winner ?= {
 		save_temporary_scope_as = mnt_wealth_goods_country
-		scope:mnt_wealth_moving_location = { mnt_wealth_apply_national_goods = { SIGN = 1 } }
-	}
-
-	scope:loser ?= {
-		if = {
-			limit = { has_variable = mnt_wealth_national_gross_output }
-			change_variable = {
-				name = mnt_wealth_national_gross_output
-				subtract = scope:mnt_wealth_moving_location.var:mnt_wealth_local_gross_output
-			}
-			change_variable = {
-				name = mnt_wealth_national_rural_gross_output
-				subtract = scope:mnt_wealth_moving_location.var:mnt_wealth_local_rural_gross_output
-			}
-			change_variable = {
-				name = mnt_wealth_national_urban_gross_output
-				subtract = scope:mnt_wealth_moving_location.var:mnt_wealth_local_urban_gross_output
-			}
-# 			change_variable = {
-# 				name = mnt_wealth_national_urban_gdp
-# 				subtract = scope:mnt_wealth_moving_location.var:mnt_wealth_local_urban_gdp
-# 			}
-		}
-	}
-
-	scope:winner ?= {
-		if = {
-			limit = { NOT = { has_variable = mnt_wealth_national_gross_output } }
-			set_variable = { name = mnt_wealth_national_gross_output value = 0 }
-			set_variable = { name = mnt_wealth_national_rural_gross_output value = 0 }
-			set_variable = { name = mnt_wealth_national_urban_gross_output value = 0 }
-			# set_variable = { name = mnt_wealth_national_urban_gdp value = 0 }
-		}
-		change_variable = {
-			name = mnt_wealth_national_gross_output
-			add = scope:mnt_wealth_moving_location.var:mnt_wealth_local_gross_output
-		}
-		change_variable = {
-			name = mnt_wealth_national_rural_gross_output
-			add = scope:mnt_wealth_moving_location.var:mnt_wealth_local_rural_gross_output
-		}
-		change_variable = {
-			name = mnt_wealth_national_urban_gross_output
-			add = scope:mnt_wealth_moving_location.var:mnt_wealth_local_urban_gross_output
-		}
-# 		change_variable = {
-# 			name = mnt_wealth_national_urban_gdp
-# 			add = scope:mnt_wealth_moving_location.var:mnt_wealth_local_urban_gdp
-# 		}
+		scope:mnt_wealth_gross_output_total_location = { mnt_wealth_apply_national_goods = { SIGN = 1 } }
+		mnt_wealth_change_national_gross_output = { SIGN = 1 }
 	}
 }
-
-# Scope: location. Takes this location's estate raw power off the old owner's
-# map and puts it on the new owner's.
 
 mnt_wealth_move_location_estate_power_between_owners = {
 	if = {

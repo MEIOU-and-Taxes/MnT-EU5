@@ -1,11 +1,4 @@
-﻿# Gross Output and Wages: gross output census pipeline.
-#
-# Prices every good a location produces to compute its gross output,
-# and computes each estate's raw power and desired wealth. The census
-# runs on a multi-month rotation via the load balancer so not every
-# location is censused every month.
-
-# ── GOODS DISCOVERY ──
+﻿# Gross output census: prices goods, computes estate raw power and desired wealth.
 
 mnt_wealth_clear_found_goods = {
 	clear_local_variable_map = mnt_wealth_found_goods_map
@@ -25,9 +18,6 @@ mnt_wealth_add_raw_material_good = {
 		add_to_local_variable_list = { name = mnt_wealth_found_goods_list target = raw_material }
 	}
 }
-
-
-# Classify every trade good as urban (manufactured) or rural (raw).
 
 mnt_wealth_build_good_classification_map = {
 	clear_global_variable_map = mnt_wealth_good_classification
@@ -111,12 +101,6 @@ mnt_wealth_build_good_classification_map = {
 	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wool value = flag:rural }
 }
 
-# ── LOCAL gross output ──
-
-# Scope: location. Calculates this location's gross output: the market value of
-# every good it produces, summed up. Each good's value is also kept in the
-# mnt_wealth_goods_value map, which the national per-good figures read.
-
 mnt_wealth_calculate_local_gross_output = {
 	set_variable = { name = mnt_wealth_local_gross_output value = 0 }
 	set_variable = { name = mnt_wealth_local_rural_gross_output value = 0 }
@@ -148,29 +132,6 @@ mnt_wealth_calculate_local_gross_output = {
 	}
 }
 
-# GDP, inert: computed nothing reads. Kept for a future use; see the census.
-# # Scope: location. Sums each building's profit to get the urban net
-# # domestic product.
-
-# mnt_wealth_calculate_local_urban_gdp = {
-# 	set_variable = { name = mnt_wealth_local_urban_gdp value = 0 }
-# 	every_buildings_in_location = {
-# 		scope:mnt_wealth_gross_output_location = {
-# 			change_variable = {
-# 				name = mnt_wealth_local_urban_gdp
-# 				add = prev.building_profit
-# 			}
-# 		}
-# 	}
-# }
-
-# ── BUILDING CLASSIFICATION ──
-
-# Scope: none (fired from weather_monthly_pulse).
-# Rebuilds the building-type lookup table when it expires. The table
-# caches which building types produce goods so the gross output census does
-# not have to check every building every time.
-
 mnt_wealth_maintain_building_produced_goods_cache = {
 	if = {
 		limit = {
@@ -186,9 +147,6 @@ mnt_wealth_maintain_building_produced_goods_cache = {
 		change_global_variable = { name = mnt_wealth_building_table_age add = 1 }
 	}
 }
-
-# Scope: building. Caches whether this building type produces goods
-# in a global map so we only check each type once per table lifetime.
 
 mnt_wealth_classify_building_type = {
 	if = {
@@ -237,75 +195,17 @@ mnt_wealth_collect_building_goods = {
 	}
 }
 
-# ── ESTATE POWER ──
-
-# Scope: location. Counts every pop into the estate that actually holds it and
-# computes raw power (pops x power per pop) in mnt_estate_raw_power, with the
-# location total in var:mnt_wealth_local_raw_power_total.
-# Membership is per pop: dhimmi and cossacks divert pops out of their usual estate.
+# Counts pops into estates and computes raw power (pops x power_per_pop).
 
 mnt_wealth_count_estate_pops = {
 	mnt_wealth_clear_pop_counts = yes
 
-	# Count by type first. It needs no iteration and costs about a microsecond,
-	# and the totals give the check below something to test the engine against.
 	mnt_wealth_count_pops_by_type = yes
 
-	set_local_variable = { name = mnt_wealth_needs_pop_walk value = 0 }
-
-	# Total what was filed and compare it against the location's own population.
-	# Counting by type only knows the pop types listed above, so a shortfall means
-	# a pop reached no estate. The walk routes whatever it finds, so it cannot
-	# miss one the same way.
-	set_local_variable = { name = mnt_wealth_pops_total value = 0 }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_nobles }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_clergy }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_burghers }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_peasants }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_dhimmi }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_tribes }
-	change_local_variable = { name = mnt_wealth_pops_total add = local_var:mnt_wealth_pops_cossacks }
-
-	set_local_variable = { name = mnt_wealth_pops_population value = population }
-	set_local_variable = { name = mnt_wealth_pops_unfiled value = local_var:mnt_wealth_pops_population }
-	change_local_variable = { name = mnt_wealth_pops_unfiled subtract = local_var:mnt_wealth_pops_total }
-
-	# Held for the log, since the walk below overwrites the live counters.
-	set_local_variable = { name = mnt_wealth_pops_bytype  value = local_var:mnt_wealth_pops_total }
-	set_local_variable = { name = mnt_wealth_pops_shortfall value = local_var:mnt_wealth_pops_unfiled }
-	# 0 by type, 1 unused (shortfall check disabled), 2 walked for dhimmi power,
-	# 3 tribesmen split, 4 slave split, 5 both splits.
-	set_local_variable = { name = mnt_wealth_pop_count_strategy value = 0 }
-
-	# DISABLED. A shortfall against the location's own population would mean a pop
-	# reached no estate, and the walk would pick it up. It never once fired across
-	# 335,337 censuss in testing, so it is off for a small runtime saving. Turn it
-	# back on if common/pop_types gains a type that mnt_wealth_count_pops_by_type
-	# does not list, which is the case it guards.
-	#
-	# It does NOT guard a dhimmi estate made only of slaves: counting by type puts
-	# those slaves in peasants, so the total still matches and nothing fires.
-	# mnt_wealth_count_pops_slave_split covers that, and does get hit.
-	#
-	# The population read and the total above are kept only because the log line
-	# reports them; drop them too if that logging goes.
-	#
-	#if = {
-	#	limit = { local_var:mnt_wealth_pops_unfiled > 0.001 }
-	#	set_local_variable = { name = mnt_wealth_needs_pop_walk value = 1 }
-	#	set_local_variable = { name = mnt_wealth_pop_count_strategy value = 1 }
-	#}
-
-	# Dhimmi can take a pop of any type, so its presence forces the full walk.
+	# Dhimmi can take a pop of any type, so its presence forces the full walk, which refiles every pop.
+	# Every pop type common/pop_types defines is listed in mnt_wealth_count_pops_by_type; a new one would need adding there.
 	if = {
 		limit = { "local_estate_power(estate_type:dhimmi_estate)" > 0 }
-		set_local_variable = { name = mnt_wealth_needs_pop_walk value = 1 }
-		set_local_variable = { name = mnt_wealth_pop_count_strategy value = 2 }
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_needs_pop_walk = 1 }
-		# The by-type totals filed pops into estates that may not hold them.
 		mnt_wealth_clear_pop_counts = yes
 		mnt_wealth_count_pops_full = yes
 	}
@@ -319,17 +219,11 @@ mnt_wealth_count_estate_pops = {
 				owner = { country_has_estate = estate_type:dhimmi_estate }
 			}
 			mnt_wealth_count_pops_slave_split = yes
-			set_local_variable = { name = mnt_wealth_pop_count_strategy value = 4 }
 		}
 
 		if = {
 			limit = { "local_estate_power(estate_type:cossacks_estate)" > 0 }
 			mnt_wealth_count_pops_tribesmen_split = yes
-			if = {
-				limit = { local_var:mnt_wealth_pop_count_strategy = 4 }
-				set_local_variable = { name = mnt_wealth_pop_count_strategy value = 5 }
-			}
-			else = { set_local_variable = { name = mnt_wealth_pop_count_strategy value = 3 } }
 		}
 	}
 
@@ -346,8 +240,6 @@ mnt_wealth_count_estate_pops = {
 	set_variable = { name = mnt_wealth_local_raw_power_total value = local_var:mnt_wealth_pops_raw_total }
 }
 
-# Scope: location. Resets the per-estate pop counters.
-
 mnt_wealth_clear_pop_counts = {
 	set_local_variable = { name = mnt_wealth_pops_nobles value = 0 }
 	set_local_variable = { name = mnt_wealth_pops_clergy value = 0 }
@@ -357,9 +249,6 @@ mnt_wealth_clear_pop_counts = {
 	set_local_variable = { name = mnt_wealth_pops_tribes value = 0 }
 	set_local_variable = { name = mnt_wealth_pops_cossacks value = 0 }
 }
-
-# Scope: location. Files one estate's raw power from its pop count and adds it
-# to local_var:mnt_wealth_pops_raw_total. Skips an estate with no pops.
 
 mnt_wealth_store_estate_pops = {
 	if = {
@@ -371,7 +260,6 @@ mnt_wealth_store_estate_pops = {
 			name = mnt_wealth_pops_per_pop
 			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_pops_key)"
 		}
-		# add_to_variable_map takes a plain target, so the product is worked out first.
 		set_local_variable = {
 			name = mnt_wealth_pops_raw
 			value = {
@@ -390,8 +278,6 @@ mnt_wealth_store_estate_pops = {
 	}
 }
 
-# Scope: location. No estate can divert a pop, so pop type is estate.
-
 mnt_wealth_count_pops_by_type = {
 	set_local_variable = { name = mnt_wealth_pops_nobles   value = num_pop_type:nobles }
 	set_local_variable = { name = mnt_wealth_pops_clergy   value = num_pop_type:clergy }
@@ -404,9 +290,6 @@ mnt_wealth_count_pops_by_type = {
 	change_local_variable = { name = mnt_wealth_pops_peasants add = local_var:mnt_wealth_pops_slaves }
 }
 
-# Scope: location. Moves the dhimmi slaves out of peasants, where counting by
-# type put them. Only slaves are walked because only they can be hidden here.
-
 mnt_wealth_count_pops_slave_split = {
 	every_pop = {
 		limit = {
@@ -417,8 +300,6 @@ mnt_wealth_count_pops_slave_split = {
 		change_local_variable = { name = mnt_wealth_pops_peasants subtract = pop_size }
 	}
 }
-
-# Scope: location. Cossacks only take tribesmen, so only tribesmen are walked.
 
 mnt_wealth_count_pops_tribesmen_split = {
 	set_local_variable = { name = mnt_wealth_pops_tribes value = 0 }
@@ -432,9 +313,6 @@ mnt_wealth_count_pops_tribesmen_split = {
 		else = { change_local_variable = { name = mnt_wealth_pops_tribes add = pop_size } }
 	}
 }
-
-# Scope: location. Full walk, in the order common/pop_types resolves: tribesmen
-# never reach dhimmi, and dhimmi outranks a pop's own estate for everything else.
 
 mnt_wealth_count_pops_full = {
 	every_pop = {
@@ -465,10 +343,6 @@ mnt_wealth_count_pops_full = {
 		else = { change_local_variable = { name = mnt_wealth_pops_peasants add = pop_size } }
 	}
 }
-
-# Scope: location. Full census (five-yearly): pops, raw power, and relative
-# cache. ITERATOR selects the estate iterator: mnt_wealth_for_all_estate_types
-# at game start, mnt_wealth_for_each_national_estate at runtime.
 
 mnt_wealth_census_estate_data = {
 	save_temporary_scope_as = mnt_wealth_census_location
@@ -568,15 +442,114 @@ mnt_wealth_census_estate_data = {
 			prev = { mnt_wealth_release_absent_estate = yes }
 		}
 		if = {
-			limit = { OR = { local_var:mnt_wealth_freed_investment > 0 local_var:mnt_wealth_freed_estate_wealth > 0 } }
-			mnt_wealth_invalidate_estate_set = yes
+			limit = { OR = { local_var:mnt_wealth_freed_investment != 0 local_var:mnt_wealth_freed_estate_wealth != 0 } }
+			set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
 			mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
 		}
 	}
 }
 
-# Scope: location. Writes one estate's census results: cached relative power and
-# a starting investment level for an estate new to this location.
+# Census: an estate the location no longer has. Strips its modifiers, folds its invested wealth and estate
+# wealth into the freed totals the census initialized, then drops its map entries. Neglect debt is folded in
+# too, so the remaining estates absorb it; nothing is written off. The totals accumulate across every
+# departing estate before redistribution runs.
+
+mnt_wealth_release_absent_estate = {
+	set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_stale_key }
+	mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_remove_estate_investment_modifiers }
+	mnt_wealth_add_progress_to_invested_wealth = yes
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+
+		change_local_variable = {
+			name = mnt_wealth_freed_investment
+			add = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+		}
+
+		remove_from_variable_map = { name = mnt_wealth_invested_wealth key = local_var:mnt_wealth_estate_key }
+	}
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+
+		change_local_variable = {
+			name = mnt_wealth_freed_estate_wealth
+			add = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
+
+		remove_from_variable_map = { name = mnt_wealth_estate_wealth key = local_var:mnt_wealth_estate_key }
+	}
+
+	remove_from_variable_map = { name = mnt_wealth_invested_since_review key = local_var:mnt_wealth_estate_key }
+}
+
+# Gives each remaining estate its power-weighted share of what the departed estates freed, debt included.
+
+mnt_wealth_redistribute_to_estate = {
+	# The cache was built by the census that is calling, so it is the live figure.
+	set_local_variable = {
+		name = mnt_wealth_relative_power
+		value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_freed_investment != 0 }
+
+		set_local_variable = {
+			name = mnt_wealth_investment_share
+			value = { value = local_var:mnt_wealth_freed_investment multiply = local_var:mnt_wealth_relative_power }
+		}
+
+		set_local_variable = { name = mnt_wealth_existing_wealth value = 0 }
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = {
+				name = mnt_wealth_existing_wealth
+				value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_new_invested_wealth
+			value = { value = local_var:mnt_wealth_existing_wealth add = local_var:mnt_wealth_investment_share }
+		}
+
+		add_to_variable_map = {
+			name = mnt_wealth_invested_wealth
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_new_invested_wealth
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_freed_estate_wealth != 0 }
+		set_local_variable = { name = mnt_wealth_existing_gold value = 0 }
+
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = {
+				name = mnt_wealth_existing_gold
+				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+			}
+		}
+
+		set_local_variable = {
+			name = mnt_wealth_new_estate_gold
+			value = {
+				value = local_var:mnt_wealth_existing_gold
+				add = { value = local_var:mnt_wealth_freed_estate_wealth multiply = local_var:mnt_wealth_relative_power }
+			}
+		}
+
+		add_to_variable_map = {
+			name = mnt_wealth_estate_wealth
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_new_estate_gold
+		}
+	}
+}
 
 mnt_wealth_store_estate_census_results = {
 	set_local_variable = {
@@ -595,9 +568,6 @@ mnt_wealth_store_estate_census_results = {
 		}
 	}
 
-	# Raw power and relative power can each exist without the other: an estate
-	# made entirely of slaves has raw power and no relative power. Either one
-	# makes the estate part of the census.
 	if = {
 		limit = { OR = { local_var:mnt_wealth_estate_relative_power > 0 local_var:mnt_wealth_raw_power_for_one_estate > 0 } }
 
@@ -608,12 +578,6 @@ mnt_wealth_store_estate_census_results = {
 		}
 	}
 }
-
-# ── SURVEY ENTRY POINTS ──
-
-
-# Scope: location. Fills in census data only if it is missing. Used
-# at game start so locations that already have data are not recensused.
 
 mnt_wealth_ensure_census_data = {
 	if = { limit = { var:mnt_wealth_local_gross_output = 0 } mnt_wealth_update_local_gross_output = yes }
@@ -629,10 +593,6 @@ mnt_wealth_ensure_census_data = {
 	}
 }
 
-# Scope: location. Recomputes this location's gross output from the goods it
-# produces, and keeps the owner's national gross output total correct by removing
-# the old value before the recompute and adding the new value after.
-
 mnt_wealth_update_local_gross_output = {
 	save_scope_as = mnt_wealth_gross_output_location
 	mnt_wealth_remove_local_gross_output_from_national_total = yes
@@ -640,22 +600,9 @@ mnt_wealth_update_local_gross_output = {
 	every_buildings_in_location         = { mnt_wealth_check_building = yes }
 	every_foreign_buildings_in_location = { mnt_wealth_check_building = yes }
 	mnt_wealth_calculate_local_gross_output = yes
-	# mnt_wealth_calculate_local_urban_gdp = yes
-	# GDP, inert: computed nothing reads. Kept for a future use; see the census.
-# 	# Gross domestic product: rural goods value plus urban net profit.
-# 	set_variable = {
-# 		name = mnt_wealth_local_gdp
-# 		value = { value = var:mnt_wealth_local_rural_gross_output add = var:mnt_wealth_local_urban_gdp }
-# 	}
 	mnt_wealth_raise_gross_output_map_mode_ceilings = yes
 	mnt_wealth_add_local_gross_output_to_national_total = yes
 }
-
-# ── ESTATE POWER RESURVEY ──
-
-# Scope: location. Five-yearly full recensus: rebuilds pops, raw power, and
-# relative cache, keeping the national raw power map correct by subtracting
-# the old values before the census and adding the new values after.
 
 mnt_wealth_retake_estate_census = {
 	if = {
@@ -672,10 +619,6 @@ mnt_wealth_retake_estate_census = {
 		mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
 	}
 }
-
-# Scope: location. Yearly-lite recensus: rebuilds the relative power cache
-# without touching pops or raw power. Reuses the same store logic and
-# leftover walks as the full census.
 
 mnt_wealth_refresh_relative_power = {
 	save_temporary_scope_as = mnt_wealth_census_location

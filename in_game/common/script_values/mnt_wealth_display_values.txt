@@ -1,22 +1,9 @@
-﻿# Script values the interface reads: the location window, its tooltips, the map
-# modes and the map mode tooltip strings. Nothing here is read by the
-# simulation; those values live in mnt_wealth_values.txt.
-
-# --- the display month ---
-
-# Months still to apply to the stored state. Every projection below replays
-# exactly these months with the formulas the advance uses, so the window
-# shows what the next review will write.
+﻿# Display values the interface reads. Nothing here is read by the simulation; simulation values live in mnt_wealth_values.txt.
 
 mnt_wealth_months_since_review = {
 	value = mnt_wealth_months_since_campaign_start
 	subtract = var:mnt_wealth_review_month
 }
-
-# --- pool and health ---
-
-# The share of the wealth pool left after a month's investment, and after
-# all the months since the review. A negative rate spends nothing.
 
 mnt_wealth_projected_pool_remaining = {
 	value = 1
@@ -27,10 +14,6 @@ mnt_wealth_projected_pool_remaining_over_period = {
 	value = mnt_wealth_projected_pool_remaining
 	pow = mnt_wealth_projected_months
 }
-
-# What a steady monthly income adds up to over the period, once the
-# investment taken from it each month is counted. Just the month count when
-# nothing is invested.
 
 mnt_wealth_projected_income_over_period = {
 	value = mnt_wealth_investment_rate
@@ -48,10 +31,6 @@ mnt_wealth_projected_income_over_period = {
 	}
 }
 
-# The wealth pool now: what was there decays by the investment taken from
-# it, and the period's income, kept wages plus net estate flow, adds up on
-# top. The same series the advance runs, summed over the estates.
-
 mnt_wealth_displayed_wealth_pool = {
 	value = var:mnt_wealth_pool
 	multiply = mnt_wealth_projected_pool_remaining_over_period
@@ -66,10 +45,6 @@ mnt_wealth_displayed_wealth_pool = {
 mnt_wealth_local_wealth_total = {
 	value = mnt_wealth_displayed_wealth_pool
 }
-
-# One estate's monthly income: its wage share plus its national flow share.
-# The wage share is its pool fraction, or its relative power when the pool
-# is empty. Reads scope:mnt_wealth_location and scope:mnt_wealth_estate.
 
 mnt_wealth_projected_estate_income = {
 	value = 0
@@ -89,10 +64,6 @@ mnt_wealth_projected_estate_income = {
 	}
 }
 
-# One estate's share of the location's raw power: its raw power over the
-# location total the survey cached. Reads scope:mnt_wealth_location and
-# scope:mnt_wealth_estate.
-
 mnt_wealth_local_estate_raw_power_fraction = {
 	value = 0
 
@@ -110,10 +81,6 @@ mnt_wealth_local_estate_raw_power_fraction = {
 	}
 }
 
-# One estate's share of the location's Local Investment Maintenance: the flat
-# monthly cost split by the estate's share of the location's raw power.
-# Reads scope:mnt_wealth_location and scope:mnt_wealth_estate.
-
 mnt_wealth_displayed_estate_maintenance = {
 	value = mnt_wealth_local_estate_raw_power_fraction
 
@@ -121,8 +88,6 @@ mnt_wealth_displayed_estate_maintenance = {
 		multiply = modifier:mnt_wealth_local_investment_maintenance
 	}
 }
-
-# One estate's wealth now: the estate's own run of the pool series.
 
 mnt_wealth_displayed_estate_wealth = {
 	value = 0
@@ -148,9 +113,6 @@ mnt_wealth_baseline = {
 	multiply = mnt_wealth_starting_gross_output_months
 }
 
-# Zero when there is no desired wealth to measure against, which means no estate
-# is present here or the location has not been surveyed yet.
-
 mnt_wealth_health_ratio = {
 	value = 0
 
@@ -168,8 +130,6 @@ mnt_wealth_band = {
 	if = { limit = { mnt_wealth_health_ratio >= 1.1 } add = 1 }
 }
 
-# --- economy ---
-
 mnt_wealth_local_gross_output_value = {
 	value = var:mnt_wealth_local_gross_output
 }
@@ -183,12 +143,10 @@ mnt_wealth_wage_rate_percent = {
 	multiply = 100
 }
 
-# Wage rate as a fraction of a ceiling that scales from 5% to 25% over 500 years.
-# ceiling = clamp((year - 1337) * 0.0004 + 0.05, 0.05, 0.25); result = rate / ceiling.
-
+# Wage rate as a fraction of a ceiling that starts at 5% and rises 0.04 points a year, capped at 25%, for the wage map mode.
 mnt_wealth_wage_mapmode_fraction = {
 	value = current_year
-	subtract = 1337
+	subtract = mnt_wealth_campaign_start_year
 	min = 0
 	multiply = 0.0004
 	add = 0.05
@@ -210,8 +168,6 @@ mnt_wealth_live_gross_output = {
 	}
 }
 
-# --- wage rate breakdown ---
-
 mnt_wealth_minimum_wage_percent = {
 	value = mnt_wealth_minimum_wage_rate
 	multiply = 100
@@ -223,70 +179,45 @@ mnt_wealth_wage_rate_computed_percent = {
 	multiply = 100
 }
 
-# --- flow map mode ratio ---
-
-# Net estate capital flow / monthly investment. Positive = investing, negative = seizing.
-# flow_ratio = estate_investment_total / (wealth * investment_rate).
-# Zero where there is no monthly investment to measure the flow against.
-
+# The divisor is checked as a product: two small positives can multiply to zero in fixed point.
 mnt_wealth_estate_flow_ratio = {
-	value = 0
+	value = mnt_wealth_local_wealth_total
+	multiply = mnt_wealth_investment_rate
+	save_temporary_value_as = mnt_wealth_flow_ratio_divisor
 
+	value = 0
 	if = {
-		limit = { mnt_wealth_local_wealth_total > 0 mnt_wealth_investment_rate > 0 }
+		limit = { scope:mnt_wealth_flow_ratio_divisor > 0 }
 		value = mnt_wealth_estate_flow_total
-		divide = { value = mnt_wealth_local_wealth_total multiply = mnt_wealth_investment_rate }
+		divide = scope:mnt_wealth_flow_ratio_divisor
 	}
 }
 
 # --- investment equilibrium ---
-
-# The level an estate settles at is where its monthly investment exactly pays its
-# monthly decay. Working that out means undoing the desired wealth curve, which
-# is a square root that cannot be computed in the data binding language.
-#
-# Every value in this section runs in location scope and reads scope:mnt_wealth_estate,
-# the estate type the tooltip row is showing.
-
-# Entry point for the location window. The interface hands in the location and
-# the estate as named scopes because the tooltip row knows both.
 
 mnt_wealth_displayed_investment_equilibrium = {
 	value = 0
 	scope:mnt_wealth_location = { add = mnt_wealth_investment_equilibrium_level }
 }
 
-# Entry point for the decay macro: one estate's monthly decay, before the
-# decay resistance the macro applies. Location and estate come in as scopes.
-
 mnt_wealth_displayed_monthly_decay = {
 	value = 0
 	scope:mnt_wealth_location = { add = mnt_wealth_monthly_estate_decay }
 }
-
-# Entry point for the invested wealth macro: invested wealth projected forward.
 
 mnt_wealth_displayed_invested_wealth = {
 	value = 0
 	scope:mnt_wealth_location = { add = mnt_wealth_projected_invested_wealth }
 }
 
-# Entry point for the decay-rate macro: one estate's live monthly decay rate.
-
 mnt_wealth_displayed_estate_decay_rate = {
 	value = 0
 	scope:mnt_wealth_location = { add = mnt_wealth_estate_decay_rate }
 }
 
-# The estate's projected absolute wealth at this location.
-
 mnt_wealth_equilibrium_estate_wealth = {
 	value = mnt_wealth_displayed_estate_wealth
 }
-
-# This location's slice of the estate's national flow: the national flow split
-# by how much of the estate's raw power sits here. Positive when the estate is
-# investing gold into the location, negative when it is seizing gold out.
 
 mnt_wealth_equilibrium_estate_flow = {
 	value = 0
@@ -315,10 +246,6 @@ mnt_wealth_equilibrium_estate_flow = {
 	}
 }
 
-# Gold a national seizure tears out of invested wealth this month: the part of a
-# negative flow that the estate's liquid wealth cannot cover. Zero while the
-# estate is investing or while its liquid wealth covers the whole seizure.
-
 mnt_wealth_equilibrium_seizure_from_invested = {
 	value = 0
 	subtract = mnt_wealth_equilibrium_estate_flow
@@ -326,11 +253,7 @@ mnt_wealth_equilibrium_seizure_from_invested = {
 	min = 0
 }
 
-# The invested wealth an estate settles at: where a month's progress is zero.
-# Spending at the rate, scaled by efficiency, less the seizure and the
-# maintenance share, over the decay it pays per gold held. Negative when the
-# charges outrun the spending: the estate settles at a neglect level. A
-# negative rate spends nothing.
+# Equilibrium invested wealth: where a month's progress is zero. Negative when charges outrun spending.
 
 mnt_wealth_equilibrium_invested_wealth = {
 	value = 0
@@ -345,10 +268,6 @@ mnt_wealth_equilibrium_invested_wealth = {
 		divide = { value = mnt_wealth_estate_decay_rate multiply = mnt_wealth_decay_resistance_multiplier }
 	}
 }
-
-# The per-estate monthly decay rate: local plus national modifier. Resolved by
-# estate type because the modifier name carries it. Runs in location scope with
-# scope:mnt_wealth_estate set, and reads the modifiers live.
 
 mnt_wealth_estate_decay_rate = {
 	value = 0
@@ -389,11 +308,6 @@ mnt_wealth_estate_decay_rate = {
 	}
 }
 
-# The level an estate settles at: the square-root curve over the equilibrium
-# invested wealth, run on the magnitude and signed, so a neglect equilibrium
-# reads negative. Zero is skipped because the engine's pow returns 1 for a
-# zero base.
-
 mnt_wealth_investment_equilibrium_level = {
 	value = mnt_wealth_equilibrium_invested_wealth
 	divide = mnt_wealth_investment_level_cost_base
@@ -414,130 +328,17 @@ mnt_wealth_investment_equilibrium_level = {
 	}
 }
 
-# --- projected investment level ---
-
-# The advance writes state up to the review month. These values replay the
-# months since the review to project the current figures.
-
-mnt_wealth_review_spend_rate = {
-	value = mnt_wealth_investment_rate
-}
-
-mnt_wealth_review_decay = {
-	value = 1
-	subtract = mnt_wealth_review_spend_rate
-}
-
-mnt_wealth_projected_effective_months = {
-	value = 0
-
-	if = {
-		limit = { mnt_wealth_review_spend_rate > 0 }
-		value = mnt_wealth_review_decay
-		pow = mnt_wealth_projected_months
-		save_temporary_value_as = mnt_wealth_review_decay_n
-		value = 1
-		subtract = scope:mnt_wealth_review_decay_n
-		divide = mnt_wealth_review_spend_rate
-	}
-}
-
-# Months elapsed since the review, floored at zero.
-
 mnt_wealth_projected_months = {
 	value = mnt_wealth_months_since_review
 	min = 0
 }
-
-mnt_wealth_projected_stored_level = {
-	value = 0
-
-	if = {
-		limit = { scope:mnt_wealth_estate = estate_type:nobles_estate }
-		add = mnt_wealth_investment_level_nobles_estate
-	}
-	else_if = {
-		limit = { scope:mnt_wealth_estate = estate_type:clergy_estate }
-		add = mnt_wealth_investment_level_clergy_estate
-	}
-	else_if = {
-		limit = { scope:mnt_wealth_estate = estate_type:burghers_estate }
-		add = mnt_wealth_investment_level_burghers_estate
-	}
-	else_if = {
-		limit = { scope:mnt_wealth_estate = estate_type:peasants_estate }
-		add = mnt_wealth_investment_level_peasants_estate
-	}
-	else_if = {
-		limit = { scope:mnt_wealth_estate = estate_type:dhimmi_estate }
-		add = mnt_wealth_investment_level_dhimmi_estate
-	}
-	else_if = {
-		limit = { scope:mnt_wealth_estate = estate_type:tribes_estate }
-		add = mnt_wealth_investment_level_tribes_estate
-	}
-	else_if = {
-		limit = { scope:mnt_wealth_estate = estate_type:cossacks_estate }
-		add = mnt_wealth_investment_level_cossacks_estate
-	}
-}
-
-# Income is the kept wage total alone, matching the pass; estate flow arrives
-# separately through the national payout.
-
-mnt_wealth_projected_investment_paid = {
-	value = 0
-
-	if = {
-		limit = {
-			mnt_wealth_projected_months > 0
-			mnt_wealth_investment_rate > 0
-		}
-		value = mnt_wealth_projected_effective_months
-		save_temporary_value_as = mnt_wealth_proj_effective_months
-		value = var:mnt_wealth_pool
-		add = var:mnt_wealth_kept_income_total
-		multiply = scope:mnt_wealth_proj_effective_months
-
-		add = {
-			value = var:mnt_wealth_kept_income_total
-			multiply = { value = mnt_wealth_projected_months subtract = scope:mnt_wealth_proj_effective_months }
-			divide = mnt_wealth_review_spend_rate
-		}
-
-		multiply = mnt_wealth_investment_rate
-	}
-}
-
-# The monthly decay at the projected invested wealth.
 
 mnt_wealth_monthly_estate_decay = {
 	value = mnt_wealth_projected_invested_wealth
 	multiply = mnt_wealth_estate_decay_rate
 }
 
-mnt_wealth_monthly_estate_progress = {
-	value = 0
-
-	if = {
-		limit = {
-			has_variable_map = mnt_wealth_estate_wealth
-			is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate }
-		}
-		value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_estate)"
-		multiply = mnt_wealth_investment_rate
-	}
-
-	multiply = mnt_wealth_investment_efficiency_multiplier
-	subtract = { value = mnt_wealth_monthly_estate_decay multiply = mnt_wealth_decay_resistance_multiplier }
-	subtract = mnt_wealth_displayed_estate_maintenance
-}
-
-# One estate's invested wealth projected forward from the review: what it
-# held decays, each month's investment lands and decays from then on, and
-# each month's maintenance share is taken. Runs in location scope with
-# scope:mnt_wealth_estate set.
-
+# Same closed form as mnt_wealth_advance_estate in the spending file; change both together.
 mnt_wealth_projected_invested_wealth = {
 	value = 0
 	if = {
@@ -649,8 +450,7 @@ mnt_wealth_projected_invested_wealth = {
 	}
 }
 
-# The investment level from the projected invested wealth.
-
+# Same level formula as mnt_wealth_recompute_estate_investment_level; change both together.
 mnt_wealth_projected_investment_level = {
 	value = mnt_wealth_projected_invested_wealth
 	save_temporary_value_as = mnt_wealth_level_invested_pool
@@ -838,11 +638,6 @@ mnt_wealth_hidden_location_modifier_count = {
 
 # --- aggregate display values ---
 
-# Net monthly wealth change: wages paid in, plus the net estate flow (positive
-# when estates invest, negative when they seize), minus what is invested.
-# The invested term floors the rate at zero: a negative rate spends nothing,
-# it never pays the pool.
-
 mnt_wealth_local_wealth_change = {
 	value = mnt_wealth_local_wage_pool
 	add = mnt_wealth_estate_flow_total
@@ -892,14 +687,10 @@ mnt_wealth_estate_seizure_demand_level = {
 	}
 }
 
-# What the built-up demand multiplies this month's seizure by.
-
 mnt_wealth_estate_seizure_multiplier = {
 	value = 1
 	add = mnt_wealth_estate_seizure_demand_level
 }
-
-# The share of the goal the estate can seize this month, demand included.
 
 mnt_wealth_estate_seizure_cap = {
 	value = mnt_wealth_estate_seizure_limit_factor
@@ -907,19 +698,11 @@ mnt_wealth_estate_seizure_cap = {
 	multiply = mnt_wealth_estate_savings_goal
 }
 
-# The most any estate can pay into its locations in a month. A share of the
-# whole economic base, so it does not shrink with the estate's power.
-
 mnt_wealth_estate_payout_cap = {
 	value = 0
 	owner = { add = country_economical_base }
 	multiply = mnt_wealth_national_investment_limit_factor
 }
-
-# How much of this month's shortfall is being added to the demand: the gap
-# between the effective goal and the treasury, as a share of the savings goal.
-# The effective goal adds last month's seizure so the demand keeps growing until
-# organic income alone would cover the goal.
 
 mnt_wealth_estate_seizure_demand_growth = {
 	value = mnt_wealth_estate_savings_goal
@@ -936,11 +719,6 @@ mnt_wealth_estate_seizure_demand_growth = {
 	divide = mnt_wealth_estate_savings_goal
 }
 
-# --- estate capital flow (estate scope) ---
-
-# One estate's net monthly flow with its locations: positive when it invests
-# gold into them, negative when it seizes gold out to cover a shortfall.
-
 mnt_wealth_estate_location_investment = {
 	value = 0
 
@@ -952,8 +730,6 @@ mnt_wealth_estate_location_investment = {
 	}
 }
 
-# Flow rate charged at the tick before last, for the estate tooltip beside
-# vanilla's "Events and other sources". Written by mnt_change_estate_gold.
 mnt_wealth_estate_flow_charged_two_months_ago_display = {
 	value = 0
 
@@ -964,9 +740,6 @@ mnt_wealth_estate_flow_charged_two_months_ago_display = {
 		}
 	}
 }
-
-# --- gross output map mode tooltips ---
-# Scope: location. The survey's gross output figures, 0 until surveyed.
 
 mnt_wealth_local_gross_output_display = {
 	value = 0
@@ -982,38 +755,6 @@ mnt_wealth_local_rural_gross_output_display = {
 	value = 0
 	if = { limit = { has_variable = mnt_wealth_local_rural_gross_output } add = var:mnt_wealth_local_rural_gross_output }
 }
-
-# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
-# # --- value added map mode tooltips ---
-# # Scope: location. The survey's gross domestic product figures, 0 until surveyed.
-
-# mnt_wealth_local_gdp_display = {
-# 	value = 0
-# 	if = { limit = { has_variable = mnt_wealth_local_gdp } add = var:mnt_wealth_local_gdp }
-# }
-
-# mnt_wealth_local_urban_gdp_display = {
-# 	value = 0
-# 	if = { limit = { has_variable = mnt_wealth_local_urban_gdp } add = var:mnt_wealth_local_urban_gdp }
-# }
-
-# mnt_wealth_local_rural_gdp_display = {
-# 	value = 0
-# 	if = { limit = { has_variable = mnt_wealth_local_rural_gross_output } add = var:mnt_wealth_local_rural_gross_output }
-# }
-
-# --- economy view header and goods breakdown ---
-# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
-# # Scope: country. Gross domestic product: urban net profit plus rural goods value.
-
-# mnt_wealth_national_gdp_display = {
-# 	value = 0
-# 	if = { limit = { has_variable = mnt_wealth_national_urban_gdp } add = var:mnt_wealth_national_urban_gdp }
-# 	if = { limit = { has_variable = mnt_wealth_national_rural_gross_output } add = var:mnt_wealth_national_rural_gross_output }
-# }
-
-# Scope: goods. 1 for a manufactured good, 0 for a raw one, so the breakdown
-# rows can sort themselves into the urban and rural lists.
 
 mnt_wealth_good_is_urban = {
 	value = 0

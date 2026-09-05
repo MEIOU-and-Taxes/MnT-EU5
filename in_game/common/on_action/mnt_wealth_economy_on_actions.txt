@@ -1,33 +1,26 @@
-﻿# Gross Output and Wages: on_actions registered in mnt_wealth_hardcoded.txt.
-# Each handler hands off to named effects in the relevant system file.
-
-# Scope: none. Fires once at game start after the lobby via CMF.
+﻿# Each handler hands off to named effects in the relevant system file.
 
 mnt_on_game_start_after_lobby = {
 	effect = {
 		mnt_wealth_seed_economy_constants = yes
-		# The cached month exists from the first frame, for the owner-change and
-		# capture hooks that can fire before the first monthly pulse.
+		# Set the elapsed month now, because the owner-change and capture hooks
+		# can fire before the first monthly pulse and need a month to read.
 		mnt_wealth_begin_month = yes
 		mnt_wealth_seed_owned_locations = yes
-		mnt_wealth_initialize_countries = yes
+		# Countries come after the locations because the national totals sum them.
+		every_landed_country = { mnt_wealth_initialize_country = yes }
 		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
 	}
 }
-
-# Scope: none (weather_monthly_pulse).
 
 mnt_on_weather_monthly_pulse = {
 	effect = {
 		mnt_wealth_maintain_building_produced_goods_cache = yes
 		mnt_wealth_begin_month = yes
 		mnt_dispatch_location_and_market_on_actions = yes
+		clear_global_variable_list = mnt_wealth_player_countries
 	}
 }
-
-# Scope: country (occupier). scope:target is the location taken.
-# The engine splits capture by fort: a location without one changes hands here,
-# a location with one through on_siege_won below. Both are looted the same way.
 
 mnt_on_location_occupied = {
 	effect = {
@@ -35,16 +28,11 @@ mnt_on_location_occupied = {
 	}
 }
 
-# Scope: country (occupier). scope:target is the location taken.
-# A location with a fort changes hands here instead, once its siege ends.
-
 mnt_on_siege_won = {
 	effect = {
 		mnt_wealth_loot_captured_location = yes
 	}
 }
-
-# Scope: country (root = the newly formed country).
 
 mnt_on_new_country_formed = {
 	effect = {
@@ -52,19 +40,13 @@ mnt_on_new_country_formed = {
 	}
 }
 
-# Scope: country (root = the annexing country). scope:target is the country that
-# was annexed. Fires after the annexation, so its locations have already moved
-# their totals across.
-
 mnt_on_annexed = {
 	effect = {
 		scope:target ?= { mnt_wealth_clear_annexed_country = yes }
 	}
 }
 
-# Scope: country (root = the country that annexed its civil war rival).
-# scope:target is the annexed country. Maps reset at civil war resolution,
-# so the raw power totals are gone; rebuild recounts them from owned locations.
+# The national estate raw power map is cleared when a civil war resolves, so rebuild it from the owned locations.
 
 mnt_on_civil_war_annexed = {
 	effect = {
@@ -73,14 +55,10 @@ mnt_on_civil_war_annexed = {
 	}
 }
 
-# Scope: country (root = the winner). Both hooks report the same scopes, so
-# neither is assumed to identify the rebel. The winner recounts a day later,
-# once the resolution has settled.
-
 mnt_on_civil_war_won = {
 	effect = {
 		mnt_wealth_rebuild_national_estate_raw_power = yes
-		trigger_event_silently = { id = mnt_wealth_economy.32 days = 1 }
+		trigger_event_silently = { id = mnt_wealth_economy.31 days = 1 }
 	}
 }
 
@@ -92,9 +70,6 @@ mnt_on_civil_war_lost = {
 		}
 	}
 }
-
-# Scope: location. scope:winner is the new owner, scope:loser is the
-# old owner (either may not exist for colonization/decolonization).
 
 mnt_on_location_changed_owner = {
 	effect = {
@@ -115,71 +90,47 @@ mnt_on_location_changed_owner = {
 	events = { mnt_wealth_economy.30 }
 }
 
-# ── SERVICE LANES ──
+# Every location pulse checks for an owner: the balanced ones land up to a month after the dispatch that
+# queued them, and a location can lose its owner in between.
 
-# Scope: location. The player's lane: runs on the month tick, no delay, so
-# income lands in the right month.
-
-mnt_monthly_instant_location_pulse = {
+mnt_monthly_instant_human_location_pulse = {
+	trigger = { exists = owner }
 	effect = {
+		mnt_wealth_human_location_month = yes
+		# The fast census frequency moves the census and review from the yearly service to here.
 		if = {
-			limit = { owner = { is_human = yes } }
-			mnt_wealth_service_location = yes
+			limit = { owner ?= { mnt_wealth_census_frequency_is_fast = yes } }
+			mnt_wealth_monthly_human_census = yes
 		}
 	}
 }
 
-# Scope: location. The AI's lane: runs on a day of the month picked from the
-# location.
-
-mnt_balanced_location_pulse = {
-	effect = {
-		if = {
-			limit = { owner = { is_ai = yes } }
-			mnt_wealth_service_location = yes
-		}
-	}
+mnt_monthly_balanced_human_location_pulse = {
 }
 
-# ── SCHEDULED PULSES ──
-# Fired by the dispatchers in mnt_wealth_schedule.txt on the entity that came
-# ready. One per rate, so each shows up on its own in a profiling run.
-
-# Scope: location (player-owned).
-
-mnt_monthly_balanced_location_pulse = {
-	effect = {
-		mnt_wealth_location_month = yes
-	}
+mnt_yearly_instant_location_pulse = {
 }
 
-# Scope: location. The deep review: every 12 months for players, every 24 for
-# AI, paced by the service cycle counter.
+mnt_yearly_balanced_location_pulse = {
+	trigger = { exists = owner }
+	effect = {
+		mnt_wealth_service_location = yes
+	}
+}
 
 mnt_biyearly_balanced_location_pulse = {
+	trigger = { exists = owner }
 	effect = {
 		mnt_wealth_location_year = yes
 	}
 }
 
-# Scope: location. True yearly for every location, AI included.
-
-mnt_yearly_balanced_location_pulse = {
-	effect = {
-		calc_location_center_scores = yes
-		epbm_price_location_buildings = yes
-	}
-}
-
-# Scope: location.
-
 mnt_five_yearly_balanced_location_pulse = {
+	trigger = { exists = owner }
 	effect = {
 		mnt_wealth_update_local_gross_output = yes
 	}
 }
-
-# Scope: market.
 
 mnt_monthly_instant_market_pulse = {
 	effect = {

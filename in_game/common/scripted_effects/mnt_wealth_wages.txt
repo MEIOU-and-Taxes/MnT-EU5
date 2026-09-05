@@ -1,16 +1,4 @@
-﻿# Gross Output and Wages: wages.
-#
-# Wages come out of a location's gross output, split between the estates by power share.
-# What an estate keeps goes into the wealth pool; the investment it buys is in
-# mnt_wealth_investment_spending.
-#
-# Maps are sparse: iteration matches the map, absence means zero.
-
-# ── LOCATION WAGE RATES ──
-
-# Scope: location. Computes the wage rate from modifiers and sets total
-# local wages. Applies a sized modifier so the wage rate affects the
-# location's economy.
+﻿# Wages: a share of gross output split by estate power. Maps are sparse; absence = zero.
 
 mnt_wealth_set_location_wages = {
 	set_local_variable = {
@@ -44,12 +32,14 @@ mnt_wealth_set_location_wages = {
 	else = {
 		mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_wage_burden }
 	}
+
+	# Locations with no monthly pass, AI and players on the slow census frequency, take the whole wage bill as kept
+	# income here. Locations with a monthly pass set it from the estate loop instead.
+	if = {
+		limit = { owner ?= { OR = { is_ai = yes mnt_wealth_census_frequency_is_slow = yes } } }
+		set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
+	}
 }
-
-# ── ESTATE WAGE BALANCES ──
-
-# Scope: location. One estate's wage income for this location, saved into
-# mnt_wealth_kept_wages.
 
 mnt_wealth_compute_estate_kept_wages = {
 	# No power entry is no claim on the wages.

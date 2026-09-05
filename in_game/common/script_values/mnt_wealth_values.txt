@@ -1,27 +1,17 @@
-﻿# Script values the simulation itself reads. Everything the interface reads
-# lives in mnt_wealth_display_values.txt.
-
-# --- calendar ---
-
-# Months since the campaign start of April 1337. Every month number in the
-# system comes from here, so they all count from the same zero.
+﻿# Simulation values. Display values are in mnt_wealth_display_values.txt.
 
 mnt_wealth_months_since_campaign_start = {
 	value = current_year
-	subtract = 1337
+	subtract = mnt_wealth_campaign_start_year
 	multiply = 12
 	add = current_month
 	subtract = 4
 }
 
-# --- wage rate ---
-
 mnt_wealth_minimum_wage_rate = {
 	value = modifier:mnt_wealth_local_minimum_wage
 	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_minimum_wage }
 }
-
-# --- investment rate ---
 
 mnt_wealth_investment_rate_multiplier = {
 	value = 1
@@ -36,11 +26,6 @@ mnt_wealth_investment_rate = {
 	multiply = mnt_wealth_investment_rate_multiplier
 }
 
-# --- investment multipliers ---
-
-# Scales the gold an estate invests into progress. 1 + efficiency, floored at 0
-# so it can never turn investment into loss. Higher efficiency builds faster.
-
 mnt_wealth_investment_efficiency_multiplier = {
 	value = 1
 	add = modifier:mnt_wealth_local_investment_efficiency
@@ -48,9 +33,7 @@ mnt_wealth_investment_efficiency_multiplier = {
 	min = 0
 }
 
-# Scales the decay an estate pays on its invested wealth. Follows the vanilla
-# cost efficiency convention: divide by 1 + resistance, with the divisor floored
-# at 0.5 so a penalty can at most double the decay. Higher resistance is cheaper.
+# 1 / (1 + resistance), floored at 0.5; higher resistance is cheaper decay.
 
 mnt_wealth_decay_resistance_multiplier = {
 	value = 1
@@ -62,12 +45,6 @@ mnt_wealth_decay_resistance_multiplier = {
 		min = 0.5
 	}
 }
-
-# --- estate capital flow ---
-
-# Scope: location. Net gold between the estates and this location's pool, each
-# estate's national flow split by this location's share of its raw power.
-# Positive when the estates invest here, negative when they seize.
 
 mnt_wealth_estate_flow_total = {
 	value = 0
@@ -107,12 +84,6 @@ mnt_wealth_estate_flow_total = {
 	}
 }
 
-# --- per-estate wealth fraction ---
-
-# Map value / pool, 0 when pool is 0. Callers hand the location and
-# estate in as scope:mnt_wealth_location and scope:mnt_wealth_estate,
-# matching the other estate display values.
-
 mnt_wealth_local_estate_wealth_fraction = {
 	value = 0
 
@@ -128,8 +99,6 @@ mnt_wealth_local_estate_wealth_fraction = {
 	}
 }
 
-# --- national sums ---
-
 mnt_wealth_owned_local_gross_output_sum = {
 	value = 0
 	every_owned_location = { add = var:mnt_wealth_local_gross_output }
@@ -143,22 +112,4 @@ mnt_wealth_owned_local_rural_gross_output_sum = {
 mnt_wealth_owned_local_urban_gross_output_sum = {
 	value = 0
 	every_owned_location = { add = var:mnt_wealth_local_urban_gross_output }
-}
-
-# GDP, inert: computed nothing reads. Kept for a future use; see the survey.
-# mnt_wealth_owned_local_urban_gdp_sum = {
-# 	value = 0
-# 	every_owned_location = { add = var:mnt_wealth_local_urban_gdp }
-# }
-
-# Fresh recount of one estate's raw power across all owned locations, used by
-# the national estate raw power audit. scope:mnt_wealth_audit_estate is the estate type.
-
-mnt_wealth_owned_raw_power_sum = {
-	value = 0
-
-	every_owned_location = {
-		limit = { is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_audit_estate } }
-		add = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_audit_estate)"
-	}
 }

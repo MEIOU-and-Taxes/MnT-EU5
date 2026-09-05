@@ -1,25 +1,10 @@
-﻿# Gross Output and Wages: looting on occupation.
-#
-# Occupation loots two pools: a share of the liquid wealth sitting in the
-# location, and a share of its yearly output taken out of invested wealth.
-# A decaying looting resistance reduces both after a recent occupation.
-
-# ── CAPTURE ──
-
-# Scope: country (the captor). scope:target is the location taken. Reached from
-# both capture on_actions, which differ only in whether the location had a fort.
+﻿# Looting on occupation: seizes liquid and invested wealth, reduced by resistance.
 
 mnt_wealth_loot_captured_location = {
 	save_temporary_scope_as = mnt_wealth_occupier
 	mnt_wealth_read_occupier_loot_stance = yes
 	scope:target ?= { mnt_wealth_loot_occupied_location = yes }
 }
-
-# ── OCCUPATION ──
-
-# Scope: location (the occupied location), with scope:mnt_wealth_occupier saved as the
-# occupying country. Brings the location up to date, loots the liquid and invested
-# wealth pools, then pays the captured gold to the occupier's estates and treasury.
 
 mnt_wealth_loot_occupied_location = {
 	# Apply the months since the review first, so the loot comes out of the
@@ -40,10 +25,6 @@ mnt_wealth_loot_occupied_location = {
 	scope:mnt_wealth_occupier ?= { mnt_wealth_pay_loot_to_estates = yes mnt_wealth_pay_loot_to_treasury = yes }
 }
 
-# ── OCCUPIER STANCE ──
-
-# Scope: country (occupier). Saves national looting modifiers as scope temps.
-
 mnt_wealth_read_occupier_loot_stance = {
 	save_temporary_scope_value_as = { name = mnt_wealth_stance_wealth value = modifier:mnt_wealth_looted_modifier }
 	save_temporary_scope_value_as = {
@@ -60,12 +41,6 @@ mnt_wealth_read_occupier_loot_stance = {
 	}
 }
 
-# ── LOOTING RESISTANCE ──
-
-# Scope: location. Sets local_var:mnt_wealth_loot_resistance and marks the location as
-# recently looted. resistance = clamp(local + national, 0, cap), where the local
-# part is the decaying mnt_wealth_recently_looted modifier the player can see.
-
 mnt_wealth_set_loot_resistance = {
 	set_local_variable = {
 		name = mnt_wealth_loot_resistance
@@ -77,20 +52,13 @@ mnt_wealth_set_loot_resistance = {
 		}
 	}
 
-	# Read first, then apply: this occupation is resisted by what the last one
-	# left behind, not by its own modifier. mode = replace restarts the ten years,
-	# so a place occupied over and over never gets a chance to recover.
+	# mode = replace restarts the ten years; resistance is from the prior occupation.
 	add_location_modifier = {
 		modifier = mnt_wealth_recently_looted
 		years = 10
 		mode = replace
 	}
 }
-
-# ── LIQUID WEALTH ──
-
-# Scope: location. Loots a fraction of each estate's wealth, reduced by
-# resistance. The kept share becomes gold for the occupier; the rest is destroyed.
 
 mnt_wealth_seize_liquid_wealth = {
 	# Compute the loot fraction once.
@@ -145,6 +113,7 @@ mnt_wealth_seize_liquid_wealth = {
 
 	change_variable = { name = mnt_wealth_pool subtract = local_var:mnt_wealth_loot_liquid_taken }
 
+	# The occupier keeps this share of what was taken. The rest is destroyed by the looting, deliberately.
 	set_local_variable = {
 		name = mnt_wealth_loot_liquid_captured
 		value = { value = local_var:mnt_wealth_loot_liquid_taken multiply = scope:mnt_wealth_keep_wealth }
@@ -152,12 +121,6 @@ mnt_wealth_seize_liquid_wealth = {
 
 	change_local_variable = { name = mnt_wealth_loot_captured_total add = local_var:mnt_wealth_loot_liquid_captured }
 }
-
-# ── INVESTED WEALTH ──
-
-# Scope: location. Loots invested wealth as a share of the location's yearly
-# output: gdp * investment_looted_modifier * (1 - resistance). Split across the
-# estates by power and subtracted from each one's invested wealth.
 
 mnt_wealth_seize_invested_wealth = {
 	set_local_variable = {
@@ -176,14 +139,12 @@ mnt_wealth_seize_invested_wealth = {
 	}
 }
 
-# Scope: location. One estate's share of the looted invested wealth.
-
 mnt_wealth_loot_estate_investment = {
 	set_local_variable = {
 		name = mnt_wealth_loot_estate_looted
 		value = {
 			value = local_var:mnt_wealth_loot_investment_total
-			multiply = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
+			multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
 		}
 	}
 
@@ -199,6 +160,7 @@ mnt_wealth_loot_estate_investment = {
 			}
 		}
 
+		# The occupier keeps this share of what was taken. The rest is destroyed by the looting, deliberately.
 		set_local_variable = {
 			name = mnt_wealth_loot_estate_captured
 			value = {
@@ -225,10 +187,6 @@ mnt_wealth_loot_estate_investment = {
 		mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_recompute_estate_investment_level }
 	}
 }
-
-# ── PAYOUT ──
-
-# Scope: country (occupier). Splits captured gold among the occupier's estates by power.
 
 mnt_wealth_pay_loot_to_estates = {
 	set_local_variable = { name = mnt_wealth_loot_paid value = 0 }
@@ -258,9 +216,6 @@ mnt_wealth_pay_loot_to_estates = {
 		}
 	}
 }
-
-# Scope: country (occupier). Whatever the estates did not claim goes to the
-# country treasury.
 
 mnt_wealth_pay_loot_to_treasury = {
 	add_gold = { value = scope:mnt_wealth_loot_total_captured subtract = local_var:mnt_wealth_loot_paid }

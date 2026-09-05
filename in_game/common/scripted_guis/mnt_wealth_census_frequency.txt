@@ -1,0 +1,22 @@
+﻿# Cycles the player's census frequency: 0 fast, 1 default, 2 slow. Unset counts as default.
+# The load balancer reads it at each location's service; the human monthly pulse reads it for frequency 0.
+
+mnt_wealth_census_frequency_cycle = {
+	scope = country
+	is_shown = { is_ai = no }
+	is_valid = { is_ai = no }
+
+	effect = {
+		if = {
+			limit = { NOT = { has_variable = mnt_wealth_census_frequency } }
+			set_variable = { name = mnt_wealth_census_frequency value = 1 }
+		}
+		if = {
+			limit = { var:mnt_wealth_census_frequency = 2 }
+			set_variable = { name = mnt_wealth_census_frequency value = 0 }
+		}
+		else = {
+			change_variable = { name = mnt_wealth_census_frequency add = 1 }
+		}
+	}
+}

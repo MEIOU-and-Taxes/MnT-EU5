@@ -1,14 +1,4 @@
-﻿# Gross Output and Wages: per-estate absolute wealth and the pool cache.
-#
-# Each estate's wealth at a location is stored as absolute gold in
-# the mnt_wealth_estate_wealth variable map. The pool variable is a
-# cached total: pool = sum of map values.
-
-# ── ESTATE WEALTH SEEDING ──
-
-# Scope: location. Seeds one estate's wealth from the starting pool
-# and its relative power. The caller sets local_var:mnt_wealth_starting_pool
-# and accumulates local_var:mnt_wealth_seed_running_total.
+﻿# Per-estate absolute wealth and pool cache. pool = sum of estate_wealth map values.
 
 mnt_wealth_seed_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_seed_amount value = 0 }
@@ -32,14 +22,6 @@ mnt_wealth_seed_estate_wealth = {
 
 	change_local_variable = { name = mnt_wealth_seed_running_total add = local_var:mnt_wealth_seed_amount }
 }
-
-
-# ── ESTATE WEALTH DRIFT ──
-
-# Scope: location. Called yearly through mnt_wealth_for_each_cached_estate.
-# Moves each estate's absolute wealth toward pool * relative_power.
-# Accumulates the net delta in local_var:mnt_wealth_drift_running_total
-# for the caller to adjust the pool.
 
 mnt_wealth_drift_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_current_wealth value = 0 }
@@ -92,10 +74,6 @@ mnt_wealth_drift_estate_wealth = {
 	}
 	change_local_variable = { name = mnt_wealth_drift_running_total add = local_var:mnt_wealth_drift_delta }
 }
-
-# ── ESTATE WEALTH HELPERS ──
-
-# Scope: location. Adds $AMOUNT$ gold to one estate and the pool.
 
 mnt_wealth_credit_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_credit_current value = 0 }

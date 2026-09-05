@@ -1,0 +1,318 @@
+﻿# Utility effects used across the wealth system.
+
+# The four wealth add and remove helpers below have no caller inside the wealth system. They are the hooks other
+# systems use to move gold into or out of a location, so they stay.
+
+mnt_wealth_add_location_wealth = {
+	set_local_variable = { name = mnt_wealth_add_amount value = { value = $AMOUNT$ min = 0 } }
+
+	if = {
+		limit = { var:mnt_wealth_pool > 0 }
+		set_local_variable = {
+			name = mnt_wealth_add_scale
+			value = { value = local_var:mnt_wealth_add_amount divide = var:mnt_wealth_pool add = 1 }
+		}
+
+		save_temporary_scope_as = mnt_wealth_add_loc
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_estate_wealth
+			save_temporary_scope_as = mnt_wealth_add_key
+
+			scope:mnt_wealth_add_loc = {
+				set_local_variable = {
+					name = mnt_wealth_add_scaled
+					value = {
+						value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_add_key)"
+						multiply = local_var:mnt_wealth_add_scale
+					}
+				}
+
+				add_to_variable_map = {
+					name = mnt_wealth_estate_wealth
+					key = scope:mnt_wealth_add_key
+					value = local_var:mnt_wealth_add_scaled
+				}
+			}
+		}
+	}
+	else = {
+		save_temporary_scope_as = mnt_wealth_add_loc
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_cached_local_relative_estate_power
+			save_temporary_scope_as = mnt_wealth_add_key
+
+			scope:mnt_wealth_add_loc = {
+				set_local_variable = { name = mnt_wealth_add_existing value = 0 }
+
+				if = {
+					limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_add_key } }
+					set_local_variable = {
+						name = mnt_wealth_add_existing
+						value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_add_key)"
+					}
+				}
+
+				set_local_variable = {
+					name = mnt_wealth_add_by_power
+					value = {
+						value = local_var:mnt_wealth_add_existing
+						add = {
+							value = local_var:mnt_wealth_add_amount
+							multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|scope:mnt_wealth_add_key)"
+						}
+					}
+				}
+
+				add_to_variable_map = {
+					name = mnt_wealth_estate_wealth
+					key = scope:mnt_wealth_add_key
+					value = local_var:mnt_wealth_add_by_power
+				}
+			}
+		}
+	}
+
+	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_add_amount }
+}
+
+mnt_wealth_remove_location_wealth = {
+	set_local_variable = { name = mnt_wealth_remove_amount value = { value = $AMOUNT$ min = 0 } }
+
+	# max = is a CEILING, so it caps remove_amount at the current wealth.
+	set_local_variable = {
+		name = mnt_wealth_removed_amount
+		value = {
+			value = local_var:mnt_wealth_remove_amount
+			max = var:mnt_wealth_pool
+			min = 0
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_removed_amount > 0 var:mnt_wealth_pool > 0 }
+		set_local_variable = {
+			name = mnt_wealth_remove_scale
+			value = {
+				value = var:mnt_wealth_pool
+				subtract = local_var:mnt_wealth_removed_amount
+				divide = var:mnt_wealth_pool
+			}
+		}
+
+		save_temporary_scope_as = mnt_wealth_remove_loc
+
+		every_key_in_variable_map = {
+			variable = mnt_wealth_estate_wealth
+			save_temporary_scope_as = mnt_wealth_remove_key
+
+			scope:mnt_wealth_remove_loc = {
+				set_local_variable = {
+					name = mnt_wealth_remove_scaled
+					value = {
+						value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_remove_key)"
+						multiply = local_var:mnt_wealth_remove_scale
+					}
+				}
+
+				add_to_variable_map = {
+					name = mnt_wealth_estate_wealth
+					key = scope:mnt_wealth_remove_key
+					value = local_var:mnt_wealth_remove_scaled
+				}
+			}
+		}
+	}
+
+	set_variable = {
+		name = mnt_wealth_pool
+		value = { value = var:mnt_wealth_pool subtract = local_var:mnt_wealth_removed_amount min = 0 }
+	}
+
+	set_local_variable = { name = mnt_wealth_removed_total value = local_var:mnt_wealth_removed_amount }
+}
+
+# Scope: location. Adds $AMOUNT$ gold to $ESTATE$'s wealth and the total.
+
+mnt_wealth_add_local_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:$ESTATE$_estate }
+	set_local_variable = { name = mnt_wealth_add_amount value = { value = $AMOUNT$ min = 0 } }
+	mnt_wealth_credit_estate_wealth = { AMOUNT = local_var:mnt_wealth_add_amount }
+}
+
+mnt_wealth_remove_local_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:$ESTATE$_estate }
+	set_local_variable = { name = mnt_wealth_local_estate_wealth value = 0 }
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_local_estate_wealth
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	# max = is a CEILING.
+	set_local_variable = {
+		name = mnt_wealth_take_amount
+		value = {
+			value = $AMOUNT$
+			min = 0
+			max = local_var:mnt_wealth_local_estate_wealth
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_removed_total value = local_var:mnt_wealth_take_amount }
+	set_local_variable = { name = mnt_wealth_take_amount   value = { value = local_var:mnt_wealth_take_amount multiply = -1 } }
+	mnt_wealth_credit_estate_wealth = { AMOUNT = local_var:mnt_wealth_take_amount }
+}
+
+mnt_wealth_apply_sized_modifier = {
+	set_local_variable = {
+		name = mnt_wealth_modifier_multiple
+		value = {
+			value = $SIZE$
+			divide = $FACTOR$
+			round = yes
+			min = 0
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_modifier_stale value = 1 }
+
+	if = {
+		limit = { has_location_modifier = $MODIFIER$ has_variable = mnt_wealth_applied_$MODIFIER$ }
+		if = {
+			limit = { var:mnt_wealth_applied_$MODIFIER$ = local_var:mnt_wealth_modifier_multiple }
+			set_local_variable = { name = mnt_wealth_modifier_stale value = 0 }
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_wealth_modifier_multiple = 0 }
+		mnt_wealth_remove_sized_modifier = { MODIFIER = $MODIFIER$ }
+	}
+	else_if = {
+		limit = { local_var:mnt_wealth_modifier_stale = 1 }
+
+		set_local_variable = {
+			name = mnt_wealth_modifier_size
+			value = { value = local_var:mnt_wealth_modifier_multiple multiply = $FACTOR$ }
+		}
+
+		add_location_modifier = {
+			modifier = $MODIFIER$
+			years = -1
+			mode = replace
+			size = local_var:mnt_wealth_modifier_size
+		}
+
+		set_variable = { name = mnt_wealth_applied_$MODIFIER$ value = local_var:mnt_wealth_modifier_multiple }
+	}
+}
+
+mnt_wealth_remove_sized_modifier = {
+	if = { limit = { has_location_modifier = $MODIFIER$ } remove_location_modifier = $MODIFIER$ }
+	if = { limit = { has_variable = mnt_wealth_applied_$MODIFIER$ } remove_variable = mnt_wealth_applied_$MODIFIER$ }
+}
+
+mnt_wealth_set_wealth_map_mode_bands = {
+	set_local_variable = { name = mnt_wealth_band_index value = 1 }
+
+	while = {
+		count = 5
+
+		set_local_variable = {
+			name = mnt_wealth_band_threshold
+			value = {
+				value = global_var:mnt_wealth_map_mode_max_wealth_pool
+				multiply = local_var:mnt_wealth_band_index
+				divide = 6
+			}
+		}
+
+		add_to_global_variable_map = {
+			name = mnt_wealth_bands
+			key = local_var:mnt_wealth_band_index
+			value = local_var:mnt_wealth_band_threshold
+		}
+
+		change_local_variable = { name = mnt_wealth_band_index add = 1 }
+	}
+}
+
+mnt_wealth_raise_wealth_map_mode_ceiling = {
+	if = {
+		limit = { var:mnt_wealth_pool > global_var:mnt_wealth_map_mode_max_wealth_pool }
+		change_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool add = 500 }
+		mnt_wealth_set_wealth_map_mode_bands = yes
+	}
+}
+
+# $MODE$ is total, urban, or rural.
+
+mnt_wealth_set_gross_output_map_mode_bands = {
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_1 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ divide = 6 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_2 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ divide = 3 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_3 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ divide = 2 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_4 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ multiply = 2 divide = 3 } }
+	set_global_variable = { name = mnt_wealth_gross_output_band_$MODE$_5 value = { value = global_var:mnt_wealth_map_mode_max_gross_output_$MODE$ multiply = 5 divide = 6 } }
+}
+
+mnt_wealth_raise_gross_output_map_mode_ceilings = {
+	if = {
+		limit = { var:mnt_wealth_local_gross_output > global_var:mnt_wealth_map_mode_max_gross_output_total }
+		change_global_variable = { name = mnt_wealth_map_mode_max_gross_output_total add = 50 }
+		mnt_wealth_set_gross_output_map_mode_bands = { MODE = total }
+	}
+	if = {
+		limit = { var:mnt_wealth_local_urban_gross_output > global_var:mnt_wealth_map_mode_max_gross_output_urban }
+		change_global_variable = { name = mnt_wealth_map_mode_max_gross_output_urban add = 50 }
+		mnt_wealth_set_gross_output_map_mode_bands = { MODE = urban }
+	}
+	if = {
+		limit = { var:mnt_wealth_local_rural_gross_output > global_var:mnt_wealth_map_mode_max_gross_output_rural }
+		change_global_variable = { name = mnt_wealth_map_mode_max_gross_output_rural add = 50 }
+		mnt_wealth_set_gross_output_map_mode_bands = { MODE = rural }
+	}
+}
+
+# Global lookup maps, built once at game start by mnt_wealth_seed_economy_constants.
+
+# Political power per pop as a map, so the census can look it up by estate key.
+mnt_wealth_build_power_per_pop_map = {
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:nobles_estate   value = mnt_wealth_nobles_power_per_pop }
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:clergy_estate   value = mnt_wealth_clergy_power_per_pop }
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:burghers_estate value = mnt_wealth_burghers_power_per_pop }
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:peasants_estate value = mnt_wealth_peasants_power_per_pop }
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:dhimmi_estate   value = mnt_wealth_dhimmi_power_per_pop }
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:tribes_estate   value = mnt_wealth_tribes_power_per_pop }
+	add_to_global_variable_map = { name = mnt_wealth_power_per_pop key = estate_type:cossacks_estate value = mnt_wealth_cossacks_power_per_pop }
+}
+
+# Short keys the GUI concatenates into icon paths for the per estate investment tooltips.
+mnt_wealth_build_estate_short_key_map = {
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:nobles_estate   value = flag:nobles }
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:clergy_estate   value = flag:clergy }
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:burghers_estate value = flag:burghers }
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:peasants_estate value = flag:peasants }
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:dhimmi_estate   value = flag:dhimmi }
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:tribes_estate   value = flag:tribes }
+	add_to_global_variable_map = { name = mnt_wealth_estate_short_key key = estate_type:cossacks_estate value = flag:cossacks }
+}
+
+# The dispatch picks a day of the month for each location, so it needs to know how many days the current month has.
+mnt_wealth_build_days_in_month_map = {
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 1  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 2  value = 28 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 3  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 4  value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 5  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 6  value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 7  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 8  value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 9  value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 10 value = 31 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 11 value = 30 }
+	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 12 value = 31 }
+}
