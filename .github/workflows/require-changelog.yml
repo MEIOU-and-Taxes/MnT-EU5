@@ -59,7 +59,11 @@ jobs:
           head_sha="${{ github.event.pull_request.head.sha }}"
           required_file="Documentation/Change log.md"
 
-          changed_files=$(git diff --name-only "$base_sha" "$head_sha")
+          # Three dots: diff against the merge base, not against the base branch
+          # tip. A two-dot diff also reports files that other people changed on
+          # the base branch after this PR branched, so someone else's changelog
+          # edit would satisfy the requirement for a PR that never touched it.
+          changed_files=$(git diff --name-only "$base_sha...$head_sha")
 
           if ! echo "$changed_files" | grep -Fxq "$required_file"; then
             echo "::error ::$required_file must be updated in this pull request."
