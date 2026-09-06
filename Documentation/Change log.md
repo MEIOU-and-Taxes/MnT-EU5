@@ -610,3 +610,5 @@ Date: 21/05/2026
 - Fix Japanese clan and stackable estate buildings being capped too low since RGOs were replaced
 - Fix converted fruit, lumber, sand, clay and wool RGO buildings ignoring their own max level
 - Fix rural buildings being capped below the levels the base game places them at
+- Fix rank upgrades being available to every country on day one
+- Fix charcoal makers producing coal with no wood input
