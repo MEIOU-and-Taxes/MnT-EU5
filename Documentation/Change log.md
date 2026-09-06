@@ -608,8 +608,12 @@ Date: 21/05/2026
 ##### Population
 - Entire max population system reworked to be more climate related, and lower in general.
 - Population growth does not cease after max population is reached, but instead slowly tapers off with a soft cap.
+- Paradox rescaled population promotion speed, causing our own scaling to be too aggressive. 
 
 ### Fixes
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
 - Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
 - Fix errors on startup that about too many farming villages in Locations
+- Fixed morale loss to scale with removal of hours
+- Fixed duplicated movement speed in defines, correcting movement speed to M&T values.
+ 
