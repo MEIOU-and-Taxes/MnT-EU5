@@ -1,105 +1,84 @@
-﻿# Gross output census: prices goods, computes estate raw power and desired wealth.
+﻿# The census: gross output from buildings and prices, estate pops and raw power, departed estates.
+
+# The census: every slow-rolling figure a location carries from the location wealth system.
+
+mnt_wealth_census_location = {
+	mnt_wealth_update_local_gross_output = yes
+	mnt_wealth_retake_estate_census = yes
+	# Gross output moved, so the cached wage bill moves with it.
+	mnt_wealth_set_location_wages = yes
+	set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
+}
+
+mnt_wealth_update_local_gross_output = {
+	save_scope_as = mnt_wealth_gross_output_location
+	mnt_wealth_remove_local_gross_output_from_national_total = yes
+	mnt_wealth_clear_found_goods = yes
+	every_buildings_in_location         = { mnt_wealth_cache_building_produced_goods = yes }
+	every_foreign_buildings_in_location = { mnt_wealth_cache_building_produced_goods = yes }
+	mnt_wealth_calculate_local_gross_output = yes
+	mnt_wealth_raise_gross_output_map_mode_ceilings = yes
+	mnt_wealth_add_local_gross_output_to_national_total = yes
+}
 
 mnt_wealth_clear_found_goods = {
 	clear_local_variable_map = mnt_wealth_found_goods_map
 	clear_local_variable_list = mnt_wealth_found_goods_list
 }
 
-mnt_wealth_add_raw_material_good = {
+mnt_wealth_cache_building_produced_goods = {
+	building_type ?= { save_temporary_scope_as = mnt_wealth_current_building_type }
+	mnt_wealth_classify_building_type = yes
+	mnt_wealth_collect_building_goods = yes
+}
+
+mnt_wealth_classify_building_type = {
 	if = {
-		limit = { exists = raw_material }
-
-		add_to_local_variable_map = {
-			name = mnt_wealth_found_goods_map
-			key = raw_material
-			value = 1
+		limit = {
+			NOT = {
+				is_key_in_global_variable_map = {
+					name = mnt_wealth_building_makes_goods
+					target = scope:mnt_wealth_current_building_type
+				}
+			}
 		}
-
-		add_to_local_variable_list = { name = mnt_wealth_found_goods_list target = raw_material }
+		if = {
+			limit = { any_production_method_of_building = { exists = produced_goods } }
+			add_to_global_variable_map = {
+				name = mnt_wealth_building_makes_goods
+				key = scope:mnt_wealth_current_building_type
+				value = 1
+			}
+		}
+		else = {
+			add_to_global_variable_map = {
+				name = mnt_wealth_building_makes_goods
+				key = scope:mnt_wealth_current_building_type
+				value = 0
+			}
+		}
 	}
 }
 
-mnt_wealth_build_good_classification_map = {
-	clear_global_variable_map = mnt_wealth_good_classification
+mnt_wealth_collect_building_goods = {
+	if = {
+		limit = { "global_variable_map(mnt_wealth_building_makes_goods|scope:mnt_wealth_current_building_type)" > 0 }
+		every_production_method_of_building = {
+			limit = {
+				exists = produced_goods
+				NOT = { is_key_in_local_variable_map = { name = mnt_wealth_found_goods_map target = produced_goods } }
+			}
+			add_to_local_variable_map = {
+				name = mnt_wealth_found_goods_map
+				key = produced_goods
+				value = 1
+			}
 
-	# Urban goods.
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:beer value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:books value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cannons value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cloth value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fine_cloth value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:firearms value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:furniture value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:glass value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:jewelry value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lacquerware value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:leather value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:liquor value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:naval_supplies value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:paper value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:porcelain value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pottery value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:steel value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tools value = flag:urban }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:weaponry value = flag:urban }
-
-	# Rural goods.
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:alum value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:amber value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:beeswax value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:chili value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:clay value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cloves value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:coal value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cocoa value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:coffee value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:copper value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cotton value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:dyes value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:elephants value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fiber_crops value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fish value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fruit value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fur value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:gems value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:goods_gold value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:horses value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:incense value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:iron value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:ivory value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lead value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:legumes value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:livestock value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lumber value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:maize value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:marble value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:masonry value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:medicaments value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:mercury value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:millet value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:olives value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pearls value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pepper value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:potato value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:rice value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:saffron value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:salt value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:saltpeter value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:sand value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:silk value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:silver value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:slaves_goods value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:stone value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:sugar value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tar value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tea value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tin value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tobacco value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wheat value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wild_game value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wine value = flag:rural }
-	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wool value = flag:rural }
+			add_to_local_variable_list = { name = mnt_wealth_found_goods_list target = produced_goods }
+		}
+	}
 }
+
 
 mnt_wealth_calculate_local_gross_output = {
 	set_variable = { name = mnt_wealth_local_gross_output value = 0 }
@@ -148,50 +127,40 @@ mnt_wealth_maintain_building_produced_goods_cache = {
 	}
 }
 
-mnt_wealth_classify_building_type = {
-	if = {
+mnt_wealth_retake_estate_census = {
+	owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
+	mnt_wealth_apply_national_estate_raw_power = { SIGN = -1 }
+	mnt_wealth_census_estate_data = yes
+	mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
+}
+
+mnt_wealth_census_estate_data = {
+	# Raw power is the measure of presence: an estate with pops here is present, one holding wealth with no pops left has departed.
+	clear_variable_map = mnt_estate_raw_power
+	set_variable = { name = mnt_wealth_local_raw_power_total value = 0 }
+	mnt_wealth_count_estate_pops = yes
+	mnt_wealth_refresh_relative_power = yes
+
+	# Departed estates: strip modifiers, redistribute gold to remaining estates.
+	set_local_variable = { name = mnt_wealth_freed_investment    value = 0 }
+	set_local_variable = { name = mnt_wealth_freed_estate_wealth value = 0 }
+	every_active_estate = {
 		limit = {
-			NOT = {
-				is_key_in_global_variable_map = {
-					name = mnt_wealth_building_makes_goods
-					target = scope:mnt_wealth_current_building_type
+			prev = {
+				NOT = { is_key_in_variable_map = { name = mnt_estate_raw_power target = prev.estate_type } }
+				OR = {
+					is_key_in_variable_map = { name = mnt_wealth_estate_wealth   target = prev.estate_type }
+					is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = prev.estate_type }
 				}
 			}
 		}
-		if = {
-			limit = { any_production_method_of_building = { exists = produced_goods } }
-			add_to_global_variable_map = {
-				name = mnt_wealth_building_makes_goods
-				key = scope:mnt_wealth_current_building_type
-				value = 1
-			}
-		}
-		else = {
-			add_to_global_variable_map = {
-				name = mnt_wealth_building_makes_goods
-				key = scope:mnt_wealth_current_building_type
-				value = 0
-			}
-		}
+		estate_type = { save_temporary_scope_as = mnt_wealth_stale_key }
+		prev = { mnt_wealth_release_absent_estate = yes }
 	}
-}
-
-mnt_wealth_collect_building_goods = {
 	if = {
-		limit = { "global_variable_map(mnt_wealth_building_makes_goods|scope:mnt_wealth_current_building_type)" > 0 }
-		every_production_method_of_building = {
-			limit = {
-				exists = produced_goods
-				NOT = { is_key_in_local_variable_map = { name = mnt_wealth_found_goods_map target = produced_goods } }
-			}
-			add_to_local_variable_map = {
-				name = mnt_wealth_found_goods_map
-				key = produced_goods
-				value = 1
-			}
-
-			add_to_local_variable_list = { name = mnt_wealth_found_goods_list target = produced_goods }
-		}
+		limit = { OR = { local_var:mnt_wealth_freed_investment != 0 local_var:mnt_wealth_freed_estate_wealth != 0 } }
+		set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
+		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
 	}
 }
 
@@ -247,44 +216,32 @@ mnt_wealth_clear_pop_counts = {
 	set_local_variable = { name = mnt_wealth_pops_cossacks value = 0 }
 }
 
-mnt_wealth_store_estate_pops = {
-	if = {
-		limit = {
-			local_var:mnt_wealth_pops_$ESTATE$ > 0
-		}
-		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
-		set_local_variable = {
-			name = mnt_wealth_pops_per_pop
-			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_pops_key)"
-		}
-		set_local_variable = {
-			name = mnt_wealth_pops_raw
-			value = {
-				value = local_var:mnt_wealth_pops_$ESTATE$
-				multiply = local_var:mnt_wealth_pops_per_pop
-			}
-		}
-
-		add_to_variable_map = {
-			name = mnt_estate_raw_power
-			key = local_var:mnt_wealth_pops_key
-			value = local_var:mnt_wealth_pops_raw
-		}
-
-		change_local_variable = { name = mnt_wealth_pops_raw_total add = local_var:mnt_wealth_pops_raw }
-	}
-}
-
 mnt_wealth_count_pops_by_type = {
-	set_local_variable = { name = mnt_wealth_pops_nobles   value = num_pop_type:nobles }
-	set_local_variable = { name = mnt_wealth_pops_clergy   value = num_pop_type:clergy }
-	set_local_variable = { name = mnt_wealth_pops_burghers value = num_pop_type:burghers }
-	set_local_variable = { name = mnt_wealth_pops_tribes   value = num_pop_type:tribesmen }
-	set_local_variable = { name = mnt_wealth_pops_slaves   value = num_pop_type:slaves }
-	set_local_variable = { name = mnt_wealth_pops_peasants value = num_pop_type:laborers }
-	change_local_variable = { name = mnt_wealth_pops_peasants add = num_pop_type:soldiers }
-	change_local_variable = { name = mnt_wealth_pops_peasants add = num_pop_type:peasants }
-	change_local_variable = { name = mnt_wealth_pops_peasants add = local_var:mnt_wealth_pops_slaves }
+	# One local per pop type, so food demand can multiply each by its consumption later.
+	set_local_variable = { name = mnt_wealth_pop_type_nobles    value = num_pop_type:nobles }
+	set_local_variable = { name = mnt_wealth_pop_type_clergy    value = num_pop_type:clergy }
+	set_local_variable = { name = mnt_wealth_pop_type_burghers  value = num_pop_type:burghers }
+	set_local_variable = { name = mnt_wealth_pop_type_laborers  value = num_pop_type:laborers }
+	set_local_variable = { name = mnt_wealth_pop_type_soldiers  value = num_pop_type:soldiers }
+	set_local_variable = { name = mnt_wealth_pop_type_peasants  value = num_pop_type:peasants }
+	set_local_variable = { name = mnt_wealth_pop_type_tribesmen value = num_pop_type:tribesmen }
+	set_local_variable = { name = mnt_wealth_pop_type_slaves    value = num_pop_type:slaves }
+
+	# Estate buckets from the pop type counts.
+	set_local_variable = { name = mnt_wealth_pops_nobles   value = local_var:mnt_wealth_pop_type_nobles }
+	set_local_variable = { name = mnt_wealth_pops_clergy   value = local_var:mnt_wealth_pop_type_clergy }
+	set_local_variable = { name = mnt_wealth_pops_burghers value = local_var:mnt_wealth_pop_type_burghers }
+	set_local_variable = { name = mnt_wealth_pops_tribes   value = local_var:mnt_wealth_pop_type_tribesmen }
+	set_local_variable = { name = mnt_wealth_pops_slaves   value = local_var:mnt_wealth_pop_type_slaves }
+	set_local_variable = {
+		name = mnt_wealth_pops_peasants
+		value = {
+			value = local_var:mnt_wealth_pop_type_laborers
+			add = local_var:mnt_wealth_pop_type_soldiers
+			add = local_var:mnt_wealth_pop_type_peasants
+			add = local_var:mnt_wealth_pop_type_slaves
+		}
+	}
 }
 
 mnt_wealth_count_pops_slave_split = {
@@ -341,104 +298,58 @@ mnt_wealth_count_pops_full = {
 	}
 }
 
-mnt_wealth_census_estate_data = {
-	save_temporary_scope_as = mnt_wealth_census_location
-	clear_variable_map = mnt_estate_raw_power
-	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
-	set_variable = { name = mnt_wealth_local_raw_power_total value = 0 }
+mnt_wealth_store_estate_pops = {
+	if = {
+		limit = {
+			local_var:mnt_wealth_pops_$ESTATE$ > 0
+		}
+		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
+		set_local_variable = {
+			name = mnt_wealth_pops_per_pop
+			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_pops_key)"
+		}
+		set_local_variable = {
+			name = mnt_wealth_pops_raw
+			value = {
+				value = local_var:mnt_wealth_pops_$ESTATE$
+				multiply = local_var:mnt_wealth_pops_per_pop
+			}
+		}
+
+		add_to_variable_map = {
+			name = mnt_estate_raw_power
+			key = local_var:mnt_wealth_pops_key
+			value = local_var:mnt_wealth_pops_raw
+		}
+
+		change_local_variable = { name = mnt_wealth_pops_raw_total add = local_var:mnt_wealth_pops_raw }
+	}
+}
+
+mnt_wealth_store_estate_census_results = {
+	set_local_variable = {
+		name = mnt_wealth_estate_relative_power
+		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
+	}
+
+	set_local_variable = { name = mnt_wealth_raw_power_for_one_estate value = 0 }
+	if = {
+		limit = {
+			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
+		}
+		set_local_variable = {
+			name = mnt_wealth_raw_power_for_one_estate
+			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
+		}
+	}
 
 	if = {
-		limit = { exists = owner }
-		mnt_wealth_count_estate_pops = yes
+		limit = { OR = { local_var:mnt_wealth_estate_relative_power > 0 local_var:mnt_wealth_raw_power_for_one_estate > 0 } }
 
-		$ITERATOR$ = { EFFECT = mnt_wealth_store_estate_census_results }
-		# Pick up estates the iterator missed and note any with no power left.
-		clear_local_variable_list = mnt_wealth_departed_estates
-
-		every_key_in_variable_map = {
-			variable = mnt_wealth_estate_wealth
-			save_temporary_scope_as = mnt_wealth_leftover_key
-
-			scope:mnt_wealth_census_location = {
-				if = {
-					limit = {
-						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-					}
-					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_census_results = yes
-
-					# Still off the roll with the live figures in: the estate has left.
-					if = {
-						limit = {
-							NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-							NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key } }
-						}
-						add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key }
-					}
-				}
-			}
-		}
-
-		every_key_in_variable_map = {
-			variable = mnt_wealth_invested_wealth
-			save_temporary_scope_as = mnt_wealth_leftover_key
-
-			scope:mnt_wealth_census_location = {
-				if = {
-					limit = {
-						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-					}
-					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_census_results = yes
-
-					# Still off the roll with the live figures in: the estate has left.
-					if = {
-						limit = {
-							NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-							NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key } }
-						}
-						add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key }
-					}
-				}
-			}
-		}
-
-		every_key_in_variable_map = {
-			variable = mnt_estate_raw_power
-			save_temporary_scope_as = mnt_wealth_leftover_key
-
-			scope:mnt_wealth_census_location = {
-				if = {
-					limit = {
-						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-					}
-					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_census_results = yes
-
-					# Still off the roll with the live figures in: the estate has left.
-					if = {
-						limit = {
-							NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-							NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key } }
-						}
-						add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_leftover_key }
-					}
-				}
-			}
-		}
-
-		# Departed estates: strip modifiers, redistribute gold to remaining estates.
-		set_local_variable = { name = mnt_wealth_freed_investment    value = 0 }
-		set_local_variable = { name = mnt_wealth_freed_estate_wealth value = 0 }
-		every_in_local_list = {
-			variable = mnt_wealth_departed_estates
-			save_temporary_scope_as = mnt_wealth_stale_key
-			prev = { mnt_wealth_release_absent_estate = yes }
-		}
-		if = {
-			limit = { OR = { local_var:mnt_wealth_freed_investment != 0 local_var:mnt_wealth_freed_estate_wealth != 0 } }
-			set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
-			mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
+		add_to_variable_map = {
+			name = mnt_wealth_cached_local_relative_estate_power
+			key = local_var:mnt_wealth_estate_key
+			value = local_var:mnt_wealth_estate_relative_power
 		}
 	}
 }
@@ -541,120 +452,4 @@ mnt_wealth_redistribute_to_estate = {
 			value = local_var:mnt_wealth_new_estate_gold
 		}
 	}
-}
-
-mnt_wealth_store_estate_census_results = {
-	set_local_variable = {
-		name = mnt_wealth_estate_relative_power
-		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
-	}
-
-	set_local_variable = { name = mnt_wealth_raw_power_for_one_estate value = 0 }
-	if = {
-		limit = {
-			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
-		}
-		set_local_variable = {
-			name = mnt_wealth_raw_power_for_one_estate
-			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
-		}
-	}
-
-	if = {
-		limit = { OR = { local_var:mnt_wealth_estate_relative_power > 0 local_var:mnt_wealth_raw_power_for_one_estate > 0 } }
-
-		add_to_variable_map = {
-			name = mnt_wealth_cached_local_relative_estate_power
-			key = local_var:mnt_wealth_estate_key
-			value = local_var:mnt_wealth_estate_relative_power
-		}
-	}
-}
-
-mnt_wealth_ensure_census_data = {
-	if = { limit = { var:mnt_wealth_local_gross_output = 0 } mnt_wealth_update_local_gross_output = yes }
-
-	if = {
-		limit = {
-			NOT = {
-				has_variable_map = mnt_wealth_cached_local_relative_estate_power
-				has_variable_map = mnt_estate_raw_power
-			}
-		}
-		mnt_wealth_census_estate_data = { ITERATOR = mnt_wealth_for_all_estate_types }
-	}
-}
-
-mnt_wealth_update_local_gross_output = {
-	save_scope_as = mnt_wealth_gross_output_location
-	mnt_wealth_remove_local_gross_output_from_national_total = yes
-	mnt_wealth_clear_found_goods = yes
-	every_buildings_in_location         = { mnt_wealth_check_building = yes }
-	every_foreign_buildings_in_location = { mnt_wealth_check_building = yes }
-	mnt_wealth_calculate_local_gross_output = yes
-	mnt_wealth_raise_gross_output_map_mode_ceilings = yes
-	mnt_wealth_add_local_gross_output_to_national_total = yes
-}
-
-mnt_wealth_retake_estate_census = {
-	if = {
-		limit = { exists = owner }
-		owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
-		mnt_wealth_apply_national_estate_raw_power = { SIGN = -1 }
-	}
-
-	mnt_wealth_census_estate_data = { ITERATOR = mnt_wealth_for_each_national_estate }
-
-	if = {
-		limit = { exists = owner }
-		owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
-		mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
-	}
-}
-
-mnt_wealth_refresh_relative_power = {
-	save_temporary_scope_as = mnt_wealth_census_location
-	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
-
-	if = {
-		limit = { exists = owner }
-
-		mnt_wealth_for_each_national_estate = { EFFECT = mnt_wealth_store_estate_census_results }
-
-		every_key_in_variable_map = {
-			variable = mnt_wealth_estate_wealth
-			save_temporary_scope_as = mnt_wealth_leftover_key
-
-			scope:mnt_wealth_census_location = {
-				if = {
-					limit = {
-						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-					}
-					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_census_results = yes
-				}
-			}
-		}
-
-		every_key_in_variable_map = {
-			variable = mnt_estate_raw_power
-			save_temporary_scope_as = mnt_wealth_leftover_key
-
-			scope:mnt_wealth_census_location = {
-				if = {
-					limit = {
-						NOT = { mnt_wealth_estate_is_present = { KEY = scope:mnt_wealth_leftover_key } }
-					}
-					set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_leftover_key }
-					mnt_wealth_store_estate_census_results = yes
-				}
-			}
-		}
-	}
-}
-
-mnt_wealth_check_building = {
-	building_type ?= { save_temporary_scope_as = mnt_wealth_current_building_type }
-	mnt_wealth_classify_building_type = yes
-	mnt_wealth_collect_building_goods = yes
 }

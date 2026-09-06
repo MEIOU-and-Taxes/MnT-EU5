@@ -1,4 +1,55 @@
-﻿# Investment level: at each review, merges investment progress, recomputes each estate's level, and sizes its modifiers.
+﻿# Reconciliation: derives each estate's investment level and modifiers from its invested wealth, drifts wealth
+# toward the power split, and refreshes relative power.
+
+# Reconciliation: derive the outcomes from the accumulators. Two-yearly for slow, yearly for medium, monthly for fast.
+# When a census is scheduled it follows this, never precedes it because we want display data to be accurate for the whole period.
+
+mnt_wealth_reconcile_location = {
+	# Relative power first, so drift below targets the current split.
+	mnt_wealth_refresh_relative_power = yes
+	set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
+	# Apply stored state under the recorded rates before anything below changes them.
+	mnt_wealth_advance_location_to_now = yes
+	# Drift is tuned per year, so scale it by the years since the last reconciliation.
+	set_local_variable = {
+		name = mnt_wealth_drift_age_factor
+		value = { value = global_var:mnt_wealth_months_elapsed subtract = var:mnt_wealth_reconciled_month divide = 12 }
+	}
+	set_local_variable = { name = mnt_wealth_drift_running_total value = 0 }
+	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_review_estate }
+
+	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_drift_running_total }
+	# Slow locations have no monthly pass; their wages only move here and at the census.
+	if = {
+		limit = { owner = { mnt_wealth_cadence_is_slow = yes } }
+		mnt_wealth_set_location_wages = yes
+	}
+
+	mnt_wealth_raise_wealth_map_mode_ceiling = yes
+	mnt_wealth_cache_location_rates = yes
+	set_variable = { name = mnt_wealth_reconciled_month value = global_var:mnt_wealth_months_elapsed }
+}
+
+# One estate's review. Level updates before drift so the level reads progress first.
+
+mnt_wealth_review_estate = {
+	mnt_wealth_update_estate_investment_level = yes
+	mnt_wealth_drift_estate_wealth = yes
+}
+
+mnt_wealth_refresh_relative_power = {
+	# Iterates the raw power keys, not estates: estates are not active during on_game_start, the raw power map is.
+	save_temporary_scope_as = mnt_wealth_census_loc
+	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
+	every_key_in_variable_map = {
+		variable = mnt_estate_raw_power
+		save_temporary_scope_as = mnt_wealth_census_key
+		scope:mnt_wealth_census_loc = {
+			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_census_key }
+			mnt_wealth_store_estate_census_results = yes
+		}
+	}
+}
 
 mnt_wealth_update_investment_levels = {
 	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_update_estate_investment_level }
@@ -15,6 +66,45 @@ mnt_wealth_update_estate_investment_level_by_name = {
 	if = {
 		limit = { local_var:mnt_wealth_current_since_review != 0 }
 		mnt_wealth_recompute_estate_investment_level = { ESTATE = $ESTATE$ }
+	}
+}
+
+mnt_wealth_add_progress_to_invested_wealth = {
+	set_local_variable = { name = mnt_wealth_current_invested value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_current_invested
+			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = { name = mnt_wealth_current_since_review value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_current_since_review
+			value = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_merged_invested
+		value = { value = local_var:mnt_wealth_current_invested add = local_var:mnt_wealth_current_since_review }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_invested_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_merged_invested
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_invested_since_review
+		key = local_var:mnt_wealth_estate_key
+		value = 0
 	}
 }
 
@@ -172,61 +262,59 @@ mnt_wealth_recompute_estate_investment_level = {
 	}
 }
 
-# Runs EFFECT with ESTATE set to the short estate name, for effects that name modifiers or variables per estate.
-
-mnt_wealth_run_effect_with_estate_name = {
-	switch = {
-		trigger = local_var:mnt_wealth_estate_key
-		estate_type:nobles_estate   = { $EFFECT$ = { ESTATE = nobles } }
-		estate_type:clergy_estate   = { $EFFECT$ = { ESTATE = clergy } }
-		estate_type:burghers_estate = { $EFFECT$ = { ESTATE = burghers } }
-		estate_type:peasants_estate = { $EFFECT$ = { ESTATE = peasants } }
-		estate_type:dhimmi_estate   = { $EFFECT$ = { ESTATE = dhimmi } }
-		estate_type:tribes_estate   = { $EFFECT$ = { ESTATE = tribes } }
-		estate_type:cossacks_estate = { $EFFECT$ = { ESTATE = cossacks } }
-	}
+mnt_wealth_remove_estate_investment_modifiers = {
+	mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_investment_$ESTATE$ }
+	mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_neglect_$ESTATE$ }
 }
 
-mnt_wealth_add_progress_to_invested_wealth = {
-	set_local_variable = { name = mnt_wealth_current_invested value = 0 }
+mnt_wealth_drift_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_current_wealth value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
-			name = mnt_wealth_current_invested
-			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
+			name = mnt_wealth_current_wealth
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
 		}
 	}
 
-	set_local_variable = { name = mnt_wealth_current_since_review value = 0 }
+	# Target wealth = pool * relative power; no power drifts to zero.
+	set_local_variable = { name = mnt_wealth_target_wealth value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
-			name = mnt_wealth_current_since_review
-			value = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)"
+			name = mnt_wealth_target_wealth
+			value = {
+				value = var:mnt_wealth_pool
+				multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			}
 		}
 	}
 
 	set_local_variable = {
-		name = mnt_wealth_merged_invested
-		value = { value = local_var:mnt_wealth_current_invested add = local_var:mnt_wealth_current_since_review }
+		name = mnt_wealth_drifted_wealth
+		value = {
+			value = local_var:mnt_wealth_current_wealth
+			add = {
+				value = local_var:mnt_wealth_target_wealth
+				subtract = local_var:mnt_wealth_current_wealth
+				multiply = mnt_wealth_local_wealth_share_trend_rate
+				multiply = local_var:mnt_wealth_drift_age_factor
+			}
+		}
 	}
 
 	add_to_variable_map = {
-		name = mnt_wealth_invested_wealth
+		name = mnt_wealth_estate_wealth
 		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_merged_invested
+		value = local_var:mnt_wealth_drifted_wealth
 	}
 
-	add_to_variable_map = {
-		name = mnt_wealth_invested_since_review
-		key = local_var:mnt_wealth_estate_key
-		value = 0
+	# Track the net change so the caller can adjust the pool.
+	set_local_variable = {
+		name = mnt_wealth_drift_delta
+		value = { value = local_var:mnt_wealth_drifted_wealth subtract = local_var:mnt_wealth_current_wealth }
 	}
-}
-
-mnt_wealth_remove_estate_investment_modifiers = {
-	mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_investment_$ESTATE$ }
-	mnt_wealth_remove_sized_modifier = { MODIFIER = mnt_wealth_neglect_$ESTATE$ }
+	change_local_variable = { name = mnt_wealth_drift_running_total add = local_var:mnt_wealth_drift_delta }
 }

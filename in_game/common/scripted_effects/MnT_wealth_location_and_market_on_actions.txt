@@ -1,4 +1,117 @@
-﻿# Scheduling and dispatch: which locations get serviced on which day.
+﻿# The scheduler: which locations get serviced on which day, and the service bookkeeping. It fires on_actions and does no other work.
+# The entire purpose of this system is to spread calculations out over day ticks and to let any systems that need to do an every_market
+# or every_location loop do it in the same loop. It also stops stutters from large nations evaluating every_owned_location on one day when
+# that can be at or above 10% of the total owned locations, Yuan/Golden Horde/etc.
+
+# One service bucket per month of the year; twelve maps because map names cannot be computed.
+
+mnt_dispatch_location_and_market_on_actions = {
+	# This month's bucket: months mod twelve. Target locations are collected first into a list, so the bucket map is
+	# never written while it is iterated.
+	set_local_variable = {
+		name = mnt_wealth_this_months_locations
+		value = { value = global_var:mnt_wealth_months_elapsed modulo = 12 add = 1 }
+	}
+	clear_local_variable_list = mnt_wealth_target_locations
+	switch = {
+		trigger = local_var:mnt_wealth_this_months_locations
+		1  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_1  mnt_wealth_collect_target_location = yes } }
+		2  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_2  mnt_wealth_collect_target_location = yes } }
+		3  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_3  mnt_wealth_collect_target_location = yes } }
+		4  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_4  mnt_wealth_collect_target_location = yes } }
+		5  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_5  mnt_wealth_collect_target_location = yes } }
+		6  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_6  mnt_wealth_collect_target_location = yes } }
+		7  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_7  mnt_wealth_collect_target_location = yes } }
+		8  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_8  mnt_wealth_collect_target_location = yes } }
+		9  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_9  mnt_wealth_collect_target_location = yes } }
+		10 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_10 mnt_wealth_collect_target_location = yes } }
+		11 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_11 mnt_wealth_collect_target_location = yes } }
+		12 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_12 mnt_wealth_collect_target_location = yes } }
+	}
+	every_in_local_list = {
+		variable = mnt_wealth_target_locations
+		mnt_wealth_dispatch_location = yes
+	}
+
+	# Every human-owned location gets the monthly pulses: one now, one on its spread day.
+	every_country = {
+		limit = { is_human = yes }
+		every_owned_location = {
+			mnt_wealth_set_dispatch_day = yes
+			trigger_event_silently = { on_action = monthly_human_location_instant_pulse_MnT }
+			trigger_event_silently = { on_action = monthly_human_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+		}
+	}
+
+	every_market_in_world = {
+		trigger_event_silently = { on_action = monthly_market_pulse_MnT }
+	}
+}
+
+# A bucket entry is the target when its next service month has arrived. Rescheduled entries sit in the same bucket a year out.
+
+mnt_wealth_collect_target_location = {
+	if = {
+		limit = {
+			has_owner = yes
+			var:mnt_wealth_next_service_month <= global_var:mnt_wealth_months_elapsed
+		}
+		add_to_local_variable_list = { name = mnt_wealth_target_locations target = this }
+	}
+}
+
+# One location's yearly service: count it, fire the pulses for this month (instant now, balanced on some day during 
+# the month, evenly spread), record it, and queue the next one twelve months out. What runs on the pulses is not this file's business.
+
+mnt_wealth_dispatch_location = {
+	mnt_wealth_ensure_location_id = yes
+	mnt_wealth_set_dispatch_day = yes
+
+	# One counter per location: every second service is also biyearly, every fourth also four-yearly.
+	change_variable = { name = mnt_wealth_service_counter add = 1 }
+	set_local_variable = { name = mnt_wealth_biyearly_phase    value = { value = var:mnt_wealth_service_counter modulo = 2 } }
+	set_local_variable = { name = mnt_wealth_four_yearly_phase value = { value = var:mnt_wealth_service_counter modulo = 4 } }
+
+	# Fire yearly pulses
+	trigger_event_silently = { on_action = yearly_location_instant_pulse_MnT }
+	trigger_event_silently = { on_action = yearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+	if = {
+		limit = { local_var:mnt_wealth_biyearly_phase = 0 }
+		# Fire bi-yearly pulses
+		trigger_event_silently = { on_action = biyearly_location_instant_pulse_MnT }
+		trigger_event_silently = { on_action = biyearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+	}
+	if = {
+		# Fire 4-yearly pulses
+		limit = { local_var:mnt_wealth_four_yearly_phase = 0 }
+		trigger_event_silently = { on_action = four_yearly_location_instant_pulse_MnT }
+		trigger_event_silently = { on_action = four_yearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+	}
+
+	# Track when this location was last updated
+	set_local_variable = { name = mnt_wealth_last_service value = global_var:mnt_wealth_months_elapsed }
+	save_temporary_scope_as = mnt_wealth_service_entity
+	add_to_global_variable_map = {
+		name = mnt_wealth_location_last_service
+		key = scope:mnt_wealth_service_entity
+		value = local_var:mnt_wealth_last_service
+	}
+	mnt_wealth_write_location_next_service = yes
+}
+
+# Locations in the same bucket spread across the month's days by id.
+
+mnt_wealth_set_dispatch_day = {
+	set_local_variable = {
+		name = mnt_wealth_dispatch_day
+		value = {
+			value = var:mnt_wealth_location_id
+			divide = 12
+			floor = yes
+			modulo = global_var:mnt_wealth_current_days_in_month
+		}
+	}
+}
 
 mnt_wealth_begin_month = {
 	set_global_variable = {
@@ -31,342 +144,11 @@ mnt_wealth_set_days_in_month = {
 	}
 }
 
-# One service bucket per month of the year; twelve maps because map names cannot be computed.
-
-mnt_dispatch_location_and_market_on_actions = {
-	# This month's bucket: months mod twelve, one-based.
-	set_local_variable = {
-		name = mnt_wealth_walk_bucket
-		value = { value = global_var:mnt_wealth_months_elapsed modulo = 12 add = 1 }
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 1 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_1
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_1|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 2 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_2
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_2|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 3 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_3
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_3|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 4 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_4
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_4|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 5 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_5
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_5|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 6 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_6
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_6|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 7 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_7
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_7|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 8 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_8
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_8|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 9 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_9
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_9|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 10 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_10
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_10|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_walk_bucket = 11 }
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_11
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_11|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-	else = {
-		every_key_in_global_variable_map = {
-			variable = mnt_wealth_service_bucket_12
-			limit = {
-				"global_variable_map(mnt_wealth_service_bucket_12|this)" <= global_var:mnt_wealth_months_elapsed
-				exists = owner
-			}
-			mnt_wealth_dispatch_location = yes
-		}
-	}
-
-	# Player locations get a monthly pass unless on slow census frequency.
-	every_in_global_list = {
-		variable = mnt_wealth_player_countries
-		limit = { NOT = { mnt_wealth_census_frequency_is_slow = yes } }
-		save_temporary_scope_as = mnt_wealth_dispatch_country
-		prev = {
-			scope:mnt_wealth_dispatch_country = {
-				every_owned_location = {
-					trigger_event_silently = { on_action = mnt_monthly_instant_human_location_pulse }
-				}
-			}
-		}
-	}
-
-	every_market_in_world = {
-		trigger_event_silently = { on_action = mnt_monthly_instant_market_pulse }
-	}
-}
-
-# Locations in the same bucket spread across the month's days by id.
-
-mnt_wealth_dispatch_location = {
-	set_local_variable = {
-		name = mnt_wealth_dispatch_day
-		value = {
-			value = var:mnt_wealth_location_id
-			divide = 12
-			floor = yes
-			modulo = global_var:mnt_wealth_current_days_in_month
-		}
-	}
-
-	trigger_event_silently = {
-		on_action = mnt_yearly_balanced_location_pulse
-		days = local_var:mnt_wealth_dispatch_day
-	}
-}
-
 mnt_wealth_ensure_location_id = {
 	if = {
 		limit = { NOT = { has_variable = mnt_wealth_location_id } }
 		set_variable = { name = mnt_wealth_location_id value = global_var:mnt_wealth_location_serial }
 		change_global_variable = { name = mnt_wealth_location_serial add = 1 }
-	}
-}
-
-mnt_wealth_schedule_next_service = {
-	set_local_variable = {
-		name = mnt_wealth_service_bucket_index
-		value = { value = local_var:mnt_wealth_next_service modulo = 12 add = 1 }
-	}
-
-	# Owner-change requeue: pull the old entry when the bucket changes.
-	if = {
-		limit = {
-			has_variable = mnt_wealth_service_bucket
-			NOT = { var:mnt_wealth_service_bucket = local_var:mnt_wealth_service_bucket_index }
-		}
-		mnt_wealth_unschedule_location = yes
-	}
-	set_variable = { name = mnt_wealth_service_bucket value = local_var:mnt_wealth_service_bucket_index }
-
-	save_temporary_scope_as = mnt_wealth_bucket_entity
-
-	if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 1 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_1 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 2 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_2 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 3 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_3 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 4 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_4 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 5 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_5 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 6 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_6 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 7 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_7 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 8 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_8 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 9 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_9 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 10 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_10 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_service_bucket_index = 11 }
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_11 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-	else = {
-		add_to_global_variable_map = { name = mnt_wealth_service_bucket_12 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service }
-	}
-}
-
-mnt_wealth_unschedule_location = {
-	if = {
-		limit = { has_variable = mnt_wealth_service_bucket }
-		save_temporary_scope_as = mnt_wealth_bucket_entity
-
-		if = {
-			limit = { var:mnt_wealth_service_bucket = 1 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_1 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 2 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_2 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 3 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_3 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 4 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_4 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 5 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_5 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 6 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_6 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 7 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_7 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 8 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_8 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 9 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_9 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 10 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_10 key = scope:mnt_wealth_bucket_entity }
-		}
-		else_if = {
-			limit = { var:mnt_wealth_service_bucket = 11 }
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_11 key = scope:mnt_wealth_bucket_entity }
-		}
-		else = {
-			remove_from_global_variable_map = { name = mnt_wealth_service_bucket_12 key = scope:mnt_wealth_bucket_entity }
-		}
-	}
-}
-
-mnt_wealth_write_location_next_service = {
-	set_local_variable = {
-		name = mnt_wealth_next_service
-		value = { value = local_var:mnt_wealth_last_service add = 12 }
-	}
-
-	mnt_wealth_schedule_next_service = yes
-}
-
-mnt_wealth_require_location_service = {
-	set_local_variable = {
-		name = mnt_wealth_next_service
-		value = { value = global_var:mnt_wealth_months_elapsed add = 1 }
-	}
-	mnt_wealth_schedule_next_service = yes
-}
-
-mnt_wealth_load_last_service = {
-	set_local_variable = { name = mnt_wealth_last_service value = 0 }
-	set_local_variable = { name = mnt_wealth_first_service value = 1 }
-	if = {
-		limit = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = this } }
-		set_local_variable = {
-			name = mnt_wealth_last_service
-			value = "global_variable_map(mnt_wealth_location_last_service|this)"
-		}
-		set_local_variable = { name = mnt_wealth_first_service value = 0 }
 	}
 }
 
@@ -385,7 +167,7 @@ mnt_wealth_seed_location_schedule = {
 	mnt_wealth_write_location_schedule = yes
 }
 
-# Records last service, picks census cohort by id, and queues the next service.
+# Records last service, seeds the service counter by id, and queues the next service.
 
 mnt_wealth_write_location_schedule = {
 	mnt_wealth_ensure_location_id = yes
@@ -396,129 +178,78 @@ mnt_wealth_write_location_schedule = {
 		value = local_var:mnt_wealth_last_service
 	}
 
-	# Spread the review and gross output census across cohorts.
+	# Spread the biyearly and four-yearly pulses across cohorts.
 	set_local_variable = {
-		name = mnt_wealth_seed_cycle
-		value = { value = var:mnt_wealth_location_id modulo = 10 }
+		name = mnt_wealth_seed_counter
+		value = { value = var:mnt_wealth_location_id modulo = 4 }
 	}
-	set_variable = { name = mnt_wealth_service_cycle value = local_var:mnt_wealth_seed_cycle }
+	set_variable = { name = mnt_wealth_service_counter value = local_var:mnt_wealth_seed_counter }
 
 	mnt_wealth_write_location_next_service = yes
 }
 
-mnt_wealth_service_location = {
-	mnt_wealth_ensure_location_id = yes
-
-	# Census frequency: 0 fast, 1 default, 2 slow. Only matters for players.
-	set_local_variable = { name = mnt_wealth_is_player        value = 0 }
-	set_local_variable = { name = mnt_wealth_census_frequency value = 1 }
-	owner ?= {
-		if = { limit = { is_human = yes } set_local_variable = { name = mnt_wealth_is_player value = 1 } }
-		if = {
-			limit = { has_variable = mnt_wealth_census_frequency }
-			set_local_variable = { name = mnt_wealth_census_frequency value = var:mnt_wealth_census_frequency }
-		}
-	}
-
-	mnt_wealth_load_last_service = yes
+mnt_wealth_write_location_next_service = {
 	set_local_variable = {
-		name = mnt_wealth_service_age
-		value = {
-			value = global_var:mnt_wealth_months_elapsed
-			subtract = local_var:mnt_wealth_last_service
-		}
+		name = mnt_wealth_next_service
+		value = { value = local_var:mnt_wealth_last_service add = 12 }
 	}
 
-	set_local_variable = { name = mnt_wealth_censused_full value = 0 }
-	set_local_variable = { name = mnt_wealth_censused_yearly value = 0 }
-
-	# Only run when a full year has passed; an owner-change requeue arrives early and skips this.
-	if = {
-		limit = { local_var:mnt_wealth_service_age >= 12 }
-
-		change_variable = { name = mnt_wealth_service_cycle add = 1 }
-
-		if = {
-			limit = { NOT = { has_variable = mnt_wealth_review_backlog } }
-			set_variable = { name = mnt_wealth_review_backlog value = 0 }
-		}
-		change_variable = { name = mnt_wealth_review_backlog add = local_var:mnt_wealth_service_age }
-
-		# AI/slow: census every 5th, review every 2nd. Default: both every service. Fast: runs from monthly pulse instead.
-		# First service always runs both (except fast).
-		set_local_variable = { name = mnt_wealth_census_phase value = { value = var:mnt_wealth_service_cycle modulo = 5 } }
-		set_local_variable = { name = mnt_wealth_review_phase   value = { value = var:mnt_wealth_service_cycle modulo = 2 } }
-		if = {
-			limit = { OR = { local_var:mnt_wealth_is_player = 0 local_var:mnt_wealth_census_frequency = 2 } }
-			if = { limit = { local_var:mnt_wealth_census_phase = 0 } set_local_variable = { name = mnt_wealth_censused_full   value = 1 } }
-			if = { limit = { local_var:mnt_wealth_review_phase = 0 }   set_local_variable = { name = mnt_wealth_censused_yearly value = 1 } }
-		}
-		else_if = {
-			limit = { local_var:mnt_wealth_census_frequency = 1 }
-			set_local_variable = { name = mnt_wealth_censused_full   value = 1 }
-			set_local_variable = { name = mnt_wealth_censused_yearly value = 1 }
-		}
-		if = {
-			limit = {
-				local_var:mnt_wealth_first_service = 1
-				NOT = { local_var:mnt_wealth_census_frequency = 0 }
-			}
-			set_local_variable = { name = mnt_wealth_censused_full   value = 1 }
-			set_local_variable = { name = mnt_wealth_censused_yearly value = 1 }
-		}
-
-		if = {
-			limit = { local_var:mnt_wealth_censused_full = 1 }
-			trigger_event_silently = { on_action = mnt_five_yearly_balanced_location_pulse }
-		}
-		if = {
-			limit = { local_var:mnt_wealth_censused_yearly = 1 }
-			set_variable = {
-				name = mnt_wealth_service_months
-				value = { value = var:mnt_wealth_review_backlog min = 1 }
-			}
-			set_variable = { name = mnt_wealth_review_backlog value = 0 }
-			trigger_event_silently = { on_action = mnt_biyearly_balanced_location_pulse }
-		}
-
-		set_local_variable = { name = mnt_wealth_last_service value = global_var:mnt_wealth_months_elapsed }
-		save_temporary_scope_as = mnt_wealth_service_entity
-		add_to_global_variable_map = {
-			name = mnt_wealth_location_last_service
-			key = scope:mnt_wealth_service_entity
-			value = local_var:mnt_wealth_last_service
-		}
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_censused_full = 1 }
-		mnt_wealth_retake_estate_census = yes
-	}
-	else_if = {
-		limit = { local_var:mnt_wealth_censused_yearly = 1 }
-		mnt_wealth_refresh_relative_power = yes
-	}
-
-	if = {
-		limit = { OR = { local_var:mnt_wealth_censused_full = 1 local_var:mnt_wealth_censused_yearly = 1 } }
-		set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
-	}
-
-	if = {
-		limit = { local_var:mnt_wealth_service_age >= 12 }
-		calc_location_center_scores = yes
-		epbm_price_location_buildings = yes
-	}
-
-	mnt_wealth_write_location_next_service = yes
+	mnt_wealth_schedule_next_service = yes
 }
 
-# Fast census: runs the yearly census and review every month from the human pulse.
+mnt_wealth_schedule_next_service = {
+	set_local_variable = {
+		name = mnt_wealth_service_bucket_index
+		value = { value = local_var:mnt_wealth_next_service modulo = 12 add = 1 }
+	}
 
-mnt_wealth_monthly_human_census = {
-	set_variable = { name = mnt_wealth_service_months value = 1 }
-	set_variable = { name = mnt_wealth_review_backlog value = 0 }
-	trigger_event_silently = { on_action = mnt_five_yearly_balanced_location_pulse }
-	trigger_event_silently = { on_action = mnt_biyearly_balanced_location_pulse }
-	mnt_wealth_retake_estate_census = yes
+	# Pull the old entry when the bucket changes.
+	if = {
+		limit = {
+			has_variable = mnt_wealth_service_bucket
+			NOT = { var:mnt_wealth_service_bucket = local_var:mnt_wealth_service_bucket_index }
+		}
+		mnt_wealth_unschedule_location = yes
+	}
+	set_variable = { name = mnt_wealth_service_bucket     value = local_var:mnt_wealth_service_bucket_index }
+	set_variable = { name = mnt_wealth_next_service_month value = local_var:mnt_wealth_next_service }
+
+	save_temporary_scope_as = mnt_wealth_bucket_entity
+	switch = {
+		trigger = local_var:mnt_wealth_service_bucket_index
+		1  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_1  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		2  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_2  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		3  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_3  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		4  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_4  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		5  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_5  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		6  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_6  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		7  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_7  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		8  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_8  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		9  = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_9  key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		10 = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_10 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		11 = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_11 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+		12 = { add_to_global_variable_map = { name = mnt_wealth_service_bucket_12 key = scope:mnt_wealth_bucket_entity value = local_var:mnt_wealth_next_service } }
+	}
+}
+
+mnt_wealth_unschedule_location = {
+	if = {
+		limit = { has_variable = mnt_wealth_service_bucket }
+		save_temporary_scope_as = mnt_wealth_bucket_entity
+		switch = {
+			trigger = var:mnt_wealth_service_bucket
+			1  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_1  key = scope:mnt_wealth_bucket_entity } }
+			2  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_2  key = scope:mnt_wealth_bucket_entity } }
+			3  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_3  key = scope:mnt_wealth_bucket_entity } }
+			4  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_4  key = scope:mnt_wealth_bucket_entity } }
+			5  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_5  key = scope:mnt_wealth_bucket_entity } }
+			6  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_6  key = scope:mnt_wealth_bucket_entity } }
+			7  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_7  key = scope:mnt_wealth_bucket_entity } }
+			8  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_8  key = scope:mnt_wealth_bucket_entity } }
+			9  = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_9  key = scope:mnt_wealth_bucket_entity } }
+			10 = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_10 key = scope:mnt_wealth_bucket_entity } }
+			11 = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_11 key = scope:mnt_wealth_bucket_entity } }
+			12 = { remove_from_global_variable_map = { name = mnt_wealth_service_bucket_12 key = scope:mnt_wealth_bucket_entity } }
+		}
+	}
 }

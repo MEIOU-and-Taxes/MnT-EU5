@@ -4,15 +4,27 @@ mnt_wealth_estate_is_present = {
 	is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = $KEY$ }
 }
 
-# Scope: country. The player's census frequency: 0 fast, 1 default, 2 slow. Unset counts as default.
-# Slow runs the country's locations at the AI pace, with no monthly pass. Fast runs the census and review every month.
+# Scope: country. The cadence: 0 fast, 1 medium, 2 slow; unset is medium. Every AI country is slow.
+# Slow runs the country's locations at the AI pace, with no monthly pass. Fast runs the reconciliation and census every month.
 
-mnt_wealth_census_frequency_is_slow = {
-	has_variable = mnt_wealth_census_frequency
-	var:mnt_wealth_census_frequency = 2
+mnt_wealth_cadence_is_slow = {
+	OR = {
+		is_ai = yes
+		AND = {
+			has_variable = mnt_wealth_cadence
+			var:mnt_wealth_cadence = 2
+		}
+	}
 }
 
-mnt_wealth_census_frequency_is_fast = {
-	has_variable = mnt_wealth_census_frequency
-	var:mnt_wealth_census_frequency = 0
+mnt_wealth_cadence_is_fast = {
+	is_human = yes
+	has_variable = mnt_wealth_cadence
+	var:mnt_wealth_cadence = 0
+}
+
+mnt_wealth_cadence_is_medium = {
+	is_human = yes
+	NOT = { mnt_wealth_cadence_is_fast = yes }
+	NOT = { mnt_wealth_cadence_is_slow = yes }
 }

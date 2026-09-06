@@ -173,7 +173,7 @@ epbm_snapshot_estates_dynamic = {
 	}
 }
 
-@epbm_rebuild_version = 500
+@epbm_rebuild_version = 510
 epbm_initialize = {
 	epbm_init_blacklist = yes
 	epbm_full_rebuild = yes
@@ -260,28 +260,25 @@ epbm_global_monthly = {
 		days = 32
 	}
 
-	# Market price caches are cleared by mnt_monthly_instant_market_pulse.
+	# Market price caches are cleared by epbm_on_market_monthly, hooked into monthly_market_pulse_MnT.
 }
 epbm_full_rebuild = {
 	epbm_init_blacklist = yes
 
-	# Seed location-level costs for every AI-owned location so the
-	# aggregation has data immediately instead of waiting a full sweep cycle.
-	every_ownable_location = {
-		limit = { exists = owner owner = { is_ai = yes } }
-		epbm_price_location_buildings = yes
-	}
-
 	# Compute only. No country is gated on owning land: building-based
 	# countries hold foreign buildings. The first monthly settle charges.
 	every_country = {
-		limit = { is_ai = yes any_active_estate = { exists = yes } }
-		epbm_calculate_estate_and_foreign = yes
-		epbm_aggregate_maintenance = yes
-	}
-
-	every_country = {
-		limit = { is_ai = no any_active_estate = { exists = yes } }
-		epbm_calculate_maintenance = yes
+		limit = { any_estate = { exists = yes } }
+		if = { 
+			limit = { is_ai = yes }
+			every_owned_location = {
+				epbm_price_location_buildings = yes
+			}
+			epbm_calculate_estate_and_foreign = yes
+			epbm_aggregate_maintenance = yes
+		}
+		else = {
+			epbm_calculate_maintenance = yes
+		}
 	}
 }

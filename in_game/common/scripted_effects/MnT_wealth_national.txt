@@ -1,71 +1,18 @@
-﻿# Gold moving between estate treasuries and their locations.
+﻿# Country scope: the estate treasury flow valves and the gold move, national running totals, owner transfers,
+# country initialise and clear.
 
-# Sign: delta = -(maintenance charge) - (flow rate). Positive flow = payout; negative = seizure.
+# The country's month: the estate treasury flow valves. Slow countries run this yearly instead, sized to twelve months.
 
-mnt_change_estate_gold = {
-	epbm_snapshot_estates_dynamic = yes
-
-	every_estate = {
-		limit = { estate_type != estate_type:crown_estate }
-		save_scope_as = mnt_estate_gold_estate
-
-		prev = {
-			set_local_variable = { name = mnt_estate_gold_net value = 0 }
-
-			if = {
-				limit = {
-					has_variable_map = epbm_maintenance_charge
-					is_key_in_variable_map = { name = epbm_maintenance_charge target = scope:mnt_estate_gold_estate }
-					"variable_map(epbm_maintenance_charge|scope:mnt_estate_gold_estate)" > 0
-				}
-				set_local_variable = { name = mnt_estate_gold_maintenance value = "variable_map(epbm_maintenance_charge|scope:mnt_estate_gold_estate)" }
-				change_local_variable = { name = mnt_estate_gold_net subtract = local_var:mnt_estate_gold_maintenance }
-			}
-
-			set_local_variable = { name = mnt_estate_gold_flow value = 0 }
-			if = {
-				limit = {
-					is_key_in_variable_map = {
-						name = mnt_wealth_estate_flow
-						target = scope:mnt_estate_gold_estate.estate_type
-					}
-				}
-				set_local_variable = { name = mnt_estate_gold_flow value = "variable_map(mnt_wealth_estate_flow|scope:mnt_estate_gold_estate.estate_type)" }
-				change_local_variable = { name = mnt_estate_gold_net subtract = local_var:mnt_estate_gold_flow }
-			}
-
-			# Flow display tiers, same shape as the EPBM ones, keyed by estate_type.
-			if = {
-				limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow_charged_last_month target = scope:mnt_estate_gold_estate.estate_type } }
-				add_to_variable_map = {
-					name = mnt_wealth_estate_flow_charged_two_months_ago
-					key = scope:mnt_estate_gold_estate.estate_type
-					value = "variable_map(mnt_wealth_estate_flow_charged_last_month|scope:mnt_estate_gold_estate.estate_type)"
-				}
-			}
-			add_to_variable_map = {
-				name = mnt_wealth_estate_flow_charged_last_month
-				key = scope:mnt_estate_gold_estate.estate_type
-				value = local_var:mnt_estate_gold_flow
-			}
-
-			if = {
-				limit = { local_var:mnt_estate_gold_net != 0 }
-				add_gold_to_estate = {
-					estate_type = scope:mnt_estate_gold_estate.estate_type
-					value = local_var:mnt_estate_gold_net
-				}
-			}
-		}
-	}
+mnt_wealth_country_month = {
+	mnt_wealth_set_national_savings_valves = yes
 }
 
-# Writes mnt_wealth_estate_flow; no gold moves. Sized to one month for players, twelve for AI.
+# Writes mnt_wealth_estate_flow; no gold moves. Sized to one month for medium and fast countries, twelve for slow.
 
 mnt_wealth_set_national_savings_valves = {
 	set_local_variable = { name = mnt_wealth_country_economical_base value = country_economical_base }
 	set_local_variable = { name = mnt_wealth_valve_months value = 1 }
-	if = { limit = { is_ai = yes } set_local_variable = { name = mnt_wealth_valve_months value = 12 } }
+	if = { limit = { mnt_wealth_cadence_is_slow = yes } set_local_variable = { name = mnt_wealth_valve_months value = 12 } }
 
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
@@ -218,119 +165,327 @@ mnt_wealth_update_estate_seizure_demand = {
 	}
 }
 
-mnt_wealth_compute_location_share_of_estate_flow = {
-	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
-	# This location's raw power for the estate, used to split the national flow.
-	set_local_variable = { name = mnt_wealth_local_raw_power value = 0 }
+# Sign: delta = -(maintenance charge) - (flow rate). Positive flow = payout; negative = seizure.
 
-	if = {
-		limit = { is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
-		set_local_variable = {
-			name = mnt_wealth_local_raw_power
-			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
-		}
-	}
+mnt_change_estate_gold = {
+	epbm_snapshot_estates_dynamic = yes
 
-	owner ?= {
-		if = {
-			limit = {
-				is_key_in_variable_map = { name = mnt_wealth_estate_flow               target = local_var:mnt_wealth_estate_key }
-				is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = local_var:mnt_wealth_estate_key }
-				"variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)" > 0
-			}
-			set_local_variable = {
-				name = mnt_wealth_national_raw_power
-				value = "variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_estate_key)"
+	every_estate = {
+		limit = { estate_type != estate_type:crown_estate }
+		save_scope_as = mnt_estate_gold_estate
+
+		prev = {
+			set_local_variable = { name = mnt_estate_gold_net value = 0 }
+
+			if = {
+				limit = {
+					has_variable_map = epbm_maintenance_charge
+					is_key_in_variable_map = { name = epbm_maintenance_charge target = scope:mnt_estate_gold_estate }
+					"variable_map(epbm_maintenance_charge|scope:mnt_estate_gold_estate)" > 0
+				}
+				set_local_variable = { name = mnt_estate_gold_maintenance value = "variable_map(epbm_maintenance_charge|scope:mnt_estate_gold_estate)" }
+				change_local_variable = { name = mnt_estate_gold_net subtract = local_var:mnt_estate_gold_maintenance }
 			}
 
-			set_local_variable = {
-				name = mnt_wealth_local_flow_share
-				value = {
-					value = "variable_map(mnt_wealth_estate_flow|local_var:mnt_wealth_estate_key)"
-					multiply = local_var:mnt_wealth_local_raw_power
-					divide = local_var:mnt_wealth_national_raw_power
+			set_local_variable = { name = mnt_estate_gold_flow value = 0 }
+			if = {
+				limit = {
+					is_key_in_variable_map = {
+						name = mnt_wealth_estate_flow
+						target = scope:mnt_estate_gold_estate.estate_type
+					}
+				}
+				set_local_variable = { name = mnt_estate_gold_flow value = "variable_map(mnt_wealth_estate_flow|scope:mnt_estate_gold_estate.estate_type)" }
+				change_local_variable = { name = mnt_estate_gold_net subtract = local_var:mnt_estate_gold_flow }
+			}
+
+			# Running total of flow paid per million national raw power. A location credits its raw power times the change
+			# since its last settle, so gold leaving here always matches gold arriving there. Per million, not per unit: the
+			# engine keeps five decimals, and flow over raw power alone would round away most of its digits.
+			if = {
+				limit = {
+					local_var:mnt_estate_gold_flow != 0
+					is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:mnt_estate_gold_estate.estate_type }
+					"variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_estate_gold_estate.estate_type)" > 0
+				}
+				set_local_variable = { name = mnt_wealth_flow_paid_running value = 0 }
+				if = {
+					limit = { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = scope:mnt_estate_gold_estate.estate_type } }
+					set_local_variable = { name = mnt_wealth_flow_paid_running value = "variable_map(mnt_wealth_flow_paid_per_million_raw_power|scope:mnt_estate_gold_estate.estate_type)" }
+				}
+				change_local_variable = {
+					name = mnt_wealth_flow_paid_running
+					add = {
+						value = local_var:mnt_estate_gold_flow
+						multiply = mnt_wealth_flow_raw_power_scale
+						divide = "variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_estate_gold_estate.estate_type)"
+					}
+				}
+				add_to_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power key = scope:mnt_estate_gold_estate.estate_type value = local_var:mnt_wealth_flow_paid_running }
+			}
+
+			# Flow display tiers, same shape as the EPBM ones, keyed by estate_type.
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow_charged_last_month target = scope:mnt_estate_gold_estate.estate_type } }
+				add_to_variable_map = {
+					name = mnt_wealth_estate_flow_charged_two_months_ago
+					key = scope:mnt_estate_gold_estate.estate_type
+					value = "variable_map(mnt_wealth_estate_flow_charged_last_month|scope:mnt_estate_gold_estate.estate_type)"
+				}
+			}
+			add_to_variable_map = {
+				name = mnt_wealth_estate_flow_charged_last_month
+				key = scope:mnt_estate_gold_estate.estate_type
+				value = local_var:mnt_estate_gold_flow
+			}
+
+			if = {
+				limit = { local_var:mnt_estate_gold_net != 0 }
+				add_gold_to_estate = {
+					estate_type = scope:mnt_estate_gold_estate.estate_type
+					value = local_var:mnt_estate_gold_net
 				}
 			}
 		}
 	}
 }
 
-# Positive flow invests; negative seizes from liquid first, then invested toward neglect.
+# Mirror of mnt_wealth_clear_annexed_country: recounts everything that effect clears.
 
-mnt_wealth_distribute_estate_flow_to_wealth = {
+mnt_wealth_initialize_country = {
+	set_variable = { name = mnt_wealth_national_gross_output       value = mnt_wealth_owned_local_gross_output_sum }
+	set_variable = { name = mnt_wealth_national_rural_gross_output value = mnt_wealth_owned_local_rural_gross_output_sum }
+	set_variable = { name = mnt_wealth_national_urban_gross_output value = mnt_wealth_owned_local_urban_gross_output_sum }
+	# set_variable = { name = mnt_wealth_national_urban_gdp value = mnt_wealth_owned_local_urban_gdp_sum }
+	mnt_wealth_rebuild_national_estate_raw_power = yes
+	mnt_wealth_rebuild_national_goods = yes
+	mnt_wealth_set_national_savings_valves = yes
+}
+
+# Country variables outlive the tag, so they need to be cleared or a re-released tag comes back with stale totals.
+
+mnt_wealth_clear_annexed_country = {
+	remove_variable = mnt_wealth_national_gross_output
+	remove_variable = mnt_wealth_national_rural_gross_output
+	remove_variable = mnt_wealth_national_urban_gross_output
+	# remove_variable = mnt_wealth_national_urban_gdp
+	mnt_wealth_clear_national_goods = yes
+	clear_variable_map = mnt_wealth_national_estate_raw_power
+	clear_variable_map = mnt_wealth_estate_flow
+	clear_variable_map = mnt_wealth_estate_seizure_demand
+}
+
+# Transfer: subtract from old owner, add to new, same tick. Location figures unchanged.
+
+mnt_wealth_transfer_location_between_owners = {
+	# New land: zero the variable set before adding to the new owner.
 	if = {
-		limit = { local_var:mnt_wealth_local_flow_share >= 0 }
-		set_local_variable = { name = mnt_wealth_liquid_wealth_change value = local_var:mnt_wealth_local_flow_share }
+		limit = { NOT = { exists = scope:loser } }
+		mnt_wealth_zero_location = yes
 	}
-	else = {
-		set_local_variable = { name = mnt_wealth_seizing value = { value = local_var:mnt_wealth_local_flow_share multiply = -1 } }
-		# Liquid wealth caps how much can be seized.
-		set_local_variable = { name = mnt_wealth_own_liquid value = 0 }
 
-		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
-			set_local_variable = {
-				name = mnt_wealth_own_liquid
-				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+	mnt_wealth_move_location_gross_output_between_owners = yes
+	mnt_wealth_move_location_estate_power_between_owners = yes
+	mnt_wealth_settle_flow_between_owners = yes
+}
+
+# Country formation can fire before initialize_country; both sides start at zero.
+
+mnt_wealth_move_location_gross_output_between_owners = {
+	save_temporary_scope_as = mnt_wealth_gross_output_total_location
+	scope:loser ?= {
+		save_temporary_scope_as = mnt_wealth_goods_country
+		scope:mnt_wealth_gross_output_total_location = { mnt_wealth_apply_national_goods = { SIGN = -1 } }
+		mnt_wealth_change_national_gross_output = { SIGN = -1 }
+	}
+	scope:winner ?= {
+		save_temporary_scope_as = mnt_wealth_goods_country
+		scope:mnt_wealth_gross_output_total_location = { mnt_wealth_apply_national_goods = { SIGN = 1 } }
+		mnt_wealth_change_national_gross_output = { SIGN = 1 }
+	}
+}
+
+mnt_wealth_move_location_estate_power_between_owners = {
+	if = {
+		limit = { exists = scope:loser }
+		scope:loser = { save_temporary_scope_as = mnt_wealth_raw_power_country }
+		mnt_wealth_apply_national_estate_raw_power = { SIGN = -1 }
+	}
+
+	if = {
+		limit = { exists = scope:winner }
+		scope:winner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
+		mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
+	}
+}
+
+# The old owner's flow owed since the last settle is credited before the count restarts under the new owner.
+
+mnt_wealth_settle_flow_between_owners = {
+	if = {
+		limit = { exists = scope:loser }
+		save_temporary_scope_as = mnt_wealth_flow_settle_loc
+
+		every_key_in_variable_map = {
+			variable = mnt_estate_raw_power
+			save_temporary_scope_as = mnt_wealth_flow_settle_key
+
+			scope:mnt_wealth_flow_settle_loc = {
+				set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_flow_settle_key }
+				mnt_wealth_compute_location_share_of_estate_flow = { COUNTRY = scope:loser }
+				mnt_wealth_distribute_estate_flow_to_wealth = yes
+				mnt_wealth_credit_estate_wealth = { AMOUNT = local_var:mnt_wealth_liquid_wealth_change }
 			}
 		}
-
-		set_local_variable = {
-			name = mnt_wealth_from_liquid
-			value = { value = local_var:mnt_wealth_seizing max = local_var:mnt_wealth_own_liquid }
-		}
-		set_local_variable = { name = mnt_wealth_liquid_wealth_change value = { value = local_var:mnt_wealth_from_liquid multiply = -1 } }
-		# Remainder comes out of invested wealth.
-		set_local_variable = {
-			name = mnt_wealth_from_invested
-			value = { value = local_var:mnt_wealth_seizing subtract = local_var:mnt_wealth_from_liquid }
-		}
-
-		set_local_variable = {
-			name = mnt_wealth_investment_change
-			value = { value = local_var:mnt_wealth_from_invested multiply = -1 }
-		}
-
-		mnt_wealth_add_investment_progress = yes
 	}
+	mnt_wealth_record_flow_baseline = { COUNTRY = scope:winner }
 }
 
-# Kept wages plus this location's share of the estate's national flow.
+# SIGN = 1 adds the location's gross output to the country's totals, -1 removes it.
+# Country scope, with the location in scope:mnt_wealth_gross_output_total_location.
 
-mnt_wealth_resolve_estate_monthly_income = {
-	# One month of the estate's national flow at this location.
-	mnt_wealth_compute_location_share_of_estate_flow = yes
-	mnt_wealth_distribute_estate_flow_to_wealth = yes
-
-	set_local_variable = {
-		name = mnt_wealth_estate_monthly_income
-		value = {
-			value = "local_variable_map(mnt_wealth_kept_wages|local_var:mnt_wealth_estate_key)"
-			add = local_var:mnt_wealth_liquid_wealth_change
-		}
-	}
-
-	set_local_variable = { name = mnt_wealth_estate_wealth_before value = 0 }
-
+mnt_wealth_change_national_gross_output = {
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
-		set_local_variable = {
-			name = mnt_wealth_estate_wealth_before
-			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
-		}
+		limit = { NOT = { has_variable = mnt_wealth_national_gross_output } }
+		set_variable = { name = mnt_wealth_national_gross_output value = 0 }
+		set_variable = { name = mnt_wealth_national_rural_gross_output value = 0 }
+		set_variable = { name = mnt_wealth_national_urban_gross_output value = 0 }
+		# set_variable = { name = mnt_wealth_national_urban_gdp value = 0 }
 	}
-
-	set_local_variable = {
-		name = mnt_wealth_estate_wealth_after
-		value = { value = local_var:mnt_wealth_estate_wealth_before add = local_var:mnt_wealth_estate_monthly_income }
+	change_variable = {
+		name = mnt_wealth_national_gross_output
+		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_gross_output multiply = $SIGN$ }
 	}
-
-	add_to_variable_map = {
-		name = mnt_wealth_estate_wealth
-		key = local_var:mnt_wealth_estate_key
-		value = local_var:mnt_wealth_estate_wealth_after
+	change_variable = {
+		name = mnt_wealth_national_rural_gross_output
+		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_rural_gross_output multiply = $SIGN$ }
 	}
-
-	change_local_variable = { name = mnt_wealth_income_running_total add = local_var:mnt_wealth_estate_monthly_income }
+	change_variable = {
+		name = mnt_wealth_national_urban_gross_output
+		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gross_output multiply = $SIGN$ }
+	}
+# 	change_variable = {
+# 		name = mnt_wealth_national_urban_gdp
+# 		add = { value = scope:mnt_wealth_gross_output_total_location.var:mnt_wealth_local_urban_gdp multiply = $SIGN$ }
+# 	}
 }
 
+mnt_wealth_remove_local_gross_output_from_national_total = {
+	save_temporary_scope_as = mnt_wealth_gross_output_total_location
+
+	owner = {
+		mnt_wealth_change_national_gross_output = { SIGN = -1 }
+		save_temporary_scope_as = mnt_wealth_goods_country
+	}
+	mnt_wealth_apply_national_goods = { SIGN = -1 }
+}
+
+mnt_wealth_add_local_gross_output_to_national_total = {
+	save_temporary_scope_as = mnt_wealth_gross_output_total_location
+
+	owner = {
+		mnt_wealth_change_national_gross_output = { SIGN = 1 }
+		save_temporary_scope_as = mnt_wealth_goods_country
+	}
+	mnt_wealth_apply_national_goods = { SIGN = 1 }
+}
+
+# SIGN = 1 adds, -1 removes. Goods whose location count hits zero leave all three structures.
+mnt_wealth_apply_national_goods = {
+	save_temporary_scope_as = mnt_wealth_goods_location
+	every_key_in_variable_map = {
+		variable = mnt_wealth_goods_value
+		save_temporary_scope_as = mnt_wealth_goods_key
+		set_local_variable = {
+			name = mnt_wealth_goods_delta
+			value = {
+				value = "scope:mnt_wealth_goods_location.variable_map(mnt_wealth_goods_value|scope:mnt_wealth_goods_key)"
+				multiply = $SIGN$
+			}
+		}
+		scope:mnt_wealth_goods_country = {
+			set_local_variable = { name = mnt_wealth_goods_running value = 0 }
+			set_local_variable = { name = mnt_wealth_goods_count value = 0 }
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_national_goods_value target = scope:mnt_wealth_goods_key } }
+				set_local_variable = { name = mnt_wealth_goods_running value = "variable_map(mnt_wealth_national_goods_value|scope:mnt_wealth_goods_key)" }
+				set_local_variable = { name = mnt_wealth_goods_count value = "variable_map(mnt_wealth_national_goods_locations|scope:mnt_wealth_goods_key)" }
+			}
+			change_local_variable = { name = mnt_wealth_goods_running add = local_var:mnt_wealth_goods_delta }
+			change_local_variable = { name = mnt_wealth_goods_count add = $SIGN$ }
+			if = {
+				limit = { local_var:mnt_wealth_goods_count > 0 }
+				add_to_variable_map = { name = mnt_wealth_national_goods_value key = scope:mnt_wealth_goods_key value = local_var:mnt_wealth_goods_running }
+				add_to_variable_map = { name = mnt_wealth_national_goods_locations key = scope:mnt_wealth_goods_key value = local_var:mnt_wealth_goods_count }
+				if = {
+					limit = { NOT = { is_target_in_variable_list = { name = mnt_wealth_national_goods target = scope:mnt_wealth_goods_key } } }
+					add_to_variable_list = { name = mnt_wealth_national_goods target = scope:mnt_wealth_goods_key }
+				}
+			}
+			else = {
+				remove_from_variable_map = { name = mnt_wealth_national_goods_value key = scope:mnt_wealth_goods_key }
+				remove_from_variable_map = { name = mnt_wealth_national_goods_locations key = scope:mnt_wealth_goods_key }
+				remove_list_variable = { name = mnt_wealth_national_goods target = scope:mnt_wealth_goods_key }
+			}
+		}
+	}
+}
+
+mnt_wealth_rebuild_national_goods = {
+	mnt_wealth_clear_national_goods = yes
+	save_temporary_scope_as = mnt_wealth_goods_country
+	every_owned_location = { mnt_wealth_apply_national_goods = { SIGN = 1 } }
+}
+
+mnt_wealth_clear_national_goods = {
+	clear_variable_map = mnt_wealth_national_goods_value
+	clear_variable_map = mnt_wealth_national_goods_locations
+	clear_variable_list = mnt_wealth_national_goods
+}
+
+# Country comes in as scope:mnt_wealth_raw_power_country because prev is the dispatching country, not the owner.
+
+mnt_wealth_apply_national_estate_raw_power = {
+	save_temporary_scope_as = mnt_wealth_raw_power_location
+
+	every_key_in_variable_map = {
+		variable = mnt_estate_raw_power
+		save_temporary_scope_as = mnt_wealth_raw_power_key
+
+		scope:mnt_wealth_raw_power_country = {
+			set_local_variable = {
+				name = mnt_wealth_raw_power_delta
+				value = {
+					value = "scope:mnt_wealth_raw_power_location.variable_map(mnt_estate_raw_power|scope:mnt_wealth_raw_power_key)"
+					multiply = $SIGN$
+				}
+			}
+
+			set_local_variable = { name = mnt_wealth_raw_power_running value = 0 }
+
+			if = {
+				limit = {
+					is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:mnt_wealth_raw_power_key }
+				}
+				set_local_variable = {
+					name = mnt_wealth_raw_power_running
+					value = "variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_raw_power_key)"
+				}
+			}
+
+			change_local_variable = { name = mnt_wealth_raw_power_running add = local_var:mnt_wealth_raw_power_delta }
+
+			add_to_variable_map = {
+				name = mnt_wealth_national_estate_raw_power
+				key = scope:mnt_wealth_raw_power_key
+				value = local_var:mnt_wealth_raw_power_running
+			}
+		}
+	}
+}
+
+mnt_wealth_rebuild_national_estate_raw_power = {
+	clear_variable_map = mnt_wealth_national_estate_raw_power
+	save_temporary_scope_as = mnt_wealth_raw_power_country
+	every_owned_location = { mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 } }
+}

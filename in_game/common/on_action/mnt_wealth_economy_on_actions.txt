@@ -18,7 +18,6 @@ mnt_on_weather_monthly_pulse = {
 		mnt_wealth_maintain_building_produced_goods_cache = yes
 		mnt_wealth_begin_month = yes
 		mnt_dispatch_location_and_market_on_actions = yes
-		clear_global_variable_list = mnt_wealth_player_countries
 	}
 }
 
@@ -90,55 +89,38 @@ mnt_on_location_changed_owner = {
 	events = { mnt_wealth_economy.30 }
 }
 
-# Every location pulse checks for an owner: the balanced ones land up to a month after the dispatch that
-# queued them, and a location can lose its owner in between.
+# Every location pulse checks for an owner: a balanced pulse lands up to a month after the dispatch that queued it,
+# and a location can lose its owner in between.
 
-mnt_monthly_instant_human_location_pulse = {
-	trigger = { exists = owner }
+# The cadence table. Slow is every AI country and any human who chose it; medium is the human default; fast runs
+# everything monthly.
+
+mnt_wealth_monthly_human_location_pulse = {
+	trigger = { has_owner = yes  owner = { NOT = { mnt_wealth_cadence_is_slow = yes } } }
 	effect = {
-		mnt_wealth_human_location_month = yes
-		# The fast census frequency moves the census and review from the yearly service to here.
+		mnt_wealth_location_income_and_expenses = yes
 		if = {
-			limit = { owner ?= { mnt_wealth_census_frequency_is_fast = yes } }
-			mnt_wealth_monthly_human_census = yes
+			limit = { owner = { mnt_wealth_cadence_is_fast = yes } }
+			mnt_wealth_reconcile_location = yes
+			mnt_wealth_census_location = yes
 		}
 	}
 }
 
-mnt_monthly_balanced_human_location_pulse = {
-}
-
-mnt_yearly_instant_location_pulse = {
-}
-
-mnt_yearly_balanced_location_pulse = {
-	trigger = { exists = owner }
+mnt_wealth_yearly_location_pulse = {
+	trigger = { has_owner = yes  owner = { mnt_wealth_cadence_is_medium = yes } }
 	effect = {
-		mnt_wealth_service_location = yes
+		mnt_wealth_reconcile_location = yes
+		mnt_wealth_census_location = yes
 	}
 }
 
-mnt_biyearly_balanced_location_pulse = {
-	trigger = { exists = owner }
-	effect = {
-		mnt_wealth_location_year = yes
-	}
+mnt_wealth_biyearly_location_pulse = {
+	trigger = { has_owner = yes  owner = { mnt_wealth_cadence_is_slow = yes } }
+	effect = { mnt_wealth_reconcile_location = yes }
 }
 
-mnt_five_yearly_balanced_location_pulse = {
-	trigger = { exists = owner }
-	effect = {
-		mnt_wealth_update_local_gross_output = yes
-	}
-}
-
-mnt_monthly_instant_market_pulse = {
-	effect = {
-		apply_cost_of_the_court_demand = yes
-		apply_diplomatic_spending_demand = yes
-		location = {
-			if = { limit = { has_variable_map = epbm_pm_cache } clear_variable_map = epbm_pm_cache }
-			if = { limit = { has_variable_map = epbm_bt_costs } clear_variable_map = epbm_bt_costs }
-		}
-	}
+mnt_wealth_four_yearly_location_pulse = {
+	trigger = { has_owner = yes  owner = { mnt_wealth_cadence_is_slow = yes } }
+	effect = { mnt_wealth_census_location = yes }
 }

@@ -12,25 +12,10 @@ mnt_wealth_economy.30 = {
 			limit = {
 				NOT = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = scope:mnt_wealth_transfer_loc } }
 			}
-			# New colony: initialize from scratch, no opening pool. The census
-			# counts the estates into the owner's national raw power.
-			mnt_wealth_update_local_gross_output = yes
-			mnt_wealth_retake_estate_census = yes
-			set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
-			mnt_wealth_set_location_wages = yes
-			set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
-			mnt_wealth_set_review_month = yes
-			# The last service is now, with no backdate.
-			set_local_variable = { name = mnt_wealth_last_service value = global_var:mnt_wealth_months_elapsed }
-			mnt_wealth_write_location_schedule = yes
+			mnt_wealth_initialize_colonized_location = yes
 		}
 		else = {
-			# Existing land: advance to now and re-census under the new owner.
-			mnt_wealth_advance_location_to_now = yes
-			mnt_wealth_update_investment_levels = yes
-			mnt_wealth_retake_estate_census = yes
-			set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
-			mnt_wealth_require_location_service = yes
+			mnt_wealth_recensus_transferred_location = yes
 		}
 	}
 }
@@ -45,28 +30,22 @@ mnt_wealth_economy.31 = {
 	immediate = { mnt_wealth_rebuild_national_estate_raw_power = yes }
 }
 
-# Monthly: recalculates each estate's savings valve and national payout.
+# Monthly, medium and fast countries: recalculate each estate's savings valve.
 
 mnt_wealth_economy.10 = {
 	type = country_event
 	hidden = yes
 	title = empty_text
-	trigger = { num_locations > 0 is_ai = no }
-	immediate = {
-		# Register this country for the instant lane so the next month's dispatch
-		# routes its locations through the monthly player path.
-		save_temporary_scope_as = mnt_wealth_player_country
-		add_to_global_variable_list = { name = mnt_wealth_player_countries target = scope:mnt_wealth_player_country }
-		mnt_wealth_set_national_savings_valves = yes
-	}
+	trigger = { num_locations > 0 NOT = { mnt_wealth_cadence_is_slow = yes } }
+	immediate = { mnt_wealth_country_month = yes }
 }
 
-# Yearly: AI countries run the valve with twelve months of application.
+# Yearly: slow countries run the valve with twelve months of application.
 
 mnt_wealth_economy.11 = {
 	type = country_event
 	hidden = yes
 	title = empty_text
-	trigger = { num_locations > 0 is_ai = yes }
+	trigger = { num_locations > 0 mnt_wealth_cadence_is_slow = yes }
 	immediate = { mnt_wealth_set_national_savings_valves = yes }
 }

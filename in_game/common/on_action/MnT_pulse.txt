@@ -9,11 +9,19 @@
 	}
 }
 
+# CMF hook, fires after player country selection, should remove the need for on_game_has_started_MnT
+on_game_start_after_lobby = { 
+	on_actions = {
+		mnt_on_game_start_after_lobby
+	}
+}
+
 weather_monthly_pulse = {
 	on_actions = {
 		epbm_on_global_monthly
-		aut_init_check 
+		aut_init_check
 		aut_monthly_update
+		mnt_on_weather_monthly_pulse
 	}
 }
 
@@ -36,6 +44,92 @@ monthly_country_pulse = {
 		monthly_country_pulse_MnT
 		epbm_on_country_monthly
 	}
+}
+
+# Wealth system hooks on engine events; the handlers live in mnt_wealth_economy_on_actions.txt.
+
+on_location_occupied = {
+	on_actions = { mnt_on_location_occupied }
+}
+
+on_siege_won = {
+	on_actions = { mnt_on_siege_won }
+}
+
+on_new_country_formed = {
+	on_actions = { mnt_on_new_country_formed }
+}
+
+on_annexed = {
+	on_actions = { mnt_on_annexed }
+}
+
+on_civil_war_annexed = {
+	on_actions = { mnt_on_civil_war_annexed }
+}
+
+on_civil_war_won = {
+	on_actions = { mnt_on_civil_war_won }
+}
+
+on_civil_war_lost = {
+	on_actions = { mnt_on_civil_war_lost }
+}
+
+# Fired by the wealth scheduler for every market each month
+
+monthly_market_pulse_MnT = {
+	on_actions = {
+		mnt_court_demand_monthly_market_pulse
+		epbm_on_market_monthly
+	}
+}
+
+mnt_court_demand_monthly_market_pulse = {
+	effect = {
+		apply_cost_of_the_court_demand = yes
+		apply_diplomatic_spending_demand = yes
+	}
+}
+
+# Fired by the wealth scheduler per location: each period as an instant on_action on the dispatch day and a balanced one
+# on the location's spread day. Monthly goes to human-owned locations only. Hook into these to run per location.
+
+monthly_human_location_instant_pulse_MnT = {
+	on_actions = { mnt_wealth_monthly_human_location_pulse }
+}
+
+monthly_human_location_balanced_pulse_MnT = {
+}
+
+yearly_location_instant_pulse_MnT = {
+}
+
+yearly_location_balanced_pulse_MnT = {
+	on_actions = {
+		mnt_wealth_yearly_location_pulse
+		mnt_centers_yearly_location_pulse
+		epbm_on_location_yearly
+	}
+}
+
+biyearly_location_instant_pulse_MnT = {
+}
+
+biyearly_location_balanced_pulse_MnT = {
+	on_actions = { mnt_wealth_biyearly_location_pulse }
+}
+
+four_yearly_location_instant_pulse_MnT = {
+}
+
+four_yearly_location_balanced_pulse_MnT = {
+	on_actions = { mnt_wealth_four_yearly_location_pulse }
+}
+
+mnt_centers_yearly_location_pulse = {
+	trigger = { has_owner = yes }
+	effect = { calc_location_center_scores = yes }
 }
 
 # The below runs BEFORE country selection so is_ai and is_human checks will not work!
@@ -134,10 +228,10 @@ monthly_country_pulse_MnT = {
 
 		# Calculate demands of individual countries
 		cost_of_the_court.1
-		# Ensure that the calculation results are available
 		# Calculate the demands and estate transfer of individual countries
 		diplomatic_spending.1
-		# Ensure that the calculation results are available
+		# monthly_market_pulse_MnT applies the effects and ensures that the calculation results are available
+		# because it runs as a subsystem from the weather_monthly_pulse which fires after monthly_country_pulse
 
 		delay = { days = 1 }
 
@@ -219,5 +313,8 @@ hide_buildings_on_start = {
 }
 
 on_location_changed_owner = {
-	on_actions = { aut_on_location_conquered }
+	on_actions = {
+		aut_on_location_conquered
+		mnt_on_location_changed_owner
+	}
 }

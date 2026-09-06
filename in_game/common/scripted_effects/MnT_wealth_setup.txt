@@ -1,4 +1,20 @@
-﻿# Game start seeding, the per-estate iterators, and the monthly and yearly location passes.
+﻿# Game start seeding and the location lifecycle: first setup, colonisation, and owner change.
+
+# Zero every ownable location; owned ones also get a schedule slot and first census.
+# Iterates ownable locations to keep location ids in map order for the schedule cohorts.
+
+mnt_wealth_seed_owned_locations = {
+	set_global_variable = { name = mnt_wealth_location_serial value = 0 }
+
+	every_ownable_location = {
+		mnt_wealth_zero_location = yes
+		if = {
+			limit = { has_owner = yes }
+			mnt_wealth_seed_location_schedule = yes
+			mnt_wealth_setup_location = yes
+		}
+	}
+}
 
 mnt_wealth_seed_economy_constants = {
 	set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = 500 }
@@ -17,47 +33,6 @@ mnt_wealth_seed_economy_constants = {
 	mnt_wealth_build_good_classification_map = yes
 }
 
-# Zero every ownable location; owned ones also get a schedule slot and first census.
-# Iterates ownable locations to keep location ids in map order for the schedule cohorts.
-
-mnt_wealth_seed_owned_locations = {
-	set_global_variable = { name = mnt_wealth_location_serial value = 0 }
-
-	every_ownable_location = {
-		mnt_wealth_zero_location = yes
-		if = {
-			limit = { exists = owner }
-			mnt_wealth_seed_location_schedule = yes
-			mnt_wealth_setup_location = yes
-		}
-	}
-}
-
-# Mirror of mnt_wealth_clear_annexed_country: recounts everything that effect clears.
-
-mnt_wealth_initialize_country = {
-	set_variable = { name = mnt_wealth_national_gross_output       value = mnt_wealth_owned_local_gross_output_sum }
-	set_variable = { name = mnt_wealth_national_rural_gross_output value = mnt_wealth_owned_local_rural_gross_output_sum }
-	set_variable = { name = mnt_wealth_national_urban_gross_output value = mnt_wealth_owned_local_urban_gross_output_sum }
-	# set_variable = { name = mnt_wealth_national_urban_gdp value = mnt_wealth_owned_local_urban_gdp_sum }
-	mnt_wealth_rebuild_national_estate_raw_power = yes
-	mnt_wealth_rebuild_national_goods = yes
-	mnt_wealth_set_national_savings_valves = yes
-}
-
-# Country variables outlive the tag, so they need to be cleared or a re-released tag comes back with stale totals.
-
-mnt_wealth_clear_annexed_country = {
-	remove_variable = mnt_wealth_national_gross_output
-	remove_variable = mnt_wealth_national_rural_gross_output
-	remove_variable = mnt_wealth_national_urban_gross_output
-	# remove_variable = mnt_wealth_national_urban_gdp
-	mnt_wealth_clear_national_goods = yes
-	clear_variable_map = mnt_wealth_national_estate_raw_power
-	clear_variable_map = mnt_wealth_estate_flow
-	clear_variable_map = mnt_wealth_estate_seizure_demand
-}
-
 # Every variable the system reads needs to exist before the first census or owner change touches the location.
 
 mnt_wealth_zero_location = {
@@ -71,14 +46,19 @@ mnt_wealth_zero_location = {
 	set_variable = { name = mnt_wealth_current_wage_rate value = 0 }
 	set_variable = { name = mnt_wealth_kept_income_total value = 0 }
 	set_variable = { name = mnt_wealth_review_month      value = 0 }
+	set_variable = { name = mnt_wealth_reconciled_month  value = 0 }
+	set_variable = { name = mnt_wealth_cached_investment_rate        value = 0 }
+	set_variable = { name = mnt_wealth_cached_investment_maintenance value = 0 }
 	clear_variable_map = mnt_wealth_goods_value
 	clear_variable_map = mnt_wealth_estate_wealth
 	clear_variable_map = mnt_wealth_invested_since_review
 	clear_variable_map = mnt_wealth_invested_wealth
+	clear_variable_map = mnt_wealth_cached_estate_decay_rate
+	clear_variable_map = mnt_wealth_flow_paid_per_million_at_settle
 }
 
 mnt_wealth_setup_location = {
-	# Estate data is unreliable during on_game_start; self-corrects at first service.
+	# Estate data is unreliable during on_game_start; self-corrects at the first census.
 	mnt_wealth_ensure_census_data = yes
 	# Seed each estate's wealth from gross output, then set the pool to the total.
 	set_local_variable = {
@@ -89,202 +69,69 @@ mnt_wealth_setup_location = {
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_seed_estate_wealth }
 	# Running total avoids rounding gaps from seed_estate_wealth.
 	set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_seed_running_total }
+	mnt_wealth_raise_wealth_map_mode_ceiling = yes
 	mnt_wealth_set_location_wages = yes
 	# Shares sum to the whole bill, so kept income total = wages.
 	set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
-	# The review month stays at zero, the campaign start, so the first service covers every month since.
+	# The review month stays at zero, the campaign start, so the first settle covers every month since.
+	mnt_wealth_cache_location_rates = yes
 }
 
-# Iterates the owner's national estates, including those with no pops here.
-# Used by the census and power refresh, which decide which estates are present.
+mnt_wealth_ensure_census_data = {
+	if = { limit = { var:mnt_wealth_local_gross_output = 0 } mnt_wealth_update_local_gross_output = yes }
 
-mnt_wealth_for_each_national_estate = {
-	save_temporary_scope_as = mnt_wealth_location
-
-	owner = {
-		every_estate = {
-			limit = { estate_type != estate_type:crown_estate }
-			save_temporary_scope_as = mnt_wealth_estate
-			set_local_variable = { name = mnt_wealth_estate_key value = estate_type }
-			scope:mnt_wealth_location = { $EFFECT$ = yes }
-		}
-	}
-}
-
-# Hardcoded estate list. Game start only: every_estate is unreliable until tick one.
-
-mnt_wealth_for_all_estate_types = {
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:nobles_estate }
-	$EFFECT$ = yes
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:clergy_estate }
-	$EFFECT$ = yes
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:burghers_estate }
-	$EFFECT$ = yes
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:peasants_estate }
-	$EFFECT$ = yes
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:dhimmi_estate }
-	$EFFECT$ = yes
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:tribes_estate }
-	$EFFECT$ = yes
-	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:cossacks_estate }
-	$EFFECT$ = yes
-}
-
-# Iterates the location's power cache keys. Setup only: every_estate is unreliable at game start.
-
-mnt_wealth_for_each_estate_in_power_cache = {
-	save_temporary_scope_as = mnt_wealth_cached_power_location
-
-	every_key_in_variable_map = {
-		variable = mnt_wealth_cached_local_relative_estate_power
-		save_temporary_scope_as = mnt_wealth_cached_power_key
-
-		scope:mnt_wealth_cached_power_location = {
-			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_cached_power_key }
-			$EFFECT$ = yes
-		}
-	}
-}
-
-# National estates filtered to those present in this location's power cache.
-
-mnt_wealth_for_each_national_estate_in_power_cache = {
-	save_temporary_scope_as = mnt_wealth_location
-
-	owner = {
-		every_estate = {
-			limit = {
-				estate_type != estate_type:crown_estate
-				scope:mnt_wealth_location = { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
-			}
-			save_temporary_scope_as = mnt_wealth_estate
-			set_local_variable = { name = mnt_wealth_estate_key value = estate_type }
-			scope:mnt_wealth_location = { $EFFECT$ = yes }
-		}
-	}
-}
-
-# Caches the filtered estate set as a local list so passes can replay without re-iterating.
-
-mnt_wealth_build_location_estate_list = {
-	clear_local_variable_list = mnt_wealth_location_estate_list
-	save_temporary_scope_as = mnt_wealth_location_estate_list_scope
-
-	owner = {
-		every_estate = {
-			limit = {
-				estate_type != estate_type:crown_estate
-				scope:mnt_wealth_location_estate_list_scope = { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
-			}
-			estate_type = { save_temporary_scope_as = mnt_wealth_location_estate_list_key }
-
-			scope:mnt_wealth_location_estate_list_scope = {
-				add_to_local_variable_list = {
-					name = mnt_wealth_location_estate_list
-					target = scope:mnt_wealth_location_estate_list_key
-				}
-			}
-		}
-	}
-
-	# Tag the list with this location's id so the iterator knows when to rebuild.
-	mnt_wealth_ensure_location_id = yes
-	set_local_variable = { name = mnt_wealth_location_estate_list_location_id value = var:mnt_wealth_location_id }
-	set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = no }
-}
-
-# Standard estate iterator. Replays the cached list, rebuilding if stale or from another location.
-
-mnt_wealth_for_each_cached_estate = {
 	if = {
 		limit = {
-			# Check existence first: an absent local reads as 0, and location id 0 exists.
-			has_local_variable = mnt_wealth_location_estate_list_location_id
-			local_var:mnt_wealth_rebuild_location_estate_list = no
-			has_variable = mnt_wealth_location_id
-			local_var:mnt_wealth_location_estate_list_location_id = var:mnt_wealth_location_id
+			NOT = {
+				has_variable_map = mnt_wealth_cached_local_relative_estate_power
+				has_variable_map = mnt_estate_raw_power
+			}
 		}
-	}
-	else = {
-		mnt_wealth_build_location_estate_list = yes
-	}
-	save_temporary_scope_as = mnt_wealth_location_cached_estate
-
-	every_in_local_list = {
-		variable = mnt_wealth_location_estate_list
-		save_temporary_scope_as = mnt_wealth_cached_estate_key
-
-		scope:mnt_wealth_location_cached_estate = {
-			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_cached_estate_key }
-			$EFFECT$ = yes
-		}
+		mnt_wealth_census_estate_data = yes
 	}
 }
 
-# The review month is the first month whose income has not been applied yet.
-# The advance and the display both count owed months from it.
+mnt_wealth_seed_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_seed_amount value = 0 }
 
-mnt_wealth_set_review_month = {
-	set_variable = { name = mnt_wealth_review_month value = global_var:mnt_wealth_months_elapsed }
-}
-
-# One estate's month: its kept share of the wage bill, then its income from that plus the national flow.
-
-mnt_wealth_earn_estate_monthly_income = {
-	mnt_wealth_compute_estate_kept_wages = yes
-	mnt_wealth_resolve_estate_monthly_income = yes
-}
-
-# One estate's review. Level updates before drift so the level reads progress first.
-
-mnt_wealth_review_estate = {
-	mnt_wealth_update_estate_investment_level = yes
-	mnt_wealth_drift_estate_wealth = yes
-}
-
-# Player-owned locations, every month.
-# Order: apply stored state under old modifiers first, then update modifiers (wages, investment rate).
-
-mnt_wealth_human_location_month = {
-	# Apply any owed months (e.g. before first service or under a previous AI owner).
-	mnt_wealth_advance_location_to_now = yes
-	# Cache the rate so a modifier change mid-loop cannot give estates different rates.
-	set_local_variable = { name = mnt_wealth_cached_investment_rate value = mnt_wealth_investment_rate }
-	# Running totals for the estate loops below.
-	set_local_variable = { name = mnt_wealth_kept_income_running_total value = 0 }
-	set_local_variable = { name = mnt_wealth_invested_running_total    value = 0 }
-	set_local_variable = { name = mnt_wealth_income_running_total      value = 0 }
-	# Wages must be set before the estate loop; each estate's income depends on them.
-	mnt_wealth_set_location_wages = yes
-	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_invest_estate_wealth }
-	# Investment comes off the pool before income lands.
-	change_variable = { name = mnt_wealth_pool subtract = local_var:mnt_wealth_invested_running_total }
-	# Each estate earns its wage share and collects any national flow.
-	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_earn_estate_monthly_income }
-
-	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_income_running_total }
-	set_variable = { name = mnt_wealth_kept_income_total value = local_var:mnt_wealth_kept_income_running_total }
-	mnt_wealth_raise_wealth_map_mode_ceiling = yes
-	# This month is applied; the next unapplied month is the following one.
-	set_variable = { name = mnt_wealth_review_month value = { value = global_var:mnt_wealth_months_elapsed add = 1 } }
-}
-
-# Location review: yearly for players, every second year for AI. Same order as the monthly pass.
-
-mnt_wealth_location_year = {
-	# Apply stored state under current wages before anything below changes them.
-	mnt_wealth_advance_location_to_now = yes
-	# Drift is tuned per year, so scale it by how many years this review covers.
-	set_local_variable = { name = mnt_wealth_drift_age_factor    value = { value = var:mnt_wealth_service_months divide = 12 } }
-	set_local_variable = { name = mnt_wealth_drift_running_total value = 0 }
-	mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_review_estate }
-
-	change_variable = { name = mnt_wealth_pool add = local_var:mnt_wealth_drift_running_total }
-	# AI and slow-census player locations have no monthly pass; their wages only move here.
 	if = {
-		limit = { owner ?= { OR = { is_ai = yes mnt_wealth_census_frequency_is_slow = yes } } }
-		mnt_wealth_set_location_wages = yes
+		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_seed_amount
+			value = {
+				value = local_var:mnt_wealth_starting_pool
+				multiply = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+			}
+		}
 	}
 
-	mnt_wealth_raise_wealth_map_mode_ceiling = yes
+	add_to_variable_map = {
+		name = mnt_wealth_estate_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_seed_amount
+	}
+
+	change_local_variable = { name = mnt_wealth_seed_running_total add = local_var:mnt_wealth_seed_amount }
+}
+
+# A location with no service record, colonised or otherwise new to the schedule. No opening pool.
+
+mnt_wealth_initialize_colonized_location = {
+	# The census counts the estates into the owner's national raw power.
+	mnt_wealth_census_location = yes
+	set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
+	mnt_wealth_set_review_month = yes
+	set_variable = { name = mnt_wealth_reconciled_month value = global_var:mnt_wealth_months_elapsed }
+	mnt_wealth_cache_location_rates = yes
+	mnt_wealth_record_flow_baseline = { COUNTRY = owner }
+	# The last service is now, with no backdate.
+	set_local_variable = { name = mnt_wealth_last_service value = global_var:mnt_wealth_months_elapsed }
+	mnt_wealth_write_location_schedule = yes
+}
+
+# Existing land under a new owner: settle under the old owner's recorded rates, then census under the new one.
+
+mnt_wealth_recensus_transferred_location = {
+	mnt_wealth_reconcile_location = yes
+	mnt_wealth_census_location = yes
 }

@@ -1,4 +1,110 @@
-﻿# Utility effects used across the wealth system.
+﻿# Utility effects used across the wealth system: estate iterators, gold hooks, sized modifiers, map mode bands, lookup maps.
+
+# Iterates the location's power cache keys. Needs no owner estate data, so setup and the rate cache use it.
+
+mnt_wealth_for_each_estate_in_power_cache = {
+	save_temporary_scope_as = mnt_wealth_cached_power_location
+
+	every_key_in_variable_map = {
+		variable = mnt_wealth_cached_local_relative_estate_power
+		save_temporary_scope_as = mnt_wealth_cached_power_key
+
+		scope:mnt_wealth_cached_power_location = {
+			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_cached_power_key }
+			$EFFECT$ = yes
+		}
+	}
+}
+
+# National estates filtered to those present in this location's power cache.
+
+mnt_wealth_for_each_national_estate_in_power_cache = {
+	save_temporary_scope_as = mnt_wealth_location
+
+	owner = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				scope:mnt_wealth_location = { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
+			}
+			save_temporary_scope_as = mnt_wealth_estate
+			set_local_variable = { name = mnt_wealth_estate_key value = estate_type }
+			scope:mnt_wealth_location = { $EFFECT$ = yes }
+		}
+	}
+}
+
+# Caches the filtered estate set as a local list so passes can replay without re-iterating.
+
+mnt_wealth_build_location_estate_list = {
+	clear_local_variable_list = mnt_wealth_location_estate_list
+	save_temporary_scope_as = mnt_wealth_location_estate_list_scope
+
+	owner = {
+		every_estate = {
+			limit = {
+				estate_type != estate_type:crown_estate
+				scope:mnt_wealth_location_estate_list_scope = { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
+			}
+			estate_type = { save_temporary_scope_as = mnt_wealth_location_estate_list_key }
+
+			scope:mnt_wealth_location_estate_list_scope = {
+				add_to_local_variable_list = {
+					name = mnt_wealth_location_estate_list
+					target = scope:mnt_wealth_location_estate_list_key
+				}
+			}
+		}
+	}
+
+	# Tag the list with this location's id so the iterator knows when to rebuild.
+	mnt_wealth_ensure_location_id = yes
+	set_local_variable = { name = mnt_wealth_location_estate_list_location_id value = var:mnt_wealth_location_id }
+	set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = no }
+}
+
+# Standard estate iterator. Replays the cached list, rebuilding if stale or from another location.
+
+mnt_wealth_for_each_cached_estate = {
+	if = {
+		limit = {
+			# Check existence first: an absent local reads as 0, and location id 0 exists.
+			has_local_variable = mnt_wealth_location_estate_list_location_id
+			local_var:mnt_wealth_rebuild_location_estate_list = no
+			has_variable = mnt_wealth_location_id
+			local_var:mnt_wealth_location_estate_list_location_id = var:mnt_wealth_location_id
+		}
+	}
+	else = {
+		mnt_wealth_build_location_estate_list = yes
+	}
+	save_temporary_scope_as = mnt_wealth_location_cached_estate
+
+	every_in_local_list = {
+		variable = mnt_wealth_location_estate_list
+		save_temporary_scope_as = mnt_wealth_cached_estate_key
+
+		scope:mnt_wealth_location_cached_estate = {
+			set_local_variable = { name = mnt_wealth_estate_key value = scope:mnt_wealth_cached_estate_key }
+			$EFFECT$ = yes
+		}
+	}
+}
+
+# Runs EFFECT with ESTATE set to the short estate name, for effects that name modifiers or variables per estate.
+
+mnt_wealth_run_effect_with_estate_name = {
+	switch = {
+		trigger = local_var:mnt_wealth_estate_key
+		estate_type:nobles_estate   = { $EFFECT$ = { ESTATE = nobles } }
+		estate_type:clergy_estate   = { $EFFECT$ = { ESTATE = clergy } }
+		estate_type:burghers_estate = { $EFFECT$ = { ESTATE = burghers } }
+		estate_type:peasants_estate = { $EFFECT$ = { ESTATE = peasants } }
+		estate_type:dhimmi_estate   = { $EFFECT$ = { ESTATE = dhimmi } }
+		estate_type:tribes_estate   = { $EFFECT$ = { ESTATE = tribes } }
+		estate_type:cossacks_estate = { $EFFECT$ = { ESTATE = cossacks } }
+	}
+}
 
 # These add/remove helpers are hooks for other systems to move gold into or out of a location.
 
@@ -166,6 +272,31 @@ mnt_wealth_remove_local_estate_wealth = {
 	mnt_wealth_credit_estate_wealth = { AMOUNT = local_var:mnt_wealth_take_amount }
 }
 
+mnt_wealth_credit_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_credit_current value = 0 }
+
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_credit_current
+			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	set_local_variable = {
+		name = mnt_wealth_credit_new
+		value = { value = local_var:mnt_wealth_credit_current add = $AMOUNT$ }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_estate_wealth
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_credit_new
+	}
+
+	change_variable = { name = mnt_wealth_pool add = $AMOUNT$ }
+}
+
 mnt_wealth_apply_sized_modifier = {
 	set_local_variable = {
 		name = mnt_wealth_modifier_multiple
@@ -241,9 +372,10 @@ mnt_wealth_set_wealth_map_mode_bands = {
 }
 
 mnt_wealth_raise_wealth_map_mode_ceiling = {
+	# The ceiling is the largest pool on the map; the bands follow it at once.
 	if = {
 		limit = { var:mnt_wealth_pool > global_var:mnt_wealth_map_mode_max_wealth_pool }
-		change_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool add = 500 }
+		set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = var:mnt_wealth_pool }
 		mnt_wealth_set_wealth_map_mode_bands = yes
 	}
 }
@@ -314,4 +446,86 @@ mnt_wealth_build_days_in_month_map = {
 	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 10 value = 31 }
 	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 11 value = 30 }
 	add_to_global_variable_map = { name = mnt_wealth_days_in_month key = 12 value = 31 }
+}
+
+mnt_wealth_build_good_classification_map = {
+	clear_global_variable_map = mnt_wealth_good_classification
+
+	# Urban goods.
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:beer value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:books value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cannons value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cloth value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fine_cloth value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:firearms value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:furniture value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:glass value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:jewelry value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lacquerware value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:leather value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:liquor value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:naval_supplies value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:paper value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:porcelain value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pottery value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:steel value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tools value = flag:urban }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:weaponry value = flag:urban }
+
+	# Rural goods.
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:alum value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:amber value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:beeswax value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:chili value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:clay value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cloves value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:coal value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cocoa value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:coffee value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:copper value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:cotton value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:dyes value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:elephants value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fiber_crops value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fish value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fruit value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:fur value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:gems value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:goods_gold value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:horses value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:incense value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:iron value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:ivory value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lead value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:legumes value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:livestock value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:lumber value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:maize value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:marble value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:masonry value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:medicaments value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:mercury value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:millet value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:olives value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pearls value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:pepper value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:potato value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:rice value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:saffron value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:salt value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:saltpeter value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:sand value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:silk value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:silver value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:slaves_goods value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:stone value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:sugar value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tar value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tea value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tin value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:tobacco value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wheat value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wild_game value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wine value = flag:rural }
+	add_to_global_variable_map = { name = mnt_wealth_good_classification key = goods:wool value = flag:rural }
 }

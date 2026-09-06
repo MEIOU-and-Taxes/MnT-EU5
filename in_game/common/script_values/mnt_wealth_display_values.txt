@@ -7,7 +7,7 @@ mnt_wealth_months_since_review = {
 
 mnt_wealth_projected_pool_remaining = {
 	value = 1
-	subtract = { value = mnt_wealth_investment_rate min = 0 }
+	subtract = { value = var:mnt_wealth_cached_investment_rate min = 0 }
 }
 
 mnt_wealth_projected_pool_remaining_over_period = {
@@ -16,7 +16,7 @@ mnt_wealth_projected_pool_remaining_over_period = {
 }
 
 mnt_wealth_projected_income_over_period = {
-	value = mnt_wealth_investment_rate
+	value = var:mnt_wealth_cached_investment_rate
 	min = 0
 	save_temporary_value_as = mnt_wealth_investment_rate
 
@@ -36,7 +36,7 @@ mnt_wealth_displayed_wealth_pool = {
 	multiply = mnt_wealth_projected_pool_remaining_over_period
 	add = {
 		value = var:mnt_wealth_kept_income_total
-		add = mnt_wealth_estate_flow_total
+		add = mnt_wealth_projected_flow_total
 		multiply = mnt_wealth_projected_income_over_period
 	}
 	min = 0
@@ -44,6 +44,90 @@ mnt_wealth_displayed_wealth_pool = {
 
 mnt_wealth_local_wealth_total = {
 	value = mnt_wealth_displayed_wealth_pool
+}
+
+# Estate flow owed since the last settle, summed over the estates present here: the country's running total per
+# million raw power, less this location's baseline, times its raw power, scaled back down. The same figure the
+# advance credits; the per-million scale keeps the stored totals precise in fixed point.
+
+mnt_wealth_projected_flow_owed = {
+	value = 0
+	save_temporary_scope_as = mnt_wealth_flow_location
+
+	if = {
+		limit = {
+			has_owner = yes
+			owner = { has_variable_map = mnt_wealth_flow_paid_per_million_raw_power }
+		}
+		owner = {
+			every_key_in_variable_map = {
+				variable = mnt_wealth_flow_paid_per_million_raw_power
+				save_temporary_scope_as = mnt_wealth_flow_key
+
+				if = {
+					limit = {
+						scope:mnt_wealth_flow_location = {
+							has_variable_map = mnt_estate_raw_power
+							is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_flow_key }
+						}
+					}
+					prev = {
+						add = {
+							value = "variable_map(mnt_wealth_flow_paid_per_million_raw_power|scope:mnt_wealth_flow_key)"
+							multiply = "scope:mnt_wealth_flow_location.variable_map(mnt_estate_raw_power|scope:mnt_wealth_flow_key)"
+						}
+					}
+					if = {
+						limit = {
+							scope:mnt_wealth_flow_location = {
+								is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:mnt_wealth_flow_key }
+							}
+						}
+						scope:mnt_wealth_flow_location = {
+							subtract = {
+								value = "variable_map(mnt_wealth_flow_paid_per_million_at_settle|scope:mnt_wealth_flow_key)"
+								multiply = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_flow_key)"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# The owed flow as a monthly figure over the projected months.
+
+mnt_wealth_projected_flow_total = {
+	value = 0
+	if = {
+		limit = { mnt_wealth_projected_months > 0 }
+		value = mnt_wealth_projected_flow_owed
+		divide = mnt_wealth_flow_raw_power_scale
+		divide = mnt_wealth_projected_months
+	}
+}
+
+# One estate's owed flow as a monthly figure. Location scope, estate in scope:mnt_wealth_estate.
+
+mnt_wealth_projected_estate_flow = {
+	value = 0
+	if = {
+		limit = {
+			mnt_wealth_projected_months > 0
+			has_variable_map = mnt_estate_raw_power
+			is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_estate }
+			owner ?= { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = scope:mnt_wealth_estate } }
+		}
+		owner = { add = "variable_map(mnt_wealth_flow_paid_per_million_raw_power|scope:mnt_wealth_estate)" }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:mnt_wealth_estate } }
+			subtract = "variable_map(mnt_wealth_flow_paid_per_million_at_settle|scope:mnt_wealth_estate)"
+		}
+		multiply = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_estate)"
+		divide = mnt_wealth_flow_raw_power_scale
+		divide = mnt_wealth_projected_months
+	}
 }
 
 mnt_wealth_projected_estate_income = {
@@ -60,7 +144,7 @@ mnt_wealth_projected_estate_income = {
 		}
 
 		multiply = var:mnt_wealth_kept_income_total
-		add = mnt_wealth_equilibrium_estate_flow
+		add = mnt_wealth_projected_estate_flow
 	}
 }
 
@@ -89,6 +173,16 @@ mnt_wealth_displayed_estate_maintenance = {
 	}
 }
 
+# Maintenance at the rate recorded at the last settle, for the projection.
+
+mnt_wealth_projected_estate_maintenance = {
+	value = mnt_wealth_local_estate_raw_power_fraction
+
+	scope:mnt_wealth_location = {
+		multiply = var:mnt_wealth_cached_investment_maintenance
+	}
+}
+
 mnt_wealth_displayed_estate_wealth = {
 	value = 0
 
@@ -106,28 +200,6 @@ mnt_wealth_displayed_estate_wealth = {
 	}
 
 	min = 0
-}
-
-mnt_wealth_baseline = {
-	value = var:mnt_wealth_local_gross_output
-	multiply = mnt_wealth_starting_gross_output_months
-}
-
-mnt_wealth_health_ratio = {
-	value = 0
-
-	if = {
-		limit = { mnt_wealth_baseline > 0 }
-		value = mnt_wealth_local_wealth_total
-		divide = mnt_wealth_baseline
-	}
-}
-
-mnt_wealth_band = {
-	value = 0
-	if = { limit = { mnt_wealth_health_ratio >= 0.5 } add = 1 }
-	if = { limit = { mnt_wealth_health_ratio >= 0.9 } add = 1 }
-	if = { limit = { mnt_wealth_health_ratio >= 1.1 } add = 1 }
 }
 
 mnt_wealth_local_gross_output_value = {
@@ -175,7 +247,7 @@ mnt_wealth_minimum_wage_percent = {
 
 mnt_wealth_wage_rate_computed_percent = {
 	value = modifier:mnt_wealth_local_wage_modifier
-	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_wage_modifier }
+	if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_wage_modifier }
 	multiply = 100
 }
 
@@ -274,37 +346,50 @@ mnt_wealth_estate_decay_rate = {
 	if = {
 		limit = { scope:mnt_wealth_estate = estate_type:nobles_estate }
 		value = modifier:mnt_wealth_local_nobles_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_nobles_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_nobles_investment_decay }
 	}
 	else_if = {
 		limit = { scope:mnt_wealth_estate = estate_type:clergy_estate }
 		value = modifier:mnt_wealth_local_clergy_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_clergy_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_clergy_investment_decay }
 	}
 	else_if = {
 		limit = { scope:mnt_wealth_estate = estate_type:burghers_estate }
 		value = modifier:mnt_wealth_local_burghers_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_burghers_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_burghers_investment_decay }
 	}
 	else_if = {
 		limit = { scope:mnt_wealth_estate = estate_type:peasants_estate }
 		value = modifier:mnt_wealth_local_peasants_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_peasants_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_peasants_investment_decay }
 	}
 	else_if = {
 		limit = { scope:mnt_wealth_estate = estate_type:dhimmi_estate }
 		value = modifier:mnt_wealth_local_dhimmi_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_dhimmi_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_dhimmi_investment_decay }
 	}
 	else_if = {
 		limit = { scope:mnt_wealth_estate = estate_type:tribes_estate }
 		value = modifier:mnt_wealth_local_tribes_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_tribes_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_tribes_investment_decay }
 	}
 	else_if = {
 		limit = { scope:mnt_wealth_estate = estate_type:cossacks_estate }
 		value = modifier:mnt_wealth_local_cossacks_investment_decay
-		if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_cossacks_investment_decay }
+		if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_cossacks_investment_decay }
+	}
+}
+
+# The estate's decay rate recorded at the last settle, for the projection.
+
+mnt_wealth_projected_estate_decay_rate = {
+	value = 0
+	if = {
+		limit = {
+			has_variable_map = mnt_wealth_cached_estate_decay_rate
+			is_key_in_variable_map = { name = mnt_wealth_cached_estate_decay_rate target = scope:mnt_wealth_estate }
+		}
+		add = "variable_map(mnt_wealth_cached_estate_decay_rate|scope:mnt_wealth_estate)"
 	}
 }
 
@@ -335,10 +420,10 @@ mnt_wealth_projected_months = {
 
 mnt_wealth_monthly_estate_decay = {
 	value = mnt_wealth_projected_invested_wealth
-	multiply = mnt_wealth_estate_decay_rate
+	multiply = mnt_wealth_projected_estate_decay_rate
 }
 
-# Same closed form as mnt_wealth_advance_estate in the spending file; change both together.
+# Same closed form as mnt_wealth_advance_estate in the income and expenses file; change both together.
 mnt_wealth_projected_invested_wealth = {
 	value = 0
 	if = {
@@ -359,8 +444,8 @@ mnt_wealth_projected_invested_wealth = {
 
 	value = mnt_wealth_projected_months
 	save_temporary_value_as = mnt_wealth_months
-	# A negative rate spends nothing.
-	value = mnt_wealth_investment_rate
+	# A negative rate spends nothing. The rates are those recorded at the last settle.
+	value = var:mnt_wealth_cached_investment_rate
 	min = 0
 	save_temporary_value_as = mnt_wealth_investment_rate
 	value = mnt_wealth_projected_pool_remaining
@@ -377,14 +462,14 @@ mnt_wealth_projected_invested_wealth = {
 	save_temporary_value_as = mnt_wealth_wealth_at_review
 	value = mnt_wealth_projected_estate_income
 	save_temporary_value_as = mnt_wealth_estate_income
-	value = mnt_wealth_displayed_estate_maintenance
+	value = mnt_wealth_projected_estate_maintenance
 	save_temporary_value_as = mnt_wealth_estate_maintenance
 
 	# The share of invested wealth left after a month's decay, and after the
 	# period. Decay is toward zero for either sign.
 	value = 1
 	subtract = {
-		value = mnt_wealth_estate_decay_rate
+		value = mnt_wealth_projected_estate_decay_rate
 		multiply = mnt_wealth_decay_resistance_multiplier
 	}
 	save_temporary_value_as = mnt_wealth_invested_pool_remaining

@@ -170,45 +170,6 @@ template mnt_wealth_collapse_if_wealth_modifier_small {
 	size = "[Select_CVector2f(Not(IsWealthModifier()), '(CVector2f)26,26', '(CVector2f)0,0')]"
 }
 
-# The crown holds no local wealth, so it is skipped.
-
-template mnt_wealth_desired_wealth_tooltip {
-	ContextualTooltipType = {
-		blockoverride "title_icon" {
-			icon = { using = tooltip_title_icon_size texture = "[GetConceptTexture('mnt_wealth_expected_wealth')]" }
-		}
-		blockoverride "title_text" { raw_text = "#T Investment Decay#!" }
-		blockoverride "concept_link" { text = "[mnt_wealth_expected_wealth|E]" }
-
-		blockoverride "tooltip_content" {
-			TooltipListBase = {
-				vbox = {
-					layoutpolicy_horizontal = expanding
-					datamodel = "[DataModelSkipFirst(LocationView.GetLocation.GetOwner.GetGovernment.GetEstates, '(int32)1')]"
-
-					item = {
-						mnt_wealth_formula_row = {
-							blockoverride "row_attributes" {
-								tooltipwidget = { using = mnt_wealth_estate_desired_wealth_tooltip }
-								visible = "[GreaterThan_float(DCMonthlyDecay(), '(float)0')]"
-							}
-							blockoverride "row_icon" {
-								icon = {
-									size = { 20 20 }
-									texture = "[GetEstateIcon(Estate.GetType)]"
-									texture_density = 2
-								}
-							}
-							blockoverride "row_label" { raw_text = "[Estate.GetType.GetNameWithNoTooltip]" }
-							blockoverride "row_value" { raw_text = "[DCMonthlyDecay()|2]@gold!" }
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
 template mnt_wealth_estate_desired_wealth_tooltip {
 	ContextualTooltipType = {
 		blockoverride "title_icon" { icon = { using = tooltip_title_icon_size texture = "[GetEstateIcon(Estate.GetType)]" } }
@@ -254,11 +215,6 @@ template mnt_wealth_center_tooltip {
 					blockoverride "row_value" {
 						raw_text = "#bold [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]#!@gold!"
 					}
-				}
-				mnt_wealth_formula_row = {
-					blockoverride "row_attributes" { tooltipwidget = { using = mnt_wealth_desired_wealth_tooltip } }
-					blockoverride "row_label" { raw_text = "Baseline" }
-					blockoverride "row_value" { raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_baseline')|2]@gold!" }
 				}
 			}
 			TooltipListBase = {
@@ -1613,100 +1569,7 @@ types MnTWealthTypes
 				position = { -10 64 }
 				autoresize = yes
 				max_update_rate = 4
-				visible = "[And(LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
-				default_format = "#color_red"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
-			}
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
-				default_format = "#color_red"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
-			}
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
-				default_format = "#color_red"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
-			}
-
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5') ), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
-				default_format = "#color_orange"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
-			}
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5') ), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
-				default_format = "#color_orange"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
-			}
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)0.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5') ), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
-				default_format = "#color_orange"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
-			}
-
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5') ), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
-				default_format = "#color_yellow"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
-			}
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5') ), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
-				default_format = "#color_yellow"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
-			}
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(And( GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)1.5'), LessThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5') ), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
-				default_format = "#color_yellow"
-				tooltipwidget = { using = mnt_wealth_center_tooltip }
-				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
-			}
-
-			text_single = {
-				parentanchor = top|right
-				position = { -10 64 }
-				autoresize = yes
-				max_update_rate = 4
-				visible = "[And(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5'), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
+				visible = "[And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change'), '(CFixedPoint)0'), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
 				default_format = "#color_green"
 				tooltipwidget = { using = mnt_wealth_center_tooltip }
 				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
@@ -1716,7 +1579,7 @@ types MnTWealthTypes
 				position = { -10 64 }
 				autoresize = yes
 				max_update_rate = 4
-				visible = "[And(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5'), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
+				visible = "[And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change'), '(CFixedPoint)0'), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
 				default_format = "#color_green"
 				tooltipwidget = { using = mnt_wealth_center_tooltip }
 				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
@@ -1726,8 +1589,39 @@ types MnTWealthTypes
 				position = { -10 64 }
 				autoresize = yes
 				max_update_rate = 4
-				visible = "[And(GreaterThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_band'), '(CFixedPoint)2.5'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
+				visible = "[And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change'), '(CFixedPoint)0'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
 				default_format = "#color_green"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
+			}
+
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change'), '(CFixedPoint)0'), GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100'))]"
+				default_format = "#color_red"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|0]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change'), '(CFixedPoint)0'), And(GreaterThanOrEqualTo_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)100')))]"
+				default_format = "#color_red"
+				tooltipwidget = { using = mnt_wealth_center_tooltip }
+				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|1]@gold!"
+			}
+			text_single = {
+				parentanchor = top|right
+				position = { -10 64 }
+				autoresize = yes
+				max_update_rate = 4
+				visible = "[And(LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_change'), '(CFixedPoint)0'), LessThan_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total'), '(CFixedPoint)10'))]"
+				default_format = "#color_red"
 				tooltipwidget = { using = mnt_wealth_center_tooltip }
 				raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_wealth_total')|2]@gold!"
 			}

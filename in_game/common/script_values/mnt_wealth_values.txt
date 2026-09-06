@@ -10,19 +10,19 @@ mnt_wealth_months_since_campaign_start = {
 
 mnt_wealth_minimum_wage_rate = {
 	value = modifier:mnt_wealth_local_minimum_wage
-	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_minimum_wage }
+	if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_minimum_wage }
 }
 
 mnt_wealth_investment_rate_multiplier = {
 	value = 1
 	add = modifier:mnt_wealth_local_investment_rate_efficiency
-	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_investment_rate_efficiency }
+	if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_investment_rate_efficiency }
 	min = 0.5
 }
 
 mnt_wealth_investment_rate = {
 	value = modifier:mnt_wealth_local_investment_rate
-	if = { limit = { exists = owner } add = owner.modifier:mnt_wealth_global_investment_rate }
+	if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_investment_rate }
 	multiply = mnt_wealth_investment_rate_multiplier
 }
 
@@ -52,7 +52,7 @@ mnt_wealth_estate_flow_total = {
 
 	if = {
 		limit = {
-			exists = owner
+			has_owner = yes
 			owner = { has_variable_map = mnt_wealth_estate_flow has_variable_map = mnt_wealth_national_estate_raw_power }
 		}
 		owner = {
@@ -113,3 +113,8 @@ mnt_wealth_owned_local_urban_gross_output_sum = {
 	value = 0
 	every_owned_location = { add = var:mnt_wealth_local_urban_gross_output }
 }
+
+# The flow running totals are kept per million raw power, not per unit. The engine holds five decimals, and a
+# month's flow divided by a large country's raw power is a few hundred-thousandths, which would store with one or
+# two significant digits and drift the credits by hundredths of a ducat a month. Scaled up they keep full precision.
+mnt_wealth_flow_raw_power_scale = 1000000
