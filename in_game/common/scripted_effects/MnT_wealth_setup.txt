@@ -114,13 +114,29 @@ mnt_wealth_seed_estate_wealth = {
 	change_local_variable = { name = mnt_wealth_seed_running_total add = local_var:mnt_wealth_seed_amount }
 }
 
+# Owner change, on the tick: a location with no service record is new land, anything else is transferred land.
+
+mnt_wealth_settle_owner_change = {
+	save_temporary_scope_as = mnt_wealth_transfer_loc
+	if = {
+		limit = {
+			NOT = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = scope:mnt_wealth_transfer_loc } }
+		}
+		mnt_wealth_initialize_colonized_location = yes
+	}
+	else = {
+		mnt_wealth_recensus_transferred_location = yes
+	}
+}
+
 # A location with no service record, colonised or otherwise new to the schedule. No opening pool.
 
 mnt_wealth_initialize_colonized_location = {
+	# The review starts now, before the census, so its settle has no owed months to apply.
+	mnt_wealth_set_review_month = yes
 	# The census counts the estates into the owner's national raw power.
 	mnt_wealth_census_location = yes
 	set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
-	mnt_wealth_set_review_month = yes
 	set_variable = { name = mnt_wealth_reconciled_month value = global_var:mnt_wealth_months_elapsed }
 	mnt_wealth_cache_location_rates = yes
 	mnt_wealth_record_flow_baseline = { COUNTRY = owner }

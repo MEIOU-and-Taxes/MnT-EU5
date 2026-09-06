@@ -40,19 +40,17 @@ mnt_wealth_build_location_estate_list = {
 	clear_local_variable_list = mnt_wealth_location_estate_list
 	save_temporary_scope_as = mnt_wealth_location_estate_list_scope
 
-	owner = {
-		every_estate = {
-			limit = {
-				estate_type != estate_type:crown_estate
-				scope:mnt_wealth_location_estate_list_scope = { mnt_wealth_estate_is_present = { KEY = prev.estate_type } }
-			}
-			estate_type = { save_temporary_scope_as = mnt_wealth_location_estate_list_key }
+	# The estates the last census found here, whether or not the owner has them active. Filtering by the owner's
+	# estates left wealth outside the pool: a country formed this tick has no estates yet, and a new owner can lack
+	# one the pops here still belong to.
+	every_key_in_variable_map = {
+		variable = mnt_wealth_cached_local_relative_estate_power
+		save_temporary_scope_as = mnt_wealth_location_estate_list_key
 
-			scope:mnt_wealth_location_estate_list_scope = {
-				add_to_local_variable_list = {
-					name = mnt_wealth_location_estate_list
-					target = scope:mnt_wealth_location_estate_list_key
-				}
+		scope:mnt_wealth_location_estate_list_scope = {
+			add_to_local_variable_list = {
+				name = mnt_wealth_location_estate_list
+				target = scope:mnt_wealth_location_estate_list_key
 			}
 		}
 	}

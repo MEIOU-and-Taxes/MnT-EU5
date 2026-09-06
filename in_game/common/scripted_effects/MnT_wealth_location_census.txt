@@ -3,6 +3,9 @@
 # The census: every slow-rolling figure a location carries from the location wealth system.
 
 mnt_wealth_census_location = {
+	# Settle before raw power changes. The owed flow is the country's per-unit counter times this location's raw
+	# power, so it must be credited at the power it accrued under; credited at the new power it invents gold.
+	mnt_wealth_advance_location_to_now = yes
 	mnt_wealth_update_local_gross_output = yes
 	mnt_wealth_retake_estate_census = yes
 	# Gross output moved, so the cached wage bill moves with it.
@@ -141,27 +144,70 @@ mnt_wealth_census_estate_data = {
 	mnt_wealth_count_estate_pops = yes
 	mnt_wealth_refresh_relative_power = yes
 
-	# Departed estates: strip modifiers, redistribute gold to remaining estates.
+	# Departed estates: strip modifiers, redistribute gold to remaining estates. Found from this location's own
+	# wealth maps, not the owner's estates: an owner that lacks the estate left its wealth sitting outside the pool.
+	# Only when some estate remains to receive it.
 	set_local_variable = { name = mnt_wealth_freed_investment    value = 0 }
 	set_local_variable = { name = mnt_wealth_freed_estate_wealth value = 0 }
-	every_active_estate = {
-		limit = {
-			prev = {
-				NOT = { is_key_in_variable_map = { name = mnt_estate_raw_power target = prev.estate_type } }
-				OR = {
-					is_key_in_variable_map = { name = mnt_wealth_estate_wealth   target = prev.estate_type }
-					is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = prev.estate_type }
-				}
-			}
+	if = {
+		limit = { var:mnt_wealth_local_raw_power_total > 0 }
+		mnt_wealth_collect_departed_estates = yes
+		every_in_local_list = {
+			variable = mnt_wealth_departed_estates
+			save_temporary_scope_as = mnt_wealth_stale_key
+			prev = { mnt_wealth_release_absent_estate = yes }
 		}
-		estate_type = { save_temporary_scope_as = mnt_wealth_stale_key }
-		prev = { mnt_wealth_release_absent_estate = yes }
 	}
 	if = {
 		limit = { OR = { local_var:mnt_wealth_freed_investment != 0 local_var:mnt_wealth_freed_estate_wealth != 0 } }
 		set_local_variable = { name = mnt_wealth_rebuild_location_estate_list value = yes }
 		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_redistribute_to_estate }
 	}
+	# The pool is the sum of the estate wealth map; the census is where the map's keys change, so it is recounted here.
+	mnt_wealth_recount_pool_from_estate_wealth = yes
+}
+
+# Estates holding wealth or investment here with no pops left, collected before anything is removed from the maps.
+
+mnt_wealth_collect_departed_estates = {
+	clear_local_variable_list = mnt_wealth_departed_estates
+	save_temporary_scope_as = mnt_wealth_departed_scan_loc
+	every_key_in_variable_map = {
+		variable = mnt_wealth_estate_wealth
+		save_temporary_scope_as = mnt_wealth_departed_key
+		scope:mnt_wealth_departed_scan_loc = { mnt_wealth_note_departed_estate = yes }
+	}
+	every_key_in_variable_map = {
+		variable = mnt_wealth_invested_wealth
+		save_temporary_scope_as = mnt_wealth_departed_key
+		scope:mnt_wealth_departed_scan_loc = { mnt_wealth_note_departed_estate = yes }
+	}
+}
+
+mnt_wealth_note_departed_estate = {
+	if = {
+		limit = {
+			NOT = { is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_departed_key } }
+			NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_departed_key } }
+		}
+		add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_departed_key }
+	}
+}
+
+mnt_wealth_recount_pool_from_estate_wealth = {
+	set_local_variable = { name = mnt_wealth_pool_recount value = 0 }
+	save_temporary_scope_as = mnt_wealth_pool_recount_loc
+	every_key_in_variable_map = {
+		variable = mnt_wealth_estate_wealth
+		save_temporary_scope_as = mnt_wealth_pool_recount_key
+		scope:mnt_wealth_pool_recount_loc = {
+			change_local_variable = {
+				name = mnt_wealth_pool_recount
+				add = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_pool_recount_key)"
+			}
+		}
+	}
+	set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_pool_recount }
 }
 
 # Counts pops into estates and computes raw power (pops x power_per_pop).
@@ -326,12 +372,9 @@ mnt_wealth_store_estate_pops = {
 	}
 }
 
-mnt_wealth_store_estate_census_results = {
-	set_local_variable = {
-		name = mnt_wealth_estate_relative_power
-		value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
-	}
+# One estate's weight, given local_var:mnt_wealth_relative_power_sum from the caller's first pass.
 
+mnt_wealth_store_estate_census_results = {
 	set_local_variable = { name = mnt_wealth_raw_power_for_one_estate value = 0 }
 	if = {
 		limit = {
@@ -344,13 +387,31 @@ mnt_wealth_store_estate_census_results = {
 	}
 
 	if = {
-		limit = { OR = { local_var:mnt_wealth_estate_relative_power > 0 local_var:mnt_wealth_raw_power_for_one_estate > 0 } }
-
-		add_to_variable_map = {
-			name = mnt_wealth_cached_local_relative_estate_power
-			key = local_var:mnt_wealth_estate_key
-			value = local_var:mnt_wealth_estate_relative_power
+		limit = { local_var:mnt_wealth_relative_power_sum > 0 }
+		set_local_variable = {
+			name = mnt_wealth_estate_relative_power
+			value = {
+				value = "local_relative_estate_power(local_var:mnt_wealth_estate_key)"
+				min = 0
+				divide = local_var:mnt_wealth_relative_power_sum
+			}
 		}
+	}
+	else_if = {
+		limit = { var:mnt_wealth_local_raw_power_total > 0 }
+		set_local_variable = {
+			name = mnt_wealth_estate_relative_power
+			value = { value = local_var:mnt_wealth_raw_power_for_one_estate divide = var:mnt_wealth_local_raw_power_total }
+		}
+	}
+	else = {
+		set_local_variable = { name = mnt_wealth_estate_relative_power value = 0 }
+	}
+
+	add_to_variable_map = {
+		name = mnt_wealth_cached_local_relative_estate_power
+		key = local_var:mnt_wealth_estate_key
+		value = local_var:mnt_wealth_estate_relative_power
 	}
 }
 
@@ -387,13 +448,21 @@ mnt_wealth_release_absent_estate = {
 	remove_from_variable_map = { name = mnt_wealth_invested_since_review key = local_var:mnt_wealth_estate_key }
 }
 
-# Gives each remaining estate its power-weighted share of what the departed estates freed, debt included.
+# Gives each remaining estate its share of what the departed estates freed, debt included, by its share of the
+# pops here. Raw power is this census's own count and sums to one; the engine's relative power can read zero for
+# every estate on the tick a location changes hands, which dropped the freed wealth.
 
 mnt_wealth_redistribute_to_estate = {
-	# The cache was built by the census that is calling, so it is the live figure.
-	set_local_variable = {
-		name = mnt_wealth_relative_power
-		value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
+	set_local_variable = { name = mnt_wealth_relative_power value = 0 }
+	if = {
+		limit = { is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_relative_power
+			value = {
+				value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
+				divide = var:mnt_wealth_local_raw_power_total
+			}
+		}
 	}
 
 	if = {

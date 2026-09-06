@@ -170,6 +170,15 @@ mnt_wealth_update_estate_seizure_demand = {
 mnt_change_estate_gold = {
 	epbm_snapshot_estates_dynamic = yes
 
+	# Flow is paid per unit of national raw power, so it waits while the map is being rebuilt: paying against a
+	# half-built map credits the locations many times what left the treasury. No land means nobody to pay. Either
+	# way the gold stays in the treasury this month.
+	set_local_variable = { name = mnt_wealth_flow_allowed value = 1 }
+	if = {
+		limit = { OR = { has_variable = mnt_wealth_raw_power_rebuilding num_locations = 0 } }
+		set_local_variable = { name = mnt_wealth_flow_allowed value = 0 }
+	}
+
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
 		save_scope_as = mnt_estate_gold_estate
@@ -190,6 +199,7 @@ mnt_change_estate_gold = {
 			set_local_variable = { name = mnt_estate_gold_flow value = 0 }
 			if = {
 				limit = {
+					local_var:mnt_wealth_flow_allowed = 1
 					is_key_in_variable_map = {
 						name = mnt_wealth_estate_flow
 						target = scope:mnt_estate_gold_estate.estate_type
@@ -250,6 +260,27 @@ mnt_change_estate_gold = {
 	}
 }
 
+# Country scope, the rebel side of a civil war it has just won, at a hook that runs before the engine hands it the
+# original's variable maps. Every location is settled against the rebel counter while it can still be read, the
+# mark holds flow, and the day-after event re-bases the baselines to whatever counter the swap leaves. Idempotent,
+# so it can sit on every hook that fires before the swap.
+
+mnt_wealth_settle_rebel_side_before_swap = {
+	if = {
+		limit = { is_rebel_country = yes }
+		every_owned_location = { mnt_wealth_advance_location_to_now = yes }
+		set_variable = { name = mnt_wealth_raw_power_rebuilding value = yes days = 2 }
+		trigger_event_silently = { id = mnt_wealth_economy.33 days = 1 }
+	}
+}
+
+# The day after rebels won a civil war, on the survivor: every location's baseline is reset to the counter the
+# swap left. Each was settled before the peace terms executed, and the mark has held flow since.
+
+mnt_wealth_rebase_flow_baselines_after_swap = {
+	every_owned_location = { mnt_wealth_record_flow_baseline = { COUNTRY = owner } }
+}
+
 # Mirror of mnt_wealth_clear_annexed_country: recounts everything that effect clears.
 
 mnt_wealth_initialize_country = {
@@ -282,6 +313,12 @@ mnt_wealth_transfer_location_between_owners = {
 	if = {
 		limit = { NOT = { exists = scope:loser } }
 		mnt_wealth_zero_location = yes
+	}
+	# Existing land: apply the owed months under the previous owner first, so its flow arrives as income over the
+	# period. Credited as a lump before the advance, it would be treated as principal held since the last review.
+	else = {
+		scope:loser = { save_temporary_scope_as = mnt_wealth_previous_owner }
+		mnt_wealth_advance_location_to_now = yes
 	}
 
 	mnt_wealth_move_location_gross_output_between_owners = yes
@@ -319,7 +356,8 @@ mnt_wealth_move_location_estate_power_between_owners = {
 	}
 }
 
-# The old owner's flow owed since the last settle is credited before the count restarts under the new owner.
+# Whatever the advance left uncredited, this month's payment when the review was already current, is credited
+# before the count restarts under the new owner.
 
 mnt_wealth_settle_flow_between_owners = {
 	if = {
@@ -485,6 +523,9 @@ mnt_wealth_apply_national_estate_raw_power = {
 }
 
 mnt_wealth_rebuild_national_estate_raw_power = {
+	# A rebuild means the map cannot be trusted until the engine's own reset has landed and the day-after recount
+	# has run. The mark expires on its own; the estate gold event pays no flow while it stands.
+	set_variable = { name = mnt_wealth_raw_power_rebuilding value = yes days = 2 }
 	clear_variable_map = mnt_wealth_national_estate_raw_power
 	save_temporary_scope_as = mnt_wealth_raw_power_country
 	every_owned_location = { mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 } }

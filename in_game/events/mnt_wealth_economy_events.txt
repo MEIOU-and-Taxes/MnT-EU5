@@ -1,25 +1,6 @@
 ﻿
 namespace = mnt_wealth_economy
 
-mnt_wealth_economy.30 = {
-	type = location_event
-	hidden = yes
-	title = empty_text
-	trigger = { has_owner = yes }
-	immediate = {
-		save_temporary_scope_as = mnt_wealth_transfer_loc
-		if = {
-			limit = {
-				NOT = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = scope:mnt_wealth_transfer_loc } }
-			}
-			mnt_wealth_initialize_colonized_location = yes
-		}
-		else = {
-			mnt_wealth_recensus_transferred_location = yes
-		}
-	}
-}
-
 # One day after a civil war resolves, either side: the estate data is not ready on the resolution frame.
 
 mnt_wealth_economy.31 = {
@@ -27,7 +8,34 @@ mnt_wealth_economy.31 = {
 	hidden = yes
 	title = empty_text
 	trigger = { num_locations > 0 }
-	immediate = { mnt_wealth_rebuild_national_estate_raw_power = yes }
+	immediate = {
+		mnt_wealth_rebuild_national_estate_raw_power = yes
+		mnt_wealth_rebuild_national_goods = yes
+	}
+}
+
+# One day after rebels won a civil war, on the survivor: every location's baseline moves to the counter the swap
+# left. All were settled before the peace terms and the mark has held flow since, so nothing owed is lost.
+
+mnt_wealth_economy.33 = {
+	type = country_event
+	hidden = yes
+	title = empty_text
+	trigger = { num_locations > 0 }
+	immediate = { mnt_wealth_rebase_flow_baselines_after_swap = yes }
+}
+
+# One day after an owner change: only the modifier reads, once the new owner's modifiers exist.
+
+mnt_wealth_economy.32 = {
+	type = location_event
+	hidden = yes
+	title = empty_text
+	trigger = { has_owner = yes }
+	immediate = {
+		mnt_wealth_set_location_wages = yes
+		mnt_wealth_cache_location_rates = yes
+	}
 }
 
 # Monthly, medium and fast countries: recalculate each estate's savings valve.

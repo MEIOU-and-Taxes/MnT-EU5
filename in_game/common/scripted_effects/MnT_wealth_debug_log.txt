@@ -1,0 +1,118 @@
+﻿# Whole-world wealth trace, not called by anything at runtime. One MWL line per owned location and one MWE line per
+# estate present there, every key=value, written to debug.log.
+#
+# To trace a run, add mnt_wealth_debug_log_world = yes after the dispatcher in mnt_on_weather_monthly_pulse. To see
+# a transfer, call mnt_wealth_debug_log_location on the location in mnt_on_location_changed_owner before the
+# transfer with wd_kind = 1 and scope:wd_country = scope:loser, and after the settle with wd_kind = 2 and
+# scope:wd_country = owner. For a one-off dump run mnt_wealth_debug_log_world from the console.
+#
+# Countries get an id on first sight. Estate codes: 1 nobles, 2 clergy, 3 burghers, 4 peasants, 5 dhimmi,
+# 6 tribes, 7 cossacks. The world is about a hundred thousand lines a month.
+
+mnt_wealth_debug_ensure_country_id = {
+	if = {
+		limit = { NOT = { has_global_variable = mnt_wealth_debug_country_serial } }
+		set_global_variable = { name = mnt_wealth_debug_country_serial value = 1 }
+	}
+	if = {
+		limit = { NOT = { has_variable = mnt_wealth_debug_country_id } }
+		set_variable = { name = mnt_wealth_debug_country_id value = global_var:mnt_wealth_debug_country_serial }
+		change_global_variable = { name = mnt_wealth_debug_country_serial add = 1 }
+	}
+}
+
+mnt_wealth_debug_log_world = {
+	every_ownable_location = {
+		limit = { has_owner = yes }
+		set_local_variable = { name = wd_kind value = 0 }
+		set_local_variable = { name = wd_loser value = 0 }
+		set_local_variable = { name = wd_winner value = 0 }
+		owner = { save_temporary_scope_as = wd_country }
+		mnt_wealth_debug_log_location = yes
+	}
+}
+
+# Location scope. wd_kind: 0 monthly, 1 before a transfer, 2 after it. scope:wd_country is the country whose
+# counters are read: the owner, or the previous owner before a transfer.
+
+mnt_wealth_debug_log_location = {
+	mnt_wealth_ensure_location_id = yes
+	scope:wd_country = {
+		mnt_wealth_debug_ensure_country_id = yes
+		set_local_variable = { name = wd_cid  value = var:mnt_wealth_debug_country_id }
+		set_local_variable = { name = wd_locs value = num_locations }
+		set_local_variable = { name = wd_econ value = country_economical_base }
+	}
+	set_local_variable = { name = wd_month      value = global_var:mnt_wealth_months_elapsed }
+	set_local_variable = { name = wd_id         value = var:mnt_wealth_location_id }
+	set_local_variable = { name = wd_pool       value = var:mnt_wealth_pool }
+	set_local_variable = { name = wd_kept       value = var:mnt_wealth_kept_income_total }
+	set_local_variable = { name = wd_gross      value = var:mnt_wealth_local_gross_output }
+	set_local_variable = { name = wd_rate       value = var:mnt_wealth_cached_investment_rate }
+	set_local_variable = { name = wd_wage       value = var:mnt_wealth_current_wage_rate }
+	set_local_variable = { name = wd_review     value = var:mnt_wealth_review_month }
+	set_local_variable = { name = wd_reconciled value = var:mnt_wealth_reconciled_month }
+
+	debug_log = "MWL m=[SCOPE.GetLocalVariable('wd_month').GetValue|0] k=[SCOPE.GetLocalVariable('wd_kind').GetValue|0] loc=[SCOPE.GetLocalVariable('wd_id').GetValue|0] cid=[SCOPE.GetLocalVariable('wd_cid').GetValue|0] lose=[SCOPE.GetLocalVariable('wd_loser').GetValue|0] win=[SCOPE.GetLocalVariable('wd_winner').GetValue|0] locs=[SCOPE.GetLocalVariable('wd_locs').GetValue|0] econ=[SCOPE.GetLocalVariable('wd_econ').GetValue|2] pool=[SCOPE.GetLocalVariable('wd_pool').GetValue|3] kept=[SCOPE.GetLocalVariable('wd_kept').GetValue|3] gross=[SCOPE.GetLocalVariable('wd_gross').GetValue|3] rate=[SCOPE.GetLocalVariable('wd_rate').GetValue|5] wage=[SCOPE.GetLocalVariable('wd_wage').GetValue|5] review=[SCOPE.GetLocalVariable('wd_review').GetValue|0] reconciled=[SCOPE.GetLocalVariable('wd_reconciled').GetValue|0]"
+
+	save_temporary_scope_as = wd_loc
+	every_key_in_variable_map = {
+		variable = mnt_estate_raw_power
+		save_temporary_scope_as = wd_key
+		scope:wd_loc = {
+			set_local_variable = { name = wd_power value = "variable_map(mnt_estate_raw_power|scope:wd_key)" }
+			set_local_variable = { name = wd_wealth value = 0 }
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:wd_key } }
+				set_local_variable = { name = wd_wealth value = "variable_map(mnt_wealth_estate_wealth|scope:wd_key)" }
+			}
+			set_local_variable = { name = wd_invested value = 0 }
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = scope:wd_key } }
+				set_local_variable = { name = wd_invested value = "variable_map(mnt_wealth_invested_wealth|scope:wd_key)" }
+			}
+			set_local_variable = { name = wd_since value = 0 }
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = scope:wd_key } }
+				set_local_variable = { name = wd_since value = "variable_map(mnt_wealth_invested_since_review|scope:wd_key)" }
+			}
+			set_local_variable = { name = wd_rel value = 0 }
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = scope:wd_key } }
+				set_local_variable = { name = wd_rel value = "variable_map(mnt_wealth_cached_local_relative_estate_power|scope:wd_key)" }
+			}
+			set_local_variable = { name = wd_base value = 0 }
+			if = {
+				limit = { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:wd_key } }
+				set_local_variable = { name = wd_base value = "variable_map(mnt_wealth_flow_paid_per_million_at_settle|scope:wd_key)" }
+			}
+			scope:wd_country = {
+				set_local_variable = { name = wd_nat value = 0 }
+				if = {
+					limit = { is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:wd_key } }
+					set_local_variable = { name = wd_nat value = "variable_map(mnt_wealth_national_estate_raw_power|scope:wd_key)" }
+				}
+				set_local_variable = { name = wd_counter value = 0 }
+				if = {
+					limit = { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = scope:wd_key } }
+					set_local_variable = { name = wd_counter value = "variable_map(mnt_wealth_flow_paid_per_million_raw_power|scope:wd_key)" }
+				}
+				set_local_variable = { name = wd_flow value = 0 }
+				if = {
+					limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow target = scope:wd_key } }
+					set_local_variable = { name = wd_flow value = "variable_map(mnt_wealth_estate_flow|scope:wd_key)" }
+				}
+			}
+			set_local_variable = { name = wd_est value = 0 }
+			if = { limit = { scope:wd_key = estate_type:nobles_estate }   set_local_variable = { name = wd_est value = 1 } }
+			if = { limit = { scope:wd_key = estate_type:clergy_estate }   set_local_variable = { name = wd_est value = 2 } }
+			if = { limit = { scope:wd_key = estate_type:burghers_estate } set_local_variable = { name = wd_est value = 3 } }
+			if = { limit = { scope:wd_key = estate_type:peasants_estate } set_local_variable = { name = wd_est value = 4 } }
+			if = { limit = { scope:wd_key = estate_type:dhimmi_estate }   set_local_variable = { name = wd_est value = 5 } }
+			if = { limit = { scope:wd_key = estate_type:tribes_estate }   set_local_variable = { name = wd_est value = 6 } }
+			if = { limit = { scope:wd_key = estate_type:cossacks_estate } set_local_variable = { name = wd_est value = 7 } }
+
+			debug_log = "MWE m=[SCOPE.GetLocalVariable('wd_month').GetValue|0] k=[SCOPE.GetLocalVariable('wd_kind').GetValue|0] loc=[SCOPE.GetLocalVariable('wd_id').GetValue|0] est=[SCOPE.GetLocalVariable('wd_est').GetValue|0] power=[SCOPE.GetLocalVariable('wd_power').GetValue|5] national=[SCOPE.GetLocalVariable('wd_nat').GetValue|5] wealth=[SCOPE.GetLocalVariable('wd_wealth').GetValue|3] invested=[SCOPE.GetLocalVariable('wd_invested').GetValue|3] since=[SCOPE.GetLocalVariable('wd_since').GetValue|3] counter=[SCOPE.GetLocalVariable('wd_counter').GetValue|3] baseline=[SCOPE.GetLocalVariable('wd_base').GetValue|3] flow=[SCOPE.GetLocalVariable('wd_flow').GetValue|4] rel=[SCOPE.GetLocalVariable('wd_rel').GetValue|4]"
+		}
+	}
+}

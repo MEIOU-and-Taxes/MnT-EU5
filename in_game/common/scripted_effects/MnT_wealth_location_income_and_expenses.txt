@@ -44,6 +44,15 @@ mnt_wealth_advance_location_to_now = {
 	if = {
 		limit = { local_var:mnt_wealth_advance_months > 0 }
 
+		# The flow counter belongs to the country that paid it: the previous owner on a transfer tick, the owner otherwise.
+		if = {
+			limit = { exists = scope:mnt_wealth_previous_owner }
+			scope:mnt_wealth_previous_owner = { save_temporary_scope_as = mnt_wealth_flow_country }
+		}
+		else = {
+			owner = { save_temporary_scope_as = mnt_wealth_flow_country }
+		}
+
 		# The rates recorded at the last settle govern the whole period. A negative rate spends nothing.
 		set_local_variable = { name = mnt_wealth_advance_investment_rate    value = { value = var:mnt_wealth_cached_investment_rate min = 0 } }
 		set_local_variable = { name = mnt_wealth_month_investment_maintenance value = var:mnt_wealth_cached_investment_maintenance }
@@ -83,8 +92,12 @@ mnt_wealth_advance_location_to_now = {
 		set_variable = { name = mnt_wealth_pool value = local_var:mnt_wealth_advance_pool_now }
 
 		mnt_wealth_set_review_month = yes
-		# The flow credited above is counted; the next settle starts from here.
-		mnt_wealth_record_flow_baseline = { COUNTRY = owner }
+		# The flow credited above is counted; the next settle starts from here. Not while the country is mid-rebuild:
+		# nothing was credited, so the baseline stays where it is and the next settle collects the whole period.
+		if = {
+			limit = { NOT = { scope:mnt_wealth_flow_country = { has_variable = mnt_wealth_raw_power_rebuilding } } }
+			mnt_wealth_record_flow_baseline = { COUNTRY = scope:mnt_wealth_flow_country }
+		}
 	}
 }
 
@@ -104,10 +117,12 @@ mnt_wealth_cache_estate_decay_rate = {
 }
 
 # Copies the country's running flow totals as this location's baseline, so the next settle credits only what is
-# paid from now on. Every estate the country has gets an entry, present here or not.
+# paid from now on. Every estate the country has gets an entry, present here or not. Cleared first: an entry left
+# over from a previous owner would be read against this country's total, which starts from zero for a new estate.
 
 mnt_wealth_record_flow_baseline = {
 	save_temporary_scope_as = mnt_wealth_baseline_loc
+	clear_variable_map = mnt_wealth_flow_paid_per_million_at_settle
 	$COUNTRY$ ?= {
 		save_temporary_scope_as = mnt_wealth_baseline_country
 		every_key_in_variable_map = {
@@ -508,7 +523,13 @@ mnt_wealth_advance_estate = {
 	}
 
 	# Flow owed over the period as a monthly figure, and maintenance, both held constant for the owed period.
-	mnt_wealth_compute_location_share_of_estate_flow = { COUNTRY = owner }
+	# None while the country's map is being rebuilt: its counter may hold the other side of a civil war swap until
+	# the day-after re-base, and the baseline is kept so the flow is collected at the next settle instead.
+	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
+	if = {
+		limit = { NOT = { scope:mnt_wealth_flow_country = { has_variable = mnt_wealth_raw_power_rebuilding } } }
+		mnt_wealth_compute_location_share_of_estate_flow = { COUNTRY = scope:mnt_wealth_flow_country }
+	}
 	set_local_variable = {
 		name = mnt_wealth_local_flow_share
 		value = { value = local_var:mnt_wealth_local_flow_share divide = local_var:mnt_wealth_advance_months }

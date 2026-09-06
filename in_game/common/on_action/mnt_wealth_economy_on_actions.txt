@@ -54,8 +54,22 @@ mnt_on_civil_war_annexed = {
 	}
 }
 
+# Rebels win: the engine fires this first, root = the rebel country annexing the original, then on_civil_war_lost
+# with the rebels as scope:winner, and only after every hook hands the survivor the original's variable maps. The
+# pre-terms war hooks never fire for a civil war. The rebel side is settled against its own counter here while it
+# can still be read.
+mnt_on_civil_war_annex = {
+	effect = {
+		if = {
+			limit = { is_rebel_country = yes }
+			mnt_wealth_settle_rebel_side_before_swap = yes
+		}
+	}
+}
+
 mnt_on_civil_war_won = {
 	effect = {
+		scope:winner ?= { mnt_wealth_settle_rebel_side_before_swap = yes }
 		mnt_wealth_rebuild_national_estate_raw_power = yes
 		trigger_event_silently = { id = mnt_wealth_economy.31 days = 1 }
 	}
@@ -63,6 +77,7 @@ mnt_on_civil_war_won = {
 
 mnt_on_civil_war_lost = {
 	effect = {
+		scope:winner ?= { mnt_wealth_settle_rebel_side_before_swap = yes }
 		scope:winner ?= {
 			mnt_wealth_rebuild_national_estate_raw_power = yes
 			trigger_event_silently = { id = mnt_wealth_economy.31 days = 1 }
@@ -83,10 +98,21 @@ mnt_on_location_changed_owner = {
 			save_temporary_scope_as = mnt_wealth_decolonize_loc
 			remove_from_global_variable_map = { name = mnt_wealth_location_last_service key = scope:mnt_wealth_decolonize_loc }
 		}
+
+		# The census runs here, after the transfer, on the tick: the effect block and the events list have no
+		# defined order between them, and the national totals corrupt if the census runs before or later.
+		if = {
+			limit = { has_owner = yes }
+			mnt_wealth_settle_owner_change = yes
+		}
 	}
 
-	# Delayed one day because new countries have no estate data on their formation frame.
-	events = { mnt_wealth_economy.30 }
+	# The modifier reads wait a day: modifiers for a new country need a day to initialize, so the wage floor
+	# and the cached rates read zero from the owner on its formation frame.
+	events = {
+		delay = { days = 1 }
+		mnt_wealth_economy.32
+	}
 }
 
 # Every location pulse checks for an owner: a balanced pulse lands up to a month after the dispatch that queued it,

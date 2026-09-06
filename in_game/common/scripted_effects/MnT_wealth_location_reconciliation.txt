@@ -41,6 +41,21 @@ mnt_wealth_refresh_relative_power = {
 	# Iterates the raw power keys, not estates: estates are not active during on_game_start, the raw power map is.
 	save_temporary_scope_as = mnt_wealth_census_loc
 	clear_variable_map = mnt_wealth_cached_local_relative_estate_power
+	# The weights must sum to one over the estates present: the drift targets and the wage shares are the pool
+	# times these, so a short total drifts the pool toward the crown's share and an all-zero one toward nothing.
+	# Normalise the engine's relative power over the estates present; when it reads zero for all of them, use the
+	# share of the pops here instead.
+	set_local_variable = { name = mnt_wealth_relative_power_sum value = 0 }
+	every_key_in_variable_map = {
+		variable = mnt_estate_raw_power
+		save_temporary_scope_as = mnt_wealth_census_key
+		scope:mnt_wealth_census_loc = {
+			change_local_variable = {
+				name = mnt_wealth_relative_power_sum
+				add = { value = "local_relative_estate_power(scope:mnt_wealth_census_key)" min = 0 }
+			}
+		}
+	}
 	every_key_in_variable_map = {
 		variable = mnt_estate_raw_power
 		save_temporary_scope_as = mnt_wealth_census_key
