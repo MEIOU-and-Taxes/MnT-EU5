@@ -607,3 +607,5 @@ Date: 21/05/2026
 - Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
 - Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
 - Fix errors on startup that about too many farming villages in Locations
+- Fix Japanese clan and stackable estate buildings being capped too low since RGOs were replaced
+- Fix converted fruit, lumber, sand, clay and wool RGO buildings ignoring their own max level
