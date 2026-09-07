@@ -66,8 +66,6 @@ Date: 21/05/2026
 - Block tribal governments (tribes and steppe hordes) from settling their tribes
 - Tribal strongholds privilege now improves rural control instead of making it worse
 - AI now has better non-royal marriage logic so that dynasties don't die out nearly as often due to refusal to wed
-- Development now directly reduced by looting and sieges.
-- Development will now decay at low enough prosperity levels.
 
 ##### Diplomacy
 
@@ -193,6 +191,7 @@ Date: 21/05/2026
 - Tribesmen pops now have same share of the tax base as peasants
 - Stop randomly spawning Eunuch children
 - Added tribes to the Steppe
+
 
 ##### Religion
 
@@ -602,6 +601,13 @@ Date: 21/05/2026
 ### Balance
 - Disable selling Works of Art to either other Nations or Estates
   - Too exploitative for the player
+- Development now directly reduced by looting and sieges.
+- Development will now decay at low enough prosperity levels.
+- Promotion rules changed, peasants unable to promote to nobles, many other classes able to promote 'upward'.
+
+##### Population
+- Entire max population system reworked to be more climate related, and lower in general.
+- Population growth does not cease after max population is reached, but instead slowly tapers off with a soft cap.
 - Paradox rescaled population promotion speed, causing our own scaling to be too aggressive. 
 
 ### Fixes
