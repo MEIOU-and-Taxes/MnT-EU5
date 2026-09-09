@@ -141,19 +141,14 @@ farming_village = {
 	forbidden_for_estates = yes
 
 	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
 	
 	price = build_price_farming_village
 	
-	location_potential = {
-		NOT = {
-			vegetation = desert
-			topography = mountains
-			arctic_climate_trigger = yes
-		}
-	}
-
 	country_potential = {
-		is_ai = no
+		always = no
 	}
 
 	can_destroy = {
@@ -166,17 +161,139 @@ farming_village = {
 
 	construction_demand = village_construction
 
-	# A village level works 1k peasants, and SUBSISTENCE_AGRICULTURE gives 1 food
-	# per 1k peasants, so one level is 1 food. Provisions is 30 food, hence 1/30.
+	# One flat method for now; the terrain tiers below are parked until the
+	# swapping behaviour is understood.
 	unique_production_methods = {
+
 		farming_village_provisions = {
 			produced = provisions
-			output = 0.0333
+			output = 0.05
 
 			category = building_maintenance
 		}
 	}
 
+#	# Villages can be built anywhere now; the land decides how much they yield.
+#	# 1k peasants eat 1 food, and provisions is 30 food, so 0.0333 is break-even.
+#	# The empty method is listed first so a village always starts on a valid
+#	# one; the rest each match exactly one kind of location.
+#	unique_production_methods = {
+#
+#		farming_village_no_provisions = { }
+#
+#		farming_village_provisions_barren = {
+#			allow = {
+#				scope:target ?= {
+#					OR = {
+#						vegetation = desert
+#						topography = mountains
+#					}
+#				}
+#			}
+#
+#			produced = provisions
+#			output = 0.02
+#
+#			category = building_maintenance
+#		}
+#
+#		farming_village_provisions_cold = {
+#			allow = {
+#				scope:target ?= {
+#					arctic_climate_trigger = yes
+#					NOT = {
+#						OR = {
+#							vegetation = desert
+#							topography = mountains
+#						}
+#					}
+#				}
+#			}
+#
+#			produced = provisions
+#			output = 0.03
+#
+#			category = building_maintenance
+#		}
+#
+#		farming_village_provisions_cold_arid = {
+#			allow = {
+#				scope:target ?= {
+#					cold_arid_climate_trigger = yes
+#					NOT = {
+#						OR = {
+#							vegetation = desert
+#							topography = mountains
+#						}
+#					}
+#				}
+#			}
+#
+#			produced = provisions
+#			output = 0.035
+#
+#			category = building_maintenance
+#		}
+#
+#		farming_village_provisions_arid = {
+#			allow = {
+#				scope:target ?= {
+#					arid_climate_trigger = yes
+#					NOT = {
+#						OR = {
+#							vegetation = desert
+#							topography = mountains
+#						}
+#					}
+#				}
+#			}
+#
+#			produced = provisions
+#			output = 0.04
+#
+#			category = building_maintenance
+#		}
+#
+#		farming_village_provisions = {
+#			allow = {
+#				scope:target ?= {
+#					arctic_climate_trigger = no
+#					arid_climate_trigger = no
+#					cold_arid_climate_trigger = no
+#					NOT = {
+#						OR = {
+#							vegetation = desert
+#							vegetation = farmland
+#							topography = mountains
+#						}
+#					}
+#				}
+#			}
+#
+#			produced = provisions
+#			output = 0.05
+#
+#			category = building_maintenance
+#		}
+#
+#		farming_village_provisions_farmland = {
+#			allow = {
+#				scope:target ?= {
+#					vegetation = farmland
+#					arctic_climate_trigger = no
+#					arid_climate_trigger = no
+#					cold_arid_climate_trigger = no
+#					NOT = { topography = mountains }
+#				}
+#			}
+#
+#			produced = provisions
+#			output = 0.07
+#
+#			category = building_maintenance
+#		}
+#	}
+#
 	modifier = {
 		local_food_capacity = 20
 		#local_monthly_food = 2.0	#provisions is the only food now
