@@ -616,4 +616,4 @@ Date: 21/05/2026
 - Fix errors on startup that about too many farming villages in Locations
 - Fixed morale loss to scale with removal of hours
 - Fixed duplicated movement speed in defines, correcting movement speed to M&T values.
- 
+- Fixed colonized locations not integrating automatically.
