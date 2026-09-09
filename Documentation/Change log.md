@@ -611,9 +611,9 @@ Date: 21/05/2026
 - Paradox rescaled population promotion speed, causing our own scaling to be too aggressive. 
 
 ### Fixes
-- Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
-- Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
-- Fix errors on startup that about too many farming villages in Locations
-- Fixed morale loss to scale with removal of hours
+- Fixed a typo which had made the 'Subtropical Highland' climate give -50% dev growth instead of the intended -5% dev growth.
+- Fixed the 'Great Pestilence' situation being visible to 'Old World' nations when they had gotten one of the three diseases during the situation.
+- Fixed errors on startup which had caused too many farming villages in locations.
+- Fixed morale loss, which failed to scale with the removal of hours.
 - Fixed duplicated movement speed in defines, correcting movement speed to M&T values.
- 
+- Fixed colonized locations not integrating automatically.
