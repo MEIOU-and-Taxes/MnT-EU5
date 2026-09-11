@@ -1,5 +1,14 @@
 ﻿# Release
 
+#### Features
+- Centers of Importance are shown on the location picture, top left, as one tile per category (trade / production / culture / education) tinted by category:
+  - a tile displays the center's current tier and is greyed out when the location holds no center of that category, with the tier number (1-4) in the corner
+  - the tile tooltip lists the effects the center grants the location, its score and the threshold needed for the next tier, with a progress bar
+  - the tier number opens the score breakdown, i.e. every factor feeding that center's score
+
+#### Bugfixes
+- Fix the production center score erroring out when a location has no urban goods value yet (that value is only written by the yearly pass), which blanked the score in tooltips and spammed script errors
+
 #### Balancing
 - Remove location building limit
 - Changes to industry-specialization urban rights
