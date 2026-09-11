@@ -1,15 +1,14 @@
-# MnT - Centers of Importance: the tiles on the location picture.
-# location_window.gui instantiates one subtype per category. Every card the player can open
-# is defined once and referenced by name:
+# MnT centers: the "Centers of Importance" tiles on the location picture.
+# location_window.gui instantiates one subtype per category (top-left column).
 #
-#   mnt_center_tier_<cat>_<tier>   one tier: what it grants and the score it needs
-#   mnt_center_factors_<cat>       the breakdown of that category's score
-#   mnt_center_tree_<cat>          the progression, tier by tier
-#   mnt_center_mapmode_<cat>       the button opening that category's mapmode
-#
+# Each tile: paper-card frame tinted per category and one icon per tier, greyed out when the
+# location holds no center of that category. The icon carries the only tooltip: the center's
+# effects, its score against the threshold for the next tier and a progress bar. Hovering that
+# threshold value opens a nested tooltip with the score breakdown (the same "Factors:" bullet
+# list the centers mapmode uses). Every tooltip header carries a button opening the mapmode.
+
 types MnT_center_slots
 {
-	# one tile: paper-card frame, an icon per tier (grey when the location holds none)
 	type mnt_center_slot = widget {
 		size = { 29 29 }
 
@@ -23,21 +22,6 @@ types MnT_center_slots
 		block "mnt_center_slot_world" {}
 	}
 
-	# mapmode buttons, one per category
-	type mnt_center_mapmode_trade = mapmode_tooltip_button {
-		datacontext = "[GetMapMode('center_trade')]"
-	}
-	type mnt_center_mapmode_production = mapmode_tooltip_button {
-		datacontext = "[GetMapMode('center_production')]"
-	}
-	type mnt_center_mapmode_culture = mapmode_tooltip_button {
-		datacontext = "[GetMapMode('center_culture')]"
-	}
-	type mnt_center_mapmode_education = mapmode_tooltip_button {
-		datacontext = "[GetMapMode('center_education')]"
-	}
-
-	# category content
 	type mnt_center_slot_trade = mnt_center_slot {
 		blockoverride "mnt_center_slot_tint" {
 			background = {
@@ -53,47 +37,93 @@ types MnT_center_slots
 				texture = "gfx/interface/icons/centers/trade_local.dds"
 				shaderfile = "gfx/FX/pdxgui_grayscale.shader"
 				effectname = "PdxGuiGrayscale"
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "MNT_NO_TRADE_CENTER_TITLE"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_trade }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/trade_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_trade = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipTextBlock = {
-							blockoverride "text" {
-								text = "MNT_NO_TRADE_CENTER"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "MNT_NO_TRADE_CENTER_TITLE"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_trade }
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
 							}
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_trade }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
+						blockoverride "tooltip_content" {
+							TooltipTextBlock = {
+								blockoverride "text" {
+									text = "MNT_NO_TRADE_CENTER"
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold')|0]"
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "MNT_NO_TRADE_CENTER_TITLE"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_trade }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/trade_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_trade')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_TRADE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_LOCAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_trade_local').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_trade }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/trade_local.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_trade')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_trade_local')]"
+													}
+												}
+											}
+										}
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_LOCAL"
-								tooltipwidget = { using = mnt_center_tier_trade_local }
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold'))), '(float)1.0'), '(float)100')]"
 							}
-						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold'))), '(float)1.0'), '(float)100')]"
 						}
 					}
 				}
@@ -111,45 +141,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_trade_local').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_trade }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/trade_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_trade = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_trade_local')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_local').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_trade }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_trade }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_REGIONAL"
-								tooltipwidget = { using = mnt_center_tier_trade_regional }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_local')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_trade_local').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_trade }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/trade_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_trade')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_TRADE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_REGIONAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_trade_regional').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_trade }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/trade_regional.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_trade')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_trade_regional')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -167,45 +243,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_trade_regional').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_trade }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/trade_regional.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_trade = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_trade_regional')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_regional').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_trade }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_trade }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_CONTINENTAL"
-								tooltipwidget = { using = mnt_center_tier_trade_continental }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_trade_regional').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_trade }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/trade_regional.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_trade')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_TRADE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_CONTINENTAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_trade_continental').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_trade }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/trade_continental.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_trade')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_trade_continental')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -223,45 +345,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_trade_continental').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_trade }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/trade_continental.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_trade = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_trade_continental')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_continental').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_trade }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_trade }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_WORLD"
-								tooltipwidget = { using = mnt_center_tier_trade_world }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_trade_continental').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_trade }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/trade_continental.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_trade')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_TRADE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_WORLD"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_trade_world').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_trade }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/trade_world.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_trade')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_trade_world')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -279,34 +447,58 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_trade_world').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_trade }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/trade_world.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_trade = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_trade_world')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_world').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_trade }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_trade }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0] /"
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_MAX"
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_world')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_trade_world').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_trade }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/trade_world.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_trade')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_TRADE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_trade_score')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_SCORE_MAX"
+								}
 							}
 						}
 					}
@@ -330,47 +522,93 @@ types MnT_center_slots
 				texture = "gfx/interface/icons/centers/production_local.dds"
 				shaderfile = "gfx/FX/pdxgui_grayscale.shader"
 				effectname = "PdxGuiGrayscale"
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "MNT_NO_PRODUCTION_CENTER_TITLE"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_production }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/production_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_production = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipTextBlock = {
-							blockoverride "text" {
-								text = "MNT_NO_PRODUCTION_CENTER"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "MNT_NO_PRODUCTION_CENTER_TITLE"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_production }
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
 							}
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_production }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
+						blockoverride "tooltip_content" {
+							TooltipTextBlock = {
+								blockoverride "text" {
+									text = "MNT_NO_PRODUCTION_CENTER"
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold')|0]"
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "MNT_NO_PRODUCTION_CENTER_TITLE"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_production }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/production_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_production')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_PRODUCTION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_LOCAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_production_local').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_production }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/production_local.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_production')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_production_local')]"
+													}
+												}
+											}
+										}
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_LOCAL"
-								tooltipwidget = { using = mnt_center_tier_production_local }
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold'))), '(float)1.0'), '(float)100')]"
 							}
-						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold'))), '(float)1.0'), '(float)100')]"
 						}
 					}
 				}
@@ -388,45 +626,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_production_local').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_production }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/production_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_production = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_production_local')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_local').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_production }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_production }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_REGIONAL"
-								tooltipwidget = { using = mnt_center_tier_production_regional }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_local')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_production_local').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_production }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/production_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_production')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_PRODUCTION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_REGIONAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_production_regional').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_production }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/production_regional.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_production')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_production_regional')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -444,45 +728,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_production_regional').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_production }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/production_regional.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_production = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_production_regional')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_regional').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_production }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_production }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_CONTINENTAL"
-								tooltipwidget = { using = mnt_center_tier_production_continental }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_production_regional').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_production }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/production_regional.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_production')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_PRODUCTION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_CONTINENTAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_production_continental').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_production }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/production_continental.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_production')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_production_continental')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -500,45 +830,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_production_continental').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_production }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/production_continental.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_production = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_production_continental')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_continental').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_production }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_production }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_WORLD"
-								tooltipwidget = { using = mnt_center_tier_production_world }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_production_continental').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_production }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/production_continental.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_production')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_PRODUCTION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_WORLD"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_production_world').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_production }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/production_world.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_production')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_production_world')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -556,34 +932,58 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_production_world').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_production }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/production_world.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_production = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_production_world')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_world').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_production }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_production }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0] /"
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_MAX"
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_world')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_production_world').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_production }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/production_world.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_production')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_PRODUCTION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_production_score')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_SCORE_MAX"
+								}
 							}
 						}
 					}
@@ -607,47 +1007,93 @@ types MnT_center_slots
 				texture = "gfx/interface/icons/centers/culture_local.dds"
 				shaderfile = "gfx/FX/pdxgui_grayscale.shader"
 				effectname = "PdxGuiGrayscale"
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "MNT_NO_CULTURE_CENTER_TITLE"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_culture }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/culture_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_culture = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipTextBlock = {
-							blockoverride "text" {
-								text = "MNT_NO_CULTURE_CENTER"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "MNT_NO_CULTURE_CENTER_TITLE"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_culture }
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
 							}
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_culture }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
+						blockoverride "tooltip_content" {
+							TooltipTextBlock = {
+								blockoverride "text" {
+									text = "MNT_NO_CULTURE_CENTER"
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold')|0]"
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "MNT_NO_CULTURE_CENTER_TITLE"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_culture }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/culture_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_culture')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_CULTURE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_LOCAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_culture_local').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_culture }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/culture_local.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_culture')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_culture_local')]"
+													}
+												}
+											}
+										}
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_LOCAL"
-								tooltipwidget = { using = mnt_center_tier_culture_local }
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold'))), '(float)1.0'), '(float)100')]"
 							}
-						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold'))), '(float)1.0'), '(float)100')]"
 						}
 					}
 				}
@@ -665,45 +1111,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_culture_local').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_culture }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/culture_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_culture = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_culture_local')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_local').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_culture }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_culture }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_REGIONAL"
-								tooltipwidget = { using = mnt_center_tier_culture_regional }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_local')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_culture_local').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_culture }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/culture_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_culture')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_CULTURE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_REGIONAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_culture_regional').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_culture }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/culture_regional.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_culture')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_culture_regional')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -721,45 +1213,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_culture_regional').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_culture }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/culture_regional.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_culture = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_culture_regional')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_regional').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_culture }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_culture }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_CONTINENTAL"
-								tooltipwidget = { using = mnt_center_tier_culture_continental }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_culture_regional').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_culture }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/culture_regional.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_culture')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_CULTURE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_CONTINENTAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_culture_continental').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_culture }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/culture_continental.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_culture')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_culture_continental')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -777,45 +1315,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_culture_continental').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_culture }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/culture_continental.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_culture = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_culture_continental')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_continental').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_culture }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_culture }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_WORLD"
-								tooltipwidget = { using = mnt_center_tier_culture_world }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_culture_continental').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_culture }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/culture_continental.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_culture')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_CULTURE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_WORLD"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_culture_world').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_culture }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/culture_world.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_culture')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_culture_world')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -833,34 +1417,58 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_culture_world').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_culture }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/culture_world.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_culture = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_culture_world')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_world').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_culture }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_culture }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0] /"
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_MAX"
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_world')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_culture_world').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_culture }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/culture_world.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_culture')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_CULTURE"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_culture_score')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_SCORE_MAX"
+								}
 							}
 						}
 					}
@@ -884,47 +1492,93 @@ types MnT_center_slots
 				texture = "gfx/interface/icons/centers/education_local.dds"
 				shaderfile = "gfx/FX/pdxgui_grayscale.shader"
 				effectname = "PdxGuiGrayscale"
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "MNT_NO_EDUCATION_CENTER_TITLE"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_education }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/education_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_education = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipTextBlock = {
-							blockoverride "text" {
-								text = "MNT_NO_EDUCATION_CENTER"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "MNT_NO_EDUCATION_CENTER_TITLE"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_education }
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
 							}
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_education }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
+						blockoverride "tooltip_content" {
+							TooltipTextBlock = {
+								blockoverride "text" {
+									text = "MNT_NO_EDUCATION_CENTER"
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold')|0]"
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "MNT_NO_EDUCATION_CENTER_TITLE"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_education }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/education_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_education')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_EDUCATION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_LOCAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_education_local').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_education }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/education_local.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_education')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_education_local')]"
+													}
+												}
+											}
+										}
+								}
 							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_LOCAL"
-								tooltipwidget = { using = mnt_center_tier_education_local }
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold'))), '(float)1.0'), '(float)100')]"
 							}
-						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold'))), '(float)1.0'), '(float)100')]"
 						}
 					}
 				}
@@ -942,45 +1596,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_education_local').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_education }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/education_local.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_education = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_education_local')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_local').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_education }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_education }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_REGIONAL"
-								tooltipwidget = { using = mnt_center_tier_education_regional }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_local')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_education_local').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_education }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/education_local.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_education')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_EDUCATION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_REGIONAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_education_regional').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_education }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/education_regional.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_education')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_education_regional')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -998,45 +1698,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_education_regional').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_education }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/education_regional.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_education = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_education_regional')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_regional').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_education }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_education }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_CONTINENTAL"
-								tooltipwidget = { using = mnt_center_tier_education_continental }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_education_regional').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_education }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/education_regional.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_education')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_EDUCATION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_CONTINENTAL"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_education_continental').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_education }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/education_continental.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_education')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_education_continental')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -1054,45 +1800,91 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_education_continental').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_education }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/education_continental.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_education = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_education_continental')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_continental').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_education }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_education }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold')|0]"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_WORLD"
-								tooltipwidget = { using = mnt_center_tier_education_world }
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
 							}
 						}
-						progressbar = {
-							size = { 260 10 }
-							using = morale_progressbar_bar
-							value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold'))), '(float)1.0'), '(float)100')]"
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_education_continental').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_education }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/education_continental.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_education')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_EDUCATION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold')|0]"
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									text = "MNT_CENTER_SCORE_WORLD"
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "[GetModifier('mnt_center_education_world').GetNameWithNoTooltip]"
+													default_format = "#explanation_link"
+													tooltipwidget = { using = mnt_center_tree_education }
+												}
+												blockoverride "title_icon_texture" {
+													texture = "gfx/interface/icons/centers/education_world.dds"
+												}
+												blockoverride "title_button" {
+													mapmode_tooltip_button = {
+														datacontext = "[GetMapMode('center_education')]"
+													}
+												}
+												blockoverride "tooltip_content" {
+													TooltipStringPairList = {
+														textcontext = "[ShowModifierEffect('mnt_center_education_world')]"
+													}
+												}
+											}
+										}
+								}
+							}
+							progressbar = {
+								size = { 260 10 }
+								using = morale_progressbar_bar
+								value = "[Multiply_float(Min_float(FixedPointToFloat(Divide_CFixedPoint(LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score'), LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold'))), '(float)1.0'), '(float)100')]"
+							}
 						}
 					}
 				}
@@ -1110,626 +1902,61 @@ types MnT_center_slots
 					color = { 0.0 0.0 0.0 1.0 }
 					alpha = 0.4
 				}
-			}
-			tooltipwidget = {
-				ContextualTooltipType = {
-					blockoverride "title_text" {
-						text = "[GetModifier('mnt_center_education_world').GetNameWithNoTooltip]"
-						default_format = "#explanation_link"
-						tooltipwidget = { using = mnt_center_tree_education }
-					}
-					blockoverride "title_icon_texture" {
-						texture = "gfx/interface/icons/centers/education_world.dds"
-					}
-					blockoverride "title_button" {
-						mnt_center_mapmode_education = {}
-					}
-					blockoverride "tooltip_content" {
-						TooltipStringPairList = {
-							textcontext = "[ShowModifierEffect('mnt_center_education_world')]"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_world').GetNameWithNoTooltip]"
+							default_format = "#explanation_link"
+							tooltipwidget = { using = mnt_center_tree_education }
 						}
-						hbox = {
-							spacing = 3
-							tooltipwidget = { using = mnt_center_factors_education }
-							text_single = {
-								default_format = "#explanation_link"
-								raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0] /"
-							}
-							text_single = {
-								default_format = "#explanation_link"
-								text = "MNT_CENTER_SCORE_MAX"
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
 							}
 						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_world')]"
+							}
+							hbox = {
+								spacing = 3
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "[GetModifier('mnt_center_education_world').GetNameWithNoTooltip]"
+											default_format = "#explanation_link"
+											tooltipwidget = { using = mnt_center_tree_education }
+										}
+										blockoverride "title_icon_texture" {
+											texture = "gfx/interface/icons/centers/education_world.dds"
+										}
+										blockoverride "title_button" {
+											mapmode_tooltip_button = {
+												datacontext = "[GetMapMode('center_education')]"
+											}
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "MNT_CENTER_FACTORS_EDUCATION"
+												}
+											}
+										}
+									}
+								}
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('mnt_center_education_score')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_SCORE_MAX"
+								}
+							}
+						}
 					}
-				}
-			}
-		}
-	}
-
-}
-
-template mnt_center_factors_trade {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "mapmode_center_trade_name"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_trade }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/trade_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_trade = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipTextBlock = {
-				blockoverride "text" {
-					text = "MNT_CENTER_FACTORS_TRADE"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_factors_production {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "mapmode_center_production_name"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_production }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/production_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_production = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipTextBlock = {
-				blockoverride "text" {
-					text = "MNT_CENTER_FACTORS_PRODUCTION"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_factors_culture {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "mapmode_center_culture_name"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_culture }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/culture_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_culture = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipTextBlock = {
-				blockoverride "text" {
-					text = "MNT_CENTER_FACTORS_CULTURE"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_factors_education {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "mapmode_center_education_name"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_education }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/education_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_education = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipTextBlock = {
-				blockoverride "text" {
-					text = "MNT_CENTER_FACTORS_EDUCATION"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_trade_local {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_trade_local').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_trade }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/trade_local.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_trade = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_trade_local')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_trade_regional {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_trade_regional').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_trade }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/trade_regional.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_trade = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_trade_regional')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_trade_continental {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_trade_continental').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_trade }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/trade_continental.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_trade = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_trade_continental')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_trade_world {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_trade_world').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_trade }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/trade_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_trade = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_trade_world')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_production_local {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_production_local').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_production }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/production_local.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_production = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_production_local')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_production_regional {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_production_regional').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_production }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/production_regional.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_production = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_production_regional')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_production_continental {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_production_continental').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_production }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/production_continental.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_production = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_production_continental')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_production_world {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_production_world').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_production }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/production_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_production = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_production_world')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_culture_local {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_culture_local').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_culture }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/culture_local.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_culture = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_culture_local')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_culture_regional {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_culture_regional').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_culture }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/culture_regional.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_culture = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_culture_regional')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_culture_continental {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_culture_continental').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_culture }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/culture_continental.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_culture = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_culture_continental')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_culture_world {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_culture_world').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_culture }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/culture_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_culture = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_culture_world')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_education_local {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_education_local').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_education }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/education_local.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_education = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_education_local')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_education_regional {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_education_regional').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_education }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/education_regional.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_education = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_education_regional')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_education_continental {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_education_continental').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_education }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/education_continental.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_education = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_education_continental')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
-				}
-			}
-		}
-	}
-}
-
-template mnt_center_tier_education_world {
-	ContextualTooltipType = {
-		blockoverride "title_text" {
-			text = "[GetModifier('mnt_center_education_world').GetNameWithNoTooltip]"
-			default_format = "#explanation_link"
-			tooltipwidget = { using = mnt_center_tree_education }
-		}
-		blockoverride "title_icon_texture" {
-			texture = "gfx/interface/icons/centers/education_world.dds"
-		}
-		blockoverride "title_button" {
-			mnt_center_mapmode_education = {}
-		}
-		blockoverride "tooltip_content" {
-			TooltipStringPairList = {
-				textcontext = "[ShowModifierEffect('mnt_center_education_world')]"
-			}
-			hbox = {
-				spacing = 3
-				text_single = {
-					default_format = "#explanation_link"
-					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold')|0]"
-				}
-				text_single = {
-					text = "MNT_CENTER_TREE_NEEDS"
 				}
 			}
 		}
@@ -1745,7 +1972,9 @@ template mnt_center_tree_trade {
 			texture = "gfx/interface/icons/centers/trade_world.dds"
 		}
 		blockoverride "title_button" {
-			mnt_center_mapmode_trade = {}
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('center_trade')]"
+			}
 		}
 		blockoverride "tooltip_content" {
 			TooltipTextBlock = {
@@ -1766,7 +1995,36 @@ template mnt_center_tree_trade {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_trade_local }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_local').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_local')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_local_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1781,7 +2039,36 @@ template mnt_center_tree_trade {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_trade_regional }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_regional').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_regional_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1796,7 +2083,36 @@ template mnt_center_tree_trade {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_trade_continental }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_continental').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_continental_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1811,7 +2127,36 @@ template mnt_center_tree_trade {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_trade_world }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_trade_world').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/trade_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_trade')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_trade_world')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_trade_world_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1826,7 +2171,9 @@ template mnt_center_tree_production {
 			texture = "gfx/interface/icons/centers/production_world.dds"
 		}
 		blockoverride "title_button" {
-			mnt_center_mapmode_production = {}
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('center_production')]"
+			}
 		}
 		blockoverride "tooltip_content" {
 			TooltipTextBlock = {
@@ -1847,7 +2194,36 @@ template mnt_center_tree_production {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_production_local }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_local').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_local')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_local_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1862,7 +2238,36 @@ template mnt_center_tree_production {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_production_regional }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_regional').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_regional_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1877,7 +2282,36 @@ template mnt_center_tree_production {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_production_continental }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_continental').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_continental_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1892,7 +2326,36 @@ template mnt_center_tree_production {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_production_world }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_production_world').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/production_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_production')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_production_world')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_production_world_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1907,7 +2370,9 @@ template mnt_center_tree_culture {
 			texture = "gfx/interface/icons/centers/culture_world.dds"
 		}
 		blockoverride "title_button" {
-			mnt_center_mapmode_culture = {}
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('center_culture')]"
+			}
 		}
 		blockoverride "tooltip_content" {
 			TooltipTextBlock = {
@@ -1928,7 +2393,36 @@ template mnt_center_tree_culture {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_culture_local }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_local').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_local')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_local_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1943,7 +2437,36 @@ template mnt_center_tree_culture {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_culture_regional }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_regional').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_regional_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1958,7 +2481,36 @@ template mnt_center_tree_culture {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_culture_continental }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_continental').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_continental_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -1973,7 +2525,36 @@ template mnt_center_tree_culture {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_culture_world }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_culture_world').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/culture_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_culture')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_culture_world')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_culture_world_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1988,7 +2569,9 @@ template mnt_center_tree_education {
 			texture = "gfx/interface/icons/centers/education_world.dds"
 		}
 		blockoverride "title_button" {
-			mnt_center_mapmode_education = {}
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('center_education')]"
+			}
 		}
 		blockoverride "tooltip_content" {
 			TooltipTextBlock = {
@@ -2009,7 +2592,36 @@ template mnt_center_tree_education {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_education_local }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_local').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_local.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_local')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_local_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -2024,7 +2636,36 @@ template mnt_center_tree_education {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_education_regional }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_regional').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_regional.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_regional')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_regional_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -2039,7 +2680,36 @@ template mnt_center_tree_education {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_education_continental }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_continental').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_continental.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_continental')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_continental_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 			hbox = {
 				spacing = 5
@@ -2054,7 +2724,36 @@ template mnt_center_tree_education {
 					default_format = "#explanation_link"
 					raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold')|0]"
 				}
-				tooltipwidget = { using = mnt_center_tier_education_world }
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_text" {
+							text = "[GetModifier('mnt_center_education_world').GetNameWithNoTooltip]"
+						}
+						blockoverride "title_icon_texture" {
+							texture = "gfx/interface/icons/centers/education_world.dds"
+						}
+						blockoverride "title_button" {
+							mapmode_tooltip_button = {
+								datacontext = "[GetMapMode('center_education')]"
+							}
+						}
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[ShowModifierEffect('mnt_center_education_world')]"
+							}
+							hbox = {
+								spacing = 3
+								text_single = {
+									default_format = "#explanation_link"
+									raw_text = "[LocationView.GetLocation.MakeScope.ScriptValue('center_education_world_threshold')|0]"
+								}
+								text_single = {
+									text = "MNT_CENTER_TREE_NEEDS"
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
