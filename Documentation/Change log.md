@@ -605,6 +605,8 @@ Date: 21/05/2026
 - Development now directly reduced by looting and sieges.
 - Development will now decay at low enough prosperity levels.
 - Promotion rules changed, peasants unable to promote to nobles, many other classes able to promote 'upward'.
+- Reduce global upkeep cost of Levies from 35% to 20%
+- Reduce Tribal Levies goods upkeep cost on top of that
 
 ##### Population
 - Entire max population system reworked to be more climate related, and lower in general.
