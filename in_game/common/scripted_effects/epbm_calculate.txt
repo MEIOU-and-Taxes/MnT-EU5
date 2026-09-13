@@ -175,14 +175,12 @@ epbm_price_building = {
 				}
 			}
 
-			# Apply level and efficiency to get actual cost. A building in another
-			# country's location has no efficiency there (reads 0), so foreign
-			# buildings are priced at level cost without it.
-			set_local_variable = { name = epbm_bldg_eff value = "location.building_efficiency(scope:epbm_bt)" }
+			# Apply level and efficiency to get actual cost. Foreign buildings read efficiency as 0 always, only use level for them
 			if = {
-				limit = { NOT = { is_building_owned_by = location.owner } }
-				set_local_variable = { name = epbm_bldg_eff value = 1 }
+				limit = { is_building_owned_by = location.owner }
+				set_local_variable = { name = epbm_bldg_eff value = "location.building_efficiency(scope:epbm_bt)" }
 			}
+			else = { set_local_variable = { name = epbm_bldg_eff value = 1 } }
 			set_local_variable = {
 				name = epbm_bldg_cost
 				value = {
