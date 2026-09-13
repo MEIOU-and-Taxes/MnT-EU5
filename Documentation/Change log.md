@@ -618,3 +618,6 @@ Date: 21/05/2026
 - Fixed morale loss, which failed to scale with the removal of hours.
 - Fixed duplicated movement speed in defines, correcting movement speed to M&T values.
 - Fixed colonized locations not integrating automatically.
+- Every country now receives two months of zeroed building maintenance costs to allow time for the estate building maintenance reductions to kick in. This should prevent most day 1 bankruptcies.
+- Foreign buildings now properly have their maintenance accounted for when distributing building maintenance to estates. This should prevent building based countries from collapsing.
+- Building maintenance reductions for AI countries should now be applied properly instead of them being double charged.
