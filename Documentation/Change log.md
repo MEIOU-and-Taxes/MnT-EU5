@@ -616,8 +616,6 @@ Date: 21/05/2026
 - Development now directly reduced by looting and sieges.
 - Development will now decay at low enough prosperity levels.
 - Promotion rules changed, peasants unable to promote to nobles, many other classes able to promote 'upward'.
-- Reduce global upkeep cost of Levies from 35% to 20%
-- Reduce Tribal Levies goods upkeep cost on top of that
 
 ##### Population
 - Entire max population system reworked to be more climate related, and lower in general.
@@ -636,3 +634,9 @@ Date: 21/05/2026
 - Building maintenance reductions for AI countries should now be applied properly instead of them being double charged.
 - Fix the production center score erroring out when a location has no urban goods value yet (that value is only written by the yearly pass), which blanked the score in tooltips and spammed script errors
 - Remove non-working performance Defines for now (they were in the wrong folder so didn't do anything)
+
+##### 0.2.9.1
+
+### Hotfix
+- Reduce global upkeep cost of Levies from 35% to 20%
+- Reduce Tribal Levies goods upkeep cost on top of that
