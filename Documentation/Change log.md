@@ -633,3 +633,4 @@ Date: 21/05/2026
 - Foreign buildings now properly have their maintenance accounted for when distributing building maintenance to estates. This should prevent building based countries from collapsing.
 - Building maintenance reductions for AI countries should now be applied properly instead of them being double charged.
 - Fix the production center score erroring out when a location has no urban goods value yet (that value is only written by the yearly pass), which blanked the score in tooltips and spammed script errors
+- Remove non-working performance Defines for now (they were in the wrong folder so didn't do anything)
