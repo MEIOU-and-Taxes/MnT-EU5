@@ -3251,82 +3251,111 @@ lateralview = {
 				}
 
 				hbox = {
-					spacing = 5
-					expand = {}
+					spacing = 3
+					# MnT: the location window draws its rename and back buttons over the left
+					# end of the header band, so a larger value here pushes the row clear of
+					# them; below ~40 they overlap the city rank icon
+					margin_left = 0
 
-					button = {
-						visible = "[And(Not(LocationView.Vars.Exists('edit_name')), LocationView.GetLocation.GetProvince.GetCountry.IsValid)]"
-						size = { 28 28 }
-						datacontext = "[LocationView.GetLocation]"
-						effectname = "NoHighlight"
-						focuspolicy = none
+					hbox = {
+						# MnT: rank icon, name, pin and the center tiles in one content-sized
+						# group, so they sit next to each other with no slack between them. The
+						# name is capped and shrinks its font rather than growing into the tiles.
+						size = { -1 36 }
+						spacing = 3
+						button = {
+							visible = "[And(Not(LocationView.Vars.Exists('edit_name')), LocationView.GetLocation.GetProvince.GetCountry.IsValid)]"
+							size = { 28 28 }
+							datacontext = "[LocationView.GetLocation]"
+							effectname = "NoHighlight"
+							focuspolicy = none
 
-						action_tooltip = {
-							click_type = right
-							click_mode = single
-							cursor = "location_menu"
-							title = "CLICK_ACTION_LOCATION_CONTEXT_MENU"
-							on_action = "[PdxGuiWidget.ToggleContextMenu]"
-						}
+							action_tooltip = {
+								click_type = right
+								click_mode = single
+								cursor = "location_menu"
+								title = "CLICK_ACTION_LOCATION_CONTEXT_MENU"
+								on_action = "[PdxGuiWidget.ToggleContextMenu]"
+							}
 
-						contextmenu_widget = {
-							LocationContextMenu = {
-								blockoverride "location_contextmenu_post_entries" {
-									ContextMenuEntry = {
-										datacontext = "[LocationView.GetRenameUIClickAction]"
-										visible = "[UIClickAction.IsVisible]"
+							contextmenu_widget = {
+								LocationContextMenu = {
+									blockoverride "location_contextmenu_post_entries" {
+										ContextMenuEntry = {
+											datacontext = "[LocationView.GetRenameUIClickAction]"
+											visible = "[UIClickAction.IsVisible]"
 
-										blockoverride "onclick" {
-											onclick = "[LocationView.PerformRename]"
-											enabled = "[UIClickAction.IsEnabled]"
-											tooltip = "[UIClickAction.GetDescription]"
-										}
+											blockoverride "onclick" {
+												onclick = "[LocationView.PerformRename]"
+												enabled = "[UIClickAction.IsEnabled]"
+												tooltip = "[UIClickAction.GetDescription]"
+											}
 
-										blockoverride "entry_icon_texture" {
-											texture = "gfx/interface/icons/flat_icons/geopolitics/location.dds"
-										}
+											blockoverride "entry_icon_texture" {
+												texture = "gfx/interface/icons/flat_icons/geopolitics/location.dds"
+											}
 
-										blockoverride "entry_text" {
-											text = "[UIClickAction.GetName]"
+											blockoverride "entry_text" {
+												text = "[UIClickAction.GetName]"
+											}
 										}
 									}
 								}
 							}
+
+							icon = {
+								parentanchor = center
+								size = { 90% 90% }
+								texture = "[Location.GetRankIcon]"
+							}
+
+							tooltipwidget = {
+								using = location_rank_tooltip
+							}
 						}
 
-						icon = {
-							parentanchor = center
-							size = { 90% 90% }
-							texture = "[Location.GetRankIcon]"
+						header_title = {
+							# MnT: hugs its text (autoresize) and stops at the cap, so the rank icon
+							# and the pin sit at the ends of the name while the tiles after the group
+							# stay in the header. A name longer than the cap shrinks down to
+							# fontsize_min instead of being cut, and only elides below that.
+							layoutpolicy_horizontal = fixed
+							autoresize = yes
+							elide = right
+							fontsize_min = 11
+							maximumsize = { 215 -1 }
+							visible = "[Not(LocationView.Vars.Exists('edit_name'))]"
+							text = "[LocationView.GetLocation.GetRankAndName]"
+							using = snd_UI_window_state
 						}
 
-						tooltipwidget = {
-							using = location_rank_tooltip
+						button_pin = {
+							size = { 23 23 }
+							visible = "[And(IsPlayerValid, Not(LocationView.Vars.Exists('edit_name')))]"
+							datacontext = "[LocationView.GetLocation]"
+							action_tooltip = {
+								title = "[SelectLocalization(IsLocationFaved(Location.Self), 'UNPIN_OUTLINER', 'PIN_OUTLINER')]"
+								on_action = "[ToggleLocationFav(Location.Self)]"
+							}
+							tooltipwidget = { BasicFunctionalTooltip = {} }
+							down = "[IsLocationFaved(Location.Self)]"
+
+						}
+
+						hbox = {
+							# MnT CENTERS OF IMPORTANCE (packed row after the location title and pin)
+							layoutpolicy_horizontal = fixed
+							layoutpolicy_vertical = fixed
+							size = { 136 34 }
+							spacing = 2
+							mnt_center_slot_trade = {}
+							mnt_center_slot_production = {}
+							mnt_center_slot_culture = {}
+							mnt_center_slot_education = {}
 						}
 					}
 
-					header_title = {
-						layoutpolicy_horizontal = fixed
-						autoresize = yes
-						maximumsize = { 380 -1 }
-						visible = "[Not(LocationView.Vars.Exists('edit_name'))]"
-						text = "[LocationView.GetLocation.GetRankAndName]"
-						using = snd_UI_window_state
-					}
 
-					button_pin = {
-						size = { 23 23 }
-						visible = "[And(IsPlayerValid, Not(LocationView.Vars.Exists('edit_name')))]"
-						datacontext = "[LocationView.GetLocation]"
-						action_tooltip = {
-							title = "[SelectLocalization(IsLocationFaved(Location.Self), 'UNPIN_OUTLINER', 'PIN_OUTLINER')]"
-							on_action = "[ToggleLocationFav(Location.Self)]"
-						}
-						tooltipwidget = { BasicFunctionalTooltip = {} }
-						down = "[IsLocationFaved(Location.Self)]"
-					}
-
-					expand = {}
 				}
 
 				hbox = {
