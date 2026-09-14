@@ -6,6 +6,7 @@
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
   - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
+- Buildings that only boost the output of goods in their location, without producing anything themselves, are now Infrastructure buildings: mercury patios, smelters, windmills, sawmills and the special buildings doing the same. They are no longer left unstaffed by employment systems that staff the most profitable buildings first, and they moved out of other building categories, which also affects the categories' triggers.
 
 ### Initial test-release v0.1
 
@@ -598,6 +599,17 @@ Date: 21/05/2026
 
 ##### M&T v0.2.9
 
+#### Features
+- Centers of Importance are shown in the location header, next to the location name and pin, as one tile per category (trade / production / culture / education) tinted by category:
+  - a tile displays the center's current tier and is greyed out when the location holds no center of that category, with the tier number (1-4) in the corner
+  - the tile tooltip lists the effects the center grants the location, its score and the threshold needed for the next tier, with a progress bar
+  - the tier number opens the score breakdown, i.e. every factor feeding that center's score
+- The four per-category center map modes become one "Centers of Importance" map mode with its own icon:
+  - the colour of a location says which category its most important center belongs to (trade gold, production red, culture violet, education blue) and how full and bright that colour is says how high the center ranks, from a dull local center to a vivid world one
+  - stripes mark a location holding a second center, so two kinds of center are visible at once
+  - the map mode tooltip lists all four categories - the tier a location holds, its score, the factors behind it and the effects it grants - and, for a category the location holds no center of, the score and the factors behind it that fall short of the local threshold
+  - locations without a center keep the default map colour
+
 ### Balance
 - Disable selling Works of Art to either other Nations or Estates
   - Too exploitative for the player
@@ -613,9 +625,14 @@ Date: 21/05/2026
 - Paradox rescaled population promotion speed, causing our own scaling to be too aggressive. 
 
 ### Fixes
-- Fixed typo making Subtropical Highland Climate -50% dev growth instead of intended -5% dev growth.
-- Fix Great Pestilence Situation being visible to Old World nations when they get one of the three diseases during the Situation
-- Fix errors on startup that about too many farming villages in Locations
-- Fixed morale loss to scale with removal of hours
+- Fixed a typo which had made the 'Subtropical Highland' climate give -50% dev growth instead of the intended -5% dev growth.
+- Fixed the 'Great Pestilence' situation being visible to 'Old World' nations when they had gotten one of the three diseases during the situation.
+- Fixed errors on startup which had caused too many farming villages in locations.
+- Fixed morale loss, which failed to scale with the removal of hours.
 - Fixed duplicated movement speed in defines, correcting movement speed to M&T values.
- 
+- Fixed colonized locations not integrating automatically.
+- Every country now receives two months of zeroed building maintenance costs to allow time for the estate building maintenance reductions to kick in. This should prevent most day 1 bankruptcies.
+- Foreign buildings now properly have their maintenance accounted for when distributing building maintenance to estates. This should prevent building based countries from collapsing.
+- Building maintenance reductions for AI countries should now be applied properly instead of them being double charged.
+- Fix the production center score erroring out when a location has no urban goods value yet (that value is only written by the yearly pass), which blanked the score in tooltips and spammed script errors
+- Remove non-working performance Defines for now (they were in the wrong folder so didn't do anything)

@@ -294,180 +294,420 @@ goods_value_rural = {
 	color_and_names_refresh_counters = { LocationPopulationChanged LocationOwnerChanged }
 }
 
-###############################################
-### MEIOU and Taxes - Centers of Importance ###
-###############################################
-center_trade = {
- 	map_color = {	
- 	 	if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_trade_world
- 	 		}
-			value = rgb { 242 204 89 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_trade_continental
- 	 		}
-			value = rgb { 140 89 199 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_trade_regional
- 	 		}
-			value = rgb { 38 161 204 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_trade_local
- 	 		}
-			value = rgb { 89 102 133 }
- 		}
-	}
+#################################################
+### MEIOU and Taxes - Centers of Importance #####
+#################################################
+#
+# One map mode for the four center categories (trade / production / culture /
+# education) and their four tiers (local / regional / continental / world),
+# replacing the four per-category modes.
+#
+# Colours follow the dynamic demand map mode: the hue says which category the
+# center belongs to, the brightness says how high it ranks, so
+#
+#     trade      dull bronze -> vivid gold
+#     production dull brick  -> vivid red
+#     culture    dull plum   -> vivid violet
+#     education  dull slate  -> vivid cyan
+#
+# A location can hold one center per category, so:
+#   map_color           -> its highest center (hue = category, brightness = tier)
+#   secondary_map_color -> the next center, drawn as stripes
+# The tooltip lists every category, its tier, score, factors and effects.
+#
+# No centers anywhere? The location keeps the default map colour.
 
-	tooltip_key = {
+centers = {
+	map_color = {
 		if = {
-			limit = { has_location_modifier = mnt_center_trade_world }
-			value = mapmode_center_trade_world_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_world
+					has_location_modifier = mnt_center_production_world
+					has_location_modifier = mnt_center_culture_world
+					has_location_modifier = mnt_center_education_world
+				}
+			}
+			if = { limit = { has_location_modifier = mnt_center_trade_world } value = rgb { 255 197 51 } }
+			else_if = { limit = { has_location_modifier = mnt_center_production_world } value = rgb { 255 82 51 } }
+			else_if = { limit = { has_location_modifier = mnt_center_culture_world } value = rgb { 170 51 255 } }
+			else = { value = rgb { 51 197 255 } }
 		}
 		else_if = {
-			limit = { has_location_modifier = mnt_center_trade_continental }
-			value = mapmode_center_trade_continental_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_continental
+					has_location_modifier = mnt_center_production_continental
+					has_location_modifier = mnt_center_culture_continental
+					has_location_modifier = mnt_center_education_continental
+				}
+			}
+			if = { limit = { has_location_modifier = mnt_center_trade_continental } value = rgb { 233 176 32 } }
+			else_if = { limit = { has_location_modifier = mnt_center_production_continental } value = rgb { 233 62 32 } }
+			else_if = { limit = { has_location_modifier = mnt_center_culture_continental } value = rgb { 149 32 233 } }
+			else = { value = rgb { 32 176 233 } }
 		}
 		else_if = {
-			limit = { has_location_modifier = mnt_center_trade_regional }
-			value = mapmode_center_trade_regional_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_regional
+					has_location_modifier = mnt_center_production_regional
+					has_location_modifier = mnt_center_culture_regional
+					has_location_modifier = mnt_center_education_regional
+				}
+			}
+			if = { limit = { has_location_modifier = mnt_center_trade_regional } value = rgb { 189 150 50 } }
+			else_if = { limit = { has_location_modifier = mnt_center_production_regional } value = rgb { 189 71 50 } }
+			else_if = { limit = { has_location_modifier = mnt_center_culture_regional } value = rgb { 131 50 189 } }
+			else = { value = rgb { 50 150 189 } }
 		}
 		else_if = {
-			limit = { has_location_modifier = mnt_center_trade_local }
-			value = mapmode_center_trade_local_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_local
+					has_location_modifier = mnt_center_production_local
+					has_location_modifier = mnt_center_culture_local
+					has_location_modifier = mnt_center_education_local
+				}
+			}
+			if = { limit = { has_location_modifier = mnt_center_trade_local } value = rgb { 141 122 73 } }
+			else_if = { limit = { has_location_modifier = mnt_center_production_local } value = rgb { 141 83 73 } }
+			else_if = { limit = { has_location_modifier = mnt_center_culture_local } value = rgb { 113 73 141 } }
+			else = { value = rgb { 73 122 141 } }
 		}
-		else = {
-			value = mapmode_center_trade_none_tooltip
-		}
 	}
 
- 	legend_key = {
- 		desc = "World Trade Center"
-		color = rgb { 242 204 89 }
- 	}
- 	legend_key = {
- 		desc = "Continental Trade Center"
-		color = rgb { 140 89 199 }
- 	}
- 	legend_key = {
- 		desc = "Regional Trade Center"
-		color = rgb { 38 161 204 }
- 	}
- 	legend_key = {
- 		desc = "Local Trade Center"
-		color = rgb { 89 102 133 }
- 	}
-	
-	map_markers = {
-		all = no
-	}
-	
-	small_map_names = location
-	medium_map_names = none
-	large_map_names = none
-
-	small_tooltip_context = location
-	medium_tooltip_context = location
-	large_tooltip_context = location
-	enable_rivers = yes
-
-	flatmap_behaviour = Always
-
-	category = geopolitics
-
-	gradient_parameters = {
-		zoom_step = @zoom_step_near
-
-		gradient_alpha_inside = 	@data_gradient_alpha_inside
-		gradient_alpha_outside = 	@data_gradient_alpha_outside
-		gradient_width = 			@data_gradient_width
-		gradient_color_mult =		@data_gradient_color_mult
-		edge_width = 				@data_edge_width
-		edge_sharpness = 			@data_edge_sharpness
-		edge_alpha = 				@data_edge_alpha
-		edge_color_mult = 			@data_edge_color_mult
-		before_lighting_blend =		@data_before_lighting_blend
-		after_lighting_blend =		@data_after_lighting_blend
-	}
-}
-
-center_culture = {
- 	map_color = {	
- 	 	if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_culture_world
- 	 		}
-			value = rgb { 242 204 89 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_culture_continental
- 	 		}
-			value = rgb { 140 89 199 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_culture_regional
- 	 		}
-			value = rgb { 38 161 204 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_culture_local
- 	 		}
-			value = rgb { 89 102 133 }
- 		}
-	}
-
-	tooltip_key = {
+	secondary_map_color = {
 		if = {
-			limit = { has_location_modifier = mnt_center_culture_world }
-			value = mapmode_center_culture_world_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_world
+					has_location_modifier = mnt_center_production_world
+					has_location_modifier = mnt_center_culture_world
+					has_location_modifier = mnt_center_education_world
+				}
+			}
+			# a second category holding the top tier becomes the stripe
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							has_location_modifier = mnt_center_trade_world
+							has_location_modifier = mnt_center_production_world
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_world
+							has_location_modifier = mnt_center_culture_world
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_world
+							has_location_modifier = mnt_center_education_world
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_world
+							has_location_modifier = mnt_center_culture_world
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_world
+							has_location_modifier = mnt_center_education_world
+						}
+						AND = {
+							has_location_modifier = mnt_center_culture_world
+							has_location_modifier = mnt_center_education_world
+						}
+					}
+				}
+				if = { limit = { has_location_modifier = mnt_center_trade_world }
+					if = { limit = { has_location_modifier = mnt_center_production_world } value = rgb { 255 82 51 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_world } value = rgb { 170 51 255 } }
+					else = { value = rgb { 51 197 255 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_production_world }
+					if = { limit = { has_location_modifier = mnt_center_culture_world } value = rgb { 170 51 255 } }
+					else = { value = rgb { 51 197 255 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_culture_world }
+					if = { limit = { has_location_modifier = mnt_center_education_world } value = rgb { 51 197 255 } }
+				}
+			}
+			else = {
+				# otherwise the stripe is the best centre below the top tier
+				if = {
+					limit = {
+						OR = {
+							has_location_modifier = mnt_center_trade_continental
+							has_location_modifier = mnt_center_production_continental
+							has_location_modifier = mnt_center_culture_continental
+							has_location_modifier = mnt_center_education_continental
+						}
+					}
+					if = { limit = { has_location_modifier = mnt_center_trade_continental } value = rgb { 233 176 32 } }
+					else_if = { limit = { has_location_modifier = mnt_center_production_continental } value = rgb { 233 62 32 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_continental } value = rgb { 149 32 233 } }
+					else = { value = rgb { 32 176 233 } }
+				}
+				else_if = {
+					limit = {
+						OR = {
+							has_location_modifier = mnt_center_trade_regional
+							has_location_modifier = mnt_center_production_regional
+							has_location_modifier = mnt_center_culture_regional
+							has_location_modifier = mnt_center_education_regional
+						}
+					}
+					if = { limit = { has_location_modifier = mnt_center_trade_regional } value = rgb { 189 150 50 } }
+					else_if = { limit = { has_location_modifier = mnt_center_production_regional } value = rgb { 189 71 50 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_regional } value = rgb { 131 50 189 } }
+					else = { value = rgb { 50 150 189 } }
+				}
+				else_if = {
+					limit = {
+						OR = {
+							has_location_modifier = mnt_center_trade_local
+							has_location_modifier = mnt_center_production_local
+							has_location_modifier = mnt_center_culture_local
+							has_location_modifier = mnt_center_education_local
+						}
+					}
+					if = { limit = { has_location_modifier = mnt_center_trade_local } value = rgb { 141 122 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_production_local } value = rgb { 141 83 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_local } value = rgb { 113 73 141 } }
+					else = { value = rgb { 73 122 141 } }
+				}
+			}
 		}
 		else_if = {
-			limit = { has_location_modifier = mnt_center_culture_continental }
-			value = mapmode_center_culture_continental_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_continental
+					has_location_modifier = mnt_center_production_continental
+					has_location_modifier = mnt_center_culture_continental
+					has_location_modifier = mnt_center_education_continental
+				}
+			}
+			# a second category holding the top tier becomes the stripe
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							has_location_modifier = mnt_center_trade_continental
+							has_location_modifier = mnt_center_production_continental
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_continental
+							has_location_modifier = mnt_center_culture_continental
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_continental
+							has_location_modifier = mnt_center_education_continental
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_continental
+							has_location_modifier = mnt_center_culture_continental
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_continental
+							has_location_modifier = mnt_center_education_continental
+						}
+						AND = {
+							has_location_modifier = mnt_center_culture_continental
+							has_location_modifier = mnt_center_education_continental
+						}
+					}
+				}
+				if = { limit = { has_location_modifier = mnt_center_trade_continental }
+					if = { limit = { has_location_modifier = mnt_center_production_continental } value = rgb { 233 62 32 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_continental } value = rgb { 149 32 233 } }
+					else = { value = rgb { 32 176 233 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_production_continental }
+					if = { limit = { has_location_modifier = mnt_center_culture_continental } value = rgb { 149 32 233 } }
+					else = { value = rgb { 32 176 233 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_culture_continental }
+					if = { limit = { has_location_modifier = mnt_center_education_continental } value = rgb { 32 176 233 } }
+				}
+			}
+			else = {
+				# otherwise the stripe is the best centre below the top tier
+				if = {
+					limit = {
+						OR = {
+							has_location_modifier = mnt_center_trade_regional
+							has_location_modifier = mnt_center_production_regional
+							has_location_modifier = mnt_center_culture_regional
+							has_location_modifier = mnt_center_education_regional
+						}
+					}
+					if = { limit = { has_location_modifier = mnt_center_trade_regional } value = rgb { 189 150 50 } }
+					else_if = { limit = { has_location_modifier = mnt_center_production_regional } value = rgb { 189 71 50 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_regional } value = rgb { 131 50 189 } }
+					else = { value = rgb { 50 150 189 } }
+				}
+				else_if = {
+					limit = {
+						OR = {
+							has_location_modifier = mnt_center_trade_local
+							has_location_modifier = mnt_center_production_local
+							has_location_modifier = mnt_center_culture_local
+							has_location_modifier = mnt_center_education_local
+						}
+					}
+					if = { limit = { has_location_modifier = mnt_center_trade_local } value = rgb { 141 122 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_production_local } value = rgb { 141 83 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_local } value = rgb { 113 73 141 } }
+					else = { value = rgb { 73 122 141 } }
+				}
+			}
 		}
 		else_if = {
-			limit = { has_location_modifier = mnt_center_culture_regional }
-			value = mapmode_center_culture_regional_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_regional
+					has_location_modifier = mnt_center_production_regional
+					has_location_modifier = mnt_center_culture_regional
+					has_location_modifier = mnt_center_education_regional
+				}
+			}
+			# a second category holding the top tier becomes the stripe
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							has_location_modifier = mnt_center_trade_regional
+							has_location_modifier = mnt_center_production_regional
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_regional
+							has_location_modifier = mnt_center_culture_regional
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_regional
+							has_location_modifier = mnt_center_education_regional
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_regional
+							has_location_modifier = mnt_center_culture_regional
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_regional
+							has_location_modifier = mnt_center_education_regional
+						}
+						AND = {
+							has_location_modifier = mnt_center_culture_regional
+							has_location_modifier = mnt_center_education_regional
+						}
+					}
+				}
+				if = { limit = { has_location_modifier = mnt_center_trade_regional }
+					if = { limit = { has_location_modifier = mnt_center_production_regional } value = rgb { 189 71 50 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_regional } value = rgb { 131 50 189 } }
+					else = { value = rgb { 50 150 189 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_production_regional }
+					if = { limit = { has_location_modifier = mnt_center_culture_regional } value = rgb { 131 50 189 } }
+					else = { value = rgb { 50 150 189 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_culture_regional }
+					if = { limit = { has_location_modifier = mnt_center_education_regional } value = rgb { 50 150 189 } }
+				}
+			}
+			else = {
+				# otherwise the stripe is the best centre below the top tier
+				if = {
+					limit = {
+						OR = {
+							has_location_modifier = mnt_center_trade_local
+							has_location_modifier = mnt_center_production_local
+							has_location_modifier = mnt_center_culture_local
+							has_location_modifier = mnt_center_education_local
+						}
+					}
+					if = { limit = { has_location_modifier = mnt_center_trade_local } value = rgb { 141 122 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_production_local } value = rgb { 141 83 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_local } value = rgb { 113 73 141 } }
+					else = { value = rgb { 73 122 141 } }
+				}
+			}
 		}
 		else_if = {
-			limit = { has_location_modifier = mnt_center_culture_local }
-			value = mapmode_center_culture_local_tooltip
+			limit = {
+				OR = {
+					has_location_modifier = mnt_center_trade_local
+					has_location_modifier = mnt_center_production_local
+					has_location_modifier = mnt_center_culture_local
+					has_location_modifier = mnt_center_education_local
+				}
+			}
+			# a second category holding the top tier becomes the stripe
+			if = {
+				limit = {
+					OR = {
+						AND = {
+							has_location_modifier = mnt_center_trade_local
+							has_location_modifier = mnt_center_production_local
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_local
+							has_location_modifier = mnt_center_culture_local
+						}
+						AND = {
+							has_location_modifier = mnt_center_trade_local
+							has_location_modifier = mnt_center_education_local
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_local
+							has_location_modifier = mnt_center_culture_local
+						}
+						AND = {
+							has_location_modifier = mnt_center_production_local
+							has_location_modifier = mnt_center_education_local
+						}
+						AND = {
+							has_location_modifier = mnt_center_culture_local
+							has_location_modifier = mnt_center_education_local
+						}
+					}
+				}
+				if = { limit = { has_location_modifier = mnt_center_trade_local }
+					if = { limit = { has_location_modifier = mnt_center_production_local } value = rgb { 141 83 73 } }
+					else_if = { limit = { has_location_modifier = mnt_center_culture_local } value = rgb { 113 73 141 } }
+					else = { value = rgb { 73 122 141 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_production_local }
+					if = { limit = { has_location_modifier = mnt_center_culture_local } value = rgb { 113 73 141 } }
+					else = { value = rgb { 73 122 141 } }
+				}
+				else_if = { limit = { has_location_modifier = mnt_center_culture_local }
+					if = { limit = { has_location_modifier = mnt_center_education_local } value = rgb { 73 122 141 } }
+				}
+			}
+			else = {
+				# otherwise the stripe is the best centre below the top tier
+			}
 		}
-		else = {
-			value = mapmode_center_culture_none_tooltip
-		}
+	}
+	tooltip_key = {
+		value = mapmode_centers_location_tooltip
 	}
 
- 	legend_key = {
- 		desc = "World Cultural Center"
-		color = rgb { 242 204 89 }
- 	}
- 	legend_key = {
- 		desc = "Continental Cultural Center"
-		color = rgb { 140 89 199 }
- 	}
- 	legend_key = {
- 		desc = "Regional Cultural Center"
-		color = rgb { 38 161 204 }
- 	}
- 	legend_key = {
- 		desc = "Local Cultural Center"
-		color = rgb { 89 102 133 }
- 	}
-	
-	map_markers = {
-		all = no
+	legend_key = {
+		desc = "Trade center - dull and dark is a lower tier, full and bright a higher one"
+		color = rgb { 233 176 32 }
 	}
-	
+	legend_key = {
+		desc = "Production center - dull and dark is a lower tier, full and bright a higher one"
+		color = rgb { 233 62 32 }
+	}
+	legend_key = {
+		desc = "Cultural center - dull and dark is a lower tier, full and bright a higher one"
+		color = rgb { 149 32 233 }
+	}
+	legend_key = {
+		desc = "Education center - dull and dark is a lower tier, full and bright a higher one"
+		color = rgb { 32 176 233 }
+	}
+
 	small_map_names = location
 	medium_map_names = location
 	large_map_names = location
@@ -480,209 +720,13 @@ center_culture = {
 	flatmap_behaviour = Always
 	use_fow = no
 
+	color_refresh_counters = { Month }
+
 	category = geopolitics
-	
-	gradient_parameters = {
-		zoom_step = @zoom_step_near
-
-		gradient_alpha_inside = 	@data_gradient_alpha_inside
-		gradient_alpha_outside = 	@data_gradient_alpha_outside
-		gradient_width = 			@data_gradient_width
-		gradient_color_mult =		@data_gradient_color_mult
-		edge_width = 				@data_edge_width
-		edge_sharpness = 			@data_edge_sharpness
-		edge_alpha = 				@data_edge_alpha
-		edge_color_mult = 			@data_edge_color_mult
-		before_lighting_blend =		@data_before_lighting_blend
-		after_lighting_blend =		@data_after_lighting_blend
-	}
-}
-
-center_education = {
- 	map_color = {	
- 	 	if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_education_world
- 	 		}
-			value = rgb { 242 204 89 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_education_continental
- 	 		}
-			value = rgb { 140 89 199 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_education_regional
- 	 		}
-			value = rgb { 38 161 204 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_education_local
- 	 		}
-			value = rgb { 89 102 133 }
- 		}
-	}
-
-	tooltip_key = {
-		if = {
-			limit = { has_location_modifier = mnt_center_education_world }
-			value = mapmode_center_education_world_tooltip
-		}
-		else_if = {
-			limit = { has_location_modifier = mnt_center_education_continental }
-			value = mapmode_center_education_continental_tooltip
-		}
-		else_if = {
-			limit = { has_location_modifier = mnt_center_education_regional }
-			value = mapmode_center_education_regional_tooltip
-		}
-		else_if = {
-			limit = { has_location_modifier = mnt_center_education_local }
-			value = mapmode_center_education_local_tooltip
-		}
-		else = {
-			value = mapmode_center_education_none_tooltip
-		}
-	}
-
- 	legend_key = {
- 		desc = "World Education Center"
-		color = rgb { 242 204 89 }
- 	}
- 	legend_key = {
- 		desc = "Continental Education Center"
-		color = rgb { 140 89 199 }
- 	}
- 	legend_key = {
- 		desc = "Regional Education Center"
-		color = rgb { 38 161 204 }
- 	}
- 	legend_key = {
- 		desc = "Local Education Center"
-		color = rgb { 89 102 133 }
- 	}
 
 	map_markers = {
 		all = no
 	}
-	
-	small_map_names = location
-	medium_map_names = location
-	large_map_names = location
-
-	small_tooltip_context = location
-	medium_tooltip_context = location
-	large_tooltip_context = location
-	enable_rivers = yes
-
-	flatmap_behaviour = Always
-	use_fow = no
-
-	category = geopolitics
-	
-	gradient_parameters = {
-		zoom_step = @zoom_step_near
-
-		gradient_alpha_inside = 	@data_gradient_alpha_inside
-		gradient_alpha_outside = 	@data_gradient_alpha_outside
-		gradient_width = 			@data_gradient_width
-		gradient_color_mult =		@data_gradient_color_mult
-		edge_width = 				@data_edge_width
-		edge_sharpness = 			@data_edge_sharpness
-		edge_alpha = 				@data_edge_alpha
-		edge_color_mult = 			@data_edge_color_mult
-		before_lighting_blend =		@data_before_lighting_blend
-		after_lighting_blend =		@data_after_lighting_blend
-	}
-}
-
-center_production = {
- 	map_color = {	
- 	 	if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_production_world
- 	 		}
-			value = rgb { 242 204 89 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_production_continental
- 	 		}
-			value = rgb { 140 89 199 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_production_regional
- 	 		}
-			value = rgb { 38 161 204 }
- 		}
- 		else_if = {
- 	 		limit = {
- 	 			has_location_modifier = mnt_center_production_local
- 	 		}
-			value = rgb { 89 102 133 }
- 		}
-	}
-
-	tooltip_key = {
-		if = {
-			limit = { has_location_modifier = mnt_center_production_world }
-			value = mapmode_center_production_world_tooltip
-		}
-		else_if = {
-			limit = { has_location_modifier = mnt_center_production_continental }
-			value = mapmode_center_production_continental_tooltip
-		}
-		else_if = {
-			limit = { has_location_modifier = mnt_center_production_regional }
-			value = mapmode_center_production_regional_tooltip
-		}
-		else_if = {
-			limit = { has_location_modifier = mnt_center_production_local }
-			value = mapmode_center_production_local_tooltip
-		}
-		else = {
-			value = mapmode_center_production_none_tooltip
-		}
-	}
-
- 	legend_key = {
- 		desc = "World Production Center"
-		color = rgb { 242 204 89 }
- 	}
- 	legend_key = {
- 		desc = "Continental Production Center"
-		color = rgb { 140 89 199 }
- 	}
- 	legend_key = {
- 		desc = "Regional Production Center"
-		color = rgb { 38 161 204 }
- 	}
- 	legend_key = {
- 		desc = "Local Production Center"
-		color = rgb { 89 102 133 }
- 	}
-
-	map_markers = {
-		all = no
-	}
-
-	small_map_names = location
-	medium_map_names = location
-	large_map_names = location
-
-	small_tooltip_context = location
-	medium_tooltip_context = location
-	large_tooltip_context = location
-	enable_rivers = yes
-
-	flatmap_behaviour = Always
-	use_fow = no
-
-	category = geopolitics
 
 	gradient_parameters = {
 		zoom_step = @zoom_step_near
