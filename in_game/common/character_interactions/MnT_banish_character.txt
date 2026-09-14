@@ -1,0 +1,158 @@
+﻿REPLACE:banish_character = { 
+	on_own_nation = yes
+	message = yes
+
+	potential = {
+		scope:actor = {
+			OR = {
+				modifier:can_banish_characters = yes
+				trigger_if = {	#Special for Korea
+					limit = { has_variable = kor_mongol_aristocrats }
+					var:kor_mongol_aristocrats > 0
+				}
+				has_variable = vij_tamil_rebellion
+			}
+		}
+	}
+
+	ai_tick = daily
+	ai_tick_frequency = 120
+
+	allow = {
+		scope:actor = {
+			government_power >= 50
+			stability >= 0
+		}
+	}
+	
+	select_trigger = {
+		looking_for_a = character
+		source = actor
+		target_flag = recipient
+		name = "choose_character"
+		column = {
+			data = name
+		}
+		visible = {
+			is_alive = yes
+		}
+		enabled = {
+			is_ruler = no
+			is_heir = no
+			is_consort = no
+			is_regent = no
+			trigger_if = {
+				limit = {
+					has_dynasty = yes
+					scope:actor = {
+						ruler ?= { has_dynasty = yes }
+					}
+				}
+				NOT = { dynasty = scope:actor.ruler.dynasty }
+			}
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			if = {	#Should not happen, but in case it does
+				limit = { scope:recipient = { is_ruler = yes } }
+				add_prestige = ABDICATE_PRESTIGE_HIT
+				add_government_power = ABDICATE_GOVERNMENT_POWER_HIT
+			}
+			if = {	#Should not happen, but in case it does
+				limit = { scope:recipient = { is_heir = yes } }
+				add_prestige = DISINHERIT_PRESTIGE_HIT
+			}
+			if = {	#Should not happen, but in case it does
+				limit = { scope:recipient = { is_consort = yes } }
+				add_prestige = REMOVE_CONSORT_PRESTIGE_HIT
+			}
+			#M&T Stability cost was too high, lowered and increased opinion penalty. 
+			if = {
+				limit = { scope:recipient = { has_estate = estate_type:nobles_estate } }
+				add_estate_satisfaction = { type = estate_type:nobles_estate value = estate_satisfaction_mild_penalty }
+				add_stability = stability_mild_penalty 
+			}
+			if = {
+				limit = { scope:recipient = { has_estate = estate_type:clergy_estate } }
+				add_estate_satisfaction = { type = estate_type:clergy_estate value = estate_satisfaction_mild_penalty }
+				add_stability = stability_mild_penalty 
+			}
+			if = {
+				limit = { scope:recipient = { has_estate = estate_type:burghers_estate } }
+				add_estate_satisfaction = { type = estate_type:burghers_estate value = estate_satisfaction_mild_penalty }
+				add_stability = stability_weak_penalty 
+			}
+			if = {
+				limit = { scope:recipient = { has_estate = estate_type:peasants_estate } }
+				add_estate_satisfaction = { type = estate_type:peasants_estate value = estate_satisfaction_mild_penalty } 
+			}
+			if = {
+				limit = { has_variable = has_banished_or_executed_character }
+				add_government_power = var:has_banished_or_executed_character
+			}
+			custom_tooltip = increase_gov_power_cost_banished_character_tt
+			hidden_effect = {
+				if = {
+					limit = { NOT = { has_variable = has_banished_or_executed_character } }
+					set_variable = { name = has_banished_or_executed_character value = -2.5 days = 730 }
+				}
+				else = {
+					set_variable = { name = has_banished_or_executed_character_temp value = var:has_banished_or_executed_character }
+					change_variable = { name = has_banished_or_executed_character_temp add = -2.5 }
+					remove_variable = has_banished_or_executed_character
+					set_variable = { name = has_banished_or_executed_character value = var:has_banished_or_executed_character_temp days = 730 }
+					remove_variable = has_banished_or_executed_character_temp
+				}
+			}
+			hidden_effect = {
+				if = {
+					limit = {
+						scope:recipient = { has_variable = tamil_rebel_leader }
+					}
+					scope:recipient = { save_scope_as = target_character }
+					trigger_event_silently = flavor_vij.1102
+				}
+			}
+		}
+		hidden_effect = {
+			scope:actor = { 
+				random_neighbor_country = { save_scope_as = target_country }
+				if = {
+					limit = { NOT = { exists = scope:target_country } }
+					random_country = {
+						limit = { within_diplomatic_range = scope:actor }
+						save_scope_as = target_country
+					}
+				}
+			}
+			scope:recipient = {
+				if = {
+					limit = { exists = scope:target_country }
+					move_country = scope:target_country
+				}
+				else = {
+					kill_character_silently = {
+						target = scope:recipient
+						reason = vanished
+					}
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = {
+			if = {
+				limit = {
+					scope:recipient = { has_variable = kor_mongol_characters }
+				}
+				value = 100
+			}
+		}
+		#The AI should not really have much reason to do this character interaction
+		#As such, only a rudimentary logic is added for Korea to get rid of the Mongol aristocrats
+	}
+	
+}	

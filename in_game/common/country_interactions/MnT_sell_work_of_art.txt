@@ -1,0 +1,147 @@
+﻿REPLACE:sell_work_of_art = {
+	category = CATEGORY_ECONOMY_ACTIONS
+	type = diplomacy
+
+	ai_tick = daily
+	ai_tick_frequency = 360
+
+	ai_prerequisite = {
+		# exists = scope:actor
+		# scope:actor = {
+		# 	gold < { value = monthly_income_total multiply = 6 }
+		# }
+		always = no	#M&T disabled as highly exploitative
+	}
+
+	price = price:sell_work_of_art
+	price_modifier = {
+		if = {
+			limit = { exists = scope:target }
+			add = {
+				desc = "ART_SALE_VALUE"
+				value = scope:target.art_price
+			}
+		}
+		else = {
+			value = 1
+		}
+	}
+	payer = scope:recipient
+	payee = scope:actor
+
+	potential = {
+		# scope:actor = {
+		# 	has_sellable_art = yes
+		# }
+		always = no	#M&T disabled as highly exploitative
+	}
+
+	allow = {
+	}
+
+	select_trigger = {
+		looking_for_a = country
+		target_flag = recipient
+		name = "choose_country"
+		column = {
+			data = name
+		}
+		visible = {
+			NOT = { this = scope:actor }
+		}
+		enabled = {
+			NOT = { is_enemy_of = scope:actor }
+			prestige >= scope:actor.prestige
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = work_of_art
+		source = actor
+		cache_targets = yes
+		target_flag = target
+		name = "sell_work_of_art_select_art"
+		none_available_msg_key = "sell_work_of_art_no_art"
+		column = {
+			data = name
+		}
+		visible = {
+			art_is_priceless = no
+		}
+	}
+
+	effect = {
+		custom_tooltip = {
+			text = sell_work_of_art_move_art_tt
+			hidden_effect = {
+				scope:target = {
+					move_art_and_owner = { location = scope:recipient.capital country = scope:recipient }
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		add = -100
+		# sell when treasury is below 6 months of income
+		if = {
+			limit = {
+				scope:actor = {
+					gold < { value = monthly_income_total multiply = 6 }
+				}
+			}
+			add = 100
+		}
+		if = {
+			limit = { scope:actor = { is_enemy_of = scope:recipient } }
+			multiply = 0
+		}
+	}
+
+	diplo_chance = {
+		base = -30
+	}
+
+	accept = {
+		add = {
+			desc = "OUR_OPINION_TOOLTIP"
+			value = "scope:recipient.opinion(scope:actor)"
+			divide = 3
+		}
+		if = {
+			limit = { scope:recipient = { gold < { value = monthly_income_total multiply = 6 } } }
+			add = {
+				desc = "LOW_TREASURY"
+				value = -60
+			}
+		}
+		if = {
+			limit = { scope:recipient = { gold > { value = monthly_income_total multiply = 24 } } }
+			add = {
+				desc = "WEALTHY_BUYER"
+				value = 30
+			}
+		}
+		if = {
+			limit = { scope:target ?= { art_quality >= 70 } }
+			add = {
+				desc = "HIGH_QUALITY_ART"
+				value = 30
+			}
+		}
+		if = {
+			limit = { scope:target ?= { art_quality < 40 } }
+			add = {
+				desc = "LOW_QUALITY_ART"
+				value = -50
+			}
+		}
+		if = {
+			limit = { scope:recipient = { is_rival_of = scope:actor } }
+			add = {
+				desc = "game_concept_rival"
+				value = -100
+			}
+		}
+	}
+}
