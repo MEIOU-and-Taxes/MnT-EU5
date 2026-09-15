@@ -645,3 +645,4 @@ Date: 21/05/2026
 
 ### Features
 - Add a specific Price Type for Urban Amenities
+- Split RGO upgrade costs to all the Vanilla types of expand RGO cost, so no longer farming cost modifier for all of them
