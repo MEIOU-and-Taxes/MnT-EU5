@@ -1,0 +1,453 @@
+﻿# BUILDING SETUP SETTINGS
+#
+# These settings decide which building types other than RGO buildings each owned location starts
+# the game with, and at what level. RGO buildings have their own settings in rgo_setup_settings.txt,
+# and the two files do not depend on each other. Anything after a # is a note, and the generator
+# ignores it.
+#
+# TO CHANGE THE SETUP
+#   Change a value after its "=" sign and save this file. Then open a terminal in the
+#   mod's folder and run:
+#       python3 tools/generators_from_game_data/generators/building_setup/building_setup.py
+#   On Windows, type py instead of python3. The game is not needed. The generator writes the
+#   setup files for both settings files into the mod. If something in a settings file is wrong,
+#   it says what and where. It finds the game and its logs itself, or uses game_directory and
+#   log_directory in tools/shared/config.ini when they are set.
+#   To update the game data these settings are used on, see the bottom of this file.
+#
+# WHERE BUILDINGS GO
+#   Every building type with a section below goes in every owned location that can build it, and so
+#   does every distribution group. With respect_technology = yes, the owner also needs what the
+#   building asks of the country, like the advance that unlocks it.
+#
+# HOW A LEVEL IS WORKED OUT
+#   The level comes from these steps, in order, using the building type's own section, then
+#   [all buildings]:
+#     1. Add up the base level from whichever of these are set:
+#          the location's pops of the types in pop_types_for_levels, in thousands, divided by peasants_per_level
+#          the location's development divided by development_per_level
+#          base_level_by_location_rank for the location's rank
+#     2. Multiply by final_level_multiplier and by every location multiplier that applies:
+#        development, population, river, lake, coast, location rank, topography, vegetation and climate.
+#     3. Round the way round_levels says.
+#     4. Lower it to percentage_of_building_max_level percent of the building's max level
+#        in that location, rounded the same way.
+#   Or skip steps 1 to 4 with fixed_level: one number for every location, or a list by location
+#   rank like { "city": 1, "megalopolis": 2 }, where a rank left out gets no building. Then:
+#     5. Raise it to fixed_level_floor if it is lower. This overrides the percentage.
+#     6. Lower it to fixed_level_ceiling if it is higher. This overrides the percentage.
+#     7. Lower it to the building's max level in that location. This always happens and
+#        wins over everything else.
+#   The levels go on top of any the location already has at game start, and the limits in
+#   steps 4 to 7 count those levels too. With destroy_vanilla_building_levels_before_counting = yes,
+#   those starting levels are removed at game start instead, and the level here is the whole level.
+#   A result below 1 means no building.
+#
+# CANNOT BE USED TOGETHER
+#   fixed_level, and steps 1 to 4: the base level settings, final_level_multiplier, the location
+#   multipliers, round_levels and percentage_of_building_max_level. Set one side to None.
+#
+# ADDING A BUILDING TYPE
+#   Add a section named with the building type's key, like [victualling_house] below, with only
+#   the lines that should be different from [all buildings]. A list there only needs the names it
+#   changes, and a setting set to None there is not used for that building type. fixed_level in a
+#   section drops steps 1 to 4 for that building type. Then update the game data, see the bottom of
+#   this file, so the report covers it.
+#   To have a building type in the game data without placing it, add its key to
+#   report_building_types instead.
+#
+# DISTRIBUTION GROUPS
+#   A section with a distribution_group list, like [villages] below, treats its building types as
+#   one item. The group's own settings work out one level for the location with steps 1 to 3, then
+#   fixed_level_floor and fixed_level_ceiling limit it. That level goes one level at a time to each
+#   building type in the list the location can build, in the list's order, round and round, until
+#   it runs out. A building type stops taking levels at its percentage_of_building_max_level and
+#   its max level, and levels no building type has room for are not placed.
+#   The building types take the group's settings. A section of their own can only change place,
+#   destroy_vanilla_building_levels_before_counting, round_levels and percentage_of_building_max_level.
+#   A building type can be in one group at most.
+#
+# KINDS OF VALUES
+#   yes or no   a switch
+#   a number    like 10 or 2.5. Percentages are plain numbers: 25 means 25%.
+#   None        the setting is not used
+#   names       a list in square brackets, one per line or on one line, like [ "SWE", "DAN" ]
+#   a list      names and numbers in braces, like { "flatland": 1, "hills": 0.5 }. A name left out
+#               counts as 1. All the multipliers that apply are multiplied together. The lists in
+#               rgo_setup_settings.txt show every name each multiplier list takes.
+
+
+[general]
+countries = None                                  # Only these countries get buildings, like [ "SWE", "DAN" ]. None means every country.
+report_building_types = [                         # More building types the game data should cover, without placing them. [] for no more.
+    "mason",
+    "pottery_guild",
+    "tannery",
+    "tools_guild",
+    "paper_guild",
+    "tar_kiln",
+    "glass_guild",
+    "dyes_guild",
+    "rural_glassmaker",
+    "saltpeter_guild",
+    "apothecary",
+    "fine_cloth_guild",
+    "cloth_guild",
+    "brewery",
+    "scriptorium",
+    "jewelry_guild",
+    "furniture_guild",
+    "lacquerware_guild",
+    "winery",
+    "porcelain_guild",
+    "distillers_guild",
+    "rural_clothmaker",
+    "bog_iron_smelter",
+    "windmill",
+    "charcoal_maker",
+    "salt_collector",
+    "fiber_crops_farm",
+    "horse_breeders",
+    "stone_quarry",
+    "local_smelters",
+    "sawmill",
+    "elephant_hunting_grounds",
+    "marketplace",
+    "forest_village",
+    "farming_village",
+    "market_village",
+    "fishing_village",
+    "weapon_guild",
+    "naval_supplies_guild",
+]
+# Many pops change type while the game sets up, through setup rules and promotion into jobs,
+# so the count of one pop type at game start can be unreliable. all is the steadiest measure.
+pop_types_for_levels = [ "peasants", "laborers", "slaves" ]   # The pops counted for levels. Choose from: burghers clergy laborers nobles peasants slaves soldiers tribesmen, or all for every pop type
+respect_technology = yes                          # yes: no building the owner cannot build yet, like a gun smith before its advance.
+
+[all buildings]
+place = yes                                # yes: this building type is placed at all.
+destroy_vanilla_building_levels_before_counting = no # yes: the levels this building type starts the game with are removed, so the level here is the whole level.
+peasants_per_level = None                  # Base level: thousands of counted pops per level. 10 means one level per 10,000.
+development_per_level = None               # Base level: development per level. 10 means one level per 10 development.
+base_level_by_location_rank = {            # Base level by the location's rank at the start. A rank left out adds nothing.
+    "town": 1,
+    "city": 2,
+    "megalopolis": 3,
+}
+final_level_multiplier = 1                 # Multiplies every level. 2 doubles them.
+additive_multiplier_per_development = 0.02 # Multiplier scaling with development. 0.02 at 20 development applies a 1.4x multiplier. 1+(0.02*20)
+additive_multiplier_per_population = 0.002 # Multiplier scaling with counted pops, per thousand. 0.01 at 20,000 pops applies a 1.2x multiplier. 1+(0.01*20)
+lake_multiplier = None                     # Multiplier when the location borders a lake.
+coastal_multiplier = None                  # Multiplier when the location is on the coast.
+river_multiplier = None                    # Multiplier by the location's river size, or none.
+location_rank_multiplier = None            # Multiplier by the location's rank at the start.
+
+topography_multiplier = {                  # Multiplier by the location's topography. Clear land gets a little more, rough land loses more.
+    "flatland": 1.1,
+    "plateau": 1,
+    "hills": 0.9,
+    "wetlands": 0.7,
+    "mountains": 0.6,
+}
+
+vegetation_multiplier = {                  # Multiplier by the location's vegetation. Clear land gets a little more, rough land loses more.
+    "farmland": 1.1,
+    "grasslands": 1.1,
+    "sparse": 1,
+    "woods": 0.9,
+    "desert": 0.7,
+    "forest": 0.7,
+    "jungle": 0.6,
+}
+
+climate_multiplier = None                  # Multiplier by the location's climate.
+round_levels = nearest                     # How levels are rounded: up, down or nearest.
+percentage_of_building_max_level = None    # The highest level, as a percent of the building's max level. None means no limit.
+fixed_level = None                         # Instead of steps 1 to 4: a level for every location, or a list by location rank. Steps 1 to 4 must be None.
+fixed_level_floor = None                   # The lowest level, a whole number. Overrides the percentage. None means no floor.
+fixed_level_ceiling = None                 # The highest level, a whole number. Overrides the percentage and the floor. None means no ceiling.
+
+
+# One victualling house in every city and two in every megalopolis
+[victualling_house]
+fixed_level = { "city": 1, "megalopolis": 2 }
+
+# One provisions market in every town, city and megalopolis
+[provisions_market]
+fixed_level = { "town": 1, "city": 1, "megalopolis": 1 }
+
+# Common goods: [all buildings] as it is, with the starting levels replaced
+[mason]
+destroy_vanilla_building_levels_before_counting = yes
+
+[pottery_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+[apothecary]
+destroy_vanilla_building_levels_before_counting = yes
+
+[weapon_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+[tools_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+[tannery]
+destroy_vanilla_building_levels_before_counting = yes
+
+[cloth_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+[paper_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+[brewery]
+destroy_vanilla_building_levels_before_counting = yes
+
+[winery]
+destroy_vanilla_building_levels_before_counting = yes
+
+[distillers_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+# Hand cannon guilds are the only firearms building placed at game start
+[hand_cannon_guild]
+destroy_vanilla_building_levels_before_counting = yes
+
+# Luxury goods: the base level comes from development instead of rank, grows faster with development,
+# and is multiplied by rank, so they go in the richer towns and most cities
+[fine_cloth_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[jewelry_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[lacquerware_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[porcelain_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[glass_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[dyes_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[furniture_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+[scriptorium]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+# Marketplaces are their own thing, not a luxury building: a base level by rank plus one level per 30 development,
+# 0.15x more per river size, and 0.3x more on the coast and by a lake
+[marketplace]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = { "town": 1, "city": 2, "megalopolis": 3 }
+development_per_level = 30
+additive_multiplier_per_development = None
+river_multiplier = { "none": 1, "1": 1.15, "2": 1.3, "3": 1.45, "4": 1.6, "5": 1.75 }
+coastal_multiplier = 1.3
+lake_multiplier = 1.3
+
+[naval_supplies_guild]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+development_per_level = 30
+additive_multiplier_per_development = 0.04
+location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "city": 1, "megalopolis": 1.5 }
+round_levels = down
+
+# Rural production: levels come from counted pops, one per 10,000, rounded down, and only where the land suits it
+# Tar kilns: cold and temperate forests, where tar was burned from pine
+[tar_kiln]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 20
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+vegetation_multiplier = { "forest": 1.2, "woods": 1, "jungle": 0.4 }
+climate_multiplier = { "boreal_climate": 1.3, "hemiboreal_climate": 1.3, "subpolar_oceanic_climate": 1.3, "hypercontinental_climate": 1.3, "monsoon_boreal_climate": 1.3, "mediterranean_boreal_climate": 1.3, "mediterranean_hemiboreal_climate": 1.3, "oceanic_climate": 1, "continental_climate": 1, "monsoon_oceanic_climate": 1, "monsoon_continental_climate": 1, "humid_subtropical_climate": 0.5, "monsoon_humid_subtropical_climate": 0.5, "rainforest_climate": 0.3, "monsoon_climate": 0.3, "savanna_winter_climate": 0.3, "savanna_summer_climate": 0.3 }
+
+# Stone quarries: hills and mountains
+[stone_quarry]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 20
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+topography_multiplier = { "mountains": 1.3, "hills": 1.2, "plateau": 1.1 }
+
+# Fiber crops farms: flax and hemp on temperate farmland and grassland, near water
+[fiber_crops_farm]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 20
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+vegetation_multiplier = { "farmland": 1.2, "grasslands": 1.1, "sparse": 0.7 }
+climate_multiplier = { "oceanic_climate": 1.1, "continental_climate": 1.1, "monsoon_oceanic_climate": 1.1, "monsoon_continental_climate": 1.1, "boreal_climate": 1.1, "hemiboreal_climate": 1.1, "subpolar_oceanic_climate": 1.1, "hypercontinental_climate": 1.1, "monsoon_boreal_climate": 1.1, "mediterranean_boreal_climate": 1.1, "mediterranean_hemiboreal_climate": 1.1, "hot_desert_climate": 0.4, "cold_desert_climate": 0.4 }
+river_multiplier = { "none": 1, "1": 1.05, "2": 1.1, "3": 1.15, "4": 1.2, "5": 1.25 }
+
+# Rural glassmakers: sand from coasts and dry land. Levels come mostly from development, with pops adding a little
+[rural_glassmaker]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 250
+development_per_level = 35
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+vegetation_multiplier = { "desert": 1.2, "sparse": 1.1 }
+coastal_multiplier = 1.1
+
+# Rural clothmakers: wool and fiber from open grassland and farmland. Levels come mostly from development, with pops adding a little
+[rural_clothmaker]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 250
+development_per_level = 35
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+vegetation_multiplier = { "grasslands": 1.1, "farmland": 1.1, "forest": 0.8, "jungle": 0.7 }
+
+# Bog iron smelters: bog ore in wetlands, and mountains, with forest for charcoal
+[bog_iron_smelter]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 20
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+topography_multiplier = { "wetlands": 1.3, "mountains": 1.1 }
+vegetation_multiplier = { "forest": 1.1 }
+
+# Charcoal makers: forests and woods
+[charcoal_maker]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 20
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+vegetation_multiplier = { "forest": 1.2, "woods": 1, "jungle": 0.8 }
+
+# Salt collectors: sunny coasts and deserts, poor in the cold
+[salt_collector]
+destroy_vanilla_building_levels_before_counting = yes
+base_level_by_location_rank = None
+peasants_per_level = 20
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+round_levels = down
+coastal_multiplier = 1.2
+vegetation_multiplier = { "desert": 1.2 }
+climate_multiplier = { "hot_desert_climate": 1.2, "hot_steppe_climate": 1.2, "boreal_climate": 0.5, "subpolar_oceanic_climate": 0.5, "tundra_climate": 0.5, "polar_climate": 0.5, "hypercontinental_climate": 0.5, "andean_tundra_climate": 0.5 }
+
+# Villages are one item. One level per 10,000 counted pops, shared out between the villages the location
+# can build, none past 35% of its max level
+[villages]
+distribution_group = [ "market_village", "farming_village", "forest_village", "fishing_village" ]
+destroy_vanilla_building_levels_before_counting = yes
+peasants_per_level = 10
+base_level_by_location_rank = None
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+topography_multiplier = None
+vegetation_multiplier = None
+round_levels = up
+percentage_of_building_max_level = 35
+
+# RGO buildings replace these, so every starting level is removed at game start
+[fruit_orchard]
+place = no
+destroy_vanilla_building_levels_before_counting = yes
+
+[lumber_mill]
+place = no
+destroy_vanilla_building_levels_before_counting = yes
+
+[sand_pit]
+place = no
+destroy_vanilla_building_levels_before_counting = yes
+
+[clay_pit]
+place = no
+destroy_vanilla_building_levels_before_counting = yes
+
+[sheep_farms]
+place = no
+destroy_vanilla_building_levels_before_counting = yes
+
+# Not placed, and vanilla's starting levels are kept. No location or country can build these at game start
+[horse_breeders]
+destroy_vanilla_building_levels_before_counting = no
+final_level_multiplier = 0
+
+[elephant_hunting_grounds]
+destroy_vanilla_building_levels_before_counting = no
+final_level_multiplier = 0
+
+
+# TO UPDATE THE GAME DATA
+#   Both settings files use the same game data: building_setup_locations.csv and
+#   building_setup_countries.csv next to the generator, which hold what the game reported about
+#   every location and country. Both open in a spreadsheet. Only update it after a game patch,
+#   after the mod changes locations, starting pops or where buildings can be built, or after
+#   adding a building type to this file.
+#     1. Run the generator once, so the report covers every building type in the settings.
+#     2. Delete main_menu/setup/start/98_mnt_rgo_setup.txt and 98_mnt_building_setup.txt from
+#        the copy of the mod the game loads, so the report sees the game start without them.
+#     3. In in_game/common/on_action/MnT_pulse.txt, near the top in on_game_start, remove
+#        the # in front of mnt_rgo_setup_dump_on_start.
+#     4. Start the game with debug mode on and begin a new game. Once the country selection
+#        screen shows, the report is in debug.log and the game can be closed.
+#     5. Put the # back.
+#     6. Run the generator. It finds the new report, saves it as the game data, and writes both
+#        setup files.

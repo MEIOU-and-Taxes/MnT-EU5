@@ -1,11 +1,45 @@
 ﻿fum_remove_sop_effect = {
-    every_country = {
-        limit = {
-            country_type = pop
-        }
-        change_country_type = building
-        every_owned_building = {
-            change_building_level = -10
-        }
-    }
+	every_ownable_location = {
+		while = {
+			limit = {
+				any_pop = {
+					owner ?= { country_type = pop }
+				}
+			}
+			# Save pop data, delete the old pop, create a matching copy belonging to the location owner
+			# Two approaches were tried before this one and failed:
+			#     every_pop = { change_pop_owner = location.owner }
+			# after which the owner's pop list and the tribes estate showed duplicated pop references
+			#     every_pop = { prev = { add_pop = { ...same culture/religion/type... } } destroy_pop = this }
+			# after which the location held neither the original nor the copy
+			random_pop = {
+				limit = {
+					owner ?= { country_type = pop }
+				}
+				culture = { save_temporary_scope_as = fum_sop_culture }
+				religion = { save_temporary_scope_as = fum_sop_religion }
+				pop_type = { save_temporary_scope_as = fum_sop_type }
+				set_local_variable = { name = fum_sop_size value = pop_size }
+				destroy_pop = this
+			}
+			# add_pop merges into a pop of the same culture, religion and type if the location has one
+			add_pop = {
+				culture = scope:fum_sop_culture
+				religion = scope:fum_sop_religion
+				type = scope:fum_sop_type
+				size = local_var:fum_sop_size
+			}
+		}
+	}
+
+	every_country = {
+		limit = {
+			country_type = pop
+		}
+		change_country_type = building
+		every_owned_building = {
+			change_building_level = -10
+		}
+		destroy_building_country = this
+	}
 }

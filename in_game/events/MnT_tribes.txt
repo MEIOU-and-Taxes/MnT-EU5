@@ -1,6 +1,6 @@
 ﻿namespace = mnt_tribes
 
-# Maintenance event for refreshing tribal pastures to always be at their building cap, whatever that may be
+# Maintenance event for refreshing tribal pastures and hunting grounds to always be at their building cap, whatever that may be
 mnt_tribes.1 = {
     type = country_event
     title = hidden_event.t
@@ -10,20 +10,11 @@ mnt_tribes.1 = {
 		country_exists_and_can_own_locations = yes
 		num_pop_type_in_country:tribesmen > 0
 	}
-	
+
 	immediate = {
 		every_owned_location = {
-			limit = { 
-				num_pop_type:tribesmen > 0
-			}
-			change_building_level_in_location = {
-				building = building_type:transhumant_wool_pasture
-				value = {
-					value = transhumant_wool_pasture_cap # start at the cap
-					subtract = "location_building_level(building_type:transhumant_wool_pasture)" # Account for existing building levels
-					floor = yes	#round down to make sure we don't accidentally go over the cap
-				}
-			}
+			limit = { num_pop_type:tribesmen > 0 }
+			mnt_tribes_refresh_buildings = yes
 		}
 	}
 }
@@ -134,5 +125,25 @@ mnt_tribes.2 = {
 			}
 		}
     }
-	
+}
+
+# Game-start version of mnt_tribes.1. Uses mnt_count_tribesmen (iterate-and-sum)
+# instead of num_pop_type, which is cached per tick and reads stale after
+# fum_remove_sop_effect moves pops on the same day.
+mnt_tribes.3 = {
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+
+	trigger = {
+		country_exists_and_can_own_locations = yes
+		mnt_count_tribesmen > 0 
+	}
+
+	immediate = {
+		every_owned_location = {
+			limit = { mnt_count_tribesmen > 0 }
+			mnt_tribes_refresh_buildings = yes
+		}
+	}
 }

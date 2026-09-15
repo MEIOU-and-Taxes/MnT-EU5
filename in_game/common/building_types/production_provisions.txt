@@ -1,8 +1,53 @@
-﻿# Buildings that combine food goods into meals and sell them as provisions,
-# the only good that yields food. Each meal is roughly 2.4 gold of
-# ingredients in near-equal amounts, so no one good carries a meal.
-# Both know every meal. The victualling house takes twice the ingredients
-# for 2.2 times the provisions, which is about seven points of margin.
+﻿# Combines food goods into provisions, the only good that yields food. Food is
+# never created: a recipe's provisions carry at most the food its ingredients
+# carried. A recipe's margin is set by what its inputs cost per food, what
+# provisions sell for per food, and how much of the food survives the cooking.
+#
+#   good        food   price   price per food   share of start supply
+#   wheat        14    0.50    0.036            46%
+#   fish         12    0.50    0.042            11%
+#   livestock    11    0.75    0.068            24%
+#   legumes      10    0.50    0.050             8%
+#   wild_game     9    0.50    0.056             6%
+#   fruit         5    0.75    0.150             4%
+#   olives        4    0.75    0.188             1%
+#   wool         11    1.25    0.114   RGO supplement only, never a recipe input
+#   provisions   10    1.00    0.100
+#
+# A good makes money as an ingredient when it costs under 0.100 per food, or
+# under 0.075 where a quarter of the food is lost in cooking. Wheat, fish,
+# legumes, game and livestock all pass both tests, livestock only just. Fruit
+# and olives never pay as ingredients: they only appear as the small second
+# ingredient in a bread recipe, or a fifth of the grove's output becomes
+# provisions at the RGO. Wool stands for the flock's meat and milk: a fifth of
+# it becomes provisions at the RGO and nowhere else. The food values in
+# 03_food.txt are the balancing tool, prices are not. Supply shares are
+# development-weighted counts of owned food locations at start.
+#
+# Each recipe has one main ingredient and one small second ingredient, so a
+# scarce good is never used heavily by a recipe that only adds it for variety.
+# Every recipe in a building takes the same food in, so automation, which
+# picks by total profit, ranks them the same way their margins do.
+#
+# Recipes: the provisions market is the bulk trade, 250 laborers and 20 food
+# of ingredients a level, keeping three quarters of the food. Wheat is the
+# main ingredient in five staples because it is nearly half the food grown,
+# with a little fish, legumes, meat, oil or fruit; fish is the main ingredient
+# in two more, one with a little bread for the coasts and one with game for
+# the north. Meat and bread turns that around for herding regions: livestock
+# is the main ingredient with a little bread, low profit at base prices and
+# high profit where livestock is cheap.
+# The victualling house is the burgher trade, a hundred workers and 10 food a
+# level, half the market's input, keeping all of it: bread or fish with a
+# small amount of the more expensive meat, game, fruit or oil. Burghers make
+# more per person, the market more per building.
+#
+# Margins: food is cheap next to provisions, so the recipes with nothing but
+# food would make 100 percent. Firewood, pottery and salt are the kitchen
+# costs that bring the market's main recipes to about 20 percent; the
+# victualling house adds glass for the table and lands near 35. Recipes with
+# livestock, game or fruit as the main ingredient make less than that at base
+# prices and only pay where those goods are cheap.
 
 provisions_market = {
 	is_foreign = no
@@ -11,82 +56,133 @@ provisions_market = {
 
 	category = basic_industry_category
 
-	employment_size = guild_employment
+	# 250 laborers per level; kept small so each level's demand is a nudge on
+	# the market, not a swing
+	employment_size = 0.25
 
 	rural_settlement = yes
 	town = yes
-	city = no
-	megalopolis = no
+	city = yes
+	megalopolis = yes
 
 	build_time = guild_build_time
 
-	# The town trade, working at hand scale
 	unique_production_methods = {
 
-		provisions_market_fish_game_and_legumes = {
-			fish = 1.75
-			wild_game = 1.75
-			legumes = 1.75
+		# Ordered by margin at base prices, best first; automation tries them in order.
+		# Fruit and oil are the small second ingredient in a bread recipe, never the
+		# main one: they are the Mediterranean bonus foods and rank low because they
+		# cost more. Every ration takes salt, more where fish or meat is the main
+		# ingredient, since the salting happens here rather than at the fishery or
+		# the herd. Every level burns a quarter unit of firewood and breaks a quarter
+		# unit of pottery.
+
+		provisions_market_bread_and_fish = {
+			wheat = 1.0
+			fish = 0.5
+			salt = 0.05
+			lumber = 0.25
+			pottery = 0.25
 
 			produced = provisions
-			output = 1
+			output = 1.5 # 20 food in, 15 out at 75 percent
 
 			category = guild_input
 		}
 
-		provisions_market_fish_meat_and_legumes = {
-			fish = 1.5
-			legumes = 1.5
-			livestock = 1.5
+		provisions_market_bread_and_legumes = {
+			wheat = 1.07
+			legumes = 0.5
+			salt = 0.04
+			lumber = 0.25
+			pottery = 0.25
 
 			produced = provisions
-			output = 1
+			output = 1.5 # 20 food in, 15 out at 75 percent
 
 			category = guild_input
 		}
 
-		provisions_market_bread_game_and_legumes = {
-			wheat = 1.5
-			wild_game = 1.5
-			legumes = 1.5
+		provisions_market_bread_and_meat = {
+			wheat = 1.2
+			livestock = 0.3
+			salt = 0.05
+			lumber = 0.25
+			pottery = 0.25
 
 			produced = provisions
-			output = 1
+			output = 1.5 # 20.1 food in, 15 out at 75 percent
 
 			category = guild_input
 		}
 
-		provisions_market_bread_meat_and_legumes = {
+		provisions_market_fish_and_bread = {
+			fish = 1.25
+			wheat = 0.36
+			salt = 0.07
+			lumber = 0.25
+			pottery = 0.25
+
+			produced = provisions
+			output = 1.5 # 20 food in, 15 out at 75 percent
+
+			category = guild_input
+		}
+
+		provisions_market_bread_and_oil = {
+			wheat = 1.36
+			olives = 0.25
+			salt = 0.04
+			lumber = 0.25
+			pottery = 0.25
+
+			produced = provisions
+			output = 1.5 # 20 food in, 15 out at 75 percent
+
+			category = guild_input
+		}
+
+		provisions_market_fish_and_game = {
+			fish = 1.35
+			wild_game = 0.42
+			salt = 0.09
+			lumber = 0.25
+			pottery = 0.25
+
+			produced = provisions
+			output = 1.5 # 20 food in, 15 out at 75 percent
+
+			category = guild_input
+		}
+
+		provisions_market_bread_and_fruit = {
 			wheat = 1.25
-			legumes = 1.25
-			livestock = 1.25
+			fruit = 0.5
+			salt = 0.04
+			lumber = 0.25
+			pottery = 0.25
 
 			produced = provisions
-			output = 1
+			output = 1.5 # 20 food in, 15 out at 75 percent
 
 			category = guild_input
 		}
 
-		provisions_market_bread_oil_and_fruit = {
-			wheat = 1.75
-			olives = 1
-			fruit = 1.25
+		# Herding method. Livestock is the main ingredient, so it loses money at
+		# base prices and is the best recipe wherever livestock trades cheap.
+
+		provisions_market_meat_and_bread = {
+			livestock = 1.43
+			wheat = 0.32
+			salt = 0.08
+			lumber = 0.25
+			pottery = 0.25
 
 			produced = provisions
-			output = 1
+			output = 1.5 # 20.2 food in, 15 out at 75 percent
 
 			category = guild_input
-		}
-
-		provisions_market_bread_meat_and_fruit = {
-			wheat = 1.25
-			fruit = 1.25
-			livestock = 1.25
-
-			produced = provisions
-			output = 1
-
-			category = guild_input
+			debug_max_profit = rural_profit_margin # below zero at base prices by design
 		}
 	}
 
@@ -110,76 +206,69 @@ victualling_house = {
 
 	build_time = workshop_build_time
 
-	# The city trade, buying and preparing in bulk
 	unique_production_methods = {
 
-		victualling_house_fish_game_and_legumes = {
-			fish = 3.5
-			wild_game = 3.5
-			legumes = 3.5
+		# Ordered by margin at base prices, best first; automation tries them in order.
+		# Every level burns a tenth of firewood, breaks a tenth of pottery and a
+		# little glass: the burgher kitchen and its table.
+
+		victualling_house_bread_and_meat = {
+			wheat = 0.5
+			livestock = 0.29
+			salt = 0.03
+			lumber = 0.1
+			pottery = 0.1
+			glass = 0.06
 
 			produced = provisions
-			output = 2.2
+			output = 1.0 # 10.2 food in, 10 out
 
 			category = guild_input
 		}
 
-		victualling_house_fish_meat_and_legumes = {
-			fish = 3
-			legumes = 3
-			livestock = 3
+		victualling_house_bread_and_fruit = {
+			wheat = 0.64
+			fruit = 0.21
+			salt = 0.03
+			lumber = 0.1
+			pottery = 0.1
+			glass = 0.06
 
 			produced = provisions
-			output = 2.2
+			output = 1.0 # 10 food in, 10 out
 
 			category = guild_input
 		}
 
-		victualling_house_bread_game_and_legumes = {
-			wheat = 3
-			wild_game = 3
-			legumes = 3
+		victualling_house_fish_and_game = {
+			fish = 0.57
+			wild_game = 0.36
+			salt = 0.04
+			lumber = 0.1
+			pottery = 0.1
+			glass = 0.06
 
 			produced = provisions
-			output = 2.2
+			output = 1.0 # 10.1 food in, 10 out
 
 			category = guild_input
 		}
 
-		victualling_house_bread_meat_and_legumes = {
-			wheat = 2.5
-			legumes = 2.5
-			livestock = 2.5
+		victualling_house_bread_and_oil = {
+			wheat = 0.64
+			olives = 0.25
+			salt = 0.02
+			lumber = 0.1
+			pottery = 0.1
+			glass = 0.06
 
 			produced = provisions
-			output = 2.2
-
-			category = guild_input
-		}
-
-		victualling_house_bread_oil_and_fruit = {
-			wheat = 3.5
-			olives = 2
-			fruit = 2.5
-
-			produced = provisions
-			output = 2.2
-
-			category = guild_input
-		}
-
-		victualling_house_bread_meat_and_fruit = {
-			wheat = 2.5
-			fruit = 2.5
-			livestock = 2.5
-
-			produced = provisions
-			output = 2.2
+			output = 1.0 # 10 food in, 10 out
 
 			category = guild_input
 		}
 	}
 
 	custom_tags = { guild }
-	construction_demand = workshop_construction
+	construction_demand = guild_construction
 }

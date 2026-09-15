@@ -1,73 +1,98 @@
 ﻿remove_RGOs = {
-	every_owned_location = {
-		replace_rgos_with_buildings = yes
-	}
-
+	# RGO buildings are placed by the setup files, so this only removes the vanilla RGO jobs
 	every_owned_location = {
 		change_max_raw_material_workers = -100
 	}
+}
 
-	add_country_modifier = {
-		modifier = fill_vacancies
-		months = 2
-		mode = add
-		desc = fill_vacancies_desc
+# Scope: location. Moves $amount$ pop units (thousands, same as pop_size)
+# out of every $from$ pop into $to$ pops by splitting each source pop by the
+# same fraction, so the mix of culture and religion is kept. Capped at 1.
+#
+# mnt_promote_pops = { from = pop_type:peasants to = pop_type:laborers amount = 1 }
+mnt_promote_pops = {
+	set_local_variable = { name = mnt_promote_source_size value = 0 }
+	every_pop = {
+		limit = { pop_type = $from$ }
+		change_local_variable = { name = mnt_promote_source_size add = pop_size }
+	}
+
+	set_local_variable = { name = mnt_promote_fraction value = 0 }
+	if = {
+		limit = { local_var:mnt_promote_source_size > 0 }
+		set_local_variable = {
+			name = mnt_promote_fraction
+			value = {
+				value = $amount$
+				divide = local_var:mnt_promote_source_size
+				max = 1
+			}
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_promote_fraction > 0 }
+		save_temporary_scope_value_as = { name = mnt_promote_fraction value = local_var:mnt_promote_fraction }
+		every_pop = {
+			limit = { pop_type = $from$ }
+			split_pop = {
+				fraction = scope:mnt_promote_fraction
+				type = $to$
+			}
+		}
 	}
 }
 
-replace_rgos_with_buildings = {
-	if = { limit = { raw_material = goods:alum } change_building_level_in_location = { building = building_type:RGO_building_alum value = rgo_building_level } }
-	if = { limit = { raw_material = goods:amber } change_building_level_in_location = { building = building_type:RGO_building_amber value = rgo_building_level } }
-	if = { limit = { raw_material = goods:beeswax } change_building_level_in_location = { building = building_type:RGO_building_beeswax value = rgo_building_level } }
-	if = { limit = { raw_material = goods:chili } change_building_level_in_location = { building = building_type:RGO_building_chili value = rgo_building_level } }
-	if = { limit = { raw_material = goods:clay } change_building_level_in_location = { building = building_type:RGO_building_clay value = rgo_building_level } }
-	if = { limit = { raw_material = goods:cloves } change_building_level_in_location = { building = building_type:RGO_building_cloves value = rgo_building_level } }
-	if = { limit = { raw_material = goods:coal } change_building_level_in_location = { building = building_type:RGO_building_coal value = rgo_building_level } }
-	if = { limit = { raw_material = goods:cocoa } change_building_level_in_location = { building = building_type:RGO_building_cocoa value = rgo_building_level } }
-	if = { limit = { raw_material = goods:coffee } change_building_level_in_location = { building = building_type:RGO_building_coffee value = rgo_building_level } }
-	if = { limit = { raw_material = goods:copper } change_building_level_in_location = { building = building_type:RGO_building_copper value = rgo_building_level } }
-	if = { limit = { raw_material = goods:cotton } change_building_level_in_location = { building = building_type:RGO_building_cotton value = rgo_building_level } }
-	if = { limit = { raw_material = goods:dyes } change_building_level_in_location = { building = building_type:RGO_building_dyes value = rgo_building_level } }
-	if = { limit = { raw_material = goods:elephants } change_building_level_in_location = { building = building_type:RGO_building_elephants value = rgo_building_level } }
-	if = { limit = { raw_material = goods:fiber_crops } change_building_level_in_location = { building = building_type:RGO_building_fiber_crops value = rgo_building_level } }
-	if = { limit = { raw_material = goods:fish } change_building_level_in_location = { building = building_type:RGO_building_fish value = rgo_building_level } }
-	if = { limit = { raw_material = goods:fruit } change_building_level_in_location = { building = building_type:RGO_building_fruit value = rgo_building_level } }
-	if = { limit = { raw_material = goods:fur } change_building_level_in_location = { building = building_type:RGO_building_fur value = rgo_building_level } }
-	if = { limit = { raw_material = goods:gems } change_building_level_in_location = { building = building_type:RGO_building_gems value = rgo_building_level } }
-	if = { limit = { raw_material = goods:goods_gold } change_building_level_in_location = { building = building_type:RGO_building_goods_gold value = rgo_building_level } }
-	if = { limit = { raw_material = goods:horses } change_building_level_in_location = { building = building_type:RGO_building_horses value = rgo_building_level } }
-	if = { limit = { raw_material = goods:incense } change_building_level_in_location = { building = building_type:RGO_building_incense value = rgo_building_level } }
-	if = { limit = { raw_material = goods:iron } change_building_level_in_location = { building = building_type:RGO_building_iron value = rgo_building_level } }
-	if = { limit = { raw_material = goods:ivory } change_building_level_in_location = { building = building_type:RGO_building_ivory value = rgo_building_level } }
-	if = { limit = { raw_material = goods:lead } change_building_level_in_location = { building = building_type:RGO_building_lead value = rgo_building_level } }
-	if = { limit = { raw_material = goods:legumes } change_building_level_in_location = { building = building_type:RGO_building_legumes value = rgo_building_level } }
-	if = { limit = { raw_material = goods:livestock } change_building_level_in_location = { building = building_type:RGO_building_livestock value = rgo_building_level } }
-	if = { limit = { raw_material = goods:lumber } change_building_level_in_location = { building = building_type:RGO_building_lumber value = rgo_building_level_double } }
-#	if = { limit = { raw_material = goods:maize } change_building_level_in_location = { building = building_type:RGO_building_maize value = rgo_building_level } }#staple
-	if = { limit = { raw_material = goods:marble } change_building_level_in_location = { building = building_type:RGO_building_marble value = rgo_building_level } }
-	if = { limit = { raw_material = goods:medicaments } change_building_level_in_location = { building = building_type:RGO_building_medicaments value = rgo_building_level } }
-	if = { limit = { raw_material = goods:mercury } change_building_level_in_location = { building = building_type:RGO_building_mercury value = rgo_building_level } }
-#	if = { limit = { raw_material = goods:millet } change_building_level_in_location = { building = building_type:RGO_building_millet value = rgo_building_level } }#staple
-	if = { limit = { raw_material = goods:olives } change_building_level_in_location = { building = building_type:RGO_building_olives value = rgo_building_level } }
-	if = { limit = { raw_material = goods:pearls } change_building_level_in_location = { building = building_type:RGO_building_pearls value = rgo_building_level } }
-	if = { limit = { raw_material = goods:pepper } change_building_level_in_location = { building = building_type:RGO_building_pepper value = rgo_building_level } }
-#	if = { limit = { raw_material = goods:potato } change_building_level_in_location = { building = building_type:RGO_building_potato value = rgo_building_level } }#staple
-#	if = { limit = { raw_material = goods:rice } change_building_level_in_location = { building = building_type:RGO_building_rice value = rgo_building_level } }#staple
-	if = { limit = { raw_material = goods:saffron } change_building_level_in_location = { building = building_type:RGO_building_saffron value = rgo_building_level } }
-	if = { limit = { raw_material = goods:salt } change_building_level_in_location = { building = building_type:RGO_building_salt value = rgo_building_level } }
-	if = { limit = { raw_material = goods:saltpeter } change_building_level_in_location = { building = building_type:RGO_building_saltpeter value = rgo_building_level } }
-	if = { limit = { raw_material = goods:sand } change_building_level_in_location = { building = building_type:RGO_building_sand value = rgo_building_level } }
-	if = { limit = { raw_material = goods:silk } change_building_level_in_location = { building = building_type:RGO_building_silk value = rgo_building_level } }
-	if = { limit = { raw_material = goods:silver } change_building_level_in_location = { building = building_type:RGO_building_silver value = rgo_building_level } }
-	if = { limit = { raw_material = goods:stone } change_building_level_in_location = { building = building_type:RGO_building_stone value = rgo_building_level } }
-	if = { limit = { raw_material = goods:sugar } change_building_level_in_location = { building = building_type:RGO_building_sugar value = rgo_building_level } }
-	if = { limit = { raw_material = goods:tea } change_building_level_in_location = { building = building_type:RGO_building_tea value = rgo_building_level } }
-	if = { limit = { raw_material = goods:tin } change_building_level_in_location = { building = building_type:RGO_building_tin value = rgo_building_level } }
-	if = { limit = { raw_material = goods:tobacco } change_building_level_in_location = { building = building_type:RGO_building_tobacco value = rgo_building_level } }
-	if = { limit = { raw_material = goods:wheat } change_building_level_in_location = { building = building_type:RGO_building_wheat value = rgo_building_level } }
-	if = { limit = { raw_material = goods:wild_game } change_building_level_in_location = { building = building_type:RGO_building_wild_game value = rgo_building_level } }
-	if = { limit = { raw_material = goods:wine } change_building_level_in_location = { building = building_type:RGO_building_wine value = rgo_building_level } }
-	if = { limit = { raw_material = goods:wool } change_building_level_in_location = { building = building_type:RGO_building_wool value = rgo_building_level } }
+# Scope: location. Promotes peasants into laborers and burghers to fill open jobs. Setup can and does handle most of this
+# but any place where we need to promote slaves is a problem that we need to sort out manually, along with any building setup
+# that can't be done by setup. Even though this gives enough pops to fill these jobs, they won't actually be worked until the 
+# following month.
+mnt_fill_building_jobs = {
+	set_local_variable = { name = mnt_fill_laborer_jobs value = 0 }
+	set_local_variable = { name = mnt_fill_burgher_jobs value = 0 }
+	every_buildings_in_location = {
+		limit = { building_pop_type = laborers }
+		change_local_variable = { name = mnt_fill_laborer_jobs add = building_employment_size_amount }
+	}
+	every_buildings_in_location = {
+		limit = { building_pop_type = burghers }
+		change_local_variable = { name = mnt_fill_burgher_jobs add = building_employment_size_amount }
+	}
+	# num_pop_type is cached per tick, so use iterate-and-sum script values instead;
+	# only matters at game start where change_pop_type runs on the same day
+	change_local_variable = { name = mnt_fill_laborer_jobs subtract = mnt_count_laborers }
+	change_local_variable = { name = mnt_fill_burgher_jobs subtract = mnt_count_burghers }
+
+	if = {
+		limit = { local_var:mnt_fill_laborer_jobs > 0 }
+		mnt_promote_pops = { from = pop_type:peasants to = pop_type:laborers amount = local_var:mnt_fill_laborer_jobs }
+	}
+	if = {
+		limit = { local_var:mnt_fill_burgher_jobs > 0 }
+		mnt_promote_pops = { from = pop_type:peasants to = pop_type:burghers amount = local_var:mnt_fill_burgher_jobs }
+	}
+}
+
+# Scope: location. Sets pasture and hunting ground levels to their caps.
+mnt_tribes_refresh_buildings = {
+	set_local_variable = { name = mnt_tribes_levels value = "location_building_level(building_type:transhumant_wool_pasture)" }
+	change_building_level_in_location = {
+		building = building_type:transhumant_wool_pasture
+		value = {
+			value = transhumant_wool_pasture_cap
+			subtract = local_var:mnt_tribes_levels
+			floor = yes
+		}
+	}
+	set_local_variable = { name = mnt_tribes_levels value = "location_building_level(building_type:tribesmen_hunting_grounds)" }
+	change_building_level_in_location = {
+		building = building_type:tribesmen_hunting_grounds
+		value = {
+			value = tribesmen_hunting_grounds_cap
+			subtract = local_var:mnt_tribes_levels
+			floor = yes
+		}
+	}
 }
 
 REPLACE:cc_setup_new_town = {
@@ -171,5 +196,169 @@ mnt_rgo_refresh_eligibility = {
 	else_if = {
 		limit = { has_variable = mnt_rgo_elig_wheat }
 		remove_variable = mnt_rgo_elig_wheat
+	}
+}
+
+# Once a year every owned location gets one level of the RGO building for its raw material if it has none
+# and the owner can build it, or else one level of another RGO building the owner can build there
+
+# TODO: initialize each location with a list of possible rgo buildings, update it in on_raw_material_changed, iterate that list instead of checking every building
+mnt_rgo_ensure_level = {
+	# The RGO building for the location's raw material. Where the owner cannot build it, look for another below
+	if = { limit = { raw_material = goods:alum NOT = { has_building_with_at_least_one_level = RGO_building_alum } } if = { limit = { can_build_building = building_type:RGO_building_alum owner = { can_build_building = building_type:RGO_building_alum } } change_building_level_in_location = { building = building_type:RGO_building_alum value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:amber NOT = { has_building_with_at_least_one_level = RGO_building_amber } } if = { limit = { can_build_building = building_type:RGO_building_amber owner = { can_build_building = building_type:RGO_building_amber } } change_building_level_in_location = { building = building_type:RGO_building_amber value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:beeswax NOT = { has_building_with_at_least_one_level = RGO_building_beeswax } } if = { limit = { can_build_building = building_type:RGO_building_beeswax owner = { can_build_building = building_type:RGO_building_beeswax } } change_building_level_in_location = { building = building_type:RGO_building_beeswax value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:chili NOT = { has_building_with_at_least_one_level = RGO_building_chili } } if = { limit = { can_build_building = building_type:RGO_building_chili owner = { can_build_building = building_type:RGO_building_chili } } change_building_level_in_location = { building = building_type:RGO_building_chili value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:clay NOT = { has_building_with_at_least_one_level = RGO_building_clay } } if = { limit = { can_build_building = building_type:RGO_building_clay owner = { can_build_building = building_type:RGO_building_clay } } change_building_level_in_location = { building = building_type:RGO_building_clay value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:cloves NOT = { has_building_with_at_least_one_level = RGO_building_cloves } } if = { limit = { can_build_building = building_type:RGO_building_cloves owner = { can_build_building = building_type:RGO_building_cloves } } change_building_level_in_location = { building = building_type:RGO_building_cloves value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:coal NOT = { has_building_with_at_least_one_level = RGO_building_coal } } if = { limit = { can_build_building = building_type:RGO_building_coal owner = { can_build_building = building_type:RGO_building_coal } } change_building_level_in_location = { building = building_type:RGO_building_coal value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:cocoa NOT = { has_building_with_at_least_one_level = RGO_building_cocoa } } if = { limit = { can_build_building = building_type:RGO_building_cocoa owner = { can_build_building = building_type:RGO_building_cocoa } } change_building_level_in_location = { building = building_type:RGO_building_cocoa value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:coffee NOT = { has_building_with_at_least_one_level = RGO_building_coffee } } if = { limit = { can_build_building = building_type:RGO_building_coffee owner = { can_build_building = building_type:RGO_building_coffee } } change_building_level_in_location = { building = building_type:RGO_building_coffee value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:copper NOT = { has_building_with_at_least_one_level = RGO_building_copper } } if = { limit = { can_build_building = building_type:RGO_building_copper owner = { can_build_building = building_type:RGO_building_copper } } change_building_level_in_location = { building = building_type:RGO_building_copper value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:cotton NOT = { has_building_with_at_least_one_level = RGO_building_cotton } } if = { limit = { can_build_building = building_type:RGO_building_cotton owner = { can_build_building = building_type:RGO_building_cotton } } change_building_level_in_location = { building = building_type:RGO_building_cotton value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:dyes NOT = { has_building_with_at_least_one_level = RGO_building_dyes } } if = { limit = { can_build_building = building_type:RGO_building_dyes owner = { can_build_building = building_type:RGO_building_dyes } } change_building_level_in_location = { building = building_type:RGO_building_dyes value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:elephants NOT = { has_building_with_at_least_one_level = RGO_building_elephants } } if = { limit = { can_build_building = building_type:RGO_building_elephants owner = { can_build_building = building_type:RGO_building_elephants } } change_building_level_in_location = { building = building_type:RGO_building_elephants value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:fiber_crops NOT = { has_building_with_at_least_one_level = RGO_building_fiber_crops } } if = { limit = { can_build_building = building_type:RGO_building_fiber_crops owner = { can_build_building = building_type:RGO_building_fiber_crops } } change_building_level_in_location = { building = building_type:RGO_building_fiber_crops value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:fish NOT = { has_building_with_at_least_one_level = RGO_building_fish } } if = { limit = { can_build_building = building_type:RGO_building_fish owner = { can_build_building = building_type:RGO_building_fish } } change_building_level_in_location = { building = building_type:RGO_building_fish value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:fruit NOT = { has_building_with_at_least_one_level = RGO_building_fruit } } if = { limit = { can_build_building = building_type:RGO_building_fruit owner = { can_build_building = building_type:RGO_building_fruit } } change_building_level_in_location = { building = building_type:RGO_building_fruit value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:fur NOT = { has_building_with_at_least_one_level = RGO_building_fur } } if = { limit = { can_build_building = building_type:RGO_building_fur owner = { can_build_building = building_type:RGO_building_fur } } change_building_level_in_location = { building = building_type:RGO_building_fur value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:gems NOT = { has_building_with_at_least_one_level = RGO_building_gems } } if = { limit = { can_build_building = building_type:RGO_building_gems owner = { can_build_building = building_type:RGO_building_gems } } change_building_level_in_location = { building = building_type:RGO_building_gems value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:goods_gold NOT = { has_building_with_at_least_one_level = RGO_building_goods_gold } } if = { limit = { can_build_building = building_type:RGO_building_goods_gold owner = { can_build_building = building_type:RGO_building_goods_gold } } change_building_level_in_location = { building = building_type:RGO_building_goods_gold value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:horses NOT = { has_building_with_at_least_one_level = RGO_building_horses } } if = { limit = { can_build_building = building_type:RGO_building_horses owner = { can_build_building = building_type:RGO_building_horses } } change_building_level_in_location = { building = building_type:RGO_building_horses value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:incense NOT = { has_building_with_at_least_one_level = RGO_building_incense } } if = { limit = { can_build_building = building_type:RGO_building_incense owner = { can_build_building = building_type:RGO_building_incense } } change_building_level_in_location = { building = building_type:RGO_building_incense value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:iron NOT = { has_building_with_at_least_one_level = RGO_building_iron } } if = { limit = { can_build_building = building_type:RGO_building_iron owner = { can_build_building = building_type:RGO_building_iron } } change_building_level_in_location = { building = building_type:RGO_building_iron value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:ivory NOT = { has_building_with_at_least_one_level = RGO_building_ivory } } if = { limit = { can_build_building = building_type:RGO_building_ivory owner = { can_build_building = building_type:RGO_building_ivory } } change_building_level_in_location = { building = building_type:RGO_building_ivory value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:lead NOT = { has_building_with_at_least_one_level = RGO_building_lead } } if = { limit = { can_build_building = building_type:RGO_building_lead owner = { can_build_building = building_type:RGO_building_lead } } change_building_level_in_location = { building = building_type:RGO_building_lead value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:legumes NOT = { has_building_with_at_least_one_level = RGO_building_legumes } } if = { limit = { can_build_building = building_type:RGO_building_legumes owner = { can_build_building = building_type:RGO_building_legumes } } change_building_level_in_location = { building = building_type:RGO_building_legumes value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:livestock NOT = { has_building_with_at_least_one_level = RGO_building_livestock } } if = { limit = { can_build_building = building_type:RGO_building_livestock owner = { can_build_building = building_type:RGO_building_livestock } } change_building_level_in_location = { building = building_type:RGO_building_livestock value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:lumber NOT = { has_building_with_at_least_one_level = RGO_building_lumber } } if = { limit = { can_build_building = building_type:RGO_building_lumber owner = { can_build_building = building_type:RGO_building_lumber } } change_building_level_in_location = { building = building_type:RGO_building_lumber value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:marble NOT = { has_building_with_at_least_one_level = RGO_building_marble } } if = { limit = { can_build_building = building_type:RGO_building_marble owner = { can_build_building = building_type:RGO_building_marble } } change_building_level_in_location = { building = building_type:RGO_building_marble value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:medicaments NOT = { has_building_with_at_least_one_level = RGO_building_medicaments } } if = { limit = { can_build_building = building_type:RGO_building_medicaments owner = { can_build_building = building_type:RGO_building_medicaments } } change_building_level_in_location = { building = building_type:RGO_building_medicaments value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:mercury NOT = { has_building_with_at_least_one_level = RGO_building_mercury } } if = { limit = { can_build_building = building_type:RGO_building_mercury owner = { can_build_building = building_type:RGO_building_mercury } } change_building_level_in_location = { building = building_type:RGO_building_mercury value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:olives NOT = { has_building_with_at_least_one_level = RGO_building_olives } } if = { limit = { can_build_building = building_type:RGO_building_olives owner = { can_build_building = building_type:RGO_building_olives } } change_building_level_in_location = { building = building_type:RGO_building_olives value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:pearls NOT = { has_building_with_at_least_one_level = RGO_building_pearls } } if = { limit = { can_build_building = building_type:RGO_building_pearls owner = { can_build_building = building_type:RGO_building_pearls } } change_building_level_in_location = { building = building_type:RGO_building_pearls value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:pepper NOT = { has_building_with_at_least_one_level = RGO_building_pepper } } if = { limit = { can_build_building = building_type:RGO_building_pepper owner = { can_build_building = building_type:RGO_building_pepper } } change_building_level_in_location = { building = building_type:RGO_building_pepper value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:saffron NOT = { has_building_with_at_least_one_level = RGO_building_saffron } } if = { limit = { can_build_building = building_type:RGO_building_saffron owner = { can_build_building = building_type:RGO_building_saffron } } change_building_level_in_location = { building = building_type:RGO_building_saffron value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:salt NOT = { has_building_with_at_least_one_level = RGO_building_salt } } if = { limit = { can_build_building = building_type:RGO_building_salt owner = { can_build_building = building_type:RGO_building_salt } } change_building_level_in_location = { building = building_type:RGO_building_salt value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:saltpeter NOT = { has_building_with_at_least_one_level = RGO_building_saltpeter } } if = { limit = { can_build_building = building_type:RGO_building_saltpeter owner = { can_build_building = building_type:RGO_building_saltpeter } } change_building_level_in_location = { building = building_type:RGO_building_saltpeter value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:sand NOT = { has_building_with_at_least_one_level = RGO_building_sand } } if = { limit = { can_build_building = building_type:RGO_building_sand owner = { can_build_building = building_type:RGO_building_sand } } change_building_level_in_location = { building = building_type:RGO_building_sand value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:silk NOT = { has_building_with_at_least_one_level = RGO_building_silk } } if = { limit = { can_build_building = building_type:RGO_building_silk owner = { can_build_building = building_type:RGO_building_silk } } change_building_level_in_location = { building = building_type:RGO_building_silk value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:silver NOT = { has_building_with_at_least_one_level = RGO_building_silver } } if = { limit = { can_build_building = building_type:RGO_building_silver owner = { can_build_building = building_type:RGO_building_silver } } change_building_level_in_location = { building = building_type:RGO_building_silver value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:stone NOT = { has_building_with_at_least_one_level = RGO_building_stone } } if = { limit = { can_build_building = building_type:RGO_building_stone owner = { can_build_building = building_type:RGO_building_stone } } change_building_level_in_location = { building = building_type:RGO_building_stone value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:sugar NOT = { has_building_with_at_least_one_level = RGO_building_sugar } } if = { limit = { can_build_building = building_type:RGO_building_sugar owner = { can_build_building = building_type:RGO_building_sugar } } change_building_level_in_location = { building = building_type:RGO_building_sugar value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:tea NOT = { has_building_with_at_least_one_level = RGO_building_tea } } if = { limit = { can_build_building = building_type:RGO_building_tea owner = { can_build_building = building_type:RGO_building_tea } } change_building_level_in_location = { building = building_type:RGO_building_tea value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:tin NOT = { has_building_with_at_least_one_level = RGO_building_tin } } if = { limit = { can_build_building = building_type:RGO_building_tin owner = { can_build_building = building_type:RGO_building_tin } } change_building_level_in_location = { building = building_type:RGO_building_tin value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:tobacco NOT = { has_building_with_at_least_one_level = RGO_building_tobacco } } if = { limit = { can_build_building = building_type:RGO_building_tobacco owner = { can_build_building = building_type:RGO_building_tobacco } } change_building_level_in_location = { building = building_type:RGO_building_tobacco value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:wheat NOT = { has_building_with_at_least_one_level = RGO_building_wheat } } if = { limit = { can_build_building = building_type:RGO_building_wheat owner = { can_build_building = building_type:RGO_building_wheat } } change_building_level_in_location = { building = building_type:RGO_building_wheat value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:wild_game NOT = { has_building_with_at_least_one_level = RGO_building_wild_game } } if = { limit = { can_build_building = building_type:RGO_building_wild_game owner = { can_build_building = building_type:RGO_building_wild_game } } change_building_level_in_location = { building = building_type:RGO_building_wild_game value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:wine NOT = { has_building_with_at_least_one_level = RGO_building_wine } } if = { limit = { can_build_building = building_type:RGO_building_wine owner = { can_build_building = building_type:RGO_building_wine } } change_building_level_in_location = { building = building_type:RGO_building_wine value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+	if = { limit = { raw_material = goods:wool NOT = { has_building_with_at_least_one_level = RGO_building_wool } } if = { limit = { can_build_building = building_type:RGO_building_wool owner = { can_build_building = building_type:RGO_building_wool } } change_building_level_in_location = { building = building_type:RGO_building_wool value = 1 } } else = { set_local_variable = { name = mnt_rgo_main_not_buildable value = 1 } } }
+
+	if = {
+		limit = {
+			has_local_variable = mnt_rgo_main_not_buildable
+			# A location that already has any RGO building keeps what it has
+			NOR = {
+				has_building_with_at_least_one_level = RGO_building_alum
+				has_building_with_at_least_one_level = RGO_building_amber
+				has_building_with_at_least_one_level = RGO_building_bad_sand
+				has_building_with_at_least_one_level = RGO_building_beeswax
+				has_building_with_at_least_one_level = RGO_building_chili
+				has_building_with_at_least_one_level = RGO_building_clay
+				has_building_with_at_least_one_level = RGO_building_cloves
+				has_building_with_at_least_one_level = RGO_building_coal
+				has_building_with_at_least_one_level = RGO_building_cocoa
+				has_building_with_at_least_one_level = RGO_building_coffee
+				has_building_with_at_least_one_level = RGO_building_copper
+				has_building_with_at_least_one_level = RGO_building_cotton
+				has_building_with_at_least_one_level = RGO_building_dyes
+				has_building_with_at_least_one_level = RGO_building_elephants
+				has_building_with_at_least_one_level = RGO_building_fiber_crops
+				has_building_with_at_least_one_level = RGO_building_fish
+				has_building_with_at_least_one_level = RGO_building_fruit
+				has_building_with_at_least_one_level = RGO_building_fur
+				has_building_with_at_least_one_level = RGO_building_gems
+				has_building_with_at_least_one_level = RGO_building_goods_gold
+				has_building_with_at_least_one_level = RGO_building_horses
+				has_building_with_at_least_one_level = RGO_building_incense
+				has_building_with_at_least_one_level = RGO_building_iron
+				has_building_with_at_least_one_level = RGO_building_ivory
+				has_building_with_at_least_one_level = RGO_building_lead
+				has_building_with_at_least_one_level = RGO_building_legumes
+				has_building_with_at_least_one_level = RGO_building_livestock
+				has_building_with_at_least_one_level = RGO_building_lumber
+				has_building_with_at_least_one_level = RGO_building_marble
+				has_building_with_at_least_one_level = RGO_building_medicaments
+				has_building_with_at_least_one_level = RGO_building_mercury
+				has_building_with_at_least_one_level = RGO_building_olives
+				has_building_with_at_least_one_level = RGO_building_pearls
+				has_building_with_at_least_one_level = RGO_building_pepper
+				has_building_with_at_least_one_level = RGO_building_saffron
+				has_building_with_at_least_one_level = RGO_building_salt
+				has_building_with_at_least_one_level = RGO_building_saltpeter
+				has_building_with_at_least_one_level = RGO_building_sand
+				has_building_with_at_least_one_level = RGO_building_silk
+				has_building_with_at_least_one_level = RGO_building_silver
+				has_building_with_at_least_one_level = RGO_building_stone
+				has_building_with_at_least_one_level = RGO_building_sugar
+				has_building_with_at_least_one_level = RGO_building_tea
+				has_building_with_at_least_one_level = RGO_building_tin
+				has_building_with_at_least_one_level = RGO_building_tobacco
+				has_building_with_at_least_one_level = RGO_building_wheat
+				has_building_with_at_least_one_level = RGO_building_wild_game
+				has_building_with_at_least_one_level = RGO_building_wine
+				has_building_with_at_least_one_level = RGO_building_wool
+			}
+		}
+		# The first RGO building the owner can build here, in alphabetical order. Nothing happens if there is none
+		if = { limit = { can_build_building = building_type:RGO_building_alum owner = { can_build_building = building_type:RGO_building_alum } } change_building_level_in_location = { building = building_type:RGO_building_alum value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_amber owner = { can_build_building = building_type:RGO_building_amber } } change_building_level_in_location = { building = building_type:RGO_building_amber value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_bad_sand owner = { can_build_building = building_type:RGO_building_bad_sand } } change_building_level_in_location = { building = building_type:RGO_building_bad_sand value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_beeswax owner = { can_build_building = building_type:RGO_building_beeswax } } change_building_level_in_location = { building = building_type:RGO_building_beeswax value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_chili owner = { can_build_building = building_type:RGO_building_chili } } change_building_level_in_location = { building = building_type:RGO_building_chili value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_clay owner = { can_build_building = building_type:RGO_building_clay } } change_building_level_in_location = { building = building_type:RGO_building_clay value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_cloves owner = { can_build_building = building_type:RGO_building_cloves } } change_building_level_in_location = { building = building_type:RGO_building_cloves value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_coal owner = { can_build_building = building_type:RGO_building_coal } } change_building_level_in_location = { building = building_type:RGO_building_coal value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_cocoa owner = { can_build_building = building_type:RGO_building_cocoa } } change_building_level_in_location = { building = building_type:RGO_building_cocoa value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_coffee owner = { can_build_building = building_type:RGO_building_coffee } } change_building_level_in_location = { building = building_type:RGO_building_coffee value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_copper owner = { can_build_building = building_type:RGO_building_copper } } change_building_level_in_location = { building = building_type:RGO_building_copper value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_cotton owner = { can_build_building = building_type:RGO_building_cotton } } change_building_level_in_location = { building = building_type:RGO_building_cotton value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_dyes owner = { can_build_building = building_type:RGO_building_dyes } } change_building_level_in_location = { building = building_type:RGO_building_dyes value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_elephants owner = { can_build_building = building_type:RGO_building_elephants } } change_building_level_in_location = { building = building_type:RGO_building_elephants value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_fiber_crops owner = { can_build_building = building_type:RGO_building_fiber_crops } } change_building_level_in_location = { building = building_type:RGO_building_fiber_crops value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_fish owner = { can_build_building = building_type:RGO_building_fish } } change_building_level_in_location = { building = building_type:RGO_building_fish value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_fruit owner = { can_build_building = building_type:RGO_building_fruit } } change_building_level_in_location = { building = building_type:RGO_building_fruit value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_fur owner = { can_build_building = building_type:RGO_building_fur } } change_building_level_in_location = { building = building_type:RGO_building_fur value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_gems owner = { can_build_building = building_type:RGO_building_gems } } change_building_level_in_location = { building = building_type:RGO_building_gems value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_goods_gold owner = { can_build_building = building_type:RGO_building_goods_gold } } change_building_level_in_location = { building = building_type:RGO_building_goods_gold value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_horses owner = { can_build_building = building_type:RGO_building_horses } } change_building_level_in_location = { building = building_type:RGO_building_horses value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_incense owner = { can_build_building = building_type:RGO_building_incense } } change_building_level_in_location = { building = building_type:RGO_building_incense value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_iron owner = { can_build_building = building_type:RGO_building_iron } } change_building_level_in_location = { building = building_type:RGO_building_iron value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_ivory owner = { can_build_building = building_type:RGO_building_ivory } } change_building_level_in_location = { building = building_type:RGO_building_ivory value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_lead owner = { can_build_building = building_type:RGO_building_lead } } change_building_level_in_location = { building = building_type:RGO_building_lead value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_legumes owner = { can_build_building = building_type:RGO_building_legumes } } change_building_level_in_location = { building = building_type:RGO_building_legumes value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_livestock owner = { can_build_building = building_type:RGO_building_livestock } } change_building_level_in_location = { building = building_type:RGO_building_livestock value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_lumber owner = { can_build_building = building_type:RGO_building_lumber } } change_building_level_in_location = { building = building_type:RGO_building_lumber value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_marble owner = { can_build_building = building_type:RGO_building_marble } } change_building_level_in_location = { building = building_type:RGO_building_marble value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_medicaments owner = { can_build_building = building_type:RGO_building_medicaments } } change_building_level_in_location = { building = building_type:RGO_building_medicaments value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_mercury owner = { can_build_building = building_type:RGO_building_mercury } } change_building_level_in_location = { building = building_type:RGO_building_mercury value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_olives owner = { can_build_building = building_type:RGO_building_olives } } change_building_level_in_location = { building = building_type:RGO_building_olives value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_pearls owner = { can_build_building = building_type:RGO_building_pearls } } change_building_level_in_location = { building = building_type:RGO_building_pearls value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_pepper owner = { can_build_building = building_type:RGO_building_pepper } } change_building_level_in_location = { building = building_type:RGO_building_pepper value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_saffron owner = { can_build_building = building_type:RGO_building_saffron } } change_building_level_in_location = { building = building_type:RGO_building_saffron value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_salt owner = { can_build_building = building_type:RGO_building_salt } } change_building_level_in_location = { building = building_type:RGO_building_salt value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_saltpeter owner = { can_build_building = building_type:RGO_building_saltpeter } } change_building_level_in_location = { building = building_type:RGO_building_saltpeter value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_sand owner = { can_build_building = building_type:RGO_building_sand } } change_building_level_in_location = { building = building_type:RGO_building_sand value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_silk owner = { can_build_building = building_type:RGO_building_silk } } change_building_level_in_location = { building = building_type:RGO_building_silk value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_silver owner = { can_build_building = building_type:RGO_building_silver } } change_building_level_in_location = { building = building_type:RGO_building_silver value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_stone owner = { can_build_building = building_type:RGO_building_stone } } change_building_level_in_location = { building = building_type:RGO_building_stone value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_sugar owner = { can_build_building = building_type:RGO_building_sugar } } change_building_level_in_location = { building = building_type:RGO_building_sugar value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_tea owner = { can_build_building = building_type:RGO_building_tea } } change_building_level_in_location = { building = building_type:RGO_building_tea value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_tin owner = { can_build_building = building_type:RGO_building_tin } } change_building_level_in_location = { building = building_type:RGO_building_tin value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_tobacco owner = { can_build_building = building_type:RGO_building_tobacco } } change_building_level_in_location = { building = building_type:RGO_building_tobacco value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_wheat owner = { can_build_building = building_type:RGO_building_wheat } } change_building_level_in_location = { building = building_type:RGO_building_wheat value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_wild_game owner = { can_build_building = building_type:RGO_building_wild_game } } change_building_level_in_location = { building = building_type:RGO_building_wild_game value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_wine owner = { can_build_building = building_type:RGO_building_wine } } change_building_level_in_location = { building = building_type:RGO_building_wine value = 1 } }
+		else_if = { limit = { can_build_building = building_type:RGO_building_wool owner = { can_build_building = building_type:RGO_building_wool } } change_building_level_in_location = { building = building_type:RGO_building_wool value = 1 } }
 	}
 }

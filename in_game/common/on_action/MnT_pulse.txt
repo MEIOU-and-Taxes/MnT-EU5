@@ -1,6 +1,8 @@
 ﻿on_game_start = {
 	on_actions = {
 		mnt_rgo_seed_eligibility
+		#mnt_rgo_setup_dump_on_start	# Uncomment only to make new game data for the building setup generator
+		mnt_building_setup_removals_on_start
 		on_game_start_MnT
 		hide_buildings_on_start
 		epbm_on_initialize
@@ -10,7 +12,7 @@
 	}
 }
 
-#Seed RGO eligibility cache before on_game_start_MnT: rgo_removal.01 builds RGOs that read the cache.
+#Seed RGO eligibility cache before the setup dump and on_game_start_MnT: the RGO build triggers read the cache.
 mnt_rgo_seed_eligibility = {
 	effect = {
 		set_global_variable = mnt_rgo_eligibility_initialized
@@ -20,13 +22,28 @@ mnt_rgo_seed_eligibility = {
 	}
 }
 
+# Reports the start state to debug.log for the building setup generator, before the mod's other
+# game start changes and after the eligibility cache the build triggers read is seeded
+mnt_rgo_setup_dump_on_start = {
+	effect = {
+		mnt_rgo_setup_dump = yes
+	}
+}
+
+# Removes the starting building levels the building setup generator replaces, before the mod's other game start changes
+mnt_building_setup_removals_on_start = {
+	effect = {
+		mnt_remove_starting_building_levels = yes
+	}
+}
+
 weather_monthly_pulse = {
 	on_actions = {
 		epbm_on_global_monthly
 		aut_init_check
 		aut_monthly_update
 		mnt_rgo_eligibility_init_check
-		mnt_food_village_relief
+		mnt_provisions_food_demand_monthly
 	}
 }
 
@@ -49,12 +66,16 @@ yearly_country_pulse = {
 		pulse_yearly_MnT
 		pulse_yearly_per_country_MnT
 		epbm_on_country_yearly
+		mnt_rgo_maintain_yearly
 	}
 }
 
-biyearly_country_pulse = {
-	on_actions = {
-		biyearly_country_pulse_MnT
+# Keeps an RGO building in every owned location, once a year (MnT_rgo_removal.txt)
+mnt_rgo_maintain_yearly = {
+	effect = {
+		every_owned_location = {
+			mnt_rgo_ensure_level = yes
+		}
 	}
 }
 
@@ -84,20 +105,20 @@ on_game_start_MnT = {
 		# Initialize update frequencies and trigger first update
 		every_country = {
 			trigger_event_silently = { id = rgo_removal.01 }
-			trigger_event_silently = { id = destroy_invalid_buildings.1 }
 			trigger_event_silently = { id = mnt_goods_value.1 }
 		}
-		# Handle Pop and Food building startup
+		# Handle Pop startup
 		every_country = {
 			limit = {
 				num_locations > 0
 			}
-			trigger_event_silently = { id = mnt_slaves.1 } # Has to be before mnt_food.1 and mnt_tribes.2 because we're creating peasants
-			trigger_event_silently = { id = mnt_tribes.2 } # Has to be before mnt_food.1 because we're removing peasants
-			trigger_event_silently = { id = mnt_food.1 }
-			trigger_event_silently = { id = mnt_tribes.1 }
+			trigger_event_silently = { id = mnt_slaves.1 } # Has to be before mnt_tribes.2 because we're creating peasants
+			trigger_event_silently = { id = mnt_tribes.2 }
+			trigger_event_silently = { id = mnt_tribes.3 }
 			trigger_event_silently = { id = mnt_urban_amenities.1 }
 		}
+		# Provisions demand exists from day one, after the pop startup above
+		mnt_provisions_food_demand_month = yes
 	}
 }
 
@@ -145,12 +166,6 @@ pulse_yearly_per_country_MnT = {
 	events = {
 		mnt_tribes.1
 		mnt_goods_value.2
-	}
-}
-
-biyearly_country_pulse_MnT = {
-	events = {
-		mnt_food.3
 	}
 }
 
@@ -263,12 +278,9 @@ mnt_on_raw_material_changed = {
 	}
 }
 
-#Frees a peasant where a location has run out of unemployed ones. One location
-#per market per month, enough to keep the worst cases from locking up.
-mnt_food_village_relief = {
+# Provisions demand for every market, once a month from the weather pulse
+mnt_provisions_food_demand_monthly = {
 	effect = {
-		random_country = {
-			trigger_event_silently = mnt_food.2
-		}
+		mnt_provisions_food_demand_month = yes
 	}
 }

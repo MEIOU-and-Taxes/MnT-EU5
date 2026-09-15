@@ -25,6 +25,16 @@ NAI = {
 	# not read a full location as a reason to stop building.
 	AI_UTILITY_PER_CAPITA_THRESHOLD = 0 #M&T from 0.25
 	AI_UTILITY_PER_CAPITA_BASE_EMPLOYMENT = 1 #M&T from 0.3
+
+	# The AI limits how many food locations may urbanize by the average base food
+	# yield of the market's RGOs. Food goods carry no food now, so that average is
+	# always zero and would pin every market to the minimum. Both bounds at 1
+	# allow every location and take food out of the decision.
+	AI_MIN_ALLOWED_URBANIZE_FOOD_LOCATION_RATIO = 1 #M&T from 0.2
+	AI_MAX_ALLOWED_URBANIZE_FOOD_LOCATION_RATIO = 1 #M&T from 0.8
+
+	# Stronger pull to build provisions in the province that is short of food
+	FOOD_NEGATIVE_IN_PROV_UTILITY = 0.25 #M&T from 0.1
 }
 
 NCulture = {
@@ -35,12 +45,16 @@ NCulture = {
 NPop = {
 	RELIGION_OPINION_SATISFACTION = 0.02 #changed from 0.05
 	TOLERANCE_ON_SATISFACTION_SCALE = 0.02 #changed from 0.05
+
+	DEVELOPMENT_SCALE_ON_DEMAND = 0 #M&T from 0.05. Pop demand no longer grows with development
 }
 
 NLocation = {
 	FORT_GARRISON_UPKEEP = 1 #M&T from 2
 	
-	SUBSISTENCE_AGRICULTURE = 1.5 #M&T from 0.8 #food per 1k idle peasants.
+	SUBSISTENCE_AGRICULTURE = 0 #M&T from 0.8. Idle peasants eat nothing from the pool and so make nothing for it.
+
+	LOAD_TIME_VILLAGE_MAX_SIZE_FRACTION = 0.3 #M&T from 0.2
 }
 
 NMarket = {
@@ -52,9 +66,11 @@ NMarket = {
 
     BURGHER_TRADE_IMPACT_ON_DEMAND_SCALE = 0.75 #vanilla: 0.25
     TRADE_IMPACT_ON_DEMAND_SCALE = 0.8 #vanilla: 0.75
-
-	FOOD_PRICE = 0 #M&T from 0.05. Food is no longer sold; provisions carries the value.
-	FOOD_PRICE_IMPACT_ON_PRICES = 0 #M&T from 0.25. Food has no price to feed back.
+	
+	#M&T from 0.05. Provisions now carries the value of food. The engine seems to set a minimum 'maximum food price' 
+	# of 0.01 so some food price movement will still happen and food price defines still have some effect
+	FOOD_PRICE = 0.0 
+	# FOOD_PRICE_IMPACT_ON_PRICES = 0.25
 
 	#multiplicative
 	MARKET_BASE_DISTANCE_FACTOR = 0.0025 # Access lost per pixel of distance #M&T from 0.005

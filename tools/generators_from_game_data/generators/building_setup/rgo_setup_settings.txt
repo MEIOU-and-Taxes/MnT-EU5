@@ -1,0 +1,457 @@
+# RGO SETUP SETTINGS
+#
+# These settings decide which RGO buildings each owned location starts the game with, and at
+# what level. Other building types have their own settings in building_setup_settings.txt, and
+# the two files do not depend on each other. Anything after a # is a note, and the generator
+# ignores it.
+#
+# TO CHANGE THE SETUP
+#   Change a value after its "=" sign and save this file. Then open a terminal in the
+#   mod's folder and run:
+#       python3 tools/generators_from_game_data/generators/building_setup/building_setup.py
+#   On Windows, type py instead of python3. The game is not needed. The generator writes the
+#   setup files for both settings files into the mod. If something in a settings file is wrong,
+#   it says what and where. It finds the game and its logs itself, or uses game_directory and
+#   log_directory in tools/shared/config.ini when they are set.
+#   To update the game data these settings are used on, see the bottom of this file.
+#
+# HOW A LEVEL IS WORKED OUT
+#   Each owned location gets the RGO building for its raw material. Its level comes from these
+#   steps, in order, using the building's own section, then [all RGO buildings]:
+#     1. Add up the base level from whichever of these are set:
+#          the location's pops of the types in pop_types_for_levels, in thousands, divided by peasants_per_level
+#          the location's development divided by development_per_level
+#          base_level_by_location_rank for the location's rank
+#     2. Multiply by final_level_multiplier and by every location multiplier that applies:
+#        development, population, river, lake, coast, location rank, topography, vegetation and climate.
+#        The main building, the ideal RGO building for the location's raw material, is also
+#        multiplied by ideal_rgo_multiplier.
+#     3. Round the way round_levels says.
+#     4. Lower it to percentage_of_building_max_level percent of the building's max level
+#        in that location, rounded the same way.
+#   Or skip steps 1 to 4 with fixed_level: one number for every location, or a list by location
+#   rank like { "city": 1, "megalopolis": 2 }, where a rank left out gets no building. Then:
+#     5. Raise it to fixed_level_floor if it is lower. This overrides the percentage.
+#     6. Lower it to fixed_level_ceiling if it is higher. This overrides the percentage.
+#     7. Lower it to the building's max level in that location. This always happens and
+#        wins over everything else. The max level grows with development and population.
+#   The levels go on top of any the location already has at game start, and the limits in
+#   steps 4 to 7 count those levels too. With destroy_vanilla_building_levels_before_counting = yes,
+#   those starting levels are removed at game start instead, and the level here is the whole level.
+#   A result below 1 means no building.
+#
+# CANNOT BE USED TOGETHER
+#   fixed_level, and steps 1 to 4: the base level settings, final_level_multiplier, the location
+#   multipliers, round_levels and percentage_of_building_max_level. Set one side to None.
+#
+# CHANGING ONE RGO BUILDING
+#   [all RGO buildings] applies to every RGO building. To change one, add a section named with
+#   its key, like [RGO_building_lumber] below, with only the lines that should be different. A
+#   list there only needs the names it changes, so climate_multiplier = { "polar_climate": 0 }
+#   keeps every other climate. fixed_level in a section drops steps 1 to 4 for that building. A
+#   setting set to None there is not used for that building, whatever [all RGO buildings] says.
+#
+# SECONDARY BUILDINGS
+#   With place_secondary_rgos = yes, a location also gets some of the other RGO buildings it can
+#   build. Each gets its own level from the steps, like the main building but without
+#   ideal_rgo_multiplier, and stays at least one level below the main building, so small locations
+#   get none. The main building's level sets that limit even where the owner cannot build the main
+#   building, and each secondary building is only placed where the owner can build it. The ones with
+#   the highest level before rounding and limits are placed, up to
+#   max_secondary_rgos_per_location, so the multipliers decide between buildings that round to the
+#   same level. After that, the highest secondary_priority and then the key in alphabetical order decide.
+#   Nothing is random, so the same settings always give the same picks.
+#
+# KINDS OF VALUES
+#   yes or no   a switch
+#   a number    like 10 or 2.5. Percentages are plain numbers: 25 means 25%.
+#   None        the setting is not used
+#   names       a list in square brackets, one per line or on one line, like [ "SWE", "DAN" ]
+#   a list      names and numbers in braces, one per line like the lists below, or on one
+#               line like { "flatland": 1, "hills": 0.5 }. A name left out counts as 1.
+#               All the multipliers that apply are multiplied together.
+
+
+[general]
+countries = None                                  # Only these countries get RGO buildings, like [ "SWE", "DAN" ]. None means every country.
+# Many pops change type while the game sets up, through setup rules and promotion into jobs,
+# so the count of one pop type at game start can be unreliable. all is the steadiest measure.
+pop_types_for_levels = [ "peasants", "laborers", "slaves" ]   # The pops counted for levels. Choose from: burghers clergy laborers nobles peasants slaves soldiers tribesmen, or all for every pop type
+respect_technology = yes                          # yes: no RGO building the owner cannot build yet, like an iron RGO before Iron Working.
+place_secondary_rgos = yes                        # yes: locations also get secondary RGO buildings. max_secondary_rgos_per_location only matters then.
+max_secondary_rgos_per_location = 2               # The most secondary RGO buildings one location can get.
+
+# All multipliers compound. lake_multiplier = 1.25 and coastal_multiplier = 1.5 == 1.25 * 1.5
+[all RGO buildings]
+place = yes                                # yes: this RGO building can be placed at all.
+place_as_secondary = yes                   # yes: this RGO building can be picked as a secondary building.
+secondary_priority = 0                     # Decides between secondary RGO buildings with the same level before rounding. Higher is picked first.
+ideal_rgo_multiplier = 2                   # Multiplies the main building's level. 2 makes the other RGO buildings about half its size.
+destroy_vanilla_building_levels_before_counting = no # yes: the levels this building starts the game with are removed, so the level here is the whole level.
+peasants_per_level = 20                    # Base level: thousands of counted pops per level. 10 means one level per 10,000.
+development_per_level = None               # Base level: development per level. 10 means one level per 10 development.
+base_level_by_location_rank = None         # Base level by the location's rank at the start, like { "town": 1, "city": 2 }. A rank left out adds nothing.
+final_level_multiplier = 1                 # Multiplies every level. 2 doubles them.
+additive_multiplier_per_development = None # Multiplier scaling with development. 0.02 at 20 development applies a 1.4x multiplier. 1+(0.02*20)
+additive_multiplier_per_population = None  # Multiplier scaling with counted pops, per thousand. 0.01 at 20,000 pops applies a 1.2x multiplier. 1+(0.01*20)
+lake_multiplier = 1                        # Multiplier when the location borders a lake.
+coastal_multiplier = 1                     # Multiplier when the location is on the coast.
+
+river_multiplier = {                       # Multiplier by the location's river size, or none.
+    "none": 1,
+    "1": 1,
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "5": 1,
+}
+
+location_rank_multiplier = {               # Multiplier by the location's rank at the start.
+    "rural_settlement": 1,
+    "town": 1,
+    "city": 1,
+    "megalopolis": 1,
+}
+
+topography_multiplier = {                  # Multiplier by the location's topography.
+    "flatland": 1,
+    "hills": 1,
+    "plateau": 1,
+    "mountains": 1,
+    "wetlands": 1,
+    "salt_pans": 1,
+    "atoll": 1,
+}
+
+vegetation_multiplier = {                  # Multiplier by the location's vegetation.
+    "farmland": 1,
+    "grasslands": 1,
+    "sparse": 1,
+    "woods": 1,
+    "forest": 1,
+    "jungle": 1,
+    "desert": 1,
+}
+
+climate_multiplier = {                     # Multiplier by the location's climate.
+    "rainforest_climate": 1,
+    "monsoon_climate": 1,
+    "savanna_winter_climate": 1,
+    "savanna_summer_climate": 1,
+    "hot_desert_climate": 1,
+    "cold_desert_climate": 1,
+    "hot_steppe_climate": 1,
+    "cold_steppe_climate": 1,
+    "mediterranean_climate": 1,
+    "oceanic_mediterranean_climate": 1,
+    "subalpine_mediterranean_climate": 1,
+    "humid_subtropical_climate": 1,
+    "monsoon_humid_subtropical_climate": 1,
+    "oceanic_climate": 1,
+    "subpolar_oceanic_climate": 1,
+    "monsoon_oceanic_climate": 1,
+    "monsoon_subpolar_oceanic_climate": 1,
+    "continental_climate": 1,
+    "hemiboreal_climate": 1,
+    "boreal_climate": 1,
+    "hypercontinental_climate": 1,
+    "mediterranean_continental_climate": 1,
+    "mediterranean_hemiboreal_climate": 1,
+    "mediterranean_boreal_climate": 1,
+    "mediterranean_hypercontinental_climate": 1,
+    "monsoon_continental_climate": 1,
+    "monsoon_hemiboreal_climate": 1,
+    "monsoon_boreal_climate": 1,
+    "monsoon_hypercontinental_climate": 1,
+    "andean_tundra_climate": 1,
+    "tundra_climate": 1,
+    "polar_climate": 1,
+}
+
+round_levels = up                          # How levels are rounded: up, down or nearest.
+percentage_of_building_max_level = 33.3    # The highest level, as a percent of the building's max level. None means no limit.
+fixed_level = None                         # Instead of steps 1 to 4: a level for every location, or a list by location rank. Steps 1 to 4 must be None.
+fixed_level_floor = 1                      # The lowest level, a whole number. Overrides the percentage. None means no floor.
+fixed_level_ceiling = None                 # The highest level, a whole number. Overrides the percentage and the floor. None means no ceiling.
+
+
+# CONDITIONS FOR EACH GOOD
+# Each RGO building's multipliers suit where its good comes from. They set the main building's level
+# where the good is the location's raw material, and decide which secondary buildings a location picks.
+
+# Alum: mined in hills and mountains
+[RGO_building_alum]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Amber: washed up on cool northern coasts
+[RGO_building_amber]
+coastal_multiplier = 1.4
+climate_multiplier = { "oceanic_climate": 1.1, "continental_climate": 1.1, "hemiboreal_climate": 1.1, "monsoon_oceanic_climate": 1.1, "monsoon_continental_climate": 1.1, "mediterranean_hemiboreal_climate": 1.1, "boreal_climate": 1.1, "subpolar_oceanic_climate": 1.1, "monsoon_subpolar_oceanic_climate": 1.1, "tundra_climate": 1.1, "andean_tundra_climate": 1.1, "polar_climate": 1.1, "hypercontinental_climate": 1.1, "monsoon_boreal_climate": 1.1, "mediterranean_boreal_climate": 1.1, "monsoon_hypercontinental_climate": 1.1, "mediterranean_hypercontinental_climate": 1.1, "rainforest_climate": 0.7, "monsoon_climate": 0.7, "savanna_winter_climate": 0.7, "savanna_summer_climate": 0.7 }
+
+# Bad sand is never a location's raw material. Half size, so it is only picked where little else fits, except in dry land
+[RGO_building_bad_sand]
+final_level_multiplier = 0.5
+vegetation_multiplier = { "desert": 2.5, "sparse": 1.5 }
+topography_multiplier = { "salt_pans": 2, "atoll": 1.5 }
+
+# Beeswax: woods and farmland, smaller overall so it does not show up everywhere
+[RGO_building_beeswax]
+final_level_multiplier = 0.8
+vegetation_multiplier = { "woods": 1.2, "farmland": 1.1, "forest": 0.9, "sparse": 0.8, "jungle": 0.8, "desert": 0.5 }
+climate_multiplier = { "boreal_climate": 0.7, "subpolar_oceanic_climate": 0.7, "monsoon_subpolar_oceanic_climate": 0.7, "tundra_climate": 0.7, "andean_tundra_climate": 0.7, "polar_climate": 0.7, "hypercontinental_climate": 0.7, "monsoon_boreal_climate": 0.7, "mediterranean_boreal_climate": 0.7, "monsoon_hypercontinental_climate": 0.7, "mediterranean_hypercontinental_climate": 0.7 }
+
+# Chili: warm farmland, poor in the cold
+[RGO_building_chili]
+vegetation_multiplier = { "farmland": 1.1 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2, "humid_subtropical_climate": 1.1, "monsoon_humid_subtropical_climate": 1.1, "boreal_climate": 0.5, "subpolar_oceanic_climate": 0.5, "monsoon_subpolar_oceanic_climate": 0.5, "tundra_climate": 0.5, "andean_tundra_climate": 0.5, "polar_climate": 0.5, "hypercontinental_climate": 0.5, "monsoon_boreal_climate": 0.5, "mediterranean_boreal_climate": 0.5, "monsoon_hypercontinental_climate": 0.5, "mediterranean_hypercontinental_climate": 0.5 }
+
+# Clay: river banks, wetlands and lakes
+[RGO_building_clay]
+river_multiplier = { "none": 0.8, "1": 1.1, "2": 1.2, "3": 1.3, "4": 1.4, "5": 1.5 }
+topography_multiplier = { "wetlands": 1.3, "mountains": 0.6, "hills": 0.9 }
+lake_multiplier = 1.2
+
+# Cloves: tropical coasts and islands
+[RGO_building_cloves]
+coastal_multiplier = 1.2
+topography_multiplier = { "atoll": 1.2 }
+vegetation_multiplier = { "jungle": 1.1 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2 }
+
+# Coal: mined in hills and mountains
+[RGO_building_coal]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Cocoa: tropical rainforest
+[RGO_building_cocoa]
+vegetation_multiplier = { "jungle": 1.2, "farmland": 1.1 }
+topography_multiplier = { "mountains": 0.6 }
+climate_multiplier = { "rainforest_climate": 1.3, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2 }
+
+# Coffee: warm highlands
+[RGO_building_coffee]
+topography_multiplier = { "hills": 1.2, "plateau": 1.2, "flatland": 0.9, "wetlands": 0.6 }
+climate_multiplier = { "rainforest_climate": 1.1, "monsoon_climate": 1.1, "savanna_winter_climate": 1.1, "savanna_summer_climate": 1.1, "humid_subtropical_climate": 1.1, "monsoon_humid_subtropical_climate": 1.1 }
+
+# Copper: mined in hills and mountains
+[RGO_building_copper]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Cotton: warm, flat, watered farmland, poor in the cold
+[RGO_building_cotton]
+vegetation_multiplier = { "farmland": 1.2 }
+topography_multiplier = { "flatland": 1.1, "mountains": 0.6 }
+river_multiplier = { "none": 1, "1": 1.06, "2": 1.12, "3": 1.18, "4": 1.24, "5": 1.3 }
+climate_multiplier = { "humid_subtropical_climate": 1.2, "monsoon_humid_subtropical_climate": 1.2, "rainforest_climate": 1.1, "monsoon_climate": 1.1, "savanna_winter_climate": 1.1, "savanna_summer_climate": 1.1, "hot_desert_climate": 1.1, "hot_steppe_climate": 1.1, "boreal_climate": 0.4, "subpolar_oceanic_climate": 0.4, "monsoon_subpolar_oceanic_climate": 0.4, "tundra_climate": 0.4, "andean_tundra_climate": 0.4, "polar_climate": 0.4, "hypercontinental_climate": 0.4, "monsoon_boreal_climate": 0.4, "mediterranean_boreal_climate": 0.4, "monsoon_hypercontinental_climate": 0.4, "mediterranean_hypercontinental_climate": 0.4 }
+
+# Dyes: warm farmland and grassland, poor in the cold
+[RGO_building_dyes]
+vegetation_multiplier = { "farmland": 1.1, "grasslands": 1.1 }
+climate_multiplier = { "rainforest_climate": 1.1, "monsoon_climate": 1.1, "savanna_winter_climate": 1.1, "savanna_summer_climate": 1.1, "humid_subtropical_climate": 1.1, "monsoon_humid_subtropical_climate": 1.1, "boreal_climate": 0.6, "subpolar_oceanic_climate": 0.6, "monsoon_subpolar_oceanic_climate": 0.6, "tundra_climate": 0.6, "andean_tundra_climate": 0.6, "polar_climate": 0.6, "hypercontinental_climate": 0.6, "monsoon_boreal_climate": 0.6, "mediterranean_boreal_climate": 0.6, "monsoon_hypercontinental_climate": 0.6, "mediterranean_hypercontinental_climate": 0.6 }
+
+# Elephants: tropical jungle and grassland
+[RGO_building_elephants]
+vegetation_multiplier = { "jungle": 1.2, "grasslands": 1.1, "farmland": 0.8, "desert": 0.5 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2, "humid_subtropical_climate": 1.1, "monsoon_humid_subtropical_climate": 1.1 }
+
+# Fiber crops: watered temperate farmland
+[RGO_building_fiber_crops]
+vegetation_multiplier = { "farmland": 1.2, "desert": 0.4 }
+topography_multiplier = { "wetlands": 1.1 }
+river_multiplier = { "none": 1, "1": 1.04, "2": 1.08, "3": 1.12, "4": 1.16, "5": 1.2 }
+climate_multiplier = { "oceanic_climate": 1.1, "continental_climate": 1.1, "hemiboreal_climate": 1.1, "monsoon_oceanic_climate": 1.1, "monsoon_continental_climate": 1.1, "mediterranean_hemiboreal_climate": 1.1, "boreal_climate": 0.7, "subpolar_oceanic_climate": 0.7, "monsoon_subpolar_oceanic_climate": 0.7, "tundra_climate": 0.7, "andean_tundra_climate": 0.7, "polar_climate": 0.7, "hypercontinental_climate": 0.7, "monsoon_boreal_climate": 0.7, "mediterranean_boreal_climate": 0.7, "monsoon_hypercontinental_climate": 0.7, "mediterranean_hypercontinental_climate": 0.7 }
+
+# Fish: coasts, lakes and big rivers
+[RGO_building_fish]
+coastal_multiplier = 1.6
+lake_multiplier = 1.4
+river_multiplier = { "none": 0.7, "1": 1, "2": 1.1, "3": 1.2, "4": 1.3, "5": 1.4 }
+
+# Fruit: warm and mediterranean farmland, poor in the cold
+[RGO_building_fruit]
+vegetation_multiplier = { "farmland": 1.2, "jungle": 1.2, "woods": 0.9, "forest": 0.7, "desert": 0.5 }
+climate_multiplier = { "mediterranean_climate": 1.4, "oceanic_mediterranean_climate": 1.4, "subalpine_mediterranean_climate": 1.4, "mediterranean_continental_climate": 1.4, "boreal_climate": 0.5, "subpolar_oceanic_climate": 0.5, "monsoon_subpolar_oceanic_climate": 0.5, "tundra_climate": 0.5, "andean_tundra_climate": 0.5, "polar_climate": 0.5, "hypercontinental_climate": 0.5, "monsoon_boreal_climate": 0.5, "mediterranean_boreal_climate": 0.5, "monsoon_hypercontinental_climate": 0.5, "mediterranean_hypercontinental_climate": 0.5, "humid_subtropical_climate": 1.2, "monsoon_humid_subtropical_climate": 1.2, "rainforest_climate": 1.2, "monsoon_climate": 1.2 }
+
+# Fur: cold forests
+[RGO_building_fur]
+vegetation_multiplier = { "forest": 1.3, "woods": 1.1, "grasslands": 0.8, "jungle": 0.7, "farmland": 0.5, "desert": 0.5 }
+climate_multiplier = { "boreal_climate": 1.3, "subpolar_oceanic_climate": 1.3, "monsoon_subpolar_oceanic_climate": 1.3, "tundra_climate": 1.3, "andean_tundra_climate": 1.3, "polar_climate": 1.3, "hypercontinental_climate": 1.3, "monsoon_boreal_climate": 1.3, "mediterranean_boreal_climate": 1.3, "monsoon_hypercontinental_climate": 1.3, "mediterranean_hypercontinental_climate": 1.3, "rainforest_climate": 0.6, "monsoon_climate": 0.6, "savanna_winter_climate": 0.6, "savanna_summer_climate": 0.6 }
+
+# Gems: mined in hills and mountains
+[RGO_building_gems]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Gold: mined in hills and mountains, and panned from rivers
+[RGO_building_goods_gold]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+river_multiplier = { "none": 1, "1": 1.04, "2": 1.08, "3": 1.12, "4": 1.16, "5": 1.2 }
+
+# Horses: open grassland and steppe
+[RGO_building_horses]
+vegetation_multiplier = { "grasslands": 1.3, "sparse": 1.2, "woods": 0.8, "desert": 0.7, "forest": 0.6, "jungle": 0.4 }
+topography_multiplier = { "flatland": 1.1, "plateau": 1.1, "mountains": 0.7, "wetlands": 0.7 }
+climate_multiplier = { "hot_desert_climate": 1.3, "hot_steppe_climate": 1.3, "cold_desert_climate": 1.3, "cold_steppe_climate": 1.3 }
+
+# Incense: hot dry scrubland
+[RGO_building_incense]
+vegetation_multiplier = { "desert": 1.2, "sparse": 1.2, "farmland": 0.8, "forest": 0.7, "jungle": 0.7 }
+topography_multiplier = { "hills": 1.1 }
+climate_multiplier = { "hot_desert_climate": 1.3, "hot_steppe_climate": 1.3 }
+
+# Iron: mined in hills and mountains
+[RGO_building_iron]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Ivory: tropical grassland and jungle
+[RGO_building_ivory]
+vegetation_multiplier = { "grasslands": 1.2, "jungle": 1.1, "farmland": 0.6 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2, "hot_steppe_climate": 1.1 }
+
+# Lead: mined in hills and mountains
+[RGO_building_lead]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Legumes: flat farmland, poor in forest, desert and the cold
+[RGO_building_legumes]
+vegetation_multiplier = { "farmland": 1.3, "grasslands": 1.1, "woods": 0.8, "forest": 0.6, "jungle": 0.6, "desert": 0.4 }
+topography_multiplier = { "flatland": 1.1, "mountains": 0.6 }
+climate_multiplier = { "boreal_climate": 0.6, "subpolar_oceanic_climate": 0.6, "monsoon_subpolar_oceanic_climate": 0.6, "tundra_climate": 0.6, "andean_tundra_climate": 0.6, "polar_climate": 0.6, "hypercontinental_climate": 0.6, "monsoon_boreal_climate": 0.6, "mediterranean_boreal_climate": 0.6, "monsoon_hypercontinental_climate": 0.6, "mediterranean_hypercontinental_climate": 0.6 }
+
+# Livestock: open flat grassland and steppe
+[RGO_building_livestock]
+vegetation_multiplier = { "grasslands": 1.3, "farmland": 1.1, "woods": 0.8, "forest": 0.6, "jungle": 0.5, "desert": 0.5 }
+topography_multiplier = { "flatland": 1.1, "plateau": 1.1, "hills": 0.9, "wetlands": 0.8, "mountains": 0.6 }
+climate_multiplier = { "hot_steppe_climate": 1.2, "cold_steppe_climate": 1.2 }
+
+# Lumber: forests and jungle, much less in open land
+[RGO_building_lumber]
+vegetation_multiplier = { "forest": 1.3, "woods": 1.1, "jungle": 1.2, "grasslands": 0.6, "farmland": 0.5, "sparse": 0.4, "desert": 0.2 }
+
+# Marble: quarried in hills and mountains
+[RGO_building_marble]
+topography_multiplier = { "mountains": 1.2, "hills": 1.2, "plateau": 1.1, "wetlands": 0.6, "atoll": 0.5 }
+
+# Medicaments: herbs gathered in woods, forest and jungle
+[RGO_building_medicaments]
+vegetation_multiplier = { "jungle": 1.3, "forest": 1.2, "woods": 1.1, "desert": 0.7 }
+
+# Mercury: mined in hills and mountains
+[RGO_building_mercury]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Olives: mediterranean hills, poor in the cold and the tropics
+[RGO_building_olives]
+topography_multiplier = { "hills": 1.2, "mountains": 0.8, "wetlands": 0.6 }
+vegetation_multiplier = { "sparse": 1.1 }
+climate_multiplier = { "mediterranean_climate": 1.4, "oceanic_mediterranean_climate": 1.4, "subalpine_mediterranean_climate": 1.4, "mediterranean_continental_climate": 1.4, "boreal_climate": 0.3, "subpolar_oceanic_climate": 0.3, "monsoon_subpolar_oceanic_climate": 0.3, "tundra_climate": 0.3, "andean_tundra_climate": 0.3, "polar_climate": 0.3, "hypercontinental_climate": 0.3, "monsoon_boreal_climate": 0.3, "mediterranean_boreal_climate": 0.3, "monsoon_hypercontinental_climate": 0.3, "mediterranean_hypercontinental_climate": 0.3, "rainforest_climate": 0.6, "monsoon_climate": 0.6, "savanna_winter_climate": 0.6, "savanna_summer_climate": 0.6 }
+
+# Pearls: warm coasts and atolls
+[RGO_building_pearls]
+coastal_multiplier = 1.3
+topography_multiplier = { "atoll": 1.4 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2, "hot_desert_climate": 1.2, "hot_steppe_climate": 1.2, "humid_subtropical_climate": 1.1, "monsoon_humid_subtropical_climate": 1.1 }
+
+# Pepper: monsoon jungle and woods
+[RGO_building_pepper]
+vegetation_multiplier = { "jungle": 1.1, "woods": 1.1, "desert": 0.5 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.3, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2 }
+
+# Saffron: dry mediterranean and steppe highlands
+[RGO_building_saffron]
+topography_multiplier = { "plateau": 1.2, "hills": 1.1 }
+vegetation_multiplier = { "sparse": 1.1, "forest": 0.7, "jungle": 0.5 }
+climate_multiplier = { "mediterranean_climate": 1.2, "oceanic_mediterranean_climate": 1.2, "subalpine_mediterranean_climate": 1.2, "mediterranean_continental_climate": 1.2, "cold_desert_climate": 1.1, "cold_steppe_climate": 1.1, "hot_steppe_climate": 1.1 }
+
+# Salt: salt pans, dry land and coasts
+[RGO_building_salt]
+topography_multiplier = { "salt_pans": 1.5 }
+coastal_multiplier = 1.2
+vegetation_multiplier = { "desert": 1.2 }
+climate_multiplier = { "hot_desert_climate": 1.1, "hot_steppe_climate": 1.1 }
+
+# Saltpeter: hot and dry land
+[RGO_building_saltpeter]
+vegetation_multiplier = { "desert": 1.2, "jungle": 0.8 }
+climate_multiplier = { "hot_desert_climate": 1.3, "hot_steppe_climate": 1.3, "cold_desert_climate": 1.1, "cold_steppe_climate": 1.1 }
+
+# Sand: coasts, rivers and desert
+[RGO_building_sand]
+coastal_multiplier = 1.2
+vegetation_multiplier = { "desert": 1.3 }
+river_multiplier = { "none": 1, "1": 1.02, "2": 1.04, "3": 1.06, "4": 1.08, "5": 1.1 }
+
+# Silk: warm farmland with mulberry woods, poor in the cold and desert
+[RGO_building_silk]
+vegetation_multiplier = { "farmland": 1.2, "woods": 1.1, "desert": 0.5 }
+climate_multiplier = { "humid_subtropical_climate": 1.2, "monsoon_humid_subtropical_climate": 1.2, "boreal_climate": 0.5, "subpolar_oceanic_climate": 0.5, "monsoon_subpolar_oceanic_climate": 0.5, "tundra_climate": 0.5, "andean_tundra_climate": 0.5, "polar_climate": 0.5, "hypercontinental_climate": 0.5, "monsoon_boreal_climate": 0.5, "mediterranean_boreal_climate": 0.5, "monsoon_hypercontinental_climate": 0.5, "mediterranean_hypercontinental_climate": 0.5 }
+
+# Silver: mined in hills and mountains
+[RGO_building_silver]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Stone: quarried in hills and mountains
+[RGO_building_stone]
+topography_multiplier = { "mountains": 1.2, "hills": 1.2, "plateau": 1.1, "wetlands": 0.6, "atoll": 0.5 }
+
+# Sugar: tropical farmland and wet lowland
+[RGO_building_sugar]
+vegetation_multiplier = { "farmland": 1.2 }
+topography_multiplier = { "wetlands": 1.1, "hills": 0.9, "mountains": 0.6 }
+river_multiplier = { "none": 1, "1": 1.02, "2": 1.04, "3": 1.06, "4": 1.08, "5": 1.1 }
+climate_multiplier = { "rainforest_climate": 1.2, "monsoon_climate": 1.2, "savanna_winter_climate": 1.2, "savanna_summer_climate": 1.2, "humid_subtropical_climate": 1.1, "monsoon_humid_subtropical_climate": 1.1 }
+
+# Tea: warm wet hills, poor in the cold
+[RGO_building_tea]
+topography_multiplier = { "hills": 1.3, "mountains": 1.1, "plateau": 1.1, "flatland": 0.8, "wetlands": 0.6 }
+climate_multiplier = { "humid_subtropical_climate": 1.2, "monsoon_humid_subtropical_climate": 1.2, "monsoon_climate": 1.1, "boreal_climate": 0.5, "subpolar_oceanic_climate": 0.5, "monsoon_subpolar_oceanic_climate": 0.5, "tundra_climate": 0.5, "andean_tundra_climate": 0.5, "polar_climate": 0.5, "hypercontinental_climate": 0.5, "monsoon_boreal_climate": 0.5, "mediterranean_boreal_climate": 0.5, "monsoon_hypercontinental_climate": 0.5, "mediterranean_hypercontinental_climate": 0.5 }
+
+# Tin: mined in hills and mountains
+[RGO_building_tin]
+topography_multiplier = { "mountains": 1.3, "hills": 1.15, "plateau": 1.1, "flatland": 0.9, "wetlands": 0.7, "atoll": 0.6 }
+
+# Tobacco: warm farmland, poor in the cold, forest and desert
+[RGO_building_tobacco]
+vegetation_multiplier = { "farmland": 1.2, "grasslands": 1.1, "forest": 0.8, "desert": 0.5 }
+climate_multiplier = { "humid_subtropical_climate": 1.2, "monsoon_humid_subtropical_climate": 1.2, "rainforest_climate": 1.1, "monsoon_climate": 1.1, "savanna_winter_climate": 1.1, "savanna_summer_climate": 1.1, "boreal_climate": 0.5, "subpolar_oceanic_climate": 0.5, "monsoon_subpolar_oceanic_climate": 0.5, "tundra_climate": 0.5, "andean_tundra_climate": 0.5, "polar_climate": 0.5, "hypercontinental_climate": 0.5, "monsoon_boreal_climate": 0.5, "mediterranean_boreal_climate": 0.5, "monsoon_hypercontinental_climate": 0.5, "mediterranean_hypercontinental_climate": 0.5 }
+
+# Wheat: flat farmland and grassland, poor in rough land and the cold
+[RGO_building_wheat]
+vegetation_multiplier = { "farmland": 1.4, "grasslands": 1.2, "sparse": 0.8, "woods": 0.8, "forest": 0.5, "jungle": 0.3, "desert": 0.3 }
+topography_multiplier = { "flatland": 1.2, "hills": 0.9, "wetlands": 0.7, "mountains": 0.5 }
+climate_multiplier = { "boreal_climate": 0.4, "subpolar_oceanic_climate": 0.4, "monsoon_subpolar_oceanic_climate": 0.4, "tundra_climate": 0.4, "andean_tundra_climate": 0.4, "polar_climate": 0.4, "hypercontinental_climate": 0.4, "monsoon_boreal_climate": 0.4, "mediterranean_boreal_climate": 0.4, "monsoon_hypercontinental_climate": 0.4, "mediterranean_hypercontinental_climate": 0.4 }
+
+# Wild game: forests, woods and jungle, more in the cold, little on farmland
+[RGO_building_wild_game]
+vegetation_multiplier = { "forest": 1.4, "woods": 1.2, "jungle": 1.2, "grasslands": 0.9, "sparse": 0.8, "farmland": 0.5 }
+topography_multiplier = { "hills": 1.1, "mountains": 1.1 }
+climate_multiplier = { "boreal_climate": 1.2, "subpolar_oceanic_climate": 1.2, "monsoon_subpolar_oceanic_climate": 1.2, "tundra_climate": 1.2, "andean_tundra_climate": 1.2, "polar_climate": 1.2, "hypercontinental_climate": 1.2, "monsoon_boreal_climate": 1.2, "mediterranean_boreal_climate": 1.2, "monsoon_hypercontinental_climate": 1.2, "mediterranean_hypercontinental_climate": 1.2 }
+
+# Wine: mediterranean and temperate hills, poor in the cold and the tropics
+[RGO_building_wine]
+topography_multiplier = { "hills": 1.2, "mountains": 0.8, "wetlands": 0.6 }
+vegetation_multiplier = { "farmland": 1.1, "forest": 0.7, "jungle": 0.4 }
+climate_multiplier = { "mediterranean_climate": 1.4, "oceanic_mediterranean_climate": 1.4, "subalpine_mediterranean_climate": 1.4, "mediterranean_continental_climate": 1.4, "boreal_climate": 0.3, "subpolar_oceanic_climate": 0.3, "monsoon_subpolar_oceanic_climate": 0.3, "tundra_climate": 0.3, "andean_tundra_climate": 0.3, "polar_climate": 0.3, "hypercontinental_climate": 0.3, "monsoon_boreal_climate": 0.3, "mediterranean_boreal_climate": 0.3, "monsoon_hypercontinental_climate": 0.3, "mediterranean_hypercontinental_climate": 0.3, "rainforest_climate": 0.4, "monsoon_climate": 0.4, "savanna_winter_climate": 0.4, "savanna_summer_climate": 0.4, "hot_desert_climate": 0.5 }
+
+# Wool: grassland, hills and cool wet or dry climates
+[RGO_building_wool]
+vegetation_multiplier = { "grasslands": 1.2, "sparse": 1.1, "farmland": 0.9, "woods": 0.7, "forest": 0.5, "jungle": 0.3 }
+topography_multiplier = { "hills": 1.3, "mountains": 1.2, "plateau": 1.2 }
+climate_multiplier = { "oceanic_climate": 1.2, "subpolar_oceanic_climate": 1.2, "cold_steppe_climate": 1.2 }
+
+
+# TO UPDATE THE GAME DATA
+#   Both settings files use the same game data: building_setup_locations.csv and
+#   building_setup_countries.csv next to the generator, which hold what the game reported about
+#   every location and country. Both open in a spreadsheet. Only update it after a game patch,
+#   after the mod changes locations, starting pops or where buildings can be built, or after
+#   adding a building type to building_setup_settings.txt.
+#     1. Run the generator once, so the report covers every building type in the settings.
+#     2. Delete main_menu/setup/start/98_mnt_rgo_setup.txt and 98_mnt_building_setup.txt from
+#        the copy of the mod the game loads, so the report sees the game start without them.
+#     3. In in_game/common/on_action/MnT_pulse.txt, near the top in on_game_start, remove
+#        the # in front of mnt_rgo_setup_dump_on_start.
+#     4. Start the game with debug mode on and begin a new game. Once the country selection
+#        screen shows, the report is in debug.log and the game can be closed.
+#     5. Put the # back.
+#     6. Run the generator. It finds the new report, saves it as the game data, and writes both
+#        setup files.

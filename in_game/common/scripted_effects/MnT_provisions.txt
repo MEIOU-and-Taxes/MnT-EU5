@@ -1,0 +1,71 @@
+﻿# Scope: none, from the weather monthly pulse. Puts a 'temporary' provisions demand on every
+# market equal to the food its pops eat plus the food its province stockpiles lose
+# to decay so the good stays as in sync as possible with food supply/demand.
+#
+# Why can't this be a pop demand? The entire point of the provisions system is to have a strong
+# correlation, ideally an exact correlation, between food and provisions. This way food demand
+# can by extension become provisions demand and prices will encourage the market to build what it needs.
+# Pop demand fails this in 2 ways, both individually fatal. 
+# 1: Pop demand is elastic in uncontrollable ways while food demand is inelastic. Pop demand responds 
+# to estate wealth, development and pop demand modifiers and does not respond to pop food consumption.
+# These failures do make it perfect to carry 'luxury food' demand; food goods that don't hold food
+# 2: Food decay cannot be predicted by pop demand. With peasants and slaves no longer directly consuming food
+# food decay is a very large proportion of total food demand, hence why the food stockpile sizes were lowered.
+#
+# Between both factors the correlation between provisions and food was too low for the system to actually work.
+mnt_provisions_food_demand_month = {
+	every_market_in_world = {
+		set_local_variable = { name = mnt_food value = 0 }
+
+		every_location_in_market = {
+			limit = { has_owner = yes }
+			# The engine reports consumption as a negative number
+			change_local_variable = { name = mnt_food subtract = food_consumption }
+			# Decay on the province stockpile, counted only at the province capital and includes
+			# the country's decay rate plus the location's, scaled by the location's decay modifier
+			if = {
+				limit = { is_province_capital = yes }
+				set_local_variable = {
+					name = mnt_decay_rate
+					value = {
+						value = owner.modifier:global_food_decay
+						add = modifier:local_food_decay
+					}
+				}
+				set_local_variable = {
+					name = mnt_decay_scale
+					value = {
+						value = modifier:local_food_decay_modifier
+						add = 1
+					}
+				}
+				change_local_variable = { name = mnt_decay_rate multiply = local_var:mnt_decay_scale }
+				change_local_variable = { name = mnt_decay_rate multiply = province.province_food }
+				change_local_variable = { name = mnt_food add = local_var:mnt_decay_rate }
+			}
+		}
+
+		# Food eaten and decayed this month, in provisions units
+		change_local_variable = { name = mnt_food divide = 10 }
+
+		# Cost of court and diplomatic spending swap between two identical demand ids to make sure
+		# the ui updates properly so copy that pattern.
+		if = {
+			limit = { has_temporary_demand = demand:mnt_provisions_food_demand1 }
+			remove_temporary_demand = demand:mnt_provisions_food_demand1
+			add_temporary_demand = {
+				type = demand:mnt_provisions_food_demand2
+				months = -1
+				scale = { value = local_var:mnt_food }
+			}
+		}
+		else = {
+			remove_temporary_demand = demand:mnt_provisions_food_demand2
+			add_temporary_demand = {
+				type = demand:mnt_provisions_food_demand1
+				months = -1
+				scale = { value = local_var:mnt_food }
+			}
+		}
+	}
+}
