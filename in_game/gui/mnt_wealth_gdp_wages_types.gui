@@ -159,15 +159,15 @@ types MnTWealthBaseTypes
 # modifier added to the system has to be listed here as well.
 
 template mnt_wealth_hide_if_wealth_modifier {
-	max_update_rate = 30
-	visible = "[Not(IsWealthModifier())]"
+	max_update_rate = 4
+	visible = "[Not(IsMnTHiddenModifier())]"
 }
 
 # Shrinks a hidden wealth-modifier icon slot to nothing so the row of icons
 # closes the gap instead of leaving blank space.
 
 template mnt_wealth_collapse_if_wealth_modifier_small {
-	size = "[Select_CVector2f(Not(IsWealthModifier()), '(CVector2f)26,26', '(CVector2f)0,0')]"
+	size = "[Select_CVector2f(Not(IsMnTHiddenModifier()), '(CVector2f)26,26', '(CVector2f)0,0')]"
 }
 
 template mnt_wealth_estate_desired_wealth_tooltip {
@@ -584,9 +584,15 @@ template mnt_wealth_gross_output_header_tooltip {
 					}
 				}
 				mnt_wealth_formula_row = {
-					blockoverride "row_label" { raw_text = "#explanation_link [Concept('mnt_wealth_cached_gross_output','GDP at Last Survey')]#!" }
+					blockoverride "row_label" { raw_text = "Urban Gross Output" }
 					blockoverride "row_value" {
-						raw_text = "#color_yellow [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_local_gross_output_value')|2]#!@gold!"
+						raw_text = "#color_yellow [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_live_urban_gross_output')|2]#!@gold!"
+					}
+				}
+				mnt_wealth_formula_row = {
+					blockoverride "row_label" { raw_text = "Rural Gross Output" }
+					blockoverride "row_value" {
+						raw_text = "#color_yellow [LocationView.GetLocation.MakeScope.ScriptValue('mnt_wealth_live_rural_gross_output')|2]#!@gold!"
 					}
 				}
 			}
@@ -1102,7 +1108,7 @@ template mnt_wealth_estate_investment_tooltip {
 				position = { 0 -6 }
 				align = center|nobaseline
 				fontsize = 14
-				max_update_rate = 30
+				max_update_rate = 4
 				visible = "[GreaterThanOrEqualTo_float(DCInvestmentLevel(), '(float)1')]"
 				raw_text = "#G #bold [DCProjectedWholeLevelInt()]#!"
 			}
@@ -1111,7 +1117,7 @@ template mnt_wealth_estate_investment_tooltip {
 				position = { 0 -6 }
 				align = center|nobaseline
 				fontsize = 14
-				max_update_rate = 30
+				max_update_rate = 4
 				visible = "[LessThanOrEqualTo_float(DCInvestmentLevel(), '(float)-1')]"
 				raw_text = "#R #bold [DCProjectedWholeLevelInt()]#!"
 			}
@@ -1120,7 +1126,7 @@ template mnt_wealth_estate_investment_tooltip {
 				position = { 0 -6 }
 				align = center|nobaseline
 				fontsize = 14
-				max_update_rate = 30
+				max_update_rate = 4
 				visible = "[And(GreaterThan_float(DCInvestmentLevel(), '(float)-1'), LessThan_float(DCInvestmentLevel(), '(float)1'))]"
 				raw_text = "#high #bold 0#!"
 			}
