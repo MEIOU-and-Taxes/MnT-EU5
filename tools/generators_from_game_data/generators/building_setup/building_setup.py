@@ -1,26 +1,20 @@
 """
 BUILDING SETUP GENERATOR
 
-Writes two setup files that place buildings in owned locations at game start:
-  main_menu/setup/start/98_mnt_rgo_setup.txt       RGO buildings, from rgo_setup_settings.txt
-  main_menu/setup/start/98_mnt_building_setup.txt  other building types, from building_setup_settings.txt
-Both settings files sit next to this script and explain how to run it. They do not depend on each other.
+Reads two settings files (rgo_setup_settings.txt and building_setup_settings.txt) and writes setup
+files that place buildings in owned locations at game start. The settings control which buildings go
+where and at what level; the game data (CSV files next to this script) tells the generator what each
+location looks like. Nothing in this script needs editing; change the settings files instead.
 
-It works from what the game reported about every location, through the mnt_rgo_setup_dump effect this
-script also writes. The report is saved to building_setup_locations.csv and building_setup_countries.csv,
-so the game only has to be started again after a patch, a change to locations, starting pops or where
-buildings can be built, or a new building type in the settings.
-
-The game and its logs are found in the usual places, or read from game_directory and log_directory in
-tools/shared/config.ini.
-
-To change the setup, edit the settings files. Nothing in this script needs editing.
+The game data comes from a dump effect this script also generates. The dump runs once at game start,
+reports every location's pops, terrain and buildable buildings to debug.log, and the generator saves
+that to CSV. The CSV is reused until a patch or mod change invalidates it; --setup-data-dump starts
+that refresh cycle. See the settings file headers for the steps.
 """
 
+import argparse
 import collections
-import configparser
 import csv
-import glob
 import math
 import re
 import sys
@@ -28,44 +22,26 @@ from pathlib import Path
 
 SCRIPT_FOLDER = Path(__file__).resolve().parent
 MOD_FOLDER = SCRIPT_FOLDER.parents[3]
+
+# The mod's folder has to be importable before the shared tools are, whatever folder this is run from
+sys.path.insert(0, str(MOD_FOLDER))
+from tools.shared.fetch_logs import CONFIG_FILE, get_from_config  # noqa: E402
 RGO_SETTINGS_FILE = SCRIPT_FOLDER / "rgo_setup_settings.txt"
 BUILDING_SETTINGS_FILE = SCRIPT_FOLDER / "building_setup_settings.txt"
-# The saved game data: one row per location, and one row per country for the building types it cannot build yet
 LOCATIONS_FILE = SCRIPT_FOLDER / "building_setup_locations.csv"
 COUNTRIES_FILE = SCRIPT_FOLDER / "building_setup_countries.csv"
-# The locations file has two columns per building type: its max level there, empty where it cannot be built,
-# and the levels already there at game start, empty where there are none
+# CSV column prefixes: each building type has a max_level (what the game caps it at) and a level (what it starts with)
 MAX_LEVEL_COLUMN = "max_level_"
 LEVEL_COLUMN = "level_"
 RGO_OUTPUT_FILE = MOD_FOLDER / "main_menu" / "setup" / "start" / "98_mnt_rgo_setup.txt"
 BUILDING_OUTPUT_FILE = MOD_FOLDER / "main_menu" / "setup" / "start" / "98_mnt_building_setup.txt"
 DUMP_EFFECT_FILE = MOD_FOLDER / "in_game" / "common" / "scripted_effects" / "MnT_setup_generated_loc_data_dump.txt"
-# Removes the starting levels of building types set to destroy_vanilla_building_levels_before_counting, at game start
 REMOVALS_EFFECT_FILE = MOD_FOLDER / "in_game" / "common" / "scripted_effects" / "MnT_setup_generated_building_removals.txt"
-CONFIG_FILE = MOD_FOLDER / "tools" / "shared" / "config.ini"
 
 DUMP_PREFIX = "MNT_RGO_DUMP "
 # Raised whenever the dump's records change, so an older dump in debug.log is not read
 DUMP_VERSION = 6
 RGO_PREFIX = "RGO_building_"
-
-# Where the game is usually installed, tried when tools/shared/config.ini has no game_directory
-GAME_FOLDER_GUESSES = [
-    "/mnt/d/Program Files (x86)/Steam/steamapps/common/Europa Universalis V/game",
-    "/mnt/c/Program Files (x86)/Steam/steamapps/common/Europa Universalis V/game",
-    "D:/Program Files (x86)/Steam/steamapps/common/Europa Universalis V/game",
-    "C:/Program Files (x86)/Steam/steamapps/common/Europa Universalis V/game",
-    str(Path.home() / ".steam" / "steam" / "steamapps" / "common" / "Europa Universalis V" / "game"),
-]
-# Where the game keeps its logs on Windows, Linux and WSL, tried when tools/shared/config.ini has no log_directory.
-# The newest debug.log found wins.
-LOG_FOLDER_GUESSES = [
-    str(Path.home() / "Documents" / "Paradox Interactive" / "Europa Universalis V" / "logs"),
-    str(Path.home() / "OneDrive" / "Documents" / "Paradox Interactive" / "Europa Universalis V" / "logs"),
-    str(Path.home() / ".local" / "share" / "Paradox Interactive" / "Europa Universalis V" / "logs"),
-    "/mnt/c/Users/*/Documents/Paradox Interactive/Europa Universalis V/logs",
-    "/mnt/c/Users/*/OneDrive/Documents/Paradox Interactive/Europa Universalis V/logs",
-]
 
 # The [general] settings each settings file takes
 RGO_GENERAL_SETTINGS = [
@@ -74,7 +50,7 @@ RGO_GENERAL_SETTINGS = [
 BUILDING_GENERAL_SETTINGS = ["countries", "report_building_types", "pop_types_for_levels", "respect_technology"]
 # [general] settings that may be left out or set to None
 OPTIONAL_SETTINGS = {"countries", "report_building_types"}
-# The location multiplier lists, and the location fact each one looks up
+# Each multiplier setting maps to the location fact it looks up
 LIST_SETTINGS = {
     "river_multiplier": "river",
     "location_rank_multiplier": "location_rank",
@@ -83,36 +59,32 @@ LIST_SETTINGS = {
     "climate_multiplier": "climate",
 }
 RIVER_SIZES = ["none", "1", "2", "3", "4", "5"]
-# The location facts the dump reports as keys, and the folder in in_game/common that defines them
+# Where the game defines each location fact, so the generator can read the valid keys
 FACT_FOLDERS = {"topography": "topography", "vegetation": "vegetation", "climate": "climates", "location_rank": "location_ranks"}
-# How the dump checks each fact. The game rejects topography:<key>, vegetation:<key> and climate:<key> here, but needs location_rank:<key>.
+# The trigger syntax the dump uses to identify each fact; location_rank needs a prefix, the others do not
 FACT_CHECKS = {
     "topography": "topography = {key}",
     "vegetation": "vegetation = {key}",
     "climate": "climate = {key}",
     "location_rank": "location_rank = location_rank:{key}",
 }
-# The settings that add up a base level
-BASE_LEVEL_SETTINGS = ["peasants_per_level", "development_per_level", "base_level_by_location_rank"]
-# The settings that work a level out from the location. fixed_level replaces all of them.
+# Setting names grouped by role in the level calculation. fixed_level is an alternative to the
+# base+multiplier pipeline; when it is set, the pipeline settings are ignored.
+BASE_LEVEL_SETTINGS = ["pops_per_level", "development_per_level", "base_level_by_location_rank"]
 POP_STEP_SETTINGS = (BASE_LEVEL_SETTINGS + ["final_level_multiplier", "additive_multiplier_per_development", "additive_multiplier_per_population",
                                             "lake_multiplier", "coastal_multiplier"]
                      + list(LIST_SETTINGS) + ["round_levels", "percentage_of_building_max_level"])
 LEVEL_SETTINGS = POP_STEP_SETTINGS + ["fixed_level", "fixed_level_floor", "fixed_level_ceiling"]
-# The settings a building type's section takes in each settings file. Only RGO buildings are picked as secondary buildings.
+# Which settings are valid in each kind of section, used to catch typos and misplaced settings
 RGO_BUILDING_SETTINGS = ["place", "place_as_secondary", "secondary_priority", "ideal_rgo_multiplier", "destroy_vanilla_building_levels_before_counting"] + LEVEL_SETTINGS
 OTHER_BUILDING_SETTINGS = ["place", "destroy_vanilla_building_levels_before_counting"] + LEVEL_SETTINGS
-# A distribution group's section takes the building settings and its list of building types. A building type in a group
-# only takes the settings that limit it alone, since the group works out the level.
+# A building in a distribution group gets its level from the group, so it can only set its own limits
 GROUP_SETTING = "distribution_group"
 GROUP_SETTINGS = [GROUP_SETTING] + OTHER_BUILDING_SETTINGS
 GROUP_MEMBER_SETTINGS = ["place", "destroy_vanilla_building_levels_before_counting", "round_levels", "percentage_of_building_max_level"]
-# Settings that cannot be used together. A section may fill in one side of a pair, not both, and the
-# most specific section that fills in either side decides which side a building type uses.
-CONFLICTING_SETTINGS = [
-    (["fixed_level"], POP_STEP_SETTINGS, "fixed_level gives the level directly, so steps 1 to 4 would do nothing"),
-]
-# The default section of each settings file, and how messages write the sections that are not building types
+NEW_DUMP_HINT = ("To make one, run this script with --setup-data-dump, start a new game, close it once the "
+                 "country selection screen shows, and run this script again.")
+# Section names for error messages and lookup
 RGO_DEFAULT_SECTION = "all rgo buildings"
 BUILDING_DEFAULT_SECTION = "all buildings"
 SPECIAL_SECTIONS = {"general": "general", RGO_DEFAULT_SECTION: "all RGO buildings", BUILDING_DEFAULT_SECTION: "all buildings"}
@@ -151,6 +123,9 @@ def in_file(path, function, *arguments):
 
 
 # ------------------------------------------------------------------ settings
+# Parsing the settings files. They use a simple ini-like format (sections, key = value pairs, # comments)
+# with multi-line values for lists and maps. Each parser returns a typed Python value and raises
+# Problem with the section name and setting name on anything it cannot read.
 
 def read_yes_no(section, key, text):
     value = text.strip().lower()
@@ -296,7 +271,8 @@ def read_general(sections, allowed):
 
 
 def name_sections(sections, building_types, for_rgo_buildings):
-    """The sections keyed by general, the default section or the building type's own key."""
+    """Maps each section name to a building type key, the default section, or a distribution group.
+    Validates that every section name is something the game recognizes and that its settings are valid."""
     default_section = RGO_DEFAULT_SECTION if for_rgo_buildings else BUILDING_DEFAULT_SECTION
     allowed = RGO_BUILDING_SETTINGS if for_rgo_buildings else OTHER_BUILDING_SETTINGS
     keys_by_lower = {key.lower(): key for key in building_types}
@@ -359,152 +335,168 @@ def distribution_groups(sections, building_types):
     return groups, group_of
 
 
-def building_rules(sections, placeable, default_section, group_of=None):
-    """The settings each building type and distribution group ends up with, and every name the lists use."""
-    group_of = group_of or {}
-    def filled(section_name, key):
-        return section_name in sections and sections[section_name].get(key, "").strip().lower() not in ("", "none")
+def filled(sections, section_name, key):
+    """Whether a section gives the setting a value, rather than leaving it out or setting it to None."""
+    return section_name in sections and sections[section_name].get(key, "").strip().lower() not in ("", "none")
 
+
+def check_conflicting_settings(sections):
+    """Stops on a section that sets fixed_level as well as the settings fixed_level replaces."""
     for section_name in sections:
-        if section_name == "general":
+        if section_name == "general" or not filled(sections, section_name, "fixed_level"):
             continue
-        for side_a, side_b, reason in CONFLICTING_SETTINGS:
-            used_a = [key for key in side_a if filled(section_name, key)]
-            used_b = [key for key in side_b if filled(section_name, key)]
-            if used_a and used_b:
-                raise Problem(f"In [{shown(section_name)}], {' and '.join(used_a)} cannot be used together with "
-                              f"{' and '.join(used_b)}: {reason}. Set one side to None.")
+        replaced = [key for key in POP_STEP_SETTINGS if filled(sections, section_name, key)]
+        if replaced:
+            raise Problem(f"In [{shown(section_name)}], fixed_level cannot be used together with {' and '.join(replaced)}: "
+                          "fixed_level gives the level directly, so steps 1 to 3 would do nothing. Set one side to None.")
 
-    # Every name a list uses, checked against the game's definitions later
+
+def listed_names(sections):
+    """(section, setting, name) for every name the lists use, checked against the game's definitions later."""
     listed = []
     for section_name, section in sections.items():
-        if section_name != "general":
-            for setting in LIST_SETTINGS:
-                listed += [(shown(section_name), setting, name) for name in read_multipliers(shown(section_name), setting, section.get(setting, ""))]
-            for setting in ("fixed_level", "base_level_by_location_rank"):
-                if section.get(setting, "").strip().startswith("{"):
-                    listed += [(shown(section_name), setting, name) for name in read_multipliers(shown(section_name), setting, section[setting])]
+        if section_name == "general":
+            continue
+        where = shown(section_name)
+        for setting in LIST_SETTINGS:
+            listed += [(where, setting, name) for name in read_multipliers(where, setting, section.get(setting, ""))]
+        for setting in ("fixed_level", "base_level_by_location_rank"):
+            if section.get(setting, "").strip().startswith("{"):
+                listed += [(where, setting, name) for name in read_multipliers(where, setting, section[setting])]
+    return listed
+
+
+class SectionChain:
+    """The sections one building type reads its settings from, nearest first: its own section, then its
+    distribution group's, then the default section. The nearest section that has a setting decides, so
+    None in a building type's own section turns that setting off for it."""
+
+    def __init__(self, sections, building, default_section, group_of):
+        self.sections = sections
+        self.building = building
+        self.default_section = default_section
+        self.chain = (([building] if building in sections else [])
+                      + ([group_of[building]] if building in group_of else [])
+                      + [default_section])
+        self.not_used = self.settings_turned_off()
+
+    def settings_turned_off(self):
+        """fixed_level replaces the settings that work a level out from the location, so the nearest section to
+        set either side decides which side this building type uses. With neither set, fixed_level is dropped."""
+        for section_name in self.chain:
+            if filled(self.sections, section_name, "fixed_level"):
+                return set(POP_STEP_SETTINGS)
+            if any(filled(self.sections, section_name, key) for key in POP_STEP_SETTINGS):
+                return {"fixed_level"}
+        return {"fixed_level"}
+
+    def where(self, key):
+        return next((name for name in self.chain if key in self.sections.get(name, {})), self.default_section)
+
+    def text(self, key):
+        return "" if key in self.not_used else self.sections[self.where(key)].get(key, "").strip()
+
+    def yes_no(self, key):
+        if self.text(key) == "":
+            raise Problem(f"[{shown(self.default_section)}] needs {key} = yes or no.")
+        return read_yes_no(shown(self.where(key)), key, self.text(key))
+
+    def number(self, key, required=False, **rules):
+        value = read_number(shown(self.where(key)), key, self.text(key), **rules)
+        if value is None and required:
+            raise Problem(f"[{self.building}] has no {key}. Fill it in under [{shown(self.default_section)}], "
+                          "or use fixed_level instead of steps 1 to 3.")
+        return value
+
+    def multipliers(self, key):
+        """Merges multiplier maps down the chain. When two sections name the same key, the nearer one wins.
+        None in a section drops all maps below it."""
+        if key in self.not_used:
+            return {}
+        used = []
+        for section_name in self.chain:
+            if key in self.sections.get(section_name, {}):
+                if not filled(self.sections, section_name, key):
+                    break
+                used.append(section_name)
+        merged = {}
+        for section_name in reversed(used):
+            merged.update(read_multipliers(shown(section_name), key, self.sections[section_name][key]))
+        return merged
+
+    def fixed_level(self):
+        """One whole number for every location, or a list of whole numbers by location rank."""
+        text = self.text("fixed_level")
+        if not text.startswith("{"):
+            return self.number("fixed_level", whole=True)
+        levels = read_multipliers(shown(self.where("fixed_level")), "fixed_level", text)
+        for rank, level in levels.items():
+            if level != int(level):
+                raise Problem(f"In [{shown(self.where('fixed_level'))}], fixed_level for {rank} must be a whole number, but it is {level:g}.")
+        return {rank: int(level) for rank, level in levels.items()}
+
+    def rounding(self, uses_pop_steps):
+        round_levels = self.text("round_levels").lower() if uses_pop_steps else "down"
+        if round_levels not in ROUNDING:
+            raise Problem(f'In [{shown(self.where("round_levels"))}], round_levels must be up, down or nearest, but it is "{round_levels}".')
+        return round_levels
+
+
+def building_rules(sections, placeable, default_section, group_of=None):
+    """Resolves the inheritance chain for each building type into a flat dict of final settings.
+    Also collects every name used in multiplier maps so they can be checked against the game later."""
+    group_of = group_of or {}
+    check_conflicting_settings(sections)
 
     rules_by_building = {}
     for building in placeable:
-        # The building type's own section first, then its distribution group's, then the default section
-        chain = ([building] if building in sections else []) + ([group_of[building]] if building in group_of else []) + [default_section]
-
-        not_used = set()
-        for side_a, side_b, _ in CONFLICTING_SETTINGS:
-            for section_name in chain:
-                if any(filled(section_name, key) for key in side_a):
-                    not_used.update(side_b)
-                    break
-                if any(filled(section_name, key) for key in side_b):
-                    not_used.update(side_a)
-                    break
-            else:
-                not_used.update(side_a)
-
-        def where(key):
-            # The nearest section that has the setting decides, so None in a building type's section turns it off there
-            return next((name for name in chain if key in sections.get(name, {})), default_section)
-
-        def text_for(key):
-            return "" if key in not_used else sections[where(key)].get(key, "").strip()
-
-        def yes_no_for(key):
-            if text_for(key) == "":
-                raise Problem(f"[{shown(default_section)}] needs {key} = yes or no.")
-            return read_yes_no(shown(where(key)), key, text_for(key))
-
-        def number_for(key, required, **rules):
-            value = read_number(shown(where(key)), key, text_for(key), **rules)
-            if value is None and required:
-                raise Problem(f"[{building}] has no {key}. Fill it in under [{shown(default_section)}], or use fixed_level instead of steps 1 to 4.")
-            return value
-
-        def multipliers_for(key):
-            # A building type's own list adds to the default section's, replacing only the names it lists
-            if key in not_used:
-                return {}
-            # None in a section drops the lists of the sections under it
-            used = []
-            for section_name in chain:
-                if key in sections.get(section_name, {}):
-                    if not filled(section_name, key):
-                        break
-                    used.append(section_name)
-            merged = {}
-            for section_name in reversed(used):
-                merged.update(read_multipliers(shown(section_name), key, sections[section_name][key]))
-            return merged
-
-        def fixed_level_for():
-            # One whole number for every location, or a list of whole numbers by location rank
-            text = text_for("fixed_level")
-            if not text.startswith("{"):
-                return number_for("fixed_level", False, whole=True)
-            levels = read_multipliers(shown(where("fixed_level")), "fixed_level", text)
-            for rank, level in levels.items():
-                if level != int(level):
-                    raise Problem(f"In [{shown(where('fixed_level'))}], fixed_level for {rank} must be a whole number, but it is {level:g}.")
-            return {rank: int(level) for rank, level in levels.items()}
-
-        uses_pop_steps = "fixed_level" in not_used
-        round_levels = text_for("round_levels").lower() if uses_pop_steps else "down"
-        if round_levels not in ROUNDING:
-            raise Problem(f'In [{shown(where("round_levels"))}], round_levels must be up, down or nearest, but it is "{round_levels}".')
+        chain = SectionChain(sections, building, default_section, group_of)
+        uses_pop_steps = "fixed_level" in chain.not_used
         rules = {
-            "place": yes_no_for("place"),
-            "destroy_vanilla_building_levels_before_counting": yes_no_for("destroy_vanilla_building_levels_before_counting"),
-            "peasants_per_level": number_for("peasants_per_level", False, above_zero=True),
-            "development_per_level": number_for("development_per_level", False, above_zero=True),
-            "base_level_by_location_rank": multipliers_for("base_level_by_location_rank"),
-            "final_level_multiplier": number_for("final_level_multiplier", uses_pop_steps),
-            "additive_multiplier_per_development": number_for("additive_multiplier_per_development", False),
-            "additive_multiplier_per_population": number_for("additive_multiplier_per_population", False),
-            "lake_multiplier": number_for("lake_multiplier", False),
-            "coastal_multiplier": number_for("coastal_multiplier", False),
-            **{setting: multipliers_for(setting) for setting in LIST_SETTINGS},
-            "round_levels": round_levels,
-            "percentage_of_building_max_level": number_for("percentage_of_building_max_level", False),
-            "fixed_level": fixed_level_for(),
-            "fixed_level_floor": number_for("fixed_level_floor", False, whole=True),
-            "fixed_level_ceiling": number_for("fixed_level_ceiling", False, whole=True),
+            "place": chain.yes_no("place"),
+            "destroy_vanilla_building_levels_before_counting": chain.yes_no("destroy_vanilla_building_levels_before_counting"),
+            "pops_per_level": chain.number("pops_per_level", above_zero=True),
+            "development_per_level": chain.number("development_per_level", above_zero=True),
+            "base_level_by_location_rank": chain.multipliers("base_level_by_location_rank"),
+            "final_level_multiplier": chain.number("final_level_multiplier", required=uses_pop_steps),
+            "additive_multiplier_per_development": chain.number("additive_multiplier_per_development"),
+            "additive_multiplier_per_population": chain.number("additive_multiplier_per_population"),
+            "lake_multiplier": chain.number("lake_multiplier"),
+            "coastal_multiplier": chain.number("coastal_multiplier"),
+            **{setting: chain.multipliers(setting) for setting in LIST_SETTINGS},
+            "round_levels": chain.rounding(uses_pop_steps),
+            "percentage_of_building_max_level": chain.number("percentage_of_building_max_level"),
+            "fixed_level": chain.fixed_level(),
+            "fixed_level_floor": chain.number("fixed_level_floor", whole=True),
+            "fixed_level_ceiling": chain.number("fixed_level_ceiling", whole=True),
         }
         # A building type in a distribution group gets its level from the group
-        if uses_pop_steps and rules["place"] and building not in group_of and rules["peasants_per_level"] is None and rules["development_per_level"] is None and not rules["base_level_by_location_rank"]:
-            raise Problem(f"[{building}] has no base level. Fill in peasants_per_level, development_per_level or base_level_by_location_rank, "
-                          f"or use fixed_level instead of steps 1 to 4.")
+        if (uses_pop_steps and rules["place"] and building not in group_of and rules["pops_per_level"] is None
+                and rules["development_per_level"] is None and not rules["base_level_by_location_rank"]):
+            raise Problem(f"[{building}] has no base level. Fill in pops_per_level, development_per_level or base_level_by_location_rank, "
+                          f"or use fixed_level instead of steps 1 to 3.")
         if default_section == RGO_DEFAULT_SECTION:
-            rules["place_as_secondary"] = yes_no_for("place_as_secondary")
-            rules["secondary_priority"] = number_for("secondary_priority", False) or 0
-            ideal_rgo_multiplier = number_for("ideal_rgo_multiplier", False)
+            rules["place_as_secondary"] = chain.yes_no("place_as_secondary")
+            rules["secondary_priority"] = chain.number("secondary_priority") or 0
+            ideal_rgo_multiplier = chain.number("ideal_rgo_multiplier")
             rules["ideal_rgo_multiplier"] = 1 if ideal_rgo_multiplier is None else ideal_rgo_multiplier
         rules_by_building[building] = rules
-    return rules_by_building, listed
+    return rules_by_building, listed_names(sections)
 
 
 # ------------------------------------------------------------- game files
-
-def read_config_path(key):
-    """A path from the [Paths] section of tools/shared/config.ini, or blank."""
-    if not CONFIG_FILE.is_file():
-        return ""
-    config = configparser.ConfigParser(inline_comment_prefixes=("#",))
-    config.read(CONFIG_FILE)
-    return config.get("Paths", key, fallback="").strip()
-
+# Reading the vanilla game and mod definitions to learn what building types exist, what their max
+# levels are, and what location facts (topography, vegetation, climate, rank) the game defines.
+# Mod files override vanilla files of the same name, matching how the engine loads them.
 
 def find_game_folder():
-    """The game's 'game' folder: from game_directory in tools/shared/config.ini, or the usual install folders."""
-    configured = read_config_path("game_directory")
-    candidates = [Path(configured).expanduser()] if configured else [Path(folder) for folder in GAME_FOLDER_GUESSES]
-    for folder in candidates:
-        for game in (folder, folder / "game"):
-            if (game / "in_game" / "common" / "building_types").is_dir():
-                return game
-    if configured:
-        raise Problem(f"game_directory in tools/shared/config.ini points to\n  {configured}\nbut the game is not there.")
-    raise Problem("The game was not found. Set game_directory in tools/shared/config.ini to the folder the game is installed in. "
-                  "If there is no config.ini, copy example_config.ini next to it and name the copy config.ini.")
+    """The game's 'game' folder, from game_directory in the shared config. Either the folder itself or its
+    parent is accepted, since the setting is written both ways."""
+    configured = Path(get_from_config("Paths", "game_directory")).expanduser()
+    for game in (configured, configured / "game"):
+        if (game / "in_game" / "common" / "building_types").is_dir():
+            return game
+    raise Problem(f"game_directory points to\n  {configured}\nbut the game is not there. Fix it here:\n  {CONFIG_FILE}")
 
 
 def text_without_notes(path):
@@ -577,13 +569,15 @@ def read_can_extract_goods(game):
 
 
 # ------------------------------------------------------------- the dump effect
+# Generates the pdx-script effect that runs at game start and writes location data to debug.log.
+# The generator cannot read the game's binary state directly, so it gets the game to report it:
+# each location's pops, terrain, buildable buildings and their max levels, all as parseable log lines.
 
-def dump_effect_text(covered, max_levels, can_extract_goods, fact_keys, pop_types):
+def dump_effect_text(covered, max_levels, can_extract_goods, fact_keys, pop_types, making_game_data=False):
+    """Builds the full scripted effect as a string. The effect iterates every owned location and
+    logs its facts, then iterates every country to log which buildings it lacks the technology for."""
     local = lambda name, decimals: f"[SCOPE.GetLocalVariable('mnt_rgo_dump_{name}').GetValue|{decimals}]"
     lines = [
-        "# GENERATED by tools/generators_from_game_data/generators/building_setup/building_setup.py for the building types its settings cover.",
-        "# Do not edit by hand. Runs at game start when mnt_rgo_setup_dump_on_start is uncommented in on_game_start (MnT_pulse.txt).",
-        "mnt_rgo_setup_dump = {",
         "\t# The generator only reads a dump that has both the start and the end line",
         f'\tdebug_log = "{DUMP_PREFIX}record=start;version={DUMP_VERSION}"',
     ]
@@ -650,36 +644,50 @@ def dump_effect_text(covered, max_levels, can_extract_goods, fact_keys, pop_type
               "\t# The engine buffers debug_log writes and only flushes when the buffer is full.",
               "\t# Without padding the dump can be incomplete until several months of game time pass.",
               "\t# These lines overflow the buffer so the data above is flushed immediately.",
-              "\twhile = {", "\t\tcount = 1000", f'\t\tdebug_log = "{FILLER_LINE}"', "\t}", "}", ""]
-    return "\n".join(lines)
+              "\twhile = {", "\t\tcount = 1000", f'\t\tdebug_log = "{FILLER_LINE}"', "\t}"]
+    # on_game_start always calls this effect, so the gate below is what decides whether it reports anything
+    return "\n".join([
+        "# GENERATED by tools/generators_from_game_data/generators/building_setup/building_setup.py for the building types its settings cover.",
+        "# Do not edit by hand. Runs at game start through mnt_rgo_setup_dump_on_start in on_game_start (MnT_pulse.txt).",
+        "mnt_rgo_setup_dump = {",
+        "\tif = {",
+        f"\t\tlimit = {{ always = {'yes' if making_game_data else 'no'} }} # yes only between a --setup-data-dump run and the run that reads the dump",
+    ] + [f"\t{line}" if line else "" for line in lines] + ["\t}", "}", ""])
 
 
-def write_dump_effect(text):
-    """Writes the dump effect when it changed. Returns a note for the person running the script, or None."""
-    if DUMP_EFFECT_FILE.is_file() and DUMP_EFFECT_FILE.read_text(encoding="utf-8-sig") == text:
-        return None
-    DUMP_EFFECT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    # Script files need a BOM
-    DUMP_EFFECT_FILE.write_text(text, encoding="utf-8-sig", newline="\n")
-    return (f"Updated {shown_path(DUMP_EFFECT_FILE)} for the building types the settings cover.\n"
-            "The game data only changes after a new dump: see TO UPDATE THE GAME DATA at the bottom of either settings file.")
+def write_script_file(path, text):
+    """Writes a generated script file when it changed, and says whether it did. Script files need a BOM."""
+    if path.is_file() and path.read_text(encoding="utf-8-sig") == text:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8-sig", newline="\n")
+    return True
+
+
+def clear_setup_for_new_game_data():
+    """Takes away the three files this script writes, so the dump reports a game start without them."""
+    for path in (RGO_OUTPUT_FILE, BUILDING_OUTPUT_FILE, REMOVALS_EFFECT_FILE):
+        if path.is_file():
+            path.unlink()
+            print(f"Deleted {shown_path(path)}")
+    print(f"\nThe dump in {shown_path(DUMP_EFFECT_FILE)} is on and now runs at game start.\n"
+          "Deploy the mod, start a new game, and close it once the country selection screen shows.\n"
+          "Then run this script again. It reads the dump, writes the three files back and turns the dump off.")
 
 
 # ----------------------------------------------------------------- game data
+# Loading the location and country data the generator works from. The data lives in two CSV files
+# saved next to the script. When debug.log has a newer complete dump, the CSVs are replaced.
+# This lets the generator run without starting the game every time.
 
 def find_debug_log():
-    """The debug.log to look for a new dump in, or None when there is none."""
-    configured = read_config_path("log_directory")
-    if configured:
-        path = Path(configured).expanduser()
-        if path.is_dir():
-            path = path / "debug.log"
-        if not path.is_file():
-            raise Problem(f"log_directory in tools/shared/config.ini points to\n  {configured}\nbut there is no debug.log there.")
-        return path
-    found = [Path(folder) / "debug.log" for guess in LOG_FOLDER_GUESSES for folder in glob.glob(guess)]
-    found = [path for path in found if path.is_file()]
-    return max(found, key=lambda path: path.stat().st_mtime) if found else None
+    """The debug.log to look for a new dump in, from log_directory in the shared config. None when the folder
+    is there but holds no debug.log yet, so the saved game data is used instead."""
+    configured = Path(get_from_config("Paths", "log_directory")).expanduser()
+    if not configured.exists():
+        raise Problem(f"log_directory points to\n  {configured}\nwhich is not there. Fix it here:\n  {CONFIG_FILE}")
+    path = configured / "debug.log" if configured.is_dir() else configured
+    return path if path.is_file() else None
 
 
 def read_value(text):
@@ -720,8 +728,7 @@ def read_dump(log_path):
         if kind not in needed:
             continue
         if any(key not in fields for key in needed[kind]):
-            raise Problem("The dump in debug.log was made with an older version of the dump effect. "
-                          "Make a new dump: see TO UPDATE THE GAME DATA at the bottom of either settings file.")
+            raise Problem("The dump in debug.log was made with an older version of the dump effect. " + NEW_DUMP_HINT)
         if kind == "location":
             facts = {key: read_value(value) for key, value in fields.items() if key not in ("record", "location")}
             # The max level of the RGO building for the location's raw material, filled in from its building line
@@ -830,8 +837,7 @@ def get_game_data():
         if status == "unfinished":
             raise Problem("The dump in debug.log is not finished yet. Let the game run a few more days so it "
                           "writes the rest of the log, then run this again.")
-        raise Problem("There is no saved game data yet and no dump in debug.log. "
-                      "Make one first: see TO UPDATE THE GAME DATA at the bottom of either settings file.")
+        raise Problem("There is no saved game data yet and no dump in debug.log. " + NEW_DUMP_HINT)
     if status == "unfinished":
         return saved, ("debug.log has a dump that is not finished yet, so the saved game data was used.\n"
                        "To use the new dump, let the game run a few more days and run this again.")
@@ -839,6 +845,10 @@ def get_game_data():
 
 
 # ---------------------------------------------------------------- the setup
+# Calculating building levels and writing the setup files. For each owned location, the generator
+# works out a level from the settings (base level from pops/dev/rank, multiplied by terrain and
+# other factors, then clamped), and emits a setup line that the game reads at start. Buildings
+# whose vanilla starting levels are being replaced also get a removal effect that strips the old levels.
 
 def check_list_names(listed, fact_keys):
     """Stops on a name a list uses that the game does not define."""
@@ -900,8 +910,8 @@ def round_level(rules, value):
 def base_level(rules, pops, facts):
     """The base level from pops, development and rank, whichever are set."""
     base = rules["base_level_by_location_rank"].get(facts["location_rank"], 0)
-    if rules["peasants_per_level"] is not None:
-        base += pops / rules["peasants_per_level"]
+    if rules["pops_per_level"] is not None:
+        base += pops / rules["pops_per_level"]
     if rules["development_per_level"] is not None:
         base += facts["development"] / rules["development_per_level"]
     return base
@@ -934,7 +944,8 @@ def building_level(rules, pops, facts, multiplier, game_max_level, existing):
 
 
 def owned_locations(game_data, general, cannot_build):
-    """(location, facts, owner, counted pops, building types the owner cannot build) for every location the settings give buildings to."""
+    """Yields each owned location that the settings apply to, with its facts, owner, counted pops
+    and the building types the owner lacks the technology for."""
     for location, facts in game_data["locations"].items():
         owner = facts["owner"]
         if owner is None or (general["countries"] and owner not in general["countries"]):
@@ -950,43 +961,55 @@ def existing_levels(facts, building):
     return int(found["level"] or 0) if found else 0
 
 
-def settle(lines, counts, removals, settled, rules, facts, owner, location, building, level):
-    """Adds the setup line for a building type in a location. With destroy_vanilla_building_levels_before_counting,
-    level is the whole level: setup adds what the starting levels lack and the removal effect takes away any above it."""
-    existing = existing_levels(facts, building)
-    if rules["destroy_vanilla_building_levels_before_counting"]:
-        settled.add((location, building))
-        added = max(level - existing, 0)
-        if existing > level:
-            removals[(location, building)] = existing - level
-    else:
-        added = level
-        counts["placed on top of levels already there"] += existing > 0
-    if added >= 1:
-        lines.append(f"\t{building} = {{ tag = {owner} level = {added} location = {location} }}\n")
+class Placement:
+    """Collects the setup lines, the level removals and the counts while buildings are placed."""
 
+    def __init__(self, rules):
+        self.rules = rules
+        self.lines = []
+        self.counts = collections.Counter()
+        self.removals = {}
+        self.settled = set()
 
-def remove_starting_levels_left(game_data, general, rules, cannot_build, removals, settled):
-    """A location that gets none of a building type set to destroy_vanilla_building_levels_before_counting loses all its starting levels."""
-    destroyed = [building for building, building_rules_here in rules.items() if building_rules_here["destroy_vanilla_building_levels_before_counting"]]
-    for location, facts, _, _, _ in owned_locations(game_data, general, cannot_build):
-        for building in destroyed:
-            existing = existing_levels(facts, building)
-            if existing > 0 and (location, building) not in settled:
-                removals[(location, building)] = existing
+    def counted_levels(self, facts, building):
+        """The starting levels that count toward the limits. None of them count when they are about to be removed."""
+        if self.rules[building]["destroy_vanilla_building_levels_before_counting"]:
+            return 0
+        return existing_levels(facts, building)
+
+    def settle(self, facts, owner, location, building, level):
+        """Adds the setup line for a building type in a location. With destroy_vanilla_building_levels_before_counting,
+        level is the whole level: setup adds what the starting levels lack and the removal effect takes away any above it."""
+        existing = existing_levels(facts, building)
+        if self.rules[building]["destroy_vanilla_building_levels_before_counting"]:
+            self.settled.add((location, building))
+            added = max(level - existing, 0)
+            if existing > level:
+                self.removals[(location, building)] = existing - level
+        else:
+            added = level
+            self.counts["placed on top of levels already there"] += existing > 0
+        if added >= 1:
+            self.lines.append(f"\t{building} = {{ tag = {owner} level = {added} location = {location} }}\n")
+
+    def strip_untouched_locations(self, game_data, general, cannot_build):
+        """A location that gets none of a building type set to destroy_vanilla_building_levels_before_counting
+        loses all its starting levels."""
+        destroyed = [building for building, rules in self.rules.items() if rules["destroy_vanilla_building_levels_before_counting"]]
+        for location, facts, _, _, _ in owned_locations(game_data, general, cannot_build):
+            for building in destroyed:
+                existing = existing_levels(facts, building)
+                if existing > 0 and (location, building) not in self.settled:
+                    self.removals[(location, building)] = existing
+        return self.lines, self.counts, self.removals
 
 
 def place_rgo_buildings(game_data, general, rules, cannot_build):
-    lines, counts, removals, settled = [], collections.Counter(), {}, set()
+    """Places the main RGO building (matching the location's raw material, boosted by ideal_rgo_multiplier)
+    and then picks the best secondary RGO buildings, each capped one level below the main."""
+    setup = Placement(rules)
     for location, facts, owner, pops, blocked in owned_locations(game_data, general, cannot_build):
         buildable = {building: found["max_level"] for building, found in facts["buildings"].items() if building in rules and found["can_build"]}
-
-        def counted(building):
-            # The starting levels only count toward the limits when they are kept
-            return 0 if rules[building]["destroy_vanilla_building_levels_before_counting"] else existing_levels(facts, building)
-
-        def place(building, level):
-            settle(lines, counts, removals, settled, rules[building], facts, owner, location, building, level)
 
         # The main building. Its level caps the secondary buildings even where it cannot be built or is not placed.
         main_building = RGO_PREFIX + str(facts["raw_material"])
@@ -994,15 +1017,16 @@ def place_rgo_buildings(game_data, general, rules, cannot_build):
         if main_building in rules:
             # The main building is the ideal RGO building for the location's raw material
             ideal_multiplier = location_multiplier(rules[main_building], facts, pops) * rules[main_building]["ideal_rgo_multiplier"]
-            main_level = building_level(rules[main_building], pops, facts, ideal_multiplier, facts["main_rgo_max_level"], counted(main_building))
+            main_level = building_level(rules[main_building], pops, facts, ideal_multiplier, facts["main_rgo_max_level"],
+                                        setup.counted_levels(facts, main_building))
             if rules[main_building]["place"] and main_level >= 1:
                 if main_building in blocked:
-                    counts["main buildings skipped by technology"] += 1
+                    setup.counts["main buildings skipped by technology"] += 1
                 elif main_building not in buildable:
-                    counts["main buildings that cannot be built there"] += 1
+                    setup.counts["main buildings that cannot be built there"] += 1
                 else:
-                    place(main_building, main_level)
-                    counts["main buildings"] += 1
+                    setup.settle(facts, owner, location, main_building, main_level)
+                    setup.counts["main buildings"] += 1
 
         if not general["place_secondary_rgos"]:
             continue
@@ -1012,7 +1036,8 @@ def place_rgo_buildings(game_data, general, rules, cannot_build):
             if building == main_building or not rules[building]["place"] or not rules[building]["place_as_secondary"] or building in blocked:
                 continue
             multiplier = location_multiplier(rules[building], facts, pops)
-            level = min(building_level(rules[building], pops, facts, multiplier, buildable[building], counted(building)), main_level - 1)
+            level = min(building_level(rules[building], pops, facts, multiplier, buildable[building],
+                                       setup.counted_levels(facts, building)), main_level - 1)
             if level >= 1:
                 # Picked by the level before rounding and limits, so the multipliers decide between buildings that round to the same level
                 fixed = rules[building]["fixed_level"]
@@ -1021,10 +1046,9 @@ def place_rgo_buildings(game_data, general, rules, cannot_build):
         # The largest come first, then the highest secondary_priority, then the key in alphabetical order. Nothing is random.
         candidates.sort(key=lambda candidate: (-candidate[2], -rules[candidate[0]]["secondary_priority"], candidate[0]))
         for building, level, _ in candidates[:general["max_secondary_rgos_per_location"]]:
-            place(building, level)
-            counts["secondary buildings"] += 1
-    remove_starting_levels_left(game_data, general, rules, cannot_build, removals, settled)
-    return lines, counts, removals
+            setup.settle(facts, owner, location, building, level)
+            setup.counts["secondary buildings"] += 1
+    return setup.strip_untouched_locations(game_data, general, cannot_build)
 
 
 def group_member_room(rules, game_max_level, counted):
@@ -1038,8 +1062,9 @@ def group_member_room(rules, game_max_level, counted):
 
 
 def place_other_buildings(game_data, general, rules, groups, cannot_build):
-    """Every building type with a section in every owned location that can build it, and every distribution group."""
-    lines, counts, removals, settled = [], collections.Counter(), {}, set()
+    """Places non-RGO buildings. Distribution groups are handled first: the group's level is split
+    round-robin among its members. Standalone building types are placed individually after."""
+    setup = Placement(rules)
     grouped = {member for members in groups.values() for member in members}
     for location, facts, owner, pops, blocked in owned_locations(game_data, general, cannot_build):
         for group, members in groups.items():
@@ -1052,9 +1077,9 @@ def place_other_buildings(game_data, general, rules, groups, cannot_build):
                 if not rules[member]["place"] or not found or not found["can_build"]:
                     continue
                 if member in blocked:
-                    counts[f"{member} skipped by technology"] += 1
+                    setup.counts[f"{member} skipped by technology"] += 1
                     continue
-                counted = 0 if rules[member]["destroy_vanilla_building_levels_before_counting"] else existing_levels(facts, member)
+                counted = setup.counted_levels(facts, member)
                 choices.append({"building": member, "counted": counted, "room": group_member_room(rules[member], found["max_level"], counted), "added": 0})
             if not choices:
                 continue
@@ -1068,11 +1093,11 @@ def place_other_buildings(game_data, general, rules, groups, cannot_build):
                 for choice in open_choices[:left]:
                     choice["added"] += 1
                 left -= min(left, len(open_choices))
-            counts[f"{group} levels no building had room for"] += max(left, 0)
+            setup.counts[f"{group} levels no building had room for"] += max(left, 0)
             for choice in choices:
                 if choice["added"] >= 1:
-                    settle(lines, counts, removals, settled, rules[choice["building"]], facts, owner, location, choice["building"], choice["added"])
-                    counts[choice["building"]] += 1
+                    setup.settle(facts, owner, location, choice["building"], choice["added"])
+                    setup.counts[choice["building"]] += 1
 
         for building, building_rules_here in rules.items():
             if building in groups or building in grouped:
@@ -1080,18 +1105,16 @@ def place_other_buildings(game_data, general, rules, groups, cannot_build):
             found = facts["buildings"].get(building)
             if not building_rules_here["place"] or not found or not found["can_build"]:
                 continue
-            # The starting levels only count toward the limits when they are kept
-            counted = 0 if building_rules_here["destroy_vanilla_building_levels_before_counting"] else existing_levels(facts, building)
-            level = building_level(building_rules_here, pops, facts, location_multiplier(building_rules_here, facts, pops), found["max_level"], counted)
+            level = building_level(building_rules_here, pops, facts, location_multiplier(building_rules_here, facts, pops),
+                                   found["max_level"], setup.counted_levels(facts, building))
             if level < 1:
                 continue
             if building in blocked:
-                counts[f"{building} skipped by technology"] += 1
+                setup.counts[f"{building} skipped by technology"] += 1
                 continue
-            settle(lines, counts, removals, settled, building_rules_here, facts, owner, location, building, level)
-            counts[building] += 1
-    remove_starting_levels_left(game_data, general, rules, cannot_build, removals, settled)
-    return lines, counts, removals
+            setup.settle(facts, owner, location, building, level)
+            setup.counts[building] += 1
+    return setup.strip_untouched_locations(game_data, general, cannot_build)
 
 
 def removals_effect_text(removals):
@@ -1106,13 +1129,6 @@ def removals_effect_text(removals):
     return "\n".join(lines)
 
 
-def write_removals_effect(text):
-    if REMOVALS_EFFECT_FILE.is_file() and REMOVALS_EFFECT_FILE.read_text(encoding="utf-8-sig") == text:
-        return
-    # Script files need a BOM
-    REMOVALS_EFFECT_FILE.write_text(text, encoding="utf-8-sig", newline="\n")
-
-
 def write_setup_file(path, settings_file, lines):
     path.parent.mkdir(parents=True, exist_ok=True)
     # Setup files can't carry a BOM, so write plain UTF-8 bytes
@@ -1123,54 +1139,88 @@ def write_setup_file(path, settings_file, lines):
     ).encode("utf-8"))
 
 
-def main():
-    rgo_general = in_file(RGO_SETTINGS_FILE, lambda: read_general(read_settings_file(RGO_SETTINGS_FILE), RGO_GENERAL_SETTINGS))
-    other_general = in_file(BUILDING_SETTINGS_FILE, lambda: read_general(read_settings_file(BUILDING_SETTINGS_FILE), BUILDING_GENERAL_SETTINGS))
+class SettingsFile:
+    """One settings file, read once: its [general] settings, its sections keyed by building type, and the
+    rules those sections give each building type. Every problem it raises names the file."""
+
+    def __init__(self, path, general_settings, for_rgo_buildings):
+        self.path = path
+        self.for_rgo_buildings = for_rgo_buildings
+        self.text_sections = self.check(read_settings_file, path)
+        self.general = self.check(read_general, self.text_sections, general_settings)
+        self.groups, self.group_of = {}, {}
+
+    def check(self, function, *arguments):
+        return in_file(self.path, function, *arguments)
+
+    def read_sections(self, max_levels):
+        self.sections = self.check(name_sections, self.text_sections, max_levels, self.for_rgo_buildings)
+        if not self.for_rgo_buildings:
+            self.groups, self.group_of = self.check(distribution_groups, self.sections, max_levels)
+
+    def read_rules(self, placeable, default_section):
+        """placeable is every building type this file places, its distribution groups included."""
+        self.placeable = placeable
+        self.rules, self.listed = self.check(building_rules, self.sections, placeable, default_section, self.group_of)
+
+
+def main(making_game_data=False):
+    """Orchestrates the full pipeline: read settings, read game definitions, update the dump effect,
+    load game data, calculate levels and write the setup files."""
+
+    # Read both settings files and learn what building types exist in the game
+    rgo = SettingsFile(RGO_SETTINGS_FILE, RGO_GENERAL_SETTINGS, for_rgo_buildings=True)
+    other = SettingsFile(BUILDING_SETTINGS_FILE, BUILDING_GENERAL_SETTINGS, for_rgo_buildings=False)
     game = find_game_folder()
     max_levels = read_building_max_levels(game)
-    rgo_sections = in_file(RGO_SETTINGS_FILE, lambda: name_sections(read_settings_file(RGO_SETTINGS_FILE), max_levels, True))
-    other_sections = in_file(BUILDING_SETTINGS_FILE, lambda: name_sections(read_settings_file(BUILDING_SETTINGS_FILE), max_levels, False))
+    rgo.read_sections(max_levels)
+    other.read_sections(max_levels)
 
-    # Every RGO building can be placed; other building types only when they have a section
+    # Decide which building types to place and which to just report in the dump
     rgo_placeable = sorted(key for key in max_levels if key.startswith(RGO_PREFIX))
-    other_groups, group_of = in_file(BUILDING_SETTINGS_FILE, distribution_groups, other_sections, max_levels)
-    other_placeable = sorted({name for name in other_sections if name in max_levels} | set(group_of))
+    other_placeable = sorted({name for name in other.sections if name in max_levels} | set(other.group_of))
     keys_by_lower = {key.lower(): key for key in max_levels}
-    unknown = [name for name in other_general["report_building_types"] if name.lower() not in keys_by_lower]
+    unknown = [name for name in other.general["report_building_types"] if name.lower() not in keys_by_lower]
     if unknown:
         raise Problem(f"{BUILDING_SETTINGS_FILE.name}: In [general], report_building_types has " + ", ".join(unknown)
                       + ", which is not a building type in the mod or the game.")
-    # The dump also reports the building types in report_building_types, without placing them
     placeable = rgo_placeable + other_placeable
-    covered = placeable + sorted({keys_by_lower[name.lower()] for name in other_general["report_building_types"]} - set(placeable))
-    rgo_rules, rgo_listed = in_file(RGO_SETTINGS_FILE, building_rules, rgo_sections, rgo_placeable, RGO_DEFAULT_SECTION)
-    other_rules, other_listed = in_file(BUILDING_SETTINGS_FILE, building_rules, other_sections, other_placeable + sorted(other_groups),
-                                        BUILDING_DEFAULT_SECTION, group_of)
+    covered = placeable + sorted({keys_by_lower[name.lower()] for name in other.general["report_building_types"]} - set(placeable))
+    rgo.read_rules(rgo_placeable, RGO_DEFAULT_SECTION)
+    other.read_rules(other_placeable + sorted(other.groups), BUILDING_DEFAULT_SECTION)
 
+    # Update the dump effect to cover whatever building types the settings mention
     fact_keys = {fact: read_definition_keys(game, folder) for fact, folder in FACT_FOLDERS.items()}
-    dump_note = write_dump_effect(dump_effect_text(covered, max_levels, read_can_extract_goods(game), fact_keys,
-                                                   read_definition_keys(game, "pop_types")))
+    dump_note = write_script_file(DUMP_EFFECT_FILE,
+                                  dump_effect_text(covered, max_levels, read_can_extract_goods(game), fact_keys,
+                                                   read_definition_keys(game, "pop_types"), making_game_data))
+    if making_game_data:
+        clear_setup_for_new_game_data()
+        return
     if dump_note:
-        print(dump_note)
+        print(f"Updated {shown_path(DUMP_EFFECT_FILE)} for the building types the settings cover.\n"
+              "The game data itself only changes after a new dump. " + NEW_DUMP_HINT)
 
+    # Load game data, validate the settings against it, and place buildings
     game_data, data_note = get_game_data()
     missing = [building for building in covered if building not in game_data["covered"]]
     if missing:
         raise Problem("The game data has nothing yet for " + ", ".join(missing) + ".\n"
-                      "The dump effect covers them now, so make a new dump: see TO UPDATE THE GAME DATA at the bottom of either settings file.")
-    in_file(RGO_SETTINGS_FILE, check_list_names, rgo_listed, fact_keys)
-    in_file(BUILDING_SETTINGS_FILE, check_list_names, other_listed, fact_keys)
-    in_file(RGO_SETTINGS_FILE, check_pop_types, rgo_general, game_data["locations"])
-    in_file(BUILDING_SETTINGS_FILE, check_pop_types, other_general, game_data["locations"])
+                      "The dump effect covers them now, so a new dump is needed. " + NEW_DUMP_HINT)
+    for settings in (rgo, other):
+        settings.check(check_list_names, settings.listed, fact_keys)
+        settings.check(check_pop_types, settings.general, game_data["locations"])
     check_named_locations(game_data["locations"])
     cannot_build = {tag: set(buildings) for tag, buildings in game_data["cannot_build"].items()}
 
-    rgo_lines, rgo_counts, rgo_removals = place_rgo_buildings(game_data, rgo_general, rgo_rules, cannot_build)
-    other_lines, other_counts, other_removals = place_other_buildings(game_data, other_general, other_rules, other_groups, cannot_build)
+    rgo_lines, rgo_counts, rgo_removals = place_rgo_buildings(game_data, rgo.general, rgo.rules, cannot_build)
+    other_lines, other_counts, other_removals = place_other_buildings(game_data, other.general, other.rules, other.groups, cannot_build)
+
+    # Write the three output files and print a summary
     write_setup_file(RGO_OUTPUT_FILE, RGO_SETTINGS_FILE, rgo_lines)
     write_setup_file(BUILDING_OUTPUT_FILE, BUILDING_SETTINGS_FILE, other_lines)
     removals = {**rgo_removals, **other_removals}
-    write_removals_effect(removals_effect_text(removals))
+    write_script_file(REMOVALS_EFFECT_FILE, removals_effect_text(removals))
 
     print(data_note)
     print(f"Wrote {len(rgo_lines)} RGO buildings to {shown_path(RGO_OUTPUT_FILE)}")
@@ -1183,8 +1233,12 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Writes the setup files that place buildings at game start.")
+    parser.add_argument("--setup-data-dump", action="store_true",
+                        help="turn the dump on and take away the files this script writes, so the next game start "
+                             "reports a clean state. Run this script again afterwards to make everything fresh.")
     try:
-        main()
+        main(parser.parse_args().setup_data_dump)
     except Problem as problem:
         print(f"\nPROBLEM: {problem}\n")
         sys.exit(1)

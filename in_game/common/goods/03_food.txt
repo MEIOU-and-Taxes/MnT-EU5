@@ -1,17 +1,20 @@
-﻿#intentionally is a replacement file, since this removes goods.
-# These goods no longer make food; provisions does, from them, and never more
-# food than they carried. The food value each good keeps below is the balancing
-# lever: it sets the good's price per food against provisions' 0.100. The full
-# table and the recipe rationale are at the top of production_provisions.txt.
+﻿# This is intentionally a replacement file, since this removes goods.
+
+# These goods no longer make food; provisions do, and are produced by other
+# food goods and never generate more food than those goods carried. The food
+# value for each good is kept consistent at these values and sets the good's
+# price per food against provisions' 0.100. The full table is at the top of
+# production_provisions.txt.
 #
 #   wheat 14  fish 12  livestock 11  legumes 10  wild_game 9  fruit 5  olives 4
 #
 # Luxury demand on a good is a class's luxury food share (MnT_pop_types.txt)
 # divided by that value. Wheat, fish and legumes are recipe inputs only, so
-# only hunger pulls on them. Livestock, wild game, fruit and olives are also
-# luxury demand, pulled by wealth. Fruit and olives never pay as the main
-# ingredient: they are the small second ingredient in a meal, or a fifth of
-# the grove's output becomes provisions at the RGO.
+# only provisions production generates demand for them. Livestock, wild game,
+# fruit and olives are also luxury demand. Fruit and olives are currently
+# unprofitable as the main ingredient in provisions: they are the small second
+# ingredient in a meal and some are converted into provisions as a side effect
+# of rgo buildings but they don't make a ton of sense as a primary food source
 wild_game = {
 	method = hunting
 	category = raw_material
@@ -21,13 +24,13 @@ wild_game = {
 
 	default_market_price = 0.5 #M&T from 1
 
-	# Luxury: nobles 0.9 food, burghers 0.2, at 9 per unit
+	# demand_add is the units carrying one food, so each multiplier is that class's luxury food
 	demand_add = {
-		all = 0.01111
+		all = 0.11111
 	}
 	demand_multiply = {
-		nobles = 9
-		burghers = 2
+		nobles = 0.9
+		burghers = 0.2
 		clergy = 0
 		soldiers = 0
 		laborers = 0
@@ -239,15 +242,15 @@ livestock = {
 	default_market_price = 0.75 #M&T from 1.5
 	ai_rgo_size_importance = 1.5 # ai preference to avoid building a city on this rgo
 
-	# Luxury: nobles 1.5 food, burghers 0.75, soldiers 0.75, clergy 0.125, at 11 per unit
+	# demand_add is the units carrying one food, so each multiplier is that class's luxury food
 	demand_add = {
-		all = 0.01136
+		all = 0.09091
 	}
 	demand_multiply = {
-		nobles = 12
-		burghers = 6
-		clergy = 1
-		soldiers = 6
+		nobles = 1.5
+		burghers = 0.75
+		clergy = 0.125
+		soldiers = 0.75
 		laborers = 0
 		peasants = 0
 		slaves = 0
@@ -255,8 +258,6 @@ livestock = {
 	}
 
 	wealth_impact_threshold = {
-		peasants = 1.1
-		laborers = 1.1
 		soldiers = 1.1
 	}
 
@@ -273,14 +274,14 @@ olives = {
 	food = 0 #M&T from 1.5, provisions is the only food
 	default_market_price = 0.75 #M&T from 1
 
-	# Luxury: nobles 0.2 food, burghers 0.25, clergy 0.05, at 4 per unit
+	# demand_add is the units carrying one food, so each multiplier is that class's luxury food
 	demand_add = {
-		all = 0.0125
+		all = 0.25
 	}
 	demand_multiply = {
-		nobles = 4
-		burghers = 5
-		clergy = 1
+		nobles = 0.2
+		burghers = 0.25
+		clergy = 0.05
 		soldiers = 0
 		laborers = 0
 		peasants = 0
@@ -303,14 +304,14 @@ fruit = {
 	default_market_price = 0.75 #M&T from 1
 
 
-	# Luxury: nobles 0.4 food, burghers 0.3, clergy 0.075, at 5 per unit
+	# demand_add is the units carrying one food, so each multiplier is that class's luxury food
 	demand_add = {
-		all = 0.005
+		all = 0.2
 	}
 	demand_multiply = {
-		nobles = 16
-		burghers = 12
-		clergy = 3
+		nobles = 0.4
+		burghers = 0.3
+		clergy = 0.075
 		soldiers = 0
 		laborers = 0
 		peasants = 0

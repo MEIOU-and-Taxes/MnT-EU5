@@ -1,9 +1,10 @@
 import configparser
 import os
 import sys
+from pathlib import Path
 
-CONFIG_PATH = r"../shared/"
-CONFIG_FILE = CONFIG_PATH + r"config.ini"
+# Next to this module, so every tool finds the same file whatever folder it is run from
+CONFIG_FILE = str(Path(__file__).resolve().parent / "config.ini")
 DEFAULT_PATH = ''
 
 def _create_default_config():
@@ -33,13 +34,22 @@ def get_from_config(section, option):
 	if not os.path.exists(CONFIG_FILE):
 		_create_default_config()
 		# After creation, we know the value is the default, so we can return it directly.
-		print("Config file created. Provide it with values for the properties necessary to run the script")
+		print(f"Config file created. Fill in the values the script needs here:\n  {CONFIG_FILE}")
 		sys.exit(1)
 
-	config = configparser.ConfigParser()
+	# Values are written with a trailing note in example_config.ini, so # ends a value
+	config = configparser.ConfigParser(inline_comment_prefixes=("#",))
 	try:
 		config.read(CONFIG_FILE)
-		return config.get(section, option)
+		value = config.get(section, option).strip()
+		if not value:
+			print(f"ERROR: {option} has no value yet. Fill it in here:\n  {CONFIG_FILE}")
+			sys.exit(1)
+		# Windows "Copy as path" quotes what it gives you, and an ini value is used exactly as written
+		if value[0] in "\"'" or value[-1] in "\"'":
+			print(f"ERROR: {option} is wrapped in quotes. Remove them, a path is written here without quotes:\n  {CONFIG_FILE}")
+			sys.exit(1)
+		return value
 	except (configparser.NoSectionError, configparser.NoOptionError):
 		# This handles cases where the file exists but is empty or malformed.
 		print(f"ERROR: Config file at '{CONFIG_FILE}' is missing the required {section} section or {option} key")

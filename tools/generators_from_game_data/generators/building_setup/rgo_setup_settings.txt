@@ -1,75 +1,17 @@
 # RGO SETUP SETTINGS
 #
-# These settings decide which RGO buildings each owned location starts the game with, and at
-# what level. Other building types have their own settings in building_setup_settings.txt, and
-# the two files do not depend on each other. Anything after a # is a note, and the generator
-# ignores it.
+# Starting RGO building levels. Other buildings: building_setup_settings.txt.
+# Run after editing (py on Windows):
+#     python3 tools/generators_from_game_data/generators/building_setup/building_setup.py
+# New game data (after patches, location/pop/building changes): run with --setup-data-dump,
+# start a new game in debug to the country screen, close, run the generator again.
 #
-# TO CHANGE THE SETUP
-#   Change a value after its "=" sign and save this file. Then open a terminal in the
-#   mod's folder and run:
-#       python3 tools/generators_from_game_data/generators/building_setup/building_setup.py
-#   On Windows, type py instead of python3. The game is not needed. The generator writes the
-#   setup files for both settings files into the mod. If something in a settings file is wrong,
-#   it says what and where. It finds the game and its logs itself, or uses game_directory and
-#   log_directory in tools/shared/config.ini when they are set.
-#   To update the game data these settings are used on, see the bottom of this file.
-#
-# HOW A LEVEL IS WORKED OUT
-#   Each owned location gets the RGO building for its raw material. Its level comes from these
-#   steps, in order, using the building's own section, then [all RGO buildings]:
-#     1. Add up the base level from whichever of these are set:
-#          the location's pops of the types in pop_types_for_levels, in thousands, divided by peasants_per_level
-#          the location's development divided by development_per_level
-#          base_level_by_location_rank for the location's rank
-#     2. Multiply by final_level_multiplier and by every location multiplier that applies:
-#        development, population, river, lake, coast, location rank, topography, vegetation and climate.
-#        The main building, the ideal RGO building for the location's raw material, is also
-#        multiplied by ideal_rgo_multiplier.
-#     3. Round the way round_levels says.
-#     4. Lower it to percentage_of_building_max_level percent of the building's max level
-#        in that location, rounded the same way.
-#   Or skip steps 1 to 4 with fixed_level: one number for every location, or a list by location
-#   rank like { "city": 1, "megalopolis": 2 }, where a rank left out gets no building. Then:
-#     5. Raise it to fixed_level_floor if it is lower. This overrides the percentage.
-#     6. Lower it to fixed_level_ceiling if it is higher. This overrides the percentage.
-#     7. Lower it to the building's max level in that location. This always happens and
-#        wins over everything else. The max level grows with development and population.
-#   The levels go on top of any the location already has at game start, and the limits in
-#   steps 4 to 7 count those levels too. With destroy_vanilla_building_levels_before_counting = yes,
-#   those starting levels are removed at game start instead, and the level here is the whole level.
-#   A result below 1 means no building.
-#
-# CANNOT BE USED TOGETHER
-#   fixed_level, and steps 1 to 4: the base level settings, final_level_multiplier, the location
-#   multipliers, round_levels and percentage_of_building_max_level. Set one side to None.
-#
-# CHANGING ONE RGO BUILDING
-#   [all RGO buildings] applies to every RGO building. To change one, add a section named with
-#   its key, like [RGO_building_lumber] below, with only the lines that should be different. A
-#   list there only needs the names it changes, so climate_multiplier = { "polar_climate": 0 }
-#   keeps every other climate. fixed_level in a section drops steps 1 to 4 for that building. A
-#   setting set to None there is not used for that building, whatever [all RGO buildings] says.
-#
-# SECONDARY BUILDINGS
-#   With place_secondary_rgos = yes, a location also gets some of the other RGO buildings it can
-#   build. Each gets its own level from the steps, like the main building but without
-#   ideal_rgo_multiplier, and stays at least one level below the main building, so small locations
-#   get none. The main building's level sets that limit even where the owner cannot build the main
-#   building, and each secondary building is only placed where the owner can build it. The ones with
-#   the highest level before rounding and limits are placed, up to
-#   max_secondary_rgos_per_location, so the multipliers decide between buildings that round to the
-#   same level. After that, the highest secondary_priority and then the key in alphabetical order decide.
-#   Nothing is random, so the same settings always give the same picks.
-#
-# KINDS OF VALUES
-#   yes or no   a switch
-#   a number    like 10 or 2.5. Percentages are plain numbers: 25 means 25%.
-#   None        the setting is not used
-#   names       a list in square brackets, one per line or on one line, like [ "SWE", "DAN" ]
-#   a list      names and numbers in braces, one per line like the lists below, or on one
-#               line like { "flatland": 1, "hills": 0.5 }. A name left out counts as 1.
-#               All the multipliers that apply are multiplied together.
+# [all RGO buildings] sets defaults. A named section like [RGO_building_lumber] overrides what it
+# sets; None drops a setting. Each location gets the RGO for its raw material; secondary RGOs are
+# levelled the same way but without ideal_rgo_multiplier. fixed_level bypasses the normal
+# base+multiplier calculation.
+# Values: yes/no, number (25 = 25%), None, list [ "SWE" ], or map { "flatland": 1, "hills": 0.5 }.
+# A map only needs what it changes; unlisted names count as 1. Multipliers compound.
 
 
 [general]
@@ -88,10 +30,9 @@ place_as_secondary = yes                   # yes: this RGO building can be picke
 secondary_priority = 0                     # Decides between secondary RGO buildings with the same level before rounding. Higher is picked first.
 ideal_rgo_multiplier = 2                   # Multiplies the main building's level. 2 makes the other RGO buildings about half its size.
 destroy_vanilla_building_levels_before_counting = no # yes: the levels this building starts the game with are removed, so the level here is the whole level.
-peasants_per_level = 20                    # Base level: thousands of counted pops per level. 10 means one level per 10,000.
+pops_per_level = 20                        # Base level: thousands of counted pops per level. 10 means one level per 10,000.
 development_per_level = None               # Base level: development per level. 10 means one level per 10 development.
 base_level_by_location_rank = None         # Base level by the location's rank at the start, like { "town": 1, "city": 2 }. A rank left out adds nothing.
-final_level_multiplier = 1                 # Multiplies every level. 2 doubles them.
 additive_multiplier_per_development = None # Multiplier scaling with development. 0.02 at 20 development applies a 1.4x multiplier. 1+(0.02*20)
 additive_multiplier_per_population = None  # Multiplier scaling with counted pops, per thousand. 0.01 at 20,000 pops applies a 1.2x multiplier. 1+(0.01*20)
 lake_multiplier = 1                        # Multiplier when the location borders a lake.
@@ -168,9 +109,10 @@ climate_multiplier = {                     # Multiplier by the location's climat
     "polar_climate": 1,
 }
 
+final_level_multiplier = 1                 # Multiplies every level. 2 doubles them.
 round_levels = up                          # How levels are rounded: up, down or nearest.
 percentage_of_building_max_level = 33.3    # The highest level, as a percent of the building's max level. None means no limit.
-fixed_level = None                         # Instead of steps 1 to 4: a level for every location, or a list by location rank. Steps 1 to 4 must be None.
+fixed_level = None                         # Instead of steps 1 to 3: a level for every location, or a list by location rank. Steps 1 to 3 must be None.
 fixed_level_floor = 1                      # The lowest level, a whole number. Overrides the percentage. None means no floor.
 fixed_level_ceiling = None                 # The highest level, a whole number. Overrides the percentage and the floor. None means no ceiling.
 
@@ -437,21 +379,3 @@ climate_multiplier = { "mediterranean_climate": 1.4, "oceanic_mediterranean_clim
 vegetation_multiplier = { "grasslands": 1.2, "sparse": 1.1, "farmland": 0.9, "woods": 0.7, "forest": 0.5, "jungle": 0.3 }
 topography_multiplier = { "hills": 1.3, "mountains": 1.2, "plateau": 1.2 }
 climate_multiplier = { "oceanic_climate": 1.2, "subpolar_oceanic_climate": 1.2, "cold_steppe_climate": 1.2 }
-
-
-# TO UPDATE THE GAME DATA
-#   Both settings files use the same game data: building_setup_locations.csv and
-#   building_setup_countries.csv next to the generator, which hold what the game reported about
-#   every location and country. Both open in a spreadsheet. Only update it after a game patch,
-#   after the mod changes locations, starting pops or where buildings can be built, or after
-#   adding a building type to building_setup_settings.txt.
-#     1. Run the generator once, so the report covers every building type in the settings.
-#     2. Delete main_menu/setup/start/98_mnt_rgo_setup.txt and 98_mnt_building_setup.txt from
-#        the copy of the mod the game loads, so the report sees the game start without them.
-#     3. In in_game/common/on_action/MnT_pulse.txt, near the top in on_game_start, remove
-#        the # in front of mnt_rgo_setup_dump_on_start.
-#     4. Start the game with debug mode on and begin a new game. Once the country selection
-#        screen shows, the report is in debug.log and the game can be closed.
-#     5. Put the # back.
-#     6. Run the generator. It finds the new report, saves it as the game data, and writes both
-#        setup files.
