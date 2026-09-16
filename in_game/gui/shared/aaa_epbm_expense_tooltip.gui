@@ -212,7 +212,6 @@ template ExpenseSettingTooltip {
 				visible = "[MaintenanceSetting.IsUpkeep]"
 				blockoverride "block_title" { raw_text = "#T Building Maintenance Breakdown#!" }
 
-				using = epbm_estate_row_crown
 
 				# Dynamic estate rows: iterates all estates, filters by pay > 0.
 				vbox = {
@@ -284,57 +283,6 @@ template ExpenseSettingTooltip {
 			# END EPBM ADDITION
 			# ═════════════════════════════════════════════════════════════════
 
-		}
-	}
-}
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Crown estate row template (hardcoded; crown is not in every_estate)
-# ═══════════════════════════════════════════════════════════════════════════════
-
-template epbm_estate_row_crown {
-	TooltipManualTableField = {
-		visible = "[Not(LessThan_CFixedPoint(GetPlayer.MakeScope.ScriptValue('epbm_crown_total_display'), '(CFixedPoint)0.01'))]"
-		blockoverride "field_content" {
-			icon = { size = { 20 20 } texture = "gfx/interface/icons/estates/crown_estate.dds" }
-
-			text_single = {
-				layoutpolicy_horizontal = expanding
-				margin_left = 3
-				raw_text = "Crown"
-			}
-
-			expand = {}
-
-			text_single = {
-				min_width = 60
-				align = right
-				raw_text = "#R -[GetPlayer.MakeScope.ScriptValue('epbm_crown_total_display')|2]#!@gold!"
-
-				tooltipwidget = {
-					ContextualTooltipType = {
-						blockoverride "tooltip_title" {}
-						blockoverride "tooltip_content" {
-							TooltipListBase = {
-								blockoverride "block_title" { raw_text = "#T Crown Maintenance Sources#!" }
-
-								TooltipManualTableField = {
-									blockoverride "field_content" {
-										text_single = { layoutpolicy_horizontal = expanding raw_text = "Shared Pool" }
-										expand = {}
-
-										text_single = {
-											min_width = 60
-											align = right
-											raw_text = "#R -[GetPlayer.MakeScope.GetVariable('epbm_crown_pool_cost').GetValue|2]#!@gold!"
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 }
