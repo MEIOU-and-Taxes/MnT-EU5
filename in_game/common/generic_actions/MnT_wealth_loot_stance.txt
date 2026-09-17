@@ -1,0 +1,234 @@
+﻿# Looting stances: three actions that swap the stance modifiers. Every country carries exactly one.
+# The AI evaluates them through mnt_wealth_loot_stance_list, only while at war, every six months.
+
+mnt_wealth_set_loot_stance_restrained = {
+	type = owncountry
+	exclusive_group = mnt_wealth_loot_stance_actions
+	show_message = no
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+	automation_tick = never
+
+	potential = {
+		scope:actor = { NOT = { has_country_modifier = mnt_wealth_loot_stance_restrained } }
+	}
+
+	effect = {
+		scope:actor = { mnt_wealth_set_loot_stance = { STANCE = restrained } }
+	}
+
+	# Personality first, ruler and society tilt it, antagonism is the brake. Additive utility, larger is likelier.
+	ai_will_do = {
+		add = { desc = "Spare the land" value = 5 }
+		if = {
+			limit = { scope:actor = { any_enemy_war_leader = { scope:actor = { opinion = { target = prev value >= 50 } } } } }
+			add = { desc = "We think well of the enemy" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_cautious } }
+			add = { desc = "Cautious personality" value = 20 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_friendly } }
+			add = { desc = "Friendly personality" value = 20 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_defensive } }
+			add = { desc = "Defensive personality" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_aggressive } }
+			subtract = { desc = "Aggressive personality" value = 20 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_opportunistic } }
+			subtract = { desc = "Opportunistic personality" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = kind_hearted } } }
+			add = { desc = "Kind-hearted ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = benevolent } } }
+			add = { desc = "Benevolent ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = just } } }
+			add = { desc = "Just ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = righteous } } }
+			add = { desc = "Righteous ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = cruel } } }
+			subtract = { desc = "Cruel ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = malevolent } } }
+			subtract = { desc = "Malevolent ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = greedy } } }
+			subtract = { desc = "Greedy ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = gold_loving } } }
+			subtract = { desc = "Gold-loving ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { societal_value:belligerent_vs_conciliatory > 25 } }
+			add = { desc = "Conciliatory society" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { societal_value:belligerent_vs_conciliatory < -25 } }
+			subtract = { desc = "Belligerent society" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_countries_with_coalition_grade_antagonism = yes } }
+			add = { desc = "Coalition forming against us" value = 40 }
+		}
+		if = {
+			limit = { scope:actor = { has_countries_with_near_coalition_grade_antagonism = yes } }
+			add = { desc = "Antagonism near coalition grade" value = 20 }
+		}
+		subtract = { desc = "bias against doing stuff" value = 1 }
+	}
+}
+
+mnt_wealth_set_loot_stance_moderate = {
+	type = owncountry
+	exclusive_group = mnt_wealth_loot_stance_actions
+	show_message = no
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+	automation_tick = never
+
+	potential = {
+		scope:actor = { NOT = { has_country_modifier = mnt_wealth_loot_stance_moderate } }
+	}
+
+	effect = {
+		scope:actor = { mnt_wealth_set_loot_stance = { STANCE = moderate } }
+	}
+
+	ai_will_do = {
+		if = {
+			limit = { scope:actor = { has_personality = ai_expansionist } }
+			add = { desc = "Expansionist personality" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_balanced } }
+			add = { desc = "Balanced personality" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_isolationist } }
+			add = { desc = "Isolationist personality" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_defensive } }
+			add = { desc = "Defensive personality" value = 5 }
+		}
+		if = {
+			limit = { scope:actor = { has_countries_with_coalition_grade_antagonism = yes } }
+			subtract = { desc = "Coalition forming against us" value = 10 }
+		}
+		subtract = { desc = "bias against doing stuff" value = 1 }
+	}
+}
+
+mnt_wealth_set_loot_stance_ruthless = {
+	type = owncountry
+	exclusive_group = mnt_wealth_loot_stance_actions
+	show_message = no
+
+	ai_tick = monthly
+	ai_tick_frequency = 6
+	automation_tick = never
+
+	potential = {
+		scope:actor = { NOT = { has_country_modifier = mnt_wealth_loot_stance_ruthless } }
+	}
+
+	effect = {
+		scope:actor = { mnt_wealth_set_loot_stance = { STANCE = ruthless } }
+	}
+
+	ai_will_do = {
+		if = {
+			limit = { scope:actor = { any_enemy_war_leader = { is_rival_of = scope:actor } } }
+			add = { desc = "The enemy is our rival" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_aggressive } }
+			add = { desc = "Aggressive personality" value = 25 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_opportunistic } }
+			add = { desc = "Opportunistic personality" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_defensive } }
+			subtract = { desc = "Defensive personality" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_cautious } }
+			subtract = { desc = "Cautious personality" value = 20 }
+		}
+		if = {
+			limit = { scope:actor = { has_personality = ai_friendly } }
+			subtract = { desc = "Friendly personality" value = 20 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = cruel } } }
+			add = { desc = "Cruel ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = malevolent } } }
+			add = { desc = "Malevolent ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = greedy } } }
+			add = { desc = "Greedy ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = gold_loving } } }
+			add = { desc = "Gold-loving ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = kind_hearted } } }
+			subtract = { desc = "Kind-hearted ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = benevolent } } }
+			subtract = { desc = "Benevolent ruler" value = 15 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = just } } }
+			subtract = { desc = "Just ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { ruler ?= { has_trait = righteous } } }
+			subtract = { desc = "Righteous ruler" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { societal_value:belligerent_vs_conciliatory < -25 } }
+			add = { desc = "Belligerent society" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { societal_value:belligerent_vs_conciliatory > 25 } }
+			subtract = { desc = "Conciliatory society" value = 10 }
+		}
+		if = {
+			limit = { scope:actor = { has_countries_with_coalition_grade_antagonism = yes } }
+			subtract = { desc = "Coalition forming against us" value = 40 }
+		}
+		if = {
+			limit = { scope:actor = { has_countries_with_near_coalition_grade_antagonism = yes } }
+			subtract = { desc = "Antagonism near coalition grade" value = 20 }
+		}
+		subtract = { desc = "bias against doing stuff" value = 1 }
+	}
+}

@@ -9,6 +9,7 @@ mnt_on_game_start_after_lobby = {
 		mnt_wealth_seed_owned_locations = yes
 		# Countries come after the locations because the national totals sum them.
 		every_landed_country = { mnt_wealth_initialize_country = yes }
+		every_country = { mnt_wealth_apply_default_loot_stance = yes }
 		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
 	}
 }
@@ -21,21 +22,11 @@ mnt_on_weather_monthly_pulse = {
 	}
 }
 
-mnt_on_location_occupied = {
-	effect = {
-		mnt_wealth_loot_captured_location = yes
-	}
-}
-
-mnt_on_siege_won = {
-	effect = {
-		mnt_wealth_loot_captured_location = yes
-	}
-}
 
 mnt_on_new_country_formed = {
 	effect = {
 		mnt_wealth_initialize_country = yes
+		mnt_wealth_apply_default_loot_stance = yes
 	}
 }
 
@@ -149,4 +140,61 @@ mnt_wealth_biyearly_location_pulse = {
 mnt_wealth_four_yearly_location_pulse = {
 	trigger = { has_owner = yes  owner = { mnt_wealth_cadence_is_slow = yes } }
 	effect = { mnt_wealth_census_location = yes }
+}
+
+# Occupation tracker: detect auto-transferred occupations the engine does not fire on_location_occupied for.
+
+mnt_occupation_on_monthly_dispatch = {
+	effect = {
+		mnt_occupation_schedule_daily_scans = yes
+	}
+}
+
+mnt_occupation_on_location_occupied = {
+	effect = {
+		mnt_occupation_collect = yes
+	}
+}
+
+mnt_occupation_on_siege_won = {
+	effect = {
+		mnt_occupation_collect = yes
+	}
+}
+
+mnt_occupation_daily_scan = {
+	effect = {
+		mnt_occupation_scan_watched_capitals = yes
+	}
+}
+
+# ROOT = the occupied location. controller = the occupier, owner = the original owner.
+mnt_custom_on_location_occupied = {
+	# on_location_occupied and on_siege_won only fire for locations directly sieged by an army
+	# This costs about 11ms per month spread across the days in the month and handles all locations
+	# when they change from owner == controller to owner != controller.
+	# It does not fire when the owner re-occupies the location, and does not fire on location transfers
+	# from civil wars or auto conquest wars.
+	# This on_action and the system that triggers it can be removed when on_location_occupied is fixed to
+	# work on locations auto-occupied from province capitals.
+	effect = {
+		controller = {
+			save_temporary_scope_as = mnt_wealth_occupier
+			mnt_wealth_read_occupier_loot_stance = yes
+		}
+		mnt_wealth_loot_occupied_location = yes
+	}
+}
+
+mnt_occupation_on_game_start = {
+	effect = {
+		mnt_occupation_build_initial_state = yes
+		mnt_occupation_schedule_daily_scans = yes
+	}
+}
+
+# root = a war participant, scope:war = the war. Humans get the looting report.
+mnt_wealth_on_ending_war = {
+	trigger = { is_ai = no exists = scope:war }
+	effect = { mnt_wealth_report_war_loot = yes }
 }

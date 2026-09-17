@@ -22,9 +22,93 @@ mnt_wealth_loot_occupied_location = {
 	}
 
 	scope:mnt_wealth_occupier ?= { mnt_wealth_pay_loot_to_estates = yes mnt_wealth_pay_loot_to_treasury = yes }
+
+	# Antagonism around the location and war exhaustion for its owner, both per point of development, reduced by resistance.
+	set_local_variable = {
+		name = mnt_wealth_loot_antagonism
+		value = {
+			value = development
+			multiply = scope:mnt_wealth_loot_antagonism_rate
+			multiply = { value = 1 subtract = local_var:mnt_wealth_loot_resistance }
+			min = 0
+		}
+	}
+	set_local_variable = {
+		name = mnt_wealth_loot_war_exhaustion
+		value = {
+			value = development
+			multiply = scope:mnt_wealth_loot_war_exhaustion_rate
+			multiply = { value = 1 subtract = local_var:mnt_wealth_loot_resistance }
+			min = 0
+		}
+	}
+	save_temporary_scope_as = mnt_wealth_loot_loc
+	scope:mnt_wealth_occupier ?= {
+		drop_antagonism_bomb = {
+			target = scope:mnt_wealth_loot_loc
+			value = local_var:mnt_wealth_loot_antagonism
+			modifier = mnt_wealth_looted_location
+		}
+	}
+	owner = { add_war_exhaustion = local_var:mnt_wealth_loot_war_exhaustion }
+
+	# Flat share of every pop destroyed, reduced by resistance, capped at half.
+	set_local_variable = {
+		name = mnt_wealth_loot_population_share
+		value = {
+			value = scope:mnt_wealth_loot_population_share
+			multiply = { value = 1 subtract = local_var:mnt_wealth_loot_resistance }
+			min = 0
+			max = 0.5
+		}
+	}
+	set_local_variable = { name = mnt_wealth_loot_population_killed value = 0 }
+	if = {
+		limit = { local_var:mnt_wealth_loot_population_share > 0 }
+		every_pop = {
+			change_local_variable = {
+				name = mnt_wealth_loot_population_killed
+				add = { value = pop_size multiply = local_var:mnt_wealth_loot_population_share }
+			}
+			add_pop_size = { value = pop_size multiply = local_var:mnt_wealth_loot_population_share multiply = -1 }
+		}
+	}
+
+	mnt_wealth_record_war_loot = yes
+}
+
+# Country scope. Swaps to the named stance; every country carries exactly one.
+# Only the stance actually held is removed, so the tooltip shows the one lost and the one gained.
+mnt_wealth_set_loot_stance = {
+	if = {
+		limit = { has_country_modifier = mnt_wealth_loot_stance_restrained }
+		remove_country_modifier = mnt_wealth_loot_stance_restrained
+	}
+	if = {
+		limit = { has_country_modifier = mnt_wealth_loot_stance_moderate }
+		remove_country_modifier = mnt_wealth_loot_stance_moderate
+	}
+	if = {
+		limit = { has_country_modifier = mnt_wealth_loot_stance_ruthless }
+		remove_country_modifier = mnt_wealth_loot_stance_ruthless
+	}
+	add_country_modifier = { modifier = mnt_wealth_loot_stance_$STANCE$ years = -1 mode = add }
+}
+
+# Country scope. Gives Restrained to a country with no stance: game start and countries formed later.
+mnt_wealth_apply_default_loot_stance = {
+	if = {
+		limit = {
+			NOT = { has_country_modifier = mnt_wealth_loot_stance_restrained }
+			NOT = { has_country_modifier = mnt_wealth_loot_stance_moderate }
+			NOT = { has_country_modifier = mnt_wealth_loot_stance_ruthless }
+		}
+		add_country_modifier = { modifier = mnt_wealth_loot_stance_restrained years = -1 mode = add }
+	}
 }
 
 mnt_wealth_read_occupier_loot_stance = {
+	mnt_wealth_apply_default_loot_stance = yes
 	save_temporary_scope_value_as = { name = mnt_wealth_stance_wealth value = modifier:mnt_wealth_looted_modifier }
 	save_temporary_scope_value_as = {
 		name = mnt_wealth_stance_investment
@@ -37,6 +121,18 @@ mnt_wealth_read_occupier_loot_stance = {
 	save_temporary_scope_value_as = {
 		name = mnt_wealth_keep_investment
 		value = modifier:mnt_wealth_gold_from_looted_investment_kept
+	}
+	save_temporary_scope_value_as = {
+		name = mnt_wealth_loot_antagonism_rate
+		value = modifier:mnt_wealth_loot_antagonism_per_development
+	}
+	save_temporary_scope_value_as = {
+		name = mnt_wealth_loot_war_exhaustion_rate
+		value = modifier:mnt_wealth_loot_war_exhaustion_per_development
+	}
+	save_temporary_scope_value_as = {
+		name = mnt_wealth_loot_population_share
+		value = modifier:mnt_wealth_loot_population_destroyed
 	}
 }
 
@@ -51,10 +147,27 @@ mnt_wealth_set_loot_resistance = {
 		}
 	}
 
-	# mode = replace restarts the ten years; resistance is from the prior occupation.
+	# Stacks: the resistance already here converts back to size (0.15 per point, decay included), the new loot's
+	# size (1.5, 3, or 6 from the wealth share) adds to it, capped at Ruthless. Duration is 20 months per size point:
+	# 2.5 years at size 1.5 up to 10 years at size 6. mode = replace restarts the clock at the combined size.
+	set_local_variable = {
+		name = mnt_wealth_recently_looted_size
+		value = {
+			value = modifier:mnt_wealth_local_looting_resistance
+			divide = 0.15
+			add = { value = scope:mnt_wealth_stance_wealth multiply = 20 }
+			min = 1
+			max = 6
+		}
+	}
+	set_local_variable = {
+		name = mnt_wealth_recently_looted_months
+		value = { value = local_var:mnt_wealth_recently_looted_size multiply = 20 min = 30 max = 120 }
+	}
 	add_location_modifier = {
 		modifier = mnt_wealth_recently_looted
-		years = 10
+		months = local_var:mnt_wealth_recently_looted_months
+		size = local_var:mnt_wealth_recently_looted_size
 		mode = replace
 	}
 }
@@ -125,6 +238,7 @@ mnt_wealth_seize_invested_wealth = {
 	set_local_variable = {
 		name = mnt_wealth_loot_investment_total
 		value = {
+			# Gross output is monthly; the stance value is months of output.
 			value = var:mnt_wealth_local_gross_output
 			multiply = scope:mnt_wealth_stance_investment
 			multiply = { value = 1 subtract = local_var:mnt_wealth_loot_resistance }
@@ -134,7 +248,8 @@ mnt_wealth_seize_invested_wealth = {
 
 	if = {
 		limit = { local_var:mnt_wealth_loot_investment_total > 0 }
-		mnt_wealth_for_each_national_estate_in_power_cache = { EFFECT = mnt_wealth_loot_estate_investment }
+		# Every estate the census found here, whether or not the owner has it active, like the rest of the system.
+		mnt_wealth_for_each_cached_estate = { EFFECT = mnt_wealth_loot_estate_investment }
 	}
 }
 
@@ -218,4 +333,324 @@ mnt_wealth_pay_loot_to_estates = {
 
 mnt_wealth_pay_loot_to_treasury = {
 	add_gold = { value = scope:mnt_wealth_loot_total_captured subtract = local_var:mnt_wealth_loot_paid }
+}
+
+# Occupation tracker: catch all occupations, including silent auto-transfers the engine does not fire on_location_occupied for.
+# The watch map tracks province capitals whose owner's locations may be auto-transferred. A daily scanner checks them.
+
+# Collector: called from on_location_occupied and on_siege_won. ROOT = occupier country, scope:target = location.
+
+mnt_occupation_collect = {
+	scope:target = {
+		if = {
+			limit = { NOT = { controller = owner } }
+
+			set_variable = mnt_occupation_detected
+			trigger_event_silently = { on_action = mnt_custom_on_location_occupied }
+
+			save_temporary_scope_as = mnt_occ_occupied_loc
+			province = {
+				random_location_in_province = {
+					limit = {
+						is_province_capital = yes
+						owner = { this = scope:mnt_occ_occupied_loc.owner }
+					}
+					save_temporary_scope_as = mnt_occ_capital
+					add_to_global_variable_map = {
+						name = mnt_occupation_watch
+						key = scope:mnt_occ_capital
+						value = owner
+					}
+				}
+			}
+		}
+	}
+}
+
+# Monthly dispatch: one independent on_action per day of the month.
+
+mnt_occupation_schedule_daily_scans = {
+	set_local_variable = { name = mnt_occ_day value = 0 }
+	while = {
+		limit = { local_var:mnt_occ_day < global_var:mnt_wealth_current_days_in_month }
+		trigger_event_silently = { on_action = mnt_occupation_daily_scan days = local_var:mnt_occ_day }
+		change_local_variable = { name = mnt_occ_day add = 1 }
+	}
+}
+
+# Daily scan: iterate watched province capitals, detect new occupations and liberations.
+
+mnt_occupation_scan_watched_capitals = {
+	clear_local_variable_list = mnt_occ_scan_targets
+	every_key_in_global_variable_map = {
+		variable = mnt_occupation_watch
+		save_temporary_scope_as = mnt_occ_collect_key
+		add_to_local_variable_list = { name = mnt_occ_scan_targets target = scope:mnt_occ_collect_key }
+	}
+
+	every_in_local_list = {
+		variable = mnt_occ_scan_targets
+		save_temporary_scope_as = mnt_occ_capital
+		mnt_occupation_scan_one_capital = yes
+	}
+}
+
+mnt_occupation_scan_one_capital = {
+	if = {
+		limit = {
+			OR = {
+				NOT = { is_province_capital = yes }
+				NOT = { owner = "global_variable_map(mnt_occupation_watch|scope:mnt_occ_capital)" }
+			}
+		}
+		mnt_occupation_rekey_stale_capital = yes
+	}
+	else = {
+		mnt_occupation_scan_province_locations = yes
+	}
+}
+
+# Re-key a stale entry: find the new province capital for the stored owner, or remove if none.
+
+mnt_occupation_rekey_stale_capital = {
+	save_temporary_scope_as = mnt_occ_stale_capital
+	set_local_variable = { name = mnt_occ_found_new_capital value = 0 }
+
+	province = {
+		random_location_in_province = {
+			limit = {
+				is_province_capital = yes
+				owner = "global_variable_map(mnt_occupation_watch|scope:mnt_occ_stale_capital)"
+			}
+			save_temporary_scope_as = mnt_occ_new_capital
+			set_local_variable = { name = mnt_occ_found_new_capital value = 1 }
+		}
+	}
+
+	remove_from_global_variable_map = { name = mnt_occupation_watch key = scope:mnt_occ_stale_capital }
+
+	if = {
+		limit = { local_var:mnt_occ_found_new_capital = 1 }
+		add_to_global_variable_map = {
+			name = mnt_occupation_watch
+			key = scope:mnt_occ_new_capital
+			value = scope:mnt_occ_new_capital.owner
+		}
+		scope:mnt_occ_new_capital = {
+			save_temporary_scope_as = mnt_occ_capital
+			mnt_occupation_scan_province_locations = yes
+		}
+	}
+}
+
+# Scan all locations in the province belonging to the stored owner.
+
+mnt_occupation_scan_province_locations = {
+	set_local_variable = { name = mnt_occ_any_occupied value = 0 }
+
+	province = {
+		every_location_in_province = {
+			limit = { owner = { this = scope:mnt_occ_capital.owner } }
+			if = {
+				limit = { NOT = { controller = owner } }
+				set_local_variable = { name = mnt_occ_any_occupied value = 1 }
+				if = {
+					limit = { NOT = { has_variable = mnt_occupation_detected } }
+					set_variable = mnt_occupation_detected
+					trigger_event_silently = { on_action = mnt_custom_on_location_occupied }
+				}
+			}
+			else = {
+				if = {
+					limit = { has_variable = mnt_occupation_detected }
+					remove_variable = mnt_occupation_detected
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = { local_var:mnt_occ_any_occupied = 0 }
+		remove_from_global_variable_map = { name = mnt_occupation_watch key = scope:mnt_occ_capital }
+	}
+}
+
+# Game start: build tracking state for pre-existing occupations without firing the custom hook.
+
+mnt_occupation_build_initial_state = {
+	every_country = {
+		save_temporary_scope_as = mnt_occ_init_owner
+		every_owned_location = {
+			limit = { NOT = { controller = owner } }
+
+			set_variable = mnt_occupation_detected
+
+			save_temporary_scope_as = mnt_occ_init_loc
+			province = {
+				random_location_in_province = {
+					limit = {
+						is_province_capital = yes
+						owner = { this = scope:mnt_occ_init_owner }
+					}
+					save_temporary_scope_as = mnt_occ_init_capital
+					add_to_global_variable_map = {
+						name = mnt_occupation_watch
+						key = scope:mnt_occ_init_capital
+						value = scope:mnt_occ_init_owner
+					}
+				}
+			}
+		}
+	}
+}
+
+# Tallies on the war the occupier and owner share, keyed by country, read back when the war ends.
+# Maps are named in full because map names cannot take a parameter.
+
+mnt_wealth_record_war_loot = {
+	owner = { save_temporary_scope_as = mnt_wealth_looted_owner }
+	scope:mnt_wealth_occupier ?= {
+		random_current_war = {
+			limit = { any_war_participant = { this = scope:mnt_wealth_looted_owner } }
+			save_temporary_scope_as = mnt_wealth_loot_war
+		}
+	}
+	if = {
+		limit = { exists = scope:mnt_wealth_loot_war }
+
+		# Destroyed is what was taken less what became gold.
+		set_local_variable = {
+			name = mnt_wealth_loot_liquid_destroyed
+			value = { value = local_var:mnt_wealth_loot_liquid_taken subtract = local_var:mnt_wealth_loot_liquid_captured min = 0 }
+		}
+		set_local_variable = {
+			name = mnt_wealth_loot_investment_captured
+			value = { value = local_var:mnt_wealth_loot_captured_total subtract = local_var:mnt_wealth_loot_liquid_captured min = 0 }
+		}
+		set_local_variable = {
+			name = mnt_wealth_loot_investment_destroyed
+			value = { value = local_var:mnt_wealth_loot_investment_total subtract = local_var:mnt_wealth_loot_investment_captured min = 0 }
+		}
+		set_local_variable = {
+			name = mnt_wealth_loot_treasury_share
+			value = { value = local_var:mnt_wealth_loot_captured_total subtract = local_var:mnt_wealth_loot_paid min = 0 }
+		}
+
+		scope:mnt_wealth_loot_war = {
+			# The occupier's side.
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_captured_total }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_gold_captured target = scope:mnt_wealth_occupier } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_gold_captured|scope:mnt_wealth_occupier)" }
+		}
+		add_to_variable_map = { name = mnt_war_gold_captured key = scope:mnt_wealth_occupier value = local_var:mnt_war_tally }
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_treasury_share }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_gold_to_treasury target = scope:mnt_wealth_occupier } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_gold_to_treasury|scope:mnt_wealth_occupier)" }
+		}
+		add_to_variable_map = { name = mnt_war_gold_to_treasury key = scope:mnt_wealth_occupier value = local_var:mnt_war_tally }
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_liquid_destroyed }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_wealth_destroyed target = scope:mnt_wealth_occupier } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_wealth_destroyed|scope:mnt_wealth_occupier)" }
+		}
+		add_to_variable_map = { name = mnt_war_wealth_destroyed key = scope:mnt_wealth_occupier value = local_var:mnt_war_tally }
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_investment_destroyed }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_investment_destroyed target = scope:mnt_wealth_occupier } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_investment_destroyed|scope:mnt_wealth_occupier)" }
+		}
+		add_to_variable_map = { name = mnt_war_investment_destroyed key = scope:mnt_wealth_occupier value = local_var:mnt_war_tally }
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_population_killed }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_people_killed target = scope:mnt_wealth_occupier } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_people_killed|scope:mnt_wealth_occupier)" }
+		}
+		add_to_variable_map = { name = mnt_war_people_killed key = scope:mnt_wealth_occupier value = local_var:mnt_war_tally }
+			# The owner's side.
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_liquid_taken }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_wealth_looted_from target = scope:mnt_wealth_looted_owner } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_wealth_looted_from|scope:mnt_wealth_looted_owner)" }
+		}
+		add_to_variable_map = { name = mnt_war_wealth_looted_from key = scope:mnt_wealth_looted_owner value = local_var:mnt_war_tally }
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_investment_total }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_investment_looted_from target = scope:mnt_wealth_looted_owner } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_investment_looted_from|scope:mnt_wealth_looted_owner)" }
+		}
+		add_to_variable_map = { name = mnt_war_investment_looted_from key = scope:mnt_wealth_looted_owner value = local_var:mnt_war_tally }
+		set_local_variable = { name = mnt_war_tally value = local_var:mnt_wealth_loot_population_killed }
+		if = {
+			limit = { is_key_in_variable_map = { name = mnt_war_people_lost target = scope:mnt_wealth_looted_owner } }
+			change_local_variable = { name = mnt_war_tally add = "variable_map(mnt_war_people_lost|scope:mnt_wealth_looted_owner)" }
+		}
+		add_to_variable_map = { name = mnt_war_people_lost key = scope:mnt_wealth_looted_owner value = local_var:mnt_war_tally }
+		}
+	}
+}
+
+# War's end, country scope with scope:war: copy this country's tallies into report variables and show the report.
+
+mnt_wealth_report_war_loot = {
+	set_variable = { name = mnt_war_report_captured value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_gold_captured target = root } } }
+		set_variable = { name = mnt_war_report_captured value = "scope:war.variable_map(mnt_war_gold_captured|root)" }
+	}
+	set_variable = { name = mnt_war_report_treasury value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_gold_to_treasury target = root } } }
+		set_variable = { name = mnt_war_report_treasury value = "scope:war.variable_map(mnt_war_gold_to_treasury|root)" }
+	}
+	set_variable = { name = mnt_war_report_wealth_destroyed value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_wealth_destroyed target = root } } }
+		set_variable = { name = mnt_war_report_wealth_destroyed value = "scope:war.variable_map(mnt_war_wealth_destroyed|root)" }
+	}
+	set_variable = { name = mnt_war_report_investment_destroyed value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_investment_destroyed target = root } } }
+		set_variable = { name = mnt_war_report_investment_destroyed value = "scope:war.variable_map(mnt_war_investment_destroyed|root)" }
+	}
+	set_variable = { name = mnt_war_report_people_killed value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_people_killed target = root } } }
+		set_variable = { name = mnt_war_report_people_killed value = "scope:war.variable_map(mnt_war_people_killed|root)" }
+	}
+	set_variable = { name = mnt_war_report_wealth_lost value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_wealth_looted_from target = root } } }
+		set_variable = { name = mnt_war_report_wealth_lost value = "scope:war.variable_map(mnt_war_wealth_looted_from|root)" }
+	}
+	set_variable = { name = mnt_war_report_investment_lost value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_investment_looted_from target = root } } }
+		set_variable = { name = mnt_war_report_investment_lost value = "scope:war.variable_map(mnt_war_investment_looted_from|root)" }
+	}
+	set_variable = { name = mnt_war_report_people_lost value = 0 }
+	if = {
+		limit = { scope:war = { is_key_in_variable_map = { name = mnt_war_people_lost target = root } } }
+		set_variable = { name = mnt_war_report_people_lost value = "scope:war.variable_map(mnt_war_people_lost|root)" }
+	}
+	set_variable = {
+		name = mnt_war_report_estates
+		value = { value = var:mnt_war_report_captured subtract = var:mnt_war_report_treasury min = 0 }
+	}
+	# Pop sizes are in thousands; the report shows people.
+	change_variable = { name = mnt_war_report_people_killed multiply = 1000 }
+	change_variable = { name = mnt_war_report_people_lost multiply = 1000 }
+
+	if = {
+		limit = {
+			OR = {
+				var:mnt_war_report_captured > 0
+				var:mnt_war_report_wealth_lost > 0
+				var:mnt_war_report_investment_lost > 0
+				var:mnt_war_report_people_lost > 0
+			}
+		}
+		trigger_event_non_silently = { id = mnt_wealth_economy.40 }
+	}
 }

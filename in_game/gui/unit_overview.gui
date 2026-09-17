@@ -1,0 +1,3522 @@
+template military_main_tabs {
+	button_main_tab_alt = {
+		layoutpolicy_horizontal = expanding
+		tooltipwidget = {
+			using = SubTabCurrentArmiesTooltip
+		}
+
+		down = "[And(IsLateralViewOpened('unit_overview'), UnitOverview.Vars.NotExistOrHasValue( 'subtab', 'army' ))]"
+		datacontext = "[GetAutomatedSystemItem('armybuilder')]"
+		using = automated_tab
+
+		blockoverride "on_action_left" { on_action = "[UnitOverview.Vars.Set( 'subtab', 'army' )]" }
+		blockoverride "text" { text = "ARMY_OVERVIEW" }
+	}
+
+	button_main_tab_alt = {
+		layoutpolicy_horizontal = expanding
+		tooltipwidget = {
+			using = SubTabCurrentNaviesTooltip
+		}
+
+		down = "[And(IsLateralViewOpened('unit_overview'), UnitOverview.Vars.HasValue( 'subtab', 'navy' ))]"
+		datacontext = "[GetAutomatedSystemItem('navybuilder')]"
+		using = automated_tab
+
+		blockoverride "on_action_left" { on_action = "[UnitOverview.Vars.Set( 'subtab', 'navy' )]" }
+		blockoverride "text" { text = "NAVY_OVERVIEW" }
+	}
+}
+
+template unit_card_actions {
+	action_tooltip = {
+		click_type = left
+		click_mode = single
+		title = "SELECT_UNIT_TT"
+		on_action = "[SelectUnit(Unit.Self)]"
+		on_action_with_params = "[PanToLocation(Unit.GetLocation)]"
+	}
+
+	action_tooltip = {
+		click_type = right
+		click_mode = single
+
+		cursor = "unit_menu"
+		title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+		on_action = "[PdxGuiWidget.ToggleContextMenu]"
+	}
+
+	contextmenu_widget = {
+		UnitContextMenu = {
+			blockoverride "unit_contextmenu_pre_entries" {
+				ContextMenuEntry = {
+					blockoverride "click_action" {
+						title = "[SelectLocalization(Unit.IsArmy, 'GO_TO_ARMY_LOCATION', 'GO_TO_NAVY_LOCATION')]"
+						on_action = "[PanToLocation(Unit.GetLocation)]"
+					}
+
+					blockoverride "tooltip" {
+						tagtooltip_enabled = yes
+						tooltip = "[Unit.GetLocation]"
+					}
+
+					blockoverride "entry_icon_texture" {
+						texture = "gfx/interface/icons/unit_actions/go_to.dds"
+						mirror = horizontal
+						using = ui_direction_button_overlay
+					}
+
+					blockoverride "entry_text" {
+						text = "[SelectLocalization(Unit.IsArmy, 'GO_TO_ARMY_LOCATION', 'GO_TO_NAVY_LOCATION')]"
+					}
+				}
+			}
+		}
+	}
+}
+
+# template unit_overview_actions {
+# 	action_tooltip = {
+# 		click_type = left
+# 		click_mode = single
+# 		title = "SELECT_UNIT_TT"
+# 		on_action = "[SelectUnit(Unit.Self)]"
+# 		on_action_with_params = "[PanToLocation(Unit.GetLocation)]"
+# 	}
+
+# 	action_tooltip = {
+# 		click_type = right
+# 		click_mode = single
+
+# 		cursor = "unit_menu"
+# 		title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+# 		on_action = "[PdxGuiWidget.ToggleContextMenu]"
+# 	}
+
+# 	datacontext = "[UnitItem.GetUnit]"
+# 	contextmenu_widget = {
+# 		UnitContextMenu = {
+# 			blockoverride "unit_contextmenu_pre_entries" {
+# 				ContextMenuEntry = {
+# 					blockoverride "click_action" {
+# 						title = "[SelectLocalization(Unit.IsArmy, 'GO_TO_ARMY_LOCATION', 'GO_TO_NAVY_LOCATION')]"
+# 						on_action = "[PanToLocation(Unit.GetLocation)]"
+# 					}
+
+# 					blockoverride "tooltip" {
+# 						tagtooltip_enabled = yes
+# 						tooltip = "[Unit.GetLocation]"
+# 					}
+
+# 					blockoverride "entry_icon_texture" {
+# 						texture = "gfx/interface/buttons/flats/transfer.dds"
+# 						mirror = horizontal
+# 						# using = ui_direction_button_overlay
+# 					}
+
+# 					blockoverride "entry_text" {
+# 						text = "[SelectLocalization(Unit.IsArmy, 'GO_TO_ARMY_LOCATION', 'GO_TO_NAVY_LOCATION')]"
+# 					}
+# 				}
+
+# 				ContextMenuEntry = {
+# 					blockoverride "click_action" {
+# 						title = "[SelectLocalization(Unit.IsArmy, 'EDIT_ARMY_NAME', 'EDIT_NAVY_NAME')]"
+# 						on_action = "[UnitOverview.SetUnitEditingNameFromUnit(UnitItem.GetUnit)]"
+# 					}
+
+# 					blockoverride "tooltip" {
+# 						tagtooltip_enabled = yes
+# 						tooltip = "[Unit.GetName]"
+# 					}
+
+# 					blockoverride "entry_icon_texture" {
+# 						texture = "gfx/interface/buttons/flats/transfer.dds"
+# 						mirror = horizontal
+# 						using = ui_direction_button_overlay
+# 					}
+
+# 					blockoverride "entry_text" {
+# 						text = "[SelectLocalization(Unit.IsArmy, 'EDIT_ARMY_NAME', 'EDIT_NAVY_NAME')]"
+# 					}
+# 				}
+
+# 				ContextMenuEntry = {
+# 					blockoverride "onclick_setup" {
+# 						enabled = "[UnitOverview.CanDisbandUnitFromUnit(UnitItem.GetUnit)]"
+# 					}
+
+# 					blockoverride "click_action" {
+# 						click_mode = confirm
+# 						title = "[SelectLocalization(Unit.IsArmy, 'DISBAND_ARMY', 'DISBAND_NAVY')]"
+# 						description = "[UnitOverview.CanDisbandUnitDescriptionFromUnit(UnitItem.GetUnit)]"
+# 						enabled = "[UnitOverview.CanDisbandUnitFromUnit(UnitItem.GetUnit)]"
+# 						on_action = "[UnitOverview.DisbandUnitFromUnit(UnitItem.GetUnit)]"
+# 					}
+
+# 					blockoverride "tooltip" {
+# 						tagtooltip_enabled = yes
+# 						tooltip = "[Unit.GetName]"
+# 					}
+
+# 					blockoverride "entry_icon_texture" {
+# 						texture = "gfx/interface/icons/unit_actions/disband.dds"
+# 					}
+
+# 					blockoverride "entry_text" {
+# 						text = "[SelectLocalization(Unit.IsArmy, 'DISBAND_ARMY', 'DISBAND_NAVY')]"
+# 					}
+# 				}
+# 			}
+# 		}
+# 	}
+# }
+
+lateralview = {
+	name = "unit_overview"
+	widgetid = "unit_overview"
+
+	blockoverride "lateralview_topbuttons_extra" {
+		widget = {
+			parentanchor = vcenter
+			size = { 40 40 }
+			position = { 30 0 }
+
+			button_automation_shortcut = {
+				parentanchor = vcenter
+				size = { 25 25 }
+
+
+				action_tooltip = {
+					title = "OPEN_AUTOMATION_PANEL_FILTER"
+					on_action = "[OpenLateralViewWithFilter('automation', 'automation_filter_military')]"
+				}
+
+				tooltipwidget = { BasicFunctionalTooltip = {} }
+			}
+		}
+	}
+
+	blockoverride "panel_header" {
+		window_header_alt = {
+			blockoverride "header_text" {
+				text = "MILITARY_TAB"
+			}
+			blockoverride "window_header_alt_color_texture" {
+				using = color_military_texture
+			}
+		}
+	}
+
+	blockoverride "panel_content" {
+		header_main_tabs = {
+			blockoverride "content" {
+				using = military_main_tabs
+			}
+		}
+
+		vbox = {
+			visible = "[UnitOverview.Vars.NotExistOrHasValue( 'subtab', 'army' )]"
+			using = layoutpolicy_expanding
+			using = window_main_tabs_margin_alt
+			using = bg_main_inner_image_alt
+			blockoverride "image" {
+				texture = "gfx/interface/illustrations/bg/bg_military.dds"
+			}
+
+			#OVERVIEW
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				spacing = 5
+				margin_top = 3
+
+				hbox = {
+					margin = { 3 0 }
+					layoutpolicy_horizontal = expanding
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						layoutstretchfactor_horizontal = 2
+						icon_text_2rows = {
+							blockoverride "icon_obj" {
+								piechart = {
+									using = bg_circle
+									size = { 30 30 }
+									using = piechart_angles
+	
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+										value = "[FixedPointToFloat(UnitOverview.GetArmyTradition)]"
+										color = { 1 1 1 1 }
+									}
+	
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+										value = "[Subtract_float('(float)100.0', FixedPointToFloat(UnitOverview.GetArmyTradition))]"
+										color = { 1 1 1 1 }
+									}
+	
+									icon = {
+										size = { 17 17 }
+										parentanchor = center
+										texture = "gfx/interface/icons/flat_icons/army_tradition.dds"
+										alpha = 1
+									}
+									using = bg_circle_piechart
+									blockoverride "bg_circle_piechart_shadow" {
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.6
+										}
+									}
+								}
+							}
+							blockoverride "top_text_setup" {
+								text = "game_concept_army_tradition"
+								default_format = "#explanation_link_overview"
+							}
+							blockoverride "bottom_text_setup" {
+								raw_text = "[UnitOverview.GetArmyTradition|/%2]"
+							}
+							datacontext = "[UnitOverview]"
+							datacontext = "[Player]"
+							tooltipwidget = {
+								using = ArmyTraditionTooltip
+							}
+						}
+					}
+
+					#MASS SELECT ARMY OBJECTIVE BUTTON
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						layoutstretchfactor_horizontal = 1
+
+						# M&T looting stance button, defined in shared/mnt_loot_stance.gui.
+						mnt_loot_stance_cell = {}
+
+						unit_action_item = {
+							visible = "[Not(IsDataModelEmpty(UnitOverview.GetArmyUnits))]"
+							datacontext = "[UnitOverview.GetSelectObjectiveArmyAction]"
+						}
+					}
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						layoutstretchfactor_horizontal = 2
+
+						expand = {}
+						header_action_button_right = {
+							size = { 200 38 }
+
+							title = "train_general"
+							actor = "[UnitOverview.GetPlayer]"
+							left_click_and_hold_action = { action_name = "train_general" }
+		
+							blockoverride "text_top" {
+								text = "train_general"
+								fontsize = 13
+							}
+
+							blockoverride "header_button_icon_obj" {
+								icon = {
+									parentanchor = center
+									size = { 24 24 }
+									texture = "gfx/interface/icons/character_roles/general.dds"
+								
+									modify_texture = {
+										using = color_white_texture
+										alpha = 0.1
+									}
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+							}
+		
+							tooltipwidget = {
+								using = train_general_tooltip
+								blockoverride "tooltip_content" {
+									using = action_tooltip_inner_content
+								}
+							}
+						}
+					}
+				}
+				
+
+				widget = {
+					layoutpolicy_horizontal = expanding
+					size = { -1 220 }
+
+					using = bg_age_event_frame
+
+					
+
+					masked_threecolor_icon = {
+						size = { 100% 100% }
+						alpha = 1
+						texture = "[UnitOverview.GetSubunitDefinitionArmyIllustration]"
+						mask = "[UnitOverview.GetSubunitDefinitionArmyIllustrationMask]"
+						primary_color = "[GetCountryUnitPrimaryColor(UnitOverview.GetPlayer, UnitOverview.GetOrCalcVisualArmySubunitDefinition)]"
+						secondary_color = "[GetCountryUnitSecondaryColor(UnitOverview.GetPlayer, UnitOverview.GetOrCalcVisualArmySubunitDefinition)]"
+						tertiary_color = "[GetCountryUnitTertiaryColor(UnitOverview.GetPlayer, UnitOverview.GetOrCalcVisualArmySubunitDefinition)]"
+						using = scene_fade_horizontal
+					}
+
+					hbox = {
+						margin = { 10 0 }
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 15
+
+							icon_text_2rows = {
+								blockoverride "icon_obj" {
+									piechart = {
+										using = bg_circle
+										size = { 30 30 }
+										using = piechart_angles
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+											value = "[FixedPointToFloat(Player.GetAverageArmyExperience)]"
+											color = { 1 1 1 1 }
+										}
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+											value = "[Subtract_float('(float)1.0', FixedPointToFloat(Player.GetAverageArmyExperience))]"
+											color = { 1 1 1 1 }
+										}
+
+										icon = {
+											size = { 17 17 }
+											parentanchor = center
+											texture = "gfx/interface/icons/military_army/military_expierence.dds"
+										}
+										using = bg_circle_piechart
+										blockoverride "bg_circle_piechart_shadow" {
+											glow = {
+												name = "drop_shadow"
+												glow_radius = 3
+												color = {0.0 0.0 0.0 1.0}
+												alpha = 0.6
+											}
+										}
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_army_experience"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetAverageArmyExperience|%]"
+								}
+								tooltipwidget = {
+									using = Average_ArmyExperienceTooltip
+								}
+							}
+
+							icon_text_2rows = {
+								blockoverride "icon_setup" {
+									texture = "[GetConceptTexture('morale')]"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_army_morale"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetDefaultLandMorale|2+=]"
+								}
+								tooltipwidget = {
+									using = TT_ArmyMorale
+								}
+							}
+
+							icon_text_2rows = {
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/military_army/discipline.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_discipline"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetModifierValueNoFormat('discipline')]"
+								}
+								datacontext = "[Player]"
+								tooltipwidget = {
+									using = DisciplineTooltip
+								}
+							}
+							
+							icon_text_2rows = {
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/modifier_types/levy_combat_efficiency.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_levy_combat_efficiency"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									text = "[Player.GetModifierValueNoFormat('levy_combat_efficiency_modifier')]"
+								}
+								
+								datacontext = "[Player]"
+								tooltipwidget = {
+									using = LevyCombatEfficiencyTooltip
+								}
+								
+							}
+							
+						
+						}
+
+						expand = {}
+
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 15
+
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								layoutstretchfactor_horizontal = 2
+
+								expand = {}
+								datacontext = "[Player]"
+								fort_limit_right_info = {}
+							}
+
+							icon_text_2rows = {
+								blockoverride "base_setup" {
+									righttoleft = yes
+								}
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/modifier_types/siege_ability.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "MODIFIER_TYPE_NAME_siege_ability"
+									default_format = "#explanation_link_overview"
+									align = right|nobaseline
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetModifierValueNoFormat('siege_ability')]"
+									align = right|nobaseline
+								}
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "MODIFIER_TYPE_NAME_siege_ability"
+										}
+									
+										blockoverride "title_icon" {
+											icon = {
+												using = tooltip_title_icon_size
+												texture = "gfx/interface/icons/modifier_types/siege_ability.dds"
+											}
+										}
+	
+										blockoverride "concept_link" {
+											text = [modifier|e]
+										}
+	
+										blockoverride "tooltip_content" {
+											TooltipStringPairList = {
+												blockoverride "block_title" {
+													text = "LIST_TITLE_SOURCES"
+												}
+												textcontext = "[Country.GetDescriptionFor('siege_ability')]"
+											}
+										}
+									}
+								}
+								datacontext = "[Player]"
+							}
+
+							icon_text_2rows = {
+								blockoverride "base_setup" {
+									righttoleft = yes
+								}
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/military_army/fort_defense.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "MODIFIER_TYPE_NAME_global_defensive"
+									default_format = "#explanation_link_overview"
+									align = right|nobaseline
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetModifierValueNoFormat('global_defensive')]"
+									align = right|nobaseline
+								}
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_text" {
+											text = "MODIFIER_TYPE_NAME_global_defensive"
+										}
+									
+										blockoverride "title_icon" {
+											icon = {
+												using = tooltip_title_icon_size
+												texture = "gfx/interface/icons/military_army/fort_defense.dds"
+											}
+										}
+	
+										blockoverride "concept_link" {
+											text = [modifier|e]
+										}
+	
+										blockoverride "tooltip_content" {
+											TooltipStringPairList = {
+												blockoverride "block_title" {
+													text = "LIST_TITLE_SOURCES"
+												}
+												textcontext = "[Country.GetDescriptionFor('global_defensive')]"
+											}
+										}
+									}
+								}
+								datacontext = "[Player]"
+							}
+
+							icon_text_2rows = {
+								blockoverride "base_setup" {
+									righttoleft = yes
+								}
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/military_army/military_tactics.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_military_tactics"
+									default_format = "#explanation_link_overview"
+									align = right|nobaseline
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetModifierValueNoFormat('military_tactics')]"
+									align = right|nobaseline
+								}
+								datacontext = "[Player]"
+								tooltipwidget = {
+									using = MilitaryTacticsTooltip
+								}
+							}
+						}
+					}
+				}
+
+				### INNER MIDDLE TAB SYSTEM
+				# header_secondary_tabs = {
+				# 	blockoverride "content" {
+				# 		button_secondary_tab_alt = {
+				# 			using = layoutpolicy_expanding
+				# 			tooltipwidget = {
+				# 				using = SubTabCurrentArmiesTooltip
+				# 			}
+
+				# 			down = "[UnitOverview.Vars.NotExistOrHasValue( 'subtab', 'army' )]"
+				# 			datacontext = "[GetAutomatedSystemItem('armybuilder')]"
+				# 			using = automated_tab
+
+				# 			blockoverride "on_action_left" { on_action = "[UnitOverview.Vars.Set( 'subtab', 'army' )]" }
+				# 			blockoverride "text" { text = "ARMY_OVERVIEW" }
+				# 		}
+
+				# 		button_secondary_tab_alt = {
+				# 			using = layoutpolicy_expanding
+				# 			tooltipwidget = {
+				# 				using = SubTabCurrentNaviesTooltip
+				# 			}
+
+				# 			down = "[UnitOverview.Vars.HasValue( 'subtab', 'navy' )]"
+				# 			datacontext = "[GetAutomatedSystemItem('navybuilder')]"
+				# 			using = automated_tab
+
+				# 			blockoverride "on_action_left" { on_action = "[UnitOverview.Vars.Set( 'subtab', 'navy' )]" }
+				# 			blockoverride "text" { text = "NAVY_OVERVIEW" }
+				# 		}
+				# 	}
+				# }
+			}
+			
+			# ARMIES
+			widget = {
+				using = layoutpolicy_expanding
+
+				vbox = {
+					margin_top = 8
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						minimumsize = { -1 45 }
+						using = bg_paper_card
+						using = bg_cabinet_card_frame
+
+						hbox = {
+							datacontext = "[GetSubUnitCategory('army_light_infantry')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('army_heavy_infantry')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							blockoverride "text_mask_extra" {
+								alpha = 0.1
+							}
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"	
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('army_light_cavalry')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('army_heavy_cavalry')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							blockoverride "text_mask_extra" {
+								alpha = 0.1
+							}
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('army_artillery')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('army_auxiliary')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							blockoverride "text_mask_extra" {
+								alpha = 0.1
+							}
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+					}
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						margin_top = 8
+
+						header_button_left = {
+							size = { 42 42 }
+							blockoverride "button_icon_stretch_sprite" {}
+							blockoverride "header_button_frame_inner" { visible = no }
+							blockoverride "header_button_icon_size" { size = { 42 42 } }
+							blockoverride "header_button_text_layout" {}
+							blockoverride "icon_overlay" {}
+							blockoverride "icon_texture" {
+								size = { 100% 100% }
+								texture = "gfx/interface/icons/unit_actions/land_levies_rally_point.dds"
+							}
+
+							enabled = "[Player.GetDiplomacy.IsAtWar]"
+
+							action_tooltip = {
+								click_type = left
+								click_mode = confirm
+					
+								enabled = "[And(Player.GetDiplomacy.IsAtWar, UnitOverview.CanRaiseAllLevies('(bool)yes'))]"
+								conditions = "[UnitOverview.RaiseAllLeviesInfo('(bool)yes')]"
+								title = "RAISE_ALL_LEVIES_CAPITAL"
+								on_action = "[UnitOverview.RaiseAllLevies('(bool)yes')]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = single
+					
+								enabled = "[And(Player.GetDiplomacy.IsAtWar, UnitOverview.CanRaiseAllLevies('(bool)yes'))]"
+								conditions = "[UnitOverview.RaiseAllLeviesInfo('(bool)yes')]"
+								title = "RAISE_ALL_LEVIES_SELECT_RALLY_POINT"
+								on_action = "[SelectLocationToRaiseAllArmyLevies()]"
+							}
+
+							tooltipwidget = {
+								BasicFunctionalTooltip = {}
+							}
+						}
+
+						# LEVIES
+						header_button_left = {
+							layoutpolicy_horizontal = expanding
+							size = { -1 42 }
+
+							blockoverride "bg_color" {
+								modify_texture = {
+									using = color_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								
+								visible = "[UnitOverview.ConstructLeviesVisible]"									
+								description = "[UnitOverview.ConstructLeviesInfo('(bool)yes')]"
+								title = "[SelectLocalization( Or3(UnitOverview.ConstructLeviesEnabled('(bool)yes'), And(Not(Player.GetDiplomacy.IsAtWar), UnitOverview.CanDisbandAllLevies('(bool)yes')), And(Player.GetDiplomacy.IsAtWar, UnitOverview.ConstructLeviesEnabled('(bool)yes'))),'CONSTRUCTION_ARMY_LEVIES_SIDEMENU', 'CONSTRUCTION_ARMY_LEVIES_SIDEMENU_NOT' )]"
+								on_action = "[SelectLocationToRiseArmy]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = confirm
+					
+								visible = "[Not(Player.GetDiplomacy.IsAtWar)]"
+								enabled = "[UnitOverview.CanDisbandAllLevies('(bool)yes')]"
+								description = "[UnitOverview.DisbandAllLeviesInfo('(bool)yes')]"
+								title = "DISBAND_ALL_LEVIES"
+								on_action = "[UnitOverview.DisbandAllLevies('(bool)yes')]"
+							}
+
+							blockoverride "icon_size" {
+								size = { 71% 71% }
+							}
+
+							blockoverride "icon_overlay" {
+								texture = "gfx/interface/icons/unit_category/army_levies.dds"
+								texture_density = 2
+							}
+
+							blockoverride "header_button_widget_extra" {
+								piechart = {
+									size = { 100% 100% }
+									parentanchor = center
+									widgetanchor = center
+									alwaystransparent = yes
+									using = piechart_angles
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+										value = "[UnitOverview.GetArmyLevyRecoveryPercentage]"
+										color = { 1 1 1 1 }
+										alwaystransparent = yes
+									}
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+										value = "[Subtract_float('(float)1.0', UnitOverview.GetArmyLevyRecoveryPercentage)]"
+										color = { 1 1 1 1 }
+										alwaystransparent = yes
+									}
+
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_icon" {
+												icon = {
+													using = tooltip_title_icon_size
+													texture = "gfx/interface/icons/outliner/categories/raiselevies.dds"
+												}
+											}
+									
+											blockoverride "title_text" {
+												text = "ARMY_LEVY_RECOVERY_TITLE"
+											}
+									
+											blockoverride "tooltip_content" {
+												TooltipScrolledTableRowList = {
+													textcontext = "[UnitOverview.GetArmyRepairTooltip]"
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "text_top" {
+								text = "game_concept_levies"
+								maximumsize = { 120 15 }
+								fontsize = 13
+							}
+
+							blockoverride "text_bottom" {
+								autoresize = yes
+								maximumsize = { 100 15 }
+								raw_text = "[UnitOverview.GetArmyLeviesStrength] #G +[UnitOverview.GetArmyLeviesInProgress]#! / [Player.GetArmyLevyPotentialStrength]"
+							}
+
+							tooltipwidget = {
+								using = UnitOverviewLeviesTooltip
+
+								blockoverride "levies_amount_block" 
+								{
+									TooltipTextBlock = {
+										visible = "[Not(StringIsEmpty(UnitOverview.RaiseAllLeviesAmountInfo('(bool)yes')))]"
+										
+										blockoverride "set_textcontext" {
+											ontextcontextchanged = "[SetStringPairListWithTitleFromTextContext(PdxGuiWidget.AccessSelf)]"
+										}
+										
+										textcontext = "[UnitOverview.RaiseAllLeviesAmountInfo('(bool)yes')]"
+										blockoverride "text" {
+											text = "[StringPairList.GetTitle.GetStringView]"
+										}
+									}
+								}
+							}
+						}
+
+						# REGULARS
+						header_button_left = {
+							layoutpolicy_horizontal = expanding
+							size = { -1 42 }
+
+							blockoverride "bg_color" {
+								modify_texture = {
+									using = color_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+
+							blockoverride "icon_size" {
+								size = { 71% 71% }
+							}
+
+							blockoverride "icon_overlay" {
+								texture = "gfx/interface/icons/unit_actions/regulars.dds"
+							}
+
+							blockoverride "text_top" {
+								text = "RECRUIT_BUTTON"
+								fontsize = 13
+								maximumsize = { 120 15 }
+							}
+
+							blockoverride "text_bottom" {
+								autoresize = yes
+								maximumsize = { 100 15 }
+								raw_text = "[UnitOverview.GetArmyRegularsStrength] #G +[UnitOverview.GetArmyRegularsInProgress]#! / [Multiply_float(FixedPointToFloat(Player.GetExpectedArmySize),'(float)1000')|0]"
+							}
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								title = "LOCATION_VIEW_ARMY_BUILDER_CLICK"
+								on_action = "[OpenLateralViewWithParams('army_builder', 'subtab = recruiting | unit_type = army')]"
+							}
+
+							tooltipwidget = {
+								using = UnitOverviewRegularsTooltip
+							}
+						}
+						
+
+						# MERCENARIES
+						header_button_left = {
+							layoutpolicy_horizontal = expanding
+							size = { -1 42 }
+
+							blockoverride "bg_color" {
+								modify_texture = {
+									using = color_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+
+							blockoverride "icon_size" {
+								size = { 71% 71% }
+							}
+
+							blockoverride "icon_overlay" {
+								texture = "gfx/interface/icons/unit_category/mercenary.dds"
+							}
+
+							blockoverride "text_top" {
+								text = "game_concept_mercenaries"
+								fontsize = "[Select_int32(HasLanguage('french'), '(int32)11', '(int32)13')]"
+								maximumsize = { 120 15 }
+							}
+
+							blockoverride "text_bottom" {
+								autoresize = yes
+								maximumsize = { 100 15 }
+								raw_text = "[UnitOverview.GetArmyMercenariesStrength] #G +[UnitOverview.GetArmyMercenariesInProgress]#! / [UnitOverview.GetNumPotentialArmyMercenaries]"
+							}
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								title = "CONSTRUCTION_MERCENARY_SIDEMENU"
+								on_action = "[OpenLateralViewWithParams('army_builder', 'subtab = hiring | unit_type = army')]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = single
+								title = "HIRE_MERCENARY_LEADER"
+								on_action = "[UnitOverview.ChooseArmyMercenaryLeader]"
+							}
+
+							tooltipwidget = {
+								using = UnitOverviewMercenariesTooltip
+							}
+						}
+					}
+
+					filtered_sorted_list = {
+						datacontext = "[UnitOverview.GetArmyUnitsSortSearch.WithFilterTags('army|unit')]"
+
+						blockoverride "scroll_list_is_empty" {
+							visible = "[IsDataModelEmpty(UnitOverview.GetArmyUnits)]"
+						}
+
+						blockoverride "scroll_list_is_empty_text" {
+							text = "ARMY_SCROLL_LIST_EMPTY"
+						}
+
+						blockoverride "scroll_list_content" {
+							addcolumn = 100%
+							addrow = 85
+
+							datamodel = "[UnitOverview.GetArmyUnits]"
+							item = {
+								# UNIT CARD
+								widget = {
+									size = { 100% 85 }
+									widget = {
+										size = { 99% 78 }
+										parentanchor = center
+										hbox = {
+											datacontext = "[UnitItem.AccessUnit]"
+											datacontext = "[UnitItem.AccessUnit.GetLocation]"
+											
+											using = bg_market_card
+											using = bg_cabinet_card_frame
+
+											unit_card = {
+												blockoverride "name_sort_highlight" {
+													sort_by_highlight = {
+														name = "name"
+													}
+												}
+
+												blockoverride "strength_sort_highlight" {
+													sort_by_highlight = {
+														name = "strength"
+													}
+												}
+
+												blockoverride "size_sort_highlight" {
+													sort_by_highlight = {
+														name = "size"
+													}
+												}
+
+												blockoverride "ships_sort_highlight" {
+													sort_by_highlight = {
+														name = "ships"
+													}
+												}
+
+												blockoverride "morale_sort_highlight" {
+													sort_by_highlight = {
+														name = "morale"
+													}
+												}
+
+												blockoverride "objective_sort_highlight" {
+													sort_by_highlight = {
+														name = "objective"
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				AutomatedSection = {
+					datacontext = "[GetAutomatedSystemItem('armybuilder')]"
+					
+					blockoverride "glow_anim_automation_visible" {
+						visible = "[AutomatedSystemsItem.IsEnabled]"
+					}
+				}
+			}
+		}
+
+		vbox = {
+			visible = "[UnitOverview.Vars.HasValue( 'subtab', 'navy' )]"
+			using = layoutpolicy_expanding
+			using = window_main_tabs_margin_alt
+			using = bg_main_inner_image_alt
+			blockoverride "image" {
+				texture = "gfx/interface/illustrations/bg/bg_navy.dds"
+			}
+
+			#OVERVIEW
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				spacing = 5
+				margin_top = 3
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					margin = { 3 0 }
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						layoutstretchfactor_horizontal = 2
+						icon_text_2rows = {
+							blockoverride "icon_obj" {
+								piechart = {
+									using = bg_circle
+									size = { 30 30 }
+									using = piechart_angles
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+										value = "[FixedPointToFloat(UnitOverview.GetNavyTradition)]"
+										color = { 1 1 1 1 }
+									}
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+										value = "[Subtract_float('(float)1.0', FixedPointToFloat(UnitOverview.GetNavyTradition))]"
+										color = { 1 1 1 1 }
+									}
+
+									icon = {
+										size = { 17 17 }
+										parentanchor = center
+										texture = "gfx/interface/icons/military_navy/navy_traditions.dds"
+										alpha = 1
+									}
+									using = bg_circle_piechart
+									blockoverride "bg_circle_piechart_shadow" {
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.6
+										}
+									}
+								}
+							}
+							blockoverride "top_text_setup" {
+								text = "game_concept_navy_tradition"
+								default_format = "#explanation_link_overview"
+							}
+							blockoverride "bottom_text_setup" {
+								raw_text = "[UnitOverview.GetNavyTradition|%2]"
+							}
+							datacontext = "[UnitOverview]"
+							datacontext = "[Player]"
+							tooltipwidget = {
+								using = NavyTraditionTooltip
+							}
+						}
+					}
+
+					#MASS SELECT NAVY OBJECTIVE BUTTON
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						layoutstretchfactor_horizontal = 1
+						unit_action_item = {
+							visible = "[Not(IsDataModelEmpty(UnitOverview.GetNavyUnits))]"
+							datacontext = "[UnitOverview.GetSelectObjectiveNavyAction]"
+						}
+					}
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						layoutstretchfactor_horizontal = 2
+
+						expand = {}
+						header_action_button_right = {
+							size = { 200 38 }
+
+							title = "train_admiral"
+							actor = "[UnitOverview.GetPlayer]"
+							left_click_and_hold_action = { action_name = "train_admiral" }
+		
+							blockoverride "text_top" {
+								text = "train_admiral"
+								fontsize = 13
+							}
+
+							blockoverride "header_button_icon_obj" {
+								icon = {
+									parentanchor = center
+									size = { 24 24 }
+									texture = "gfx/interface/icons/character_roles/admiral.dds"
+								
+									modify_texture = {
+										using = color_white_texture
+										alpha = 0.1
+									}
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+							}
+		
+							tooltipwidget = {
+								using = train_admiral_tooltip
+								blockoverride "tooltip_content" {
+									using = action_tooltip_inner_content
+								}
+							}
+						}
+					}
+				}
+
+				widget = {
+					layoutpolicy_horizontal = expanding
+					size = { -1 220 }
+
+					using = bg_age_event_frame
+
+					masked_threecolor_icon = {
+						size = { 100% 100% }
+						alpha = 1
+						texture = "[UnitOverview.GetSubunitDefinitionNavyIllustration]"
+						mask = "[UnitOverview.GetSubunitDefinitionNavyIllustrationMask]"
+						primary_color = "[GetCountryUnitPrimaryColor(UnitOverview.GetPlayer, UnitOverview.GetOrCalcVisualNavySubunitDefinition)]"
+						secondary_color = "[GetCountryUnitSecondaryColor(UnitOverview.GetPlayer, UnitOverview.GetOrCalcVisualNavySubunitDefinition)]"
+						tertiary_color = "[GetCountryUnitTertiaryColor(UnitOverview.GetPlayer, UnitOverview.GetOrCalcVisualNavySubunitDefinition)]"
+						using = scene_fade_horizontal
+					}
+
+					hbox = {
+						margin = { 10 0 }
+						vbox = {
+							using = layoutpolicy_expanding
+							
+							icon_text_2rows = {
+								blockoverride "icon_obj" {
+									piechart = {
+										using = bg_circle
+										size = { 30 30 }
+										using = piechart_angles
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+											value = "[FixedPointToFloat(Player.GetAverageNavyExperience)]"
+											color = { 1 1 1 1 }
+										}
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+											value = "[Subtract_float('(float)1.0', FixedPointToFloat(Player.GetAverageNavyExperience))]"
+											color = { 1 1 1 1 }
+										}
+
+										icon = {
+											size = { 17 17 }
+											parentanchor = center
+											texture = "gfx/interface/icons/military_army/navy_expierence.dds"
+
+											alpha = 1
+										}
+										using = bg_circle_piechart
+										blockoverride "bg_circle_piechart_shadow" {
+											glow = {
+												name = "drop_shadow"
+												glow_radius = 3
+												color = {0.0 0.0 0.0 1.0}
+												alpha = 0.6
+											}
+										}
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_navy_experience"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									raw_text = "[Player.GetAverageNavyExperience|%]"
+								}
+								tooltipwidget = {
+									using = Average_NavyExperienceTooltip
+								}
+							}
+
+							icon_text_2rows = {
+								blockoverride "icon_setup" {
+									texture = "[GetConceptTexture('morale')]"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									text = "game_concept_navy_morale"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									text = "[Player.GetDefaultNavalMorale|2+=]"
+								}
+								tooltipwidget = {
+									using = TT_NavyMorale
+								}
+							}
+						}
+
+						expand = {}
+
+						vbox = {
+							using = layoutpolicy_expanding
+
+							icon_text_2rows = {
+								blockoverride "base_setup" {
+									righttoleft = yes
+								}
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/flat_icons/military/naval_damage_done.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									align = right|nobaseline
+									text = "game_concept_naval_damage"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									align = right|nobaseline
+									raw_text = "[Player.GetModifierValueNoFormat('naval_damage_done')] / [Player.GetModifierValueNoFormat('naval_damage_taken')]"
+								}
+								tooltipwidget = {
+									using = NavalDamageTooltip
+								}
+							}
+
+							icon_text_2rows = {
+								blockoverride "base_setup" {
+									righttoleft = yes
+								}
+								blockoverride "icon_setup" {
+									texture = "gfx/interface/icons/military_navy/naval_range.dds"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 3
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.3
+									}
+								}
+								blockoverride "top_text_setup" {
+									align = right|nobaseline
+									text = "game_concept_naval_range"
+									default_format = "#explanation_link_overview"
+								}
+								blockoverride "bottom_text_setup" {
+									align = right|nobaseline
+									text = "[Player.GetDoubleModifierValueNoFormatTruncated('naval_range','naval_range_modifier')]"
+								}
+								datacontext = "[Player]"
+								tooltipwidget = {
+									using = naval_range_tooltip
+								}
+							}
+
+							
+						}
+					}
+				}
+			}
+
+			# NAVIES
+			widget = {
+				using = layoutpolicy_expanding
+
+				vbox = {
+					margin_top = 8
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						minimumsize = { -1 45 }
+						using = bg_paper_card
+						using = bg_cabinet_card_frame
+
+						hbox = {
+							datacontext = "[GetSubUnitCategory('navy_heavy_ship')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('navy_light_ship')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							blockoverride "text_mask_extra" {
+								alpha = 0.1
+							}
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"	
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('navy_galley')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+						hbox = {
+							datacontext = "[GetSubUnitCategory('navy_transport')]"
+							spacing = 3
+							using = layoutpolicy_expanding
+							using = bg_text_mask_container_brown
+
+							blockoverride "text_mask_extra" {
+								alpha = 0.1
+							}
+
+							expand = {}
+
+							icon = {
+								size = { 30 30 }
+								texture = "[GetSubUnitCategoryIcon(SubUnitCategory.Self)]"
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+							text_single = { text = "[SubUnitCategory.GetCombatAbility(Player.Self)|+=0%]" }
+							tooltipwidget = { using = UnitCategoryPower_tooltip }
+							
+							expand = {}
+						}
+					}
+
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						margin_top = 8
+
+						header_button_left = {
+							size = { 42 42 }
+							blockoverride "button_icon_stretch_sprite" {}
+							blockoverride "header_button_frame_inner" { visible = no }
+							blockoverride "header_button_icon_size" { size = { 42 42 } }
+							blockoverride "header_button_text_layout" {}
+							blockoverride "icon_overlay" {}
+							blockoverride "icon_texture" {
+								size = { 100% 100% }
+								texture = "gfx/interface/icons/unit_actions/navy_levies_rally_point.dds"
+							}
+
+							enabled = "[Player.GetDiplomacy.IsAtWar]"
+
+							action_tooltip = {
+								click_type = left
+								click_mode = confirm
+					
+								enabled = "[And(Player.GetDiplomacy.IsAtWar, UnitOverview.CanRaiseAllLevies('(bool)no'))]"
+								description = "[UnitOverview.ConstructLeviesInfo('(bool)no')]"
+								conditions = "[UnitOverview.RaiseAllLeviesInfo('(bool)no')]"
+								title = "[SelectLocalization( Player.GetCapital.IsCoastal, 'RAISE_ALL_LEVIES_CAPITAL', 'RAISE_ALL_LEVIES_COAST_CAPITAL')]"
+								on_action = "[UnitOverview.RaiseAllLevies('(bool)no')]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = single
+					
+								enabled = "[And(Player.GetDiplomacy.IsAtWar, UnitOverview.CanRaiseAllLevies('(bool)no'))]"
+								conditions = "[UnitOverview.RaiseAllLeviesInfo('(bool)no')]"
+								title = "RAISE_ALL_LEVIES_SELECT_RALLY_POINT"
+								on_action = "[SelectLocationToRaiseAllNavyLevies()]"
+							}
+
+							tooltipwidget = {
+								BasicFunctionalTooltip = {}
+							}
+						}
+
+						# LEVIES
+						header_button_left = {
+							layoutpolicy_horizontal = expanding
+							size = {-1 42}
+
+							blockoverride "bg_color" {
+								modify_texture = {
+									using = color_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+
+							blockoverride "icon_size" {
+								size = { 71% 71% }
+							}
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								
+								visible = "[UnitOverview.ConstructLeviesVisible]"									
+								description = "[UnitOverview.ConstructLeviesInfo('(bool)no')]"
+								title = "CONSTRUCTION_NAVY_LEVIES_SIDEMENU"
+								on_action = "[SelectLocationToRiseNavy]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = confirm
+					
+								visible = "[Not(Player.GetDiplomacy.IsAtWar)]"
+								enabled = "[UnitOverview.CanDisbandAllLevies('(bool)no')]"
+								description = "[UnitOverview.DisbandAllLeviesInfo('(bool)no')]"
+								title = "DISBAND_ALL_LEVIES"
+								on_action = "[UnitOverview.DisbandAllLevies('(bool)no')]"
+							}
+
+							blockoverride "icon_overlay" {
+								texture = "gfx/interface/icons/unit_actions/navy_levies.dds"
+							}
+
+							blockoverride "header_button_widget_extra" {
+								piechart = {
+									size = { 100% 100% }
+									parentanchor = center
+									widgetanchor = center
+									alwaystransparent = yes
+									using = piechart_angles
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+										value = "[UnitOverview.GetNavyLevyRecoveryPercentage]"
+										color = { 1 1 1 1 }
+										alwaystransparent = yes
+									}
+
+									pieslice_no_highlight = {
+										texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+										value = "[Subtract_float('(float)1.0', UnitOverview.GetNavyLevyRecoveryPercentage)]"
+										color = { 1 1 1 1 }
+										alwaystransparent = yes
+									}
+
+									tooltipwidget = {
+										ContextualTooltipType = {
+											blockoverride "title_icon" {
+												icon = {
+													using = tooltip_title_icon_size
+													texture = "gfx/interface/icons/outliner/categories/raiselevies.dds"
+												}
+											}
+									
+											blockoverride "title_text" {
+												text = "NAVY_LEVY_RECOVERY_TITLE"
+											}
+									
+											blockoverride "tooltip_content" {
+												TooltipScrolledStringPairList = {
+													textcontext = "[UnitOverview.GetNavyRepairTooltip]"
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "text_top" {
+								text = "game_concept_levies"
+								fontsize = 13
+								maximumsize = { 120 15 }
+							}
+
+							blockoverride "text_bottom" {
+								autoresize = yes
+								maximumsize = { 100 15 }
+								raw_text = "[UnitOverview.GetNavyLeviesStrength] #G +[UnitOverview.GetNavyLeviesInProgress]#! / [Player.GetNavyLevyPower]"
+							}
+
+							tooltipwidget = {
+								using = UnitOverviewNavalLeviesTooltip
+							}
+						}
+
+						# REGULARS
+						header_button_left = {
+							layoutpolicy_horizontal = expanding
+							size = {-1 42}
+							enabled = "[UnitOverview.CanBuild('(bool)no')]"
+
+							blockoverride "icon_size" {
+								size = { 71% 71% }
+							}
+
+							blockoverride "bg_color" {
+								modify_texture = {
+									using = color_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+
+							blockoverride "icon_overlay" {
+								texture = "gfx/interface/icons/unit_category/regulars_navy.dds"
+							}
+
+							blockoverride "text_top" {
+								text = "RECRUIT_S_BUTTON"
+								fontsize = 13
+								maximumsize = { 120 15 }
+							}
+
+							blockoverride "text_bottom" {
+								autoresize = yes
+								maximumsize = { 100 15 }
+								raw_text = "[UnitOverview.GetNavyRegularsStrength] #G +[UnitOverview.GetNavyRegularsInProgress]#! / [Multiply_float(FixedPointToFloat(Player.GetExpectedNavySize),'(float)1')|0]"
+							}
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								title = "LOCATION_VIEW_NAVY_BUILDER_CLICK"
+								on_action = "[OpenLateralViewWithParams('army_builder', 'subtab = recruiting | unit_type = navy')]"
+								enabled = "[UnitOverview.CanBuild('(bool)no')]"
+								description = "[UnitOverview.CanBuildInfo('(bool)no')]"
+							}
+
+							tooltipwidget = {
+								using = UnitOverviewShipsTooltip
+							}
+						}
+
+
+						# MERCENARIES
+						header_button_left = {
+							layoutpolicy_horizontal = expanding
+							size = {-1 42}
+							enabled = "[UnitOverview.CanHireMerc('(bool)no')]"
+
+							blockoverride "icon_size" {
+								size = { 71% 71% }
+							}
+
+							blockoverride "bg_color" {
+								modify_texture = {
+									using = color_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+
+							blockoverride "icon_overlay" {
+								texture = "gfx/interface/icons/unit_category/mercenary_navy.dds"
+							}
+
+							blockoverride "text_top" {
+								text = "hire_mercenary_label"
+								fontsize = 13
+								maximumsize = { 120 15 }
+							}
+
+							blockoverride "text_bottom" {
+								autoresize = yes
+								maximumsize = { 100 15 }
+								raw_text = "[UnitOverview.GetNavyMercenariesStrength] #G +[UnitOverview.GetNavyMercenariesInProgress]#! / [UnitOverview.GetNumPotentialNavyMercenaries]"
+							}
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								title = "CONSTRUCTION_MERCENARY_SIDEMENU"
+								on_action = "[OpenLateralViewWithParams('army_builder', 'subtab = hiring | unit_type = navy')]"
+								enabled = "[UnitOverview.CanHireMerc('(bool)no')]"
+								description = "[UnitOverview.CanHireMercInfo('(bool)no')]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = single
+								title = "HIRE_MERCENARY_LEADER"
+								on_action = "[UnitOverview.ChooseNavyMercenaryLeader]"
+								enabled = "[UnitOverview.CanHireMerc('(bool)no')]"
+								# description = "[UnitOverview.CanHireMercInfo('(bool)no')]"
+							}
+
+							tooltipwidget = {
+								using = UnitOverviewNavalMercenariesTooltip
+							}
+						}
+					}
+
+					filtered_sorted_list = {
+						datacontext = "[UnitOverview.GetNavyUnitsSortSearch.WithFilterTags('navy|unit')]"
+
+						blockoverride "scroll_list_is_empty" {
+							visible = "[IsDataModelEmpty(UnitOverview.GetNavyUnits)]"
+						}
+
+						blockoverride "scroll_list_is_empty_text" {
+							text = "NAVY_SCROLL_LIST_EMPTY"
+						}
+
+						blockoverride "scroll_list_content" {
+							addcolumn = 100%
+							addrow = 85
+
+							datamodel = "[UnitOverview.GetNavyUnits]"
+							item = {
+								# UNIT CARD
+								widget = {
+									size = { 100% 85 }
+									widget = {
+										size = { 99% 78 }
+										parentanchor = center
+										hbox = {
+											datacontext = "[UnitItem.AccessUnit]"
+											datacontext = "[UnitItem.AccessUnit.GetLocation]"
+											
+											using = bg_market_card
+											using = bg_cabinet_card_frame
+
+											unit_card = {
+												blockoverride "name_sort_highlight" {
+													sort_by_small_highlight = {
+														ignore_layout = yes
+														name = "name"
+													}
+												}
+
+												blockoverride "strength_sort_highlight" {
+													sort_by_small_highlight = {
+														ignore_layout = yes
+														name = "strength"
+													}
+												}
+
+												blockoverride "size_sort_highlight" {
+													sort_by_small_highlight = {
+														ignore_layout = yes
+														name = "size"
+													}
+												}
+
+												blockoverride "ships_sort_highlight" {
+													sort_by_small_highlight = {
+														ignore_layout = yes
+														name = "ships"
+													}
+												}
+
+												blockoverride "morale_sort_highlight" {
+													sort_by_small_highlight = {
+														ignore_layout = yes
+														name = "morale"
+													}
+												}
+
+												blockoverride "objective_sort_highlight" {
+													sort_by_small_highlight = {
+														ignore_layout = yes
+														name = "objective"
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				AutomatedSection = {
+					datacontext = "[GetAutomatedSystemItem('navybuilder')]"
+					
+					blockoverride "glow_anim_automation_visible" {
+						visible = "[AutomatedSystemsItem.IsEnabled]"
+					}
+				}
+			}
+		}
+	}
+}
+
+types UnitOverviewTypes
+{
+	type unit_card = hbox {
+		using = layoutpolicy_expanding
+		margin_left = 3
+
+		# COMMANDER
+		widget = {
+			size = { 67 72 }
+			datacontext = "[Unit.GetCommander]"
+			using = character_portrait_bg
+
+			# Without Commander
+			block "unit_card_empty_portrait" {
+				character_frame_small = {
+					blockoverride "character_frame_enable" {}
+					visible = "[Not(Unit.HasLeader)]"
+					blockoverride "portrait_datacontext" {
+						datacontext = "[Unit.GetCommander]"
+					}
+					blockoverride "character_frame_size" {
+						size = { 67 72 }
+					}
+
+					blockoverride "portrait_widget" {
+						portrait_standard_head_framed_button = {
+							
+							size = { 100% 100% }
+							blockoverride "character_tooltip" {
+								tooltipwidget = { BasicFunctionalTooltip = {} }
+							}
+		
+							blockoverride "portrait_click" {
+								action_tooltip = {
+									visible = "[Unit.IsArmy]"
+									click_type = left
+									click_mode = single
+									title = "SELECT_COMMANDER_ARMY_TT" 
+									enabled = "[Unit.CanReplaceLeader]"
+									description = "[Unit.CanReplaceLeaderInfo]"
+									on_action = "[SetupSelectCommanderLeft(Unit.Self)]"
+									cursor = "character_menu"
+								}
+		
+								action_tooltip = {
+									visible = "[Not(Unit.IsArmy)]"
+									click_type = left
+									click_mode = single
+									title = "SELECT_COMMANDER_NAVY_TT" 
+									enabled = "[Unit.CanReplaceLeader]"
+									description = "[Unit.CanReplaceLeaderInfo]"
+									on_action = "[SetupSelectCommanderLeft(Unit.Self)]"
+									cursor = "character_menu"
+								}
+							}
+							
+							blockoverride "character_contextmenu"{}
+							blockoverride "rightclick"{}
+							blockoverride "hover"{}
+						}
+					}
+				}
+			}
+
+			# With Commander
+			character_frame_small = {
+				visible = "[Unit.HasLeader]"
+				enabled = "[Unit.GetCommander.CanGiveUnitBonus]"
+				blockoverride "portrait_datacontext" {
+					datacontext = "[Unit.GetCommander]"
+				}
+				blockoverride "character_frame_size" {
+					size = { 67 72 }
+				}
+				# blockoverride "character_frame_dynasty_visible" {
+				# 	visible = no
+				# }
+				blockoverride "character_frame_estate_visible" {
+					visible = no
+				}
+			}
+
+			header_button_left = {
+				parentanchor = hcenter|bottom
+				position = {0 4}
+				size = { 23 23 }
+				enabled = "[Unit.CanReplaceLeader]"
+				block "unit_card_replace_visible" {
+					visible = "[Unit.HasLeader]"
+				}
+
+				blockoverride "button_icon_stretch_sprite" {}
+				blockoverride "header_button_frame_inner" {visible = no}
+				blockoverride "header_button_icon_size" { size = { 20 20 } }
+				blockoverride "header_button_text_layout" {}
+
+				blockoverride "icon_texture" {
+					texture = "gfx/interface/icons/sort/change.dds"
+					modify_texture = {
+						using = color_new_gold_texture
+					}
+					modify_texture = {
+						using = color_black_texture
+						blend_mode = overlay
+						alpha = 0.3
+					}
+					modify_texture = {
+						using = overlay_stone_texture
+						blend_mode = overlay
+						alpha = 0.5
+					}
+					texture_density = 2
+				}
+
+				tooltipwidget = { BasicFunctionalTooltip = {} }
+				action_tooltip = {
+					visible = "[Unit.IsArmy]"
+					click_type = left
+					click_mode = single
+					title = "CLICK_TO_REPLACE" 
+					enabled = "[Unit.CanReplaceLeader]"
+					description = "[Unit.CanReplaceLeaderInfo]"
+					on_action = "[SetupSelectCommanderLeft(Unit.Self)]"
+				}
+
+				action_tooltip = {
+					visible = "[Not(Unit.IsArmy)]"
+					click_type = left
+					click_mode = single
+					title = "CLICK_TO_REPLACE_ADMIRAL" 
+					enabled = "[Unit.CanReplaceLeader]"
+					description = "[Unit.CanReplaceLeaderInfo]"
+					on_action = "[SetupSelectCommanderLeft(Unit.Self)]"
+				}
+
+				action_tooltip = {
+					click_type = right
+					click_mode = confirm
+					title = "REMOVE_COMMANDER_TT" 
+					enabled = "[Unit.CanReplaceLeader]"
+					description = "[Unit.CanReplaceLeaderInfo]"
+					on_action = "[Unit.RemoveCommander]"
+				}
+				action_tooltip = {
+					visible = "[Not(Unit.IsArmy)]"
+					click_type = right
+					click_mode = confirm
+					title = "REMOVE_ALMIRANT_TT" 
+					enabled = "[Unit.CanReplaceLeader]"
+					description = "[Unit.CanReplaceLeaderInfo]"
+					on_action = "[Unit.RemoveCommander]"
+				}
+			}
+		}
+		
+		vbox = {
+			using = layoutpolicy_expanding
+			block "unit_card_margins" {
+				margin = {0 5}
+				margin_right = 5
+			}
+			
+			# TOP CONTENT
+			hbox = {
+				using = layoutpolicy_expanding
+				layoutstretchfactor_vertical = 6
+				
+				# UNIT BUTTON
+				card_header_button_01 = {
+					name = "unit_header_button"
+					using = layoutpolicy_expanding
+					size = {-1 30}
+
+					using = bg_paper_card
+					using = bg_card_header_01_military
+					blockoverride "uiaction_gov" {
+						visible = "[Not(UIAction.IsEnabled)]"
+					}
+					
+					# block "unit_card_title_tooltip" {
+						tooltipwidget = {
+							using = Unit_tooltip
+						}
+					# }
+
+					block "unit_card_title_action" {
+						using = unit_card_actions
+					}
+
+					hbox = {
+						block "name_sort_highlight" {}
+
+						margin = {5 0}
+						spacing = 5
+
+						button = {
+							size = { 25 25 }
+
+							action_tooltip = {
+								click_type = left
+								click_mode = single
+								title = "TOGGLE_UNIT_SELECTION_TT"
+								on_action = "[ToggleSelectUnit(Unit.Self)]"
+							}
+
+							action_tooltip = {
+								click_type = right
+								click_mode = single
+								title = "TOGGLE_ALL"
+								on_action = "[SelectAllPlayerUnits(Unit.IsArmy)]"
+							}
+
+							tooltipwidget = {
+								BasicFunctionalTooltip = {
+								}
+							}
+							button_checkbox = {
+								size = { 100% 100% }
+								down = "[IsUnitSelected(Unit.Self)]"
+								alwaystransparent = yes
+							}
+						}
+
+						widget = {
+							size = { 10 22 }
+							allow_outside = yes
+
+							unit_composition_bar = {
+								size = { 8 22 }
+							}
+
+							icon = {
+								size = { 100% 100% }
+								texture = "gfx/interface/component_tiles/square_outline_alt.dds"
+								texture_density = 2
+								spriteType = corneredstretched
+								spriteBorder = { 20 20 }
+								modify_texture = {
+									using = color_super_dark_brown_texture
+									blend_mode = multiply
+								}
+							}
+						}
+		
+						# country_flag_very_small = {
+						# 	datacontext = "[Unit.GetCountry]"
+						# }
+		
+						text_single = {
+							using = layoutpolicy_expanding
+							autoresize = no
+							align = nobaseline
+							default_format = "#yellow_titles"
+							text = "[Unit.GetNameWithNoTooltip]"
+						}
+
+						icon = {
+							size = { 20 20 }
+							texture = "gfx/interface/icons/unit_view/atrittion_icon.dds"
+
+							visible = "[GreaterThan_CFixedPoint(Unit.GetAttrition, '(CFixedPoint)0')]"
+							
+							tooltipwidget = {
+								SimpleContextualStringPairTooltipType = {
+									lowpriotextcontext = "[Unit.GetAttritionTooltip]"
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/unit_view/atrittion_icon.dds"
+
+											glow = {
+												name = "drop_shadow"
+												glow_radius = 3
+												color = {0.0 0.0 0.0 1.0}
+												alpha = 0.3
+											}
+										}
+									}
+									blockoverride "concept_link" {
+										text = "[attrition|e]"
+									}
+								}
+							}
+							
+							glow = {
+								name = "drop_shadow"
+								glow_radius = 5
+								color = {1.0 0.0 0.0 1.0}
+								alpha = 0.6
+							}
+						}
+
+						icon = {
+							visible = "[Unit.HasPrisoners]"
+							size = {20 20}
+							texture = "gfx/interface/icons/unit_category/captured.dds"
+							datacontext = "[Unit.GetUnitBox('captured')]"
+							tooltipwidget = {
+								using = SubUnitArray_tooltip
+							}
+						}
+
+						offerMercenaryIcon = {
+							size = {25 25}
+							visible = "[Unit.ContainsPlayerMercenaries]"
+							tooltipwidget = {
+								using = unit_is_player_mercenary_tooltip
+							}
+						}
+
+						icon = {
+							size = {20 20}
+							visible = "[And(Unit.ContainsMercenaries, Not(Unit.ContainsPlayerMercenaries))]"
+							texture = "[GetConceptTexture('mercenary')]"
+							tooltipwidget = {
+								using = unit_is_player_mercenary_tooltip
+							}
+						}
+
+						expand = {}
+					}
+
+					# header_button_left = {
+					# 	size = {100% 100%}
+					# 	blockoverride "icon_size" {
+					# 		visible = no
+					# 	}
+						
+					# 	blockoverride "bg_color" {
+					# 		alpha = 0
+					# 	}
+					# 	blockoverride "header_button_frame_inner_mirror" { visible = no }
+					# }
+				}
+
+				#SELECT OBJECTIVE BUTTON
+				widget = {
+					size = { 34 34 }
+					onmousehierarchyenter = "[PdxGuiWidget.SetHighlightObjectiveGeography(Unit.Self)]"
+					#shortcut button
+					button = {
+						size = { 1 1 }
+						onclick = "[ShowUnitMilitaryObjectiveGroups(Unit.Self)]"
+						input_action = "select_objective"
+						use_global_input_instance = yes
+						tooltip_enabled = no
+					}
+					header_button_left = {
+						size = { 100% 100% }
+
+						block "objective_sort_highlight" {}
+	
+						blockoverride "bg_color" {
+							alpha = 0.5
+							# NAVY
+							modify_texture = {
+								visible = "[Unit.IsNavy]"
+								using = color_mid_blue_texture
+								blend_mode = multiply
+							}
+							# ARMY
+							modify_texture = {
+								visible = "[Unit.IsArmy]"
+								using = color_desat_red_texture
+								blend_mode = multiply
+							}
+							modify_texture = {
+								texture = "gfx/interface/cards/headers/header_pattern_01.dds"
+								alpha = 0.4
+								blend_mode = overlay
+							}
+						}
+						blockoverride "icon_size" {
+							size = { 71% 71% }
+						}
+						blockoverride "header_button_frame_inner" { visible = no }
+						blockoverride "header_button_text_layout" {}
+						blockoverride "header_button_icon_size" { size = { 30 30 } }
+						blockoverride "header_button_icon_obj" {
+							icon = {
+								parentanchor = center
+								visible = "[Unit.IsAutomated]"
+								size = { 65% 65% }
+								texture = "[GetMilitaryObjectiveIcon(Unit.GetObjectiveGroup.GetObjective.GetType)]"
+								texture_density = 2
+							}
+							icon = {
+								parentanchor = center
+								visible = "[Not(Unit.IsAutomated)]"
+								size = { 65% 65% }
+								texture = "gfx/interface/icons/unit_actions/select_objective.dds"
+								texture_density = 2
+							}
+						}
+	
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										visible = "[Not(Unit.IsAutomated)]"
+										texture = "gfx/interface/icons/unit_actions/select_objective.dds"
+						
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.3
+										}
+									}
+	
+									icon = {
+										using = tooltip_title_icon_size
+										visible = "[Unit.IsAutomated]"
+										texture = "[GetMilitaryObjectiveIcon(Unit.GetObjectiveGroup.GetObjective.GetType)]"
+						
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.3
+										}
+									}
+								}
+						
+								blockoverride "title_text" {
+									text = "[Select_CString(Unit.IsAutomated, Unit.GetObjectiveGroup.GetObjective.GetName, Localize('MILITARY_OBJECTIVES_SELECT'))]"
+								}
+	
+								blockoverride "concept_link" {
+									text = "[military_objective|e]"
+								}
+						
+								blockoverride "tooltip_content" {
+									TooltipTextBlock = {
+										visible = "[Unit.IsAutomated]"
+										blockoverride "text" { text = "[Unit.GetObjectiveGroup.GetObjective.GetInfo]" }
+									}
+									TooltipTextBlock = {
+										visible = "[Not(Unit.IsAutomated)]"
+										blockoverride "text" { text = "NO_OBJECTIVE_SELECTED" }
+									}
+
+									TooltipScrolledBlockList = {
+										visible = "[Unit.IsAutomated]"
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}										
+										textcontext = "[Unit.GetObjectiveGroup.GetObjective.GetAction]"
+									}
+								}
+							}
+						}
+	
+						input_action = "select_objective"
+						use_global_input_instance = yes
+	
+						action_tooltip = {
+							enabled = "[Unit.IsAutomated]"
+							click_type = right
+							click_mode = confirm
+							click_modifier = default
+							title = "CANCEL_OBJECTIVE"
+							conditions = "NO_OBJECTIVE_SELECTED_CONDITION"
+							on_action = "[CancelUnitMilitaryObjective(Unit.Self)]"
+						}
+	
+						action_tooltip = {
+							enabled = "[Unit.IsAutomated]"
+							click_type = right
+							click_mode = confirm
+							click_modifier = ctrl
+							title = "CANCEL_OBJECTIVE_TYPE"
+							conditions = "NO_OBJECTIVE_SELECTED_CONDITION"
+							on_action = "[CancelMilitaryObjectiveGlobally(Unit.Self)]"
+						}
+	
+						action_tooltip = {
+							click_type = left
+							click_mode = single
+							title = "GIVE_NEW_OBJECTIVE"
+							on_action = "[ShowUnitMilitaryObjectiveGroups(Unit.Self)]"
+							visible = "[Not(Unit.IsAutomated)]"
+						}
+	
+						action_tooltip = {
+							click_type = left
+							click_mode = single
+							title = "REPLACE_CURRENT_OBJECTIVE"
+							on_action = "[ShowUnitMilitaryObjectiveGroups(Unit.Self)]"
+							visible = "[Unit.IsAutomated]"
+						}
+
+						action_tooltip = {
+							click_type = left
+							click_mode = single
+							click_modifier = ctrl
+							title = "VIEW_CURRENT_OBJECTIVE"
+							on_action = "[ShowUnitMilitaryObjectiveGroup(Unit.Self)]"
+							visible = "[Unit.IsAutomated]"
+						}
+					}
+				}
+
+				# EMBARK ICON - NAVY WITHOUT EMBARKED ARMY/IES
+				icon = {
+					visible = "[And(Unit.IsNavy, Not(GreaterThan_int32(Unit.GetUsedTransportCapacityValue, '(int32)0')))]"
+					layoutpolicy_vertical = expanding
+					size = { 85 -1 }
+
+					texture = "gfx/interface/buttons/navigational_header_button_frame.dds"
+					texture_density = 2
+					spriteType = corneredstretched
+					spriteborder = { 45 25 }
+					frame_grid = {4 1}
+					frame = 3
+
+					hbox = {
+						spacing = 5
+						margin = { 5 0 }
+						layoutpolicy_horizontal = expanding
+
+						expand = {}
+						
+						icon = {
+							size = { 20 20 }
+							texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+							texture_density = 2
+						}
+
+						text_single = {
+							maximumsize = { 55 20 }
+							minimumsize = { -1  20 }
+							align = left|nobaseline
+							text = "[Unit.GetMaxTransportCapacity]"
+						}
+
+						expand = {}
+						
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+									}
+								}
+							
+								blockoverride "title_text" {
+									text = "TRANSPORT_CAPACITY_TT_TITLE"
+								}
+						
+								blockoverride "concept_link" {
+									text = "[transport_capacity|e]"
+								}
+								
+								blockoverride "tooltip_content" {
+									TooltipTextBlock = {
+										blockoverride "text" {
+											text = "TRANSPORT_CAPACITY_TT_TEXT_2"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+					
+				# EMBARK BUTTON
+				header_button_left = {
+					layoutpolicy_vertical = expanding
+					size = { 80 -1 }
+					visible = "[Not(And(Unit.IsNavy, Not(GreaterThan_int32(Unit.GetUsedTransportCapacityValue, '(int32)0'))))]"
+					enabled = "[Or(And3(Unit.IsArmy, Not(Unit.IsInTransport), Unit.CanEmbark), Not(And(Unit.IsArmy, Not(Unit.IsInTransport))))]"
+
+					blockoverride "bg_color" {
+						alpha = 0.5
+						# NAVY
+						modify_texture = {
+							visible = "[Unit.IsNavy]"
+							using = color_mid_blue_texture
+							blend_mode = multiply
+						}
+						# ARMY
+						modify_texture = {
+							visible = "[Unit.IsArmy]"
+							using = color_desat_red_texture
+							blend_mode = multiply
+						}
+						modify_texture = {
+							texture = "gfx/interface/cards/headers/header_pattern_01.dds"
+							alpha = 0.4
+							blend_mode = overlay
+						}
+					}
+					blockoverride "icon_size" {
+						size = { 71% 71% }
+					}
+					blockoverride "header_button_icon_size" { size = { 30 30 } }
+					blockoverride "header_button_icon_obj" {
+						piechart = {
+							visible = "[And(Unit.IsNavy, GreaterThan_int32(Unit.GetUsedTransportCapacityValue, '(int32)0'))]"
+							parentanchor = center
+							size = { 20 20 }
+							using = piechart_angles
+							using = bg_circle_piechart
+		
+							pieslice = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+								value = "[Unit.GetUsedTransportCapacityPercentage]"
+								color = { 1 1 1 1 }
+							}
+		
+							pieslice = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+								value = "[Subtract_float('(float)1.0', Unit.GetUsedTransportCapacityPercentage)]"
+								color = { 1 1 1 1 }
+							}
+
+							icon = {
+								parentanchor = center
+								size = { 70% 70% }
+								texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+								texture_density = 2
+							}
+						}
+
+						piechart = {
+							visible = "[And(Unit.IsArmy, Unit.IsInTransport)]"
+							size = { 20 20 }
+							using = piechart_angles
+							parentanchor = center
+							using = bg_circle_piechart
+
+							pieslice = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+								value = "[Unit.GetLoadedOn.GetUsedTransportCapacityPercentage]"
+								color = { 1 1 1 1 }
+							}
+		
+							pieslice = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+								value = "[Subtract_float('(float)1.0', Unit.GetLoadedOn.GetUsedTransportCapacityPercentage)]"
+								color = { 1 1 1 1 }
+							}
+
+							icon = {
+								parentanchor = center
+								size = { 70% 70% }
+								texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+							}
+						}
+
+						icon = {
+							parentanchor = center
+							visible = "[Not(Or(And(Unit.IsNavy, GreaterThan_int32(Unit.GetUsedTransportCapacityValue, '(int32)0')), And(Unit.IsArmy, Unit.IsInTransport)))]"
+							size = { 65% 65% }
+							texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+							texture_density = 2
+						}
+					}
+					blockoverride "header_button_text_layout" {
+						hbox = {
+							using = layoutpolicy_expanding
+							minimumsize = { -1 30 }
+							margin = { 5 0 }
+
+							# ARMY NOT IN TRANSPORT
+							text_single = {
+								visible = "[And(Unit.IsArmy, Not(Unit.IsInTransport))]"
+								layoutpolicy_horizontal = expanding
+								size = {-1 20}
+								autoresize = no
+								align = center
+								text = "[Unit.GetTransportCost]"
+							}
+								
+							# ARMY IN TRANSPORT
+							text_single = {
+								visible = "[And(Unit.IsArmy, Unit.IsInTransport)]"
+								layoutpolicy_horizontal = expanding
+								size = {-1 20}
+								autoresize = no
+								align = left|nobaseline
+								raw_text = "[Unit.GetLoadedOn.GetUsedTransportCapacityShort]/[Unit.GetLoadedOn.GetMaxTransportCapacityShort]"
+							}
+
+							# NAVY WITH EMBARKED ARMY/IES
+							text_single = {
+								visible = "[And(Unit.IsNavy, GreaterThan_int32(Unit.GetUsedTransportCapacityValue, '(int32)0'))]"
+								layoutpolicy_horizontal = expanding
+								size = {-1 20}
+								autoresize = no
+								align = left|nobaseline
+								raw_text = "[Unit.GetUsedTransportCapacityShort]/[Unit.GetMaxTransportCapacityShort]"
+							}
+						}
+					}
+					tooltipwidget = {
+						ContextualTooltipType = {
+							blockoverride "tooltip_title" {
+								ContextualTooltipHeader = {
+									visible = "[And(Unit.IsArmy, Unit.IsInTransport)]"
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/unit_actions/select_transport.dds"						
+										}
+									}
+									blockoverride "title_text" {
+										text = "SELECT_LOADED_UNIT"
+									}
+									blockoverride "concept_link" {
+										text = "[embarking|e]"
+									}
+								}
+								ContextualTooltipHeader = {
+									visible = "[And(Unit.IsArmy, Not(Unit.IsInTransport))]"
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/unit_actions/select_transport.dds"						
+										}
+									}
+									blockoverride "title_text" {
+										text = "EMBARK_ACTION"
+									}
+									blockoverride "concept_link" {
+										text = "[embarking|e]"
+									}
+								}
+								ContextualTooltipHeader = {
+									visible = "[And(Unit.IsNavy, GreaterThan_int32(Unit.GetEmbarkedArmiesAmount, '(int32)1'))]"
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/unit_actions/select_transport.dds"						
+										}
+									}
+									blockoverride "title_text" {
+										text = "SELECT_LOADED_UNITS"
+									}
+									blockoverride "concept_link" {
+										text = "[embarking|e]"
+									}
+								}
+								ContextualTooltipHeader = {
+									visible = "[And(Unit.IsNavy, Not(GreaterThan_int32(Unit.GetEmbarkedArmiesAmount, '(int32)1')))]"
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "gfx/interface/icons/unit_actions/select_transport.dds"						
+										}
+									}
+									blockoverride "title_text" {
+										text = "SELECT_ONBOARDED_UNIT"
+									}
+									blockoverride "concept_link" {
+										text = "[embarking|e]"
+									}
+								}
+								TooltipLockProgress = {}
+							}
+					
+							blockoverride "tooltip_content" {
+								TooltipTextBlock = {
+									visible = "[And(Unit.IsArmy, Not(Unit.IsInTransport))]"
+									blockoverride "text" {
+										text = "TRANSPORT_COST_FOR_ARMY_HEADER"
+									}
+								}
+								TooltipTextBlock = {
+									visible = "[And(Unit.IsNavy, GreaterThan_int32(Unit.GetUsedTransportCapacityValue, '(int32)0'))]"
+									blockoverride "text" {
+										text = "TRANSPORT_CAPACITY_TT_TEXT_2"
+									}
+								}
+								TooltipTextBlock = {
+									visible = "[And(Unit.IsArmy, Unit.IsInTransport)]"
+									blockoverride "text" {
+										text = "TRANSPORT_CAPACITY_TT_TEXT_3"
+									}
+								}
+							}
+						}
+					}
+					action_tooltip = {
+						visible = "[And(Unit.IsArmy, Unit.IsInTransport)]"
+						click_type = right
+						click_mode = single
+						title = "DISEMBARK_ACTION"
+						enabled = "[Unit.CanDisembark]"
+						description = "[Unit.GetCanDisembarkTooltip]"
+						on_action = "[Unit.Disembark]"
+					}
+	
+					action_tooltip = {
+						visible = "[And(Unit.IsArmy, Unit.IsInTransport)]"
+						click_type = left
+						click_mode = single
+						title = "SELECT_LOADED_UNIT"
+						on_action = "[SelectUnit(Unit.GetLoadedOn.Self)]"
+					}
+
+					action_tooltip = {
+						visible = "[And(Unit.IsArmy, Not(Unit.IsInTransport))]"
+						click_type = left
+						click_mode = single
+						title = "EMBARK_ACTION"
+						enabled = "[Unit.CanEmbark]"
+						description = "[Unit.GetCanEmbarkTooltip]"
+						on_action = "[Embark(Unit.Self)]"
+					}
+
+					action_tooltip = {
+						visible = "[And(Unit.IsNavy, GreaterThan_int32(Unit.GetEmbarkedArmiesAmount, '(int32)1'))]"
+						click_type = left
+						click_mode = single
+						title = "SELECT_LOADED_UNITS"
+						on_action = "[SelectUnitsOnBoard(Unit.Self)]"
+					}
+
+					action_tooltip = {
+						visible = "[And(Unit.IsNavy, Not(GreaterThan_int32(Unit.GetEmbarkedArmiesAmount, '(int32)1')))]"
+						click_type = left
+						click_mode = single
+						title = "SELECT_ONBOARDED_UNIT"
+						on_action = "[SelectUnit(Unit.GetFirstUnitOnBoard.Self)]"
+					}
+				}
+				
+				# STATUS LOCATION
+				header_button_left = {
+					layoutpolicy_vertical = expanding
+					size = { 110 -1 }
+
+					tooltipwidget = {
+						using = location_tooltip_alt
+					}
+					action_tooltip = {
+						click_type = left
+						click_mode = single
+						title = "OPEN_UNIT_LOCATION"
+						visible = "[Location.IsLand]"
+						on_action = "[ShowLocation(Location.Self)]"
+						enabled = "[Not(Location.IsCorridor)]"
+					}
+					action_tooltip = {
+						click_type = left
+						click_mode = single
+						title = "OPEN_UNIT_LOCATION"
+						visible = "[Not(Location.IsLand)]"
+						on_action = "[ShowSeaZone(Location.Self)]"
+						enabled = "[Not(Location.IsCorridor)]"
+					}
+					action_tooltip = {
+						click_type = right
+						click_mode = single
+						title = "GO_TO_UNIT_LOCATION"
+						on_action = "[PanToLocation(Location.Self)]"
+					}
+					onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(Location.Self)]"
+
+					blockoverride "bg_color" {
+						alpha = 0.5
+						# NAVY
+						modify_texture = {
+							visible = "[Unit.IsNavy]"
+							using = color_mid_blue_texture
+							blend_mode = multiply
+						}
+						# ARMY
+						modify_texture = {
+							visible = "[Unit.IsArmy]"
+							using = color_desat_red_texture
+							blend_mode = multiply
+						}
+						modify_texture = {
+							texture = "gfx/interface/cards/headers/header_pattern_01.dds"
+							alpha = 0.4
+							blend_mode = overlay
+						}
+					}
+					blockoverride "icon_size" {
+						size = { 71% 71% }
+					}
+					blockoverride "header_button_icon_size" { size = { 30 30 } }
+
+					blockoverride "header_button_icon_obj" {
+						icon = {
+							size = {20 20}
+							parentanchor = center
+							texture = "[Unit.GetStatusTexture]"
+						}
+					}
+					blockoverride "header_button_text_layout" {
+						hbox = {
+							using = layoutpolicy_expanding
+							minimumsize = { -1 30 }
+							margin = {5 0}
+
+							text_single = {
+								layoutpolicy_horizontal = expanding
+								size = {-1 20}
+								autoresize = no
+								alwaystransparent = yes
+								filter_mouse = none
+								text = "[Location.GetNameWithNoTooltip|L]"
+							}
+						}
+					}
+				}
+			}
+
+			# BOTTOM CONTENT
+			hbox = {
+				using = layoutpolicy_expanding
+				layoutstretchfactor_vertical = 6
+				margin = {0 3}
+				margin_bottom = 1
+				spacing = 2
+
+				# UNIT INFO
+				button_regular = {
+					name = "unit_card_info"
+					layoutpolicy_vertical = expanding
+					size = { 134 -1 }
+					datacontext = "[Unit.GetBalanceAction]"
+
+					action_tooltip = {
+						click_type = left
+						click_mode = single
+	
+						title = "[UnitActionItem.GetName]"
+						on_action = "[UnitActionItem.SingleLeftClick]"
+						enabled = "[UnitActionItem.CanSingleLeftClick]"
+					}
+
+					tooltipwidget = {
+						using = Unit_tooltip
+					}
+
+					hbox = {
+						margin = { 5 0 }
+						margin_bottom = 2
+						spacing = 3
+						# FOOD
+						piechart = {
+							size = { 20 20 }
+
+							using = piechart_angles
+
+							icon = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+								size = { 97% 97% }
+								parentanchor = center
+								color = { 0 0 0 1 }
+							}
+
+							pieslice = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+								value = "[Unit.GetFoodPercentage]"
+								color = { 0.3 0.8 0.3 1 }
+								alpha = 0.8
+							}
+
+							pieslice = {
+								texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+								value = "[Subtract_float('(float)100.0', Unit.GetFoodPercentage)]"
+								color = { 0.3 0.3 0.3 1 }
+								alpha = 0.8
+							}
+
+							icon = {
+								parentanchor = center
+								size = { 57% 57% }
+								texture = "gfx/interface/icons/unit_view/food.dds"
+								texture_density = 2
+								alpha = 1
+
+								glow = {
+									name = "drop_shadow"
+									glow_radius = 3
+									color = {0.0 0.0 0.0 1.0}
+									alpha = 0.3
+								}
+							}
+
+							using = bg_circle_piechart
+
+							# widget = {
+							# 	parentanchor = bottom|right
+							# 	position = { -2 -8 }
+
+							# 	icon = {
+							# 		visible = "[Not(Unit.IsGainingFood)]"
+
+							# 		size = { 10 10 }
+							# 		mirror = vertical
+
+							# 		texture = "gfx/interface/icons/flat_icons/arrow.dds"
+
+							# 		modify_texture = {
+							# 			using = color_red_texture
+							# 		}
+							# 	}
+
+							# 	icon = {
+							# 		visible = "[Unit.IsGainingFood]"
+
+							# 		size = { 10 10 }
+
+							# 		texture = "gfx/interface/icons/flat_icons/arrow.dds"
+
+							# 		modify_texture = {
+							# 			using = color_light_green_texture
+							# 		}
+							# 	}
+							# }
+							
+							tooltipwidget = {
+								using = UnitFood_tooltip
+							}
+						}
+
+						vbox = {
+							hbox = {
+								spacing = 3
+								# ARMY STRENGTH
+								hbox = {
+									visible = "[Unit.IsArmy]"
+									spacing = 2
+									tooltipmeta = {
+										texture = "gfx/interface/icons/unit_actions/reinforcement_rate.dds"
+									}
+									tooltipwidget = {
+										using = reinforcement_rate_tootlip
+									}
+
+									text_single = {
+										text = "[Unit.GetVisualStrength]"
+										align = right|nobaseline
+										autoresize = no
+										size = { 30 16}
+									}
+									icon = {
+										size = { 16 16 }
+										using = army_strength_texture
+										texture_density = 2
+									}
+
+									block "strength_sort_highlight" {}
+								}
+
+								# Regiments
+								hbox = {
+									spacing = 2
+									text_single = {
+										text = "[GetDataModelSize(Unit.GetSubUnits)]"
+										using = Font_Size_Small
+										
+										align = right|nobaseline
+										autoresize = no
+										size = { 20 16}
+									}
+
+									icon = {
+										size = { 16 16 }
+										# block "count_icon" {
+											using = unit_formation_texture
+										# }
+										glow = {
+											name = "drop_shadow"
+											glow_radius = 3
+											color = {0.0 0.0 0.0 1.0}
+											alpha = 0.3
+										}
+									}
+
+									block "size_sort_highlight" {}
+									
+									block "ships_sort_highlight" {}
+								}
+
+								# NAVY BLOCKADE
+								hbox = {
+									visible = "[Unit.IsNavy]"
+									spacing = 2
+									tooltipwidget = {
+										using = UnitBlockade_tooltip
+									}
+									text_single = {
+										text = "[Unit.GetAccumulatedUnitStat('blockade_capacity')]"
+										align = right|nobaseline
+										autoresize = no
+										size = { 30 16}
+									}
+									icon = {
+										size = { 16 16 }
+										texture = "gfx/interface/icons/location_icons/coastal_blockade.dds"
+										texture_density = 2
+									}
+								}
+							}
+
+							progressbar = {
+								visible = "[Unit.HasMaximumMaintenance]"
+								tooltipwidget = {
+									using = UnitMorale_tooltip
+								}
+								layoutpolicy_horizontal = expanding
+								size = { -1 5 }
+								using = progress_bar_green_alt
+								min = 0
+								max = "[Unit.GetMaxMoraleFloat]"
+								value = "[Unit.GetMoraleFloat]"
+								block "morale_sort_highlight" {}
+							}
+
+							progressbar = {
+								visible = "[Not(Unit.HasMaximumMaintenance)]"
+								tooltipwidget = {
+									using = UnitMorale_tooltip
+								}
+								layoutpolicy_horizontal = expanding
+								size = { -1 5 }
+								using = progress_bar_goldish
+								min = 0
+								max = "[Unit.GetMaxMoraleFloat]"
+								value = "[Unit.GetMoraleFloat]"
+								block "morale_sort_highlight" {}
+							}
+						}
+
+						# #EXPERIENCE
+						# piechart = {
+						# 	size = { 17 17 }
+
+						# 	using = piechart_angles
+
+						# 	using = bg_circle_piechart
+
+						# 	icon = {
+						# 		texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						# 		size = { 97% 97% }
+						# 		parentanchor = center
+						# 		color = { 0 0 0 1 }
+						# 	}
+
+						# 	pieslice = {
+						# 		texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						# 		value = "[Unit.GetExperience]"
+						# 		color = { 0.3 0.8 0.3 1 }
+						# 		alpha = 0.8
+						# 	}
+
+						# 	pieslice = {
+						# 		texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						# 		value = "[Subtract_float('(float)100.0', Unit.GetExperience)]"
+						# 		color = { 0.3 0.3 0.3 1 }
+						# 		alpha = 0.8
+						# 	}
+
+						# 	icon = {
+						# 		visible = "[Not(Unit.IsArmy)]"
+						# 		parentanchor = center
+						# 		size = { 63% 63% }
+						# 		texture = "gfx/interface/icons/flat_icons/military/navy_experience.dds"
+						# 		texture_density = 2
+						# 		alpha = 1
+
+						# 		glow = {
+						# 			name = "drop_shadow"
+						# 			glow_radius = 3
+						# 			color = {0.0 0.0 0.0 1.0}
+						# 			alpha = 0.3
+						# 		}
+						# 	}
+							
+						# 	icon = {
+						# 		visible = "[Unit.IsArmy]"
+						# 		parentanchor = center
+						# 		size = { 63% 63% }
+						# 		texture = "gfx/interface/icons/flat_icons/military/army_experience.dds"
+						# 		texture_density = 2
+						# 		alpha = 1
+
+						# 		glow = {
+						# 			name = "drop_shadow"
+						# 			glow_radius = 3
+						# 			color = {0.0 0.0 0.0 1.0}
+						# 			alpha = 0.3
+						# 		}
+						# 	}
+
+						# 	# widget = {
+						# 	# 	parentanchor = bottom|right
+						# 	# 	position = { -2 -8 }
+
+						# 	# 	icon = {
+						# 	# 		visible = "[Not(Unit.IsGainingExperience)]"
+
+						# 	# 		size = { 10 10 }
+						# 	# 		mirror = vertical
+
+						# 	# 		texture = "gfx/interface/icons/flat_icons/arrow.dds"
+
+						# 	# 		modify_texture = {
+						# 	# 			using = color_red_texture
+						# 	# 		}
+						# 	# 	}
+
+						# 	# 	icon = {
+						# 	# 		visible = "[Unit.IsGainingExperience]"
+
+						# 	# 		size = { 10 10 }
+
+						# 	# 		texture = "gfx/interface/icons/flat_icons/arrow.dds"
+
+						# 	# 		modify_texture = {
+						# 	# 			using = color_light_green_texture
+						# 	# 		}
+						# 	# 	}
+						# 	# }
+							
+						# 	tooltipwidget = {
+						# 		SimpleContextualTooltipType = {
+						# 			lowpriotextcontext = "[Unit.GetExperienceTooltip]"
+						# 			blockoverride "title_icon" {
+						# 				icon = {
+						# 					visible = "[Unit.IsArmy]"
+						# 					using = tooltip_title_icon_size
+						# 					texture = "gfx/interface/icons/flat_icons/military/army_experience.dds"
+
+						# 					glow = {
+						# 						name = "drop_shadow"
+						# 						glow_radius = 3
+						# 						color = {0.0 0.0 0.0 1.0}
+						# 						alpha = 0.3
+						# 					}
+						# 				}
+						# 				icon = {
+						# 					visible = "[Not(Unit.IsArmy)]"
+						# 					using = tooltip_title_icon_size
+						# 					texture = "gfx/interface/icons/flat_icons/military/navy_experience.dds"
+
+						# 					glow = {
+						# 						name = "drop_shadow"
+						# 						glow_radius = 3
+						# 						color = {0.0 0.0 0.0 1.0}
+						# 						alpha = 0.3
+						# 					}
+						# 				}
+						# 			}
+						# 			blockoverride "concept_link" {
+						# 				text = "[experience|e]"
+						# 			}
+						# 		}
+						# 	}
+						# }
+					}
+				}
+
+				# DEATTACH ARMY
+				hbox = {
+					using = layoutpolicy_expanding
+					visible = "[Unit.IsArmy]"
+					spacing = 1
+					margin_right = 2
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('army_light_infantry')]"
+					}
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('army_heavy_infantry')]"
+					}
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('army_light_cavalry')]"
+					}
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('army_heavy_cavalry')]"
+					}
+					
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('army_artillery')]"
+					}
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('army_auxiliary')]"
+					}
+				}
+
+				# DEATTACH NAVY
+				hbox = {
+					using = layoutpolicy_expanding
+					visible = "[Unit.IsNavy]"
+					spacing = 1
+					margin_right = 2
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('navy_galley')]"
+					}
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('navy_light_ship')]"
+					}
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('navy_heavy_ship')]"
+					}
+
+					SubUnitCategoryCardButton = {
+						datacontext = "[GetSubUnitCategory('navy_transport')]"
+					}
+				}
+			}
+		}
+	}
+
+	type unit_card_right_buttons = hbox {
+		layoutpolicy_vertical = expanding
+		margin = {5 5}
+		using = bg_cabinet_card_frame
+		vbox = {
+			layoutpolicy_vertical = expanding
+
+			# PREV UNIT
+			button = {
+				size = { 19 19 }
+				texture = "gfx/interface/buttons/up_button_alt.dds"
+				texture_density = 2
+				enabled = "[CanSelectPrevUnit(Unit.Self)]"
+
+				modify_texture = {
+					using = color_new_gold_texture
+					blend_mode = add
+					alpha = 1
+				}
+				modify_texture = {
+					using = overlay_stone_texture
+					blend_mode = overlay
+					alpha = 1
+				}
+				background = {
+					texture = "gfx/interface/buttons/bg_button_light.dds"
+					texture_density = 2
+					modify_texture = {
+						using = color_intense_brown_texture
+						blend_mode = add
+					}
+					modify_texture = {
+						using = color_dark_brown_texture
+						blend_mode = multiply
+						alpha = 0.8
+					}
+				}
+				tooltipwidget = { BasicFunctionalTooltip = {} }
+
+				action_tooltip = {
+					click_type = left
+					click_mode = single
+					enabled = "[CanSelectPrevUnit(Unit.Self)]"
+					title = "SCROLL_UP_UNIT_FILTER"
+					on_action = "[SelectPrevUnit(Unit.Self)]"
+				}
+			}
+
+			# FILTER BUTTON
+			block "unit_filter_buttons" {
+				filter_button_alt = {
+					size = { 19 19 }
+					blockoverride "filter_button_action" {
+						# action_tooltip = {
+						# 	click_type = left
+						# 	click_mode = single
+						# 	title = "TOGGLE_MARKET_SELECTION"
+						# 	on_action = "[ProductionView.ToggleProductionSelectMarket(PdxGuiWidget.FindParent('production_filtered_list').Self)]"
+						# }
+					}
+					tooltipwidget = { BasicFunctionalTooltip = {} }
+					
+					blockoverride "glow_visible" {
+						visible = no
+						# visible = "[ProductionView.IsProductionSelectMarketOpened(PdxGuiWidget.FindParent('production_filtered_list').Self)]"
+					}
+				}
+			}
+
+			# NEXT UNIT
+			button = {
+				size = { 19 19 }
+				texture = "gfx/interface/buttons/up_button_alt.dds"
+				mirror = vertical
+				texture_density = 2
+				enabled = "[CanSelectNextUnit(Unit.Self)]"
+
+				modify_texture = {
+					using = color_new_gold_texture
+					blend_mode = add
+					alpha = 1
+				}
+				modify_texture = {
+					using = overlay_stone_texture
+					blend_mode = overlay
+					alpha = 1
+				}
+				background = {
+					texture = "gfx/interface/buttons/bg_button_light.dds"
+					texture_density = 2
+					modify_texture = {
+						using = color_intense_brown_texture
+						blend_mode = add
+					}
+					modify_texture = {
+						using = color_dark_brown_texture
+						blend_mode = multiply
+						alpha = 0.8
+					}
+				}
+				tooltipwidget = { BasicFunctionalTooltip = {} }
+
+				action_tooltip = {
+					click_type = left
+					click_mode = single
+					enabled = "[CanSelectNextUnit(Unit.Self)]"
+					title = "SCROLL_DOWN_UNIT_FILTER"
+					on_action = "[SelectNextUnit(Unit.Self)]"
+				}
+			}
+		}
+	}
+
+	type unit_action_item = widget {
+		size = { 45 45 }
+
+		vbox = {
+			widget = {
+				using = layoutpolicy_expanding
+				visible = "[Not(UnitActionItem.IsToggleAction)]"
+
+				header_button_left = {
+					parentanchor = center
+					size = { 80% 80% }
+					blockoverride "button_icon_stretch_sprite" {}
+					blockoverride "header_button_frame_inner" { visible = no }
+					# blockoverride "header_button_icon_size" { size = { 100% 100% } }
+					blockoverride "header_button_icon_size" { size = { 36 36 } }
+					blockoverride "header_button_text_layout" {}
+					blockoverride "icon_overlay" {}
+					blockoverride "icon_texture" {
+						size = { 100% 100% }
+						texture = "[UnitActionItem.GetTexture]"
+					}
+
+					action_tooltip = {
+						click_type = left
+						click_mode = confirm
+						title = "[UnitActionItem.GetName]"
+						visible = "[UnitActionItem.HasHoldLeftAction]"
+						on_action = "[UnitActionItem.HoldLeftClick]"
+						enabled = "[UnitActionItem.CanHoldLeftClick]"
+						description = "[UnitActionItem.GetLeftClickDescription]"
+					}
+
+					action_tooltip = {
+						click_type = right
+						click_mode = confirm
+	
+						visible = "[UnitActionItem.HasHoldRightAction]"
+						title = "[UnitActionItem.GetSecondaryName]"
+						on_action = "[UnitActionItem.HoldRightClick]"
+						enabled = "[UnitActionItem.CanHoldRightClick]"
+						description = "[UnitActionItem.GetRightClickDescription]"
+					}
+
+					action_tooltip = {
+						click_type = left
+						click_mode = single
+						visible = "[UnitActionItem.HasSingleLeftAction]"
+						title = "[UnitActionItem.GetName]"
+						on_action = "[UnitActionItem.SingleLeftClick]"
+						conditions = "[MakeItFailIf(Not(UnitActionItem.CanSingleLeftClick), UnitActionItem.GetTooltip)]"
+						enabled = "[UnitActionItem.CanSingleLeftClick]"
+						description = "[UnitActionItem.GetLeftClickDescription]"
+					}
+
+					enabled = "[Or3(And(UnitActionItem.HasSingleLeftAction, UnitActionItem.CanSingleLeftClick),
+					And(UnitActionItem.HasHoldRightAction, UnitActionItem.CanHoldRightClick),
+					And(UnitActionItem.HasHoldLeftAction, UnitActionItem.CanHoldLeftClick))]"
+
+					input_action = "[UnitActionItem.GetShortcut]"
+					use_global_input_instance = yes
+
+					datacontext = "[UnitActionItem]"
+					tooltipwidget = {
+						using = UnitAction_tooltip
+					}
+
+					glow = {
+						name = "drop_shadow"
+						glow_radius = 3
+						color = {0.0 0.0 0.0 1.0}
+						alpha = 0.3
+					}
+				}
+			}
+
+			button = {
+				using = layoutpolicy_expanding
+				onclick = "[UnitActionItem.SingleLeftClick]"
+				enabled = "[UnitActionItem.CanSingleLeftClick]"
+				input_action = "[UnitActionItem.GetShortcut]"
+				use_global_input_instance = yes
+
+				datacontext = "[UnitActionItem]"
+				tooltipwidget = {
+					using = UnitAction_tooltip
+				}
+				visible = "[UnitActionItem.IsToggleAction]"
+
+				UnitAbilitCheckbox = {
+					visible = "[UnitActionItem.IsToggleAction]"
+					parentanchor = center
+					size = { 36 36 }
+					blockoverride "header_button_icon_size" { size = { 36 36 } }
+
+					blockoverride "icon_texture" {
+						texture = "[UnitActionItem.GetTexture]"
+					}
+					blockoverride "icon_size" {
+						size = {30 30}
+					}
+
+					blockoverride "header_button_modify_visible" {
+						visible = "[UnitActionItem.IsActive]"
+					}
+
+					enabled = "[UnitActionItem.CanSingleLeftClick]"
+					input_action = "[UnitActionItem.GetShortcut]"
+					use_global_input_instance = yes
+					down = "[UnitActionItem.IsActive]"												
+
+					datacontext = "[UnitActionItem]"
+					action_tooltip = {
+						visible = "[UnitActionItem.HasSingleLeftAction]"
+						title = "[UnitActionItem.GetName]"
+						on_action = "[UnitActionItem.SingleLeftClick]"													
+						conditions = "[UnitActionItem.GetTooltip]"
+						enabled = "[UnitActionItem.CanSingleLeftClick]"
+						description = "[UnitActionItem.GetLeftClickDescription]"
+					}
+					tooltipwidget = {
+						using = UnitAction_tooltip
+					}
+				}
+
+				# glow = {
+				# 	name = "drop_shadow"
+				# 	glow_radius = 3
+				# 	color = {0.0 0.0 0.0 1.0}
+				# 	alpha = 0.3
+				# }
+			}
+		}
+	}
+
+	type fort_limit_right_info = icon_text_2rows {
+		blockoverride "base_setup" {
+			righttoleft = yes
+		}
+		blockoverride "icon_texture" {
+			texture = "[GetConceptTexture('fort_limit')]"
+		}
+		blockoverride "top_text_setup" {
+			text =  "game_concept_fort_limit"
+			default_format = "#explanation_link_overview"
+		}
+		blockoverride "bottom_text_setup" {
+			text = "[Country.GetCurrentFortsAmount|2W]/[Country.GetFortLimit|2W]"
+		}
+		blockoverride "text_align" {
+			align = right|nobaseline
+		}
+		tooltipwidget = {
+			using = FortLimitTooltip
+		}
+	}
+}
