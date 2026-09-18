@@ -640,3 +640,8 @@ Date: 21/05/2026
 ### Hotfix
 - Reduce global upkeep cost of Levies from 35% to 20%
 - Reduce Tribal Levies goods upkeep cost on top of that
+
+##### 0.2.10
+
+### Optimization
+- Use every_ownable_location instead of every_location_in_the_world for calculating Centers of X. Should be significantly faster
