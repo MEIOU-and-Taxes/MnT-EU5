@@ -645,3 +645,7 @@ Date: 21/05/2026
 
 ### Optimization
 - Use every_ownable_location instead of every_location_in_the_world for calculating Centers of X. Should be significantly faster
+
+### Features
+- Add a specific Price Type for Urban Amenities
+- Split RGO upgrade costs to all the Vanilla types of expand RGO cost, so no longer farming cost modifier for all of them
