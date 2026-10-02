@@ -114,3 +114,144 @@ REPLACE:royal_brewing_rights = {
 REPLACE:royal_masonry_rights = {
 	potential = { always = no }
 }
+
+# Production efficiency maluses become wages
+REPLACE:mining_charter = {
+	location_modifier = {
+		local_max_rgo_size_modifier = 0.35
+		local_peasant_enfranchisment = -0.1
+		mnt_wealth_local_wage_modifier = 0.05 #M&T from -5% production efficiency
+	}
+
+	allow = {
+		scope:target = {
+			custom_tooltip = {
+				text = mining_charter_rgo_tt
+				OR = {
+					is_mining_rgo = yes
+					AND = {
+						is_port = no
+						raw_material = goods:salt
+					}
+				}
+			}
+			NOR = {
+				has_town_rights = town_rights_type:scandinavian_bergslag_privileges
+				has_town_rights = town_rights_type:upper_bergregal
+				has_town_rights = town_rights_type:lower_bergregal
+			}
+		}
+	}
+
+	color = hsv { 0.35 0.30 0.45 }
+}
+
+REPLACE:studium_privileges = {
+	location_modifier = {
+		local_monthly_literacy = 0.05
+		local_pop_promotion_speed_modifier = 0.2
+		local_institution_growth_modifier = 0.2
+		mnt_wealth_local_wage_modifier = 0.05 #M&T from -5% production efficiency
+	}
+
+	allow = {
+		scope:target = {
+			custom_tooltip = {
+				text = studium_privileges_rank_tt
+				OR = {
+					location_rank = location_rank:city
+					location_rank = location_rank:megalopolis
+				}
+			}
+		}
+	}
+
+	color = hsv { 0.12 0.55 0.88 }
+}
+
+REPLACE:ville_franche_town_rights = {
+	kept_at_conquest = no
+	location_modifier = {
+		local_peasant_enfranchisment = 0.1
+		local_population_capacity_modifier = 0.2
+
+		mnt_wealth_local_wage_modifier = 0.05 #M&T from -5% production efficiency
+	}
+
+	potential = {
+		culture = {
+			has_culture_group = culture_group:french_group
+		}
+		modifier:allow_ville_franche_town_rights = yes
+	}
+
+	color = map_FRA
+}
+
+REPLACE:borgo_franco_town_rights = {
+	kept_at_conquest = no
+	location_modifier = {
+		local_trades_per_burgher = 0.25
+		local_peasant_enfranchisment = 0.1
+
+		mnt_wealth_local_wage_modifier = 0.05 #M&T from -5% production efficiency
+	}
+
+	potential = {
+		culture = {
+			has_culture_group = culture_group:italian_group
+		}
+	}
+
+	color = map_ITA
+}
+
+REPLACE:scandinavian_tar_privileges = {
+	kept_at_conquest = no
+	location_modifier = {
+		local_tar_output_modifier = 0.2
+		local_naval_supplies_output_modifier = 0.2
+		local_peasant_enfranchisment = 0.05
+
+		mnt_wealth_local_wage_modifier = 0.05 #M&T from -5% production efficiency
+	}
+
+	allow = {
+		scope:target = {
+			NOT = { has_town_rights = town_rights_type:royal_naval_rights }
+		}
+	}
+
+	color = goods_lumber
+}
+
+REPLACE:scholai_literacy_rights = {
+	kept_at_conquest = no
+	potential = {
+		OR = {
+			culture = { has_culture_group = culture_group:greek_group }
+			culture_group_percentage_in_country = {
+				culture_group = culture_group:greek_group
+				value > 0.25
+			}
+		}
+	}
+	allow = {
+		scope:target = {
+			dominant_culture ?= { has_culture_group = culture_group:greek_group }
+
+			has_building = building_type:university
+			development >= 20
+		}
+	}
+	location_modifier = {
+		local_monthly_literacy = 0.05
+		promote_institution_chance = 1
+		local_institution_growth_modifier = 0.2
+		local_pop_promotion_speed_modifier = 0.25
+
+		mnt_wealth_local_wage_modifier = 0.05 #M&T from -5% production efficiency
+	}
+
+	color = goods_cloves
+}
