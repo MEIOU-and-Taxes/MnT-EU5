@@ -31,13 +31,20 @@ mnt_wealth_projected_income_over_period = {
 	}
 }
 
+# The sum of each estate's displayed wealth over the estates the advance settles, so an estate whose projection
+# goes below zero counts as zero here, as the advance stores it.
+
 mnt_wealth_displayed_wealth_pool = {
-	value = var:mnt_wealth_pool
-	multiply = mnt_wealth_projected_pool_remaining_over_period
-	add = {
-		value = var:mnt_wealth_kept_income_total
-		add = mnt_wealth_projected_flow_total
-		multiply = mnt_wealth_projected_income_over_period
+	value = 0
+	save_temporary_scope_as = mnt_wealth_location
+
+	if = {
+		limit = { has_variable_map = mnt_wealth_cached_local_relative_estate_power }
+		every_key_in_variable_map = {
+			variable = mnt_wealth_cached_local_relative_estate_power
+			save_temporary_scope_as = mnt_wealth_estate
+			prev = { add = mnt_wealth_displayed_estate_wealth }
+		}
 	}
 	min = 0
 }
@@ -80,7 +87,7 @@ mnt_wealth_projected_flow_owed = {
 					if = {
 						limit = {
 							scope:mnt_wealth_flow_location = {
-								is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:mnt_wealth_flow_key }
+								has_variable_map = mnt_wealth_flow_paid_per_million_at_settle is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:mnt_wealth_flow_key }
 							}
 						}
 						scope:mnt_wealth_flow_location = {
@@ -117,11 +124,11 @@ mnt_wealth_projected_estate_flow = {
 			mnt_wealth_projected_months > 0
 			has_variable_map = mnt_estate_raw_power
 			is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_estate }
-			owner ?= { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = scope:mnt_wealth_estate } }
+			owner ?= { has_variable_map = mnt_wealth_flow_paid_per_million_raw_power is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = scope:mnt_wealth_estate } }
 		}
 		owner = { add = "variable_map(mnt_wealth_flow_paid_per_million_raw_power|scope:mnt_wealth_estate)" }
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:mnt_wealth_estate } }
+			limit = { has_variable_map = mnt_wealth_flow_paid_per_million_at_settle is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = scope:mnt_wealth_estate } }
 			subtract = "variable_map(mnt_wealth_flow_paid_per_million_at_settle|scope:mnt_wealth_estate)"
 		}
 		multiply = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_estate)"
@@ -139,7 +146,7 @@ mnt_wealth_projected_estate_income = {
 			add = mnt_wealth_local_estate_wealth_fraction
 		}
 		else_if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = scope:mnt_wealth_estate } }
+			limit = { has_variable_map = mnt_wealth_cached_local_relative_estate_power is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = scope:mnt_wealth_estate } }
 			add = "variable_map(mnt_wealth_cached_local_relative_estate_power|scope:mnt_wealth_estate)"
 		}
 
@@ -155,7 +162,7 @@ mnt_wealth_local_estate_raw_power_fraction = {
 		if = {
 			limit = {
 				var:mnt_wealth_local_raw_power_total > 0
-				is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_estate }
+				has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_estate }
 			}
 			add = {
 				value = "variable_map(mnt_estate_raw_power|scope:mnt_wealth_estate)"
@@ -183,12 +190,15 @@ mnt_wealth_projected_estate_maintenance = {
 	}
 }
 
-mnt_wealth_displayed_estate_wealth = {
+# One estate's wealth projected to now, before the floor. The advance stores a value below zero as zero wealth and
+# moves the shortfall into invested wealth, so the two displays below split it the same way.
+
+mnt_wealth_projected_estate_wealth = {
 	value = 0
 
 	scope:mnt_wealth_location = {
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate } }
+			limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate } }
 			add = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_estate)"
 		}
 
@@ -198,7 +208,10 @@ mnt_wealth_displayed_estate_wealth = {
 			multiply = mnt_wealth_projected_income_over_period
 		}
 	}
+}
 
+mnt_wealth_displayed_estate_wealth = {
+	value = mnt_wealth_projected_estate_wealth
 	min = 0
 }
 
@@ -215,17 +228,46 @@ mnt_wealth_wage_rate_percent = {
 	multiply = 100
 }
 
-# Wage rate as a fraction of a ceiling that starts at 5% and rises 0.04 points a year, capped at 25%, for the wage map mode.
+# Wage rate as a fraction of the elastic wage ceiling (mnt_wealth_raise_wage_map_mode_ceiling), for the wage map mode.
 mnt_wealth_wage_mapmode_fraction = {
-	value = current_year
-	subtract = mnt_wealth_campaign_start_year
-	min = 0
-	multiply = 0.0004
-	add = 0.05
-	max = 0.25
-	save_temporary_value_as = mnt_wealth_wage_ceiling
-	value = var:mnt_wealth_current_wage_rate
-	divide = scope:mnt_wealth_wage_ceiling
+	value = 0
+	if = {
+		limit = { has_global_variable = mnt_wealth_map_mode_max_wage_rate }
+		value = var:mnt_wealth_current_wage_rate
+		divide = global_var:mnt_wealth_map_mode_max_wage_rate
+		max = 1
+	}
+}
+
+# Map modes colour every location at once, so they read stored values only: the pool and the rates recorded at the
+# last settle, never the projected display values.
+
+# The pool at the last settle as a fraction of the elastic wealth ceiling, for the local wealth map mode.
+
+mnt_wealth_pool_mapmode_fraction = {
+	value = 0
+	if = {
+		limit = { var:mnt_wealth_pool > 0 has_global_variable = mnt_wealth_map_mode_max_wealth_pool }
+		value = var:mnt_wealth_pool
+		divide = global_var:mnt_wealth_map_mode_max_wealth_pool
+		max = 1
+	}
+}
+
+# The estate flow as a multiple of a month's investment from the pool at the last settle, for the flow map mode.
+# The tooltip ratio above divides by the projected pool instead.
+
+mnt_wealth_estate_flow_mapmode_ratio = {
+	value = var:mnt_wealth_pool
+	multiply = { value = var:mnt_wealth_cached_investment_rate min = 0 }
+	save_temporary_value_as = mnt_wealth_flow_mapmode_divisor
+
+	value = 0
+	if = {
+		limit = { scope:mnt_wealth_flow_mapmode_divisor > 0 }
+		value = mnt_wealth_estate_flow_total
+		divide = scope:mnt_wealth_flow_mapmode_divisor
+	}
 }
 
 mnt_wealth_live_gross_output = {
@@ -280,7 +322,7 @@ mnt_wealth_wage_rate_computed_percent = {
 # The divisor is checked as a product: two small positives can multiply to zero in fixed point.
 mnt_wealth_estate_flow_ratio = {
 	value = mnt_wealth_local_wealth_total
-	multiply = mnt_wealth_investment_rate
+	multiply = mnt_wealth_recorded_investment_rate
 	save_temporary_value_as = mnt_wealth_flow_ratio_divisor
 
 	value = 0
@@ -351,7 +393,8 @@ mnt_wealth_equilibrium_seizure_from_invested = {
 	min = 0
 }
 
-# Equilibrium invested wealth: where a month's progress is zero. Negative when charges outrun spending.
+# Equilibrium invested wealth: where a month's progress is zero. Negative when charges outrun spending. It reads the
+# live rates on purpose: it predicts the long run, and every future settle records the rates live at that time.
 
 mnt_wealth_equilibrium_invested_wealth = {
 	value = 0
@@ -482,7 +525,7 @@ mnt_wealth_projected_invested_wealth = {
 	# The estate's own income and wealth after income.
 	value = 0
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate } }
 		add = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_estate)"
 	}
 	save_temporary_value_as = mnt_wealth_wealth_at_review
@@ -496,7 +539,7 @@ mnt_wealth_projected_invested_wealth = {
 	value = 1
 	subtract = {
 		value = mnt_wealth_projected_estate_decay_rate
-		multiply = mnt_wealth_decay_resistance_multiplier
+		multiply = mnt_wealth_recorded_decay_resistance
 	}
 	save_temporary_value_as = mnt_wealth_invested_pool_remaining
 	value = scope:mnt_wealth_invested_pool_remaining
@@ -553,12 +596,14 @@ mnt_wealth_projected_invested_wealth = {
 			value = scope:mnt_wealth_inflow_slope
 			multiply = scope:mnt_wealth_sloped_inflow_sum
 		}
-		multiply = mnt_wealth_investment_efficiency_multiplier
+		multiply = mnt_wealth_recorded_investment_efficiency
 	}
 	subtract = {
 		value = scope:mnt_wealth_estate_maintenance
 		multiply = scope:mnt_wealth_flat_inflow_sum
 	}
+	# Wealth projected below zero comes out of invested wealth, as the advance writes it.
+	add = { value = mnt_wealth_projected_estate_wealth max = 0 }
 }
 
 # Same level formula as mnt_wealth_recompute_estate_investment_level; change both together.
@@ -770,7 +815,7 @@ mnt_wealth_local_wealth_change = {
 	add = mnt_wealth_estate_flow_total
 	subtract = {
 		value = mnt_wealth_local_wealth_total
-		multiply = { value = mnt_wealth_investment_rate min = 0 }
+		multiply = { value = mnt_wealth_recorded_investment_rate min = 0 }
 	}
 }
 
@@ -783,14 +828,15 @@ mnt_wealth_local_wealth_share_monthly_trend_rate = {
 
 # --- estate savings (estate scope) ---
 
-# A newly formed country has no economic base yet, so the goal is held at a
-# gold minimum. The ratios measured against it below then always have something
-# to divide by.
+# The same goal the valve sets in mnt_wealth_set_national_savings_valves. The minimum also gives the ratios below
+# something to divide by for a newly formed country with no economic base yet.
 
 mnt_wealth_estate_savings_goal = {
 	value = 0
 	owner = { add = { value = country_economical_base multiply = "estate_power(prev.estate_type)" } }
-	min = 1
+	multiply = mnt_wealth_estate_savings_goal_base_factor
+	min = mnt_wealth_estate_savings_goal_minimum
+	multiply = mnt_wealth_estate_savings_time_multiplier
 }
 
 mnt_wealth_estate_savings_ratio = {
@@ -808,7 +854,7 @@ mnt_wealth_estate_seizure_demand_level = {
 
 	owner = {
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_seizure_demand target = prev.estate_type } }
+			limit = { has_variable_map = mnt_wealth_estate_seizure_demand is_key_in_variable_map = { name = mnt_wealth_estate_seizure_demand target = prev.estate_type } }
 			add = "variable_map(mnt_wealth_estate_seizure_demand|prev.estate_type)"
 		}
 	}
@@ -837,7 +883,7 @@ mnt_wealth_estate_seizure_demand_growth = {
 
 	owner = {
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow target = prev.estate_type } }
+			limit = { has_variable_map = mnt_wealth_estate_flow is_key_in_variable_map = { name = mnt_wealth_estate_flow target = prev.estate_type } }
 			subtract = { value = "variable_map(mnt_wealth_estate_flow|prev.estate_type)" min = 0 }
 		}
 	}
@@ -851,7 +897,7 @@ mnt_wealth_estate_location_investment = {
 
 	owner = {
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow target = prev.estate_type } }
+			limit = { has_variable_map = mnt_wealth_estate_flow is_key_in_variable_map = { name = mnt_wealth_estate_flow target = prev.estate_type } }
 			add = "variable_map(mnt_wealth_estate_flow|prev.estate_type)"
 		}
 	}
@@ -862,7 +908,7 @@ mnt_wealth_estate_flow_charged_two_months_ago_display = {
 
 	owner = {
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_flow_charged_two_months_ago target = prev.estate_type } }
+			limit = { has_variable_map = mnt_wealth_estate_flow_charged_two_months_ago is_key_in_variable_map = { name = mnt_wealth_estate_flow_charged_two_months_ago target = prev.estate_type } }
 			add = "variable_map(mnt_wealth_estate_flow_charged_two_months_ago|prev.estate_type)"
 		}
 	}

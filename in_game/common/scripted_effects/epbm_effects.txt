@@ -99,47 +99,12 @@ epbm_add_estate_building_costs_dynamic = {
 }
 
 epbm_snapshot_estates_dynamic = {
+	# The refund scale, which the building upkeep auto_modifiers read for every country.
 	every_estate = {
 		limit = { estate_type != estate_type:crown_estate }
 		save_scope_as = epbm_est
 
 		prev = {
-			if = {
-				limit = { has_variable_map = epbm_maintenance_charged_last_month is_key_in_variable_map = { name = epbm_maintenance_charged_last_month target = scope:epbm_est } }
-				add_to_variable_map = {
-					name = epbm_maintenance_charged_two_months_ago
-					key = scope:epbm_est
-					value = "variable_map(epbm_maintenance_charged_last_month|scope:epbm_est)"
-				}
-			}
-
-			if = {
-				limit = { has_variable_map = epbm_maintenance_charge is_key_in_variable_map = { name = epbm_maintenance_charge target = scope:epbm_est } }
-				add_to_variable_map = {
-					name = epbm_maintenance_charged_last_month
-					key = scope:epbm_est
-					value = "variable_map(epbm_maintenance_charge|scope:epbm_est)"
-				}
-			}
-
-			if = {
-				limit = { has_variable_map = epbm_shared_charge is_key_in_variable_map = { name = epbm_shared_charge target = scope:epbm_est } }
-				add_to_variable_map = {
-					name = epbm_shared_charged_last_month
-					key = scope:epbm_est
-					value = "variable_map(epbm_shared_charge|scope:epbm_est)"
-				}
-			}
-
-			if = {
-				limit = { has_variable_map = epbm_estate_building_charge is_key_in_variable_map = { name = epbm_estate_building_charge target = scope:epbm_est } }
-				add_to_variable_map = {
-					name = epbm_estate_building_charged_last_month
-					key = scope:epbm_est
-					value = "variable_map(epbm_estate_building_charge|scope:epbm_est)"
-				}
-			}
-
 			if = {
 				limit = { has_variable_map = epbm_upkeep_scale is_key_in_variable_map = { name = epbm_upkeep_scale target = scope:epbm_est.estate_type } }
 				add_to_variable_map = {
@@ -149,6 +114,61 @@ epbm_snapshot_estates_dynamic = {
 				}
 			}
 		}
+	}
+
+	# Display tiers, read only by the expense and government tooltips, so only players write them. An AI country
+	# clears any left from when it was a player, so its tooltips show nothing rather than an old bill.
+	if = {
+		limit = { is_ai = no }
+		every_estate = {
+			limit = { estate_type != estate_type:crown_estate }
+			save_scope_as = epbm_est
+
+			prev = {
+				if = {
+					limit = { has_variable_map = epbm_maintenance_charged_last_month is_key_in_variable_map = { name = epbm_maintenance_charged_last_month target = scope:epbm_est } }
+					add_to_variable_map = {
+						name = epbm_maintenance_charged_two_months_ago
+						key = scope:epbm_est
+						value = "variable_map(epbm_maintenance_charged_last_month|scope:epbm_est)"
+					}
+				}
+
+				if = {
+					limit = { has_variable_map = epbm_maintenance_charge is_key_in_variable_map = { name = epbm_maintenance_charge target = scope:epbm_est } }
+					add_to_variable_map = {
+						name = epbm_maintenance_charged_last_month
+						key = scope:epbm_est
+						value = "variable_map(epbm_maintenance_charge|scope:epbm_est)"
+					}
+				}
+
+				if = {
+					limit = { has_variable_map = epbm_shared_charge is_key_in_variable_map = { name = epbm_shared_charge target = scope:epbm_est } }
+					add_to_variable_map = {
+						name = epbm_shared_charged_last_month
+						key = scope:epbm_est
+						value = "variable_map(epbm_shared_charge|scope:epbm_est)"
+					}
+				}
+
+				if = {
+					limit = { has_variable_map = epbm_estate_building_charge is_key_in_variable_map = { name = epbm_estate_building_charge target = scope:epbm_est } }
+					add_to_variable_map = {
+						name = epbm_estate_building_charged_last_month
+						key = scope:epbm_est
+						value = "variable_map(epbm_estate_building_charge|scope:epbm_est)"
+					}
+				}
+			}
+		}
+	}
+	else_if = {
+		limit = { has_variable_map = epbm_maintenance_charged_last_month }
+		clear_variable_map = epbm_maintenance_charged_last_month
+		if = { limit = { has_variable_map = epbm_maintenance_charged_two_months_ago } clear_variable_map = epbm_maintenance_charged_two_months_ago }
+		if = { limit = { has_variable_map = epbm_shared_charged_last_month } clear_variable_map = epbm_shared_charged_last_month }
+		if = { limit = { has_variable_map = epbm_estate_building_charged_last_month } clear_variable_map = epbm_estate_building_charged_last_month }
 	}
 }
 

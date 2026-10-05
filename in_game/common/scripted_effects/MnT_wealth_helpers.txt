@@ -134,7 +134,7 @@ mnt_wealth_add_location_wealth = {
 				set_local_variable = { name = mnt_wealth_add_existing value = 0 }
 
 				if = {
-					limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_add_key } }
+					limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_add_key } }
 					set_local_variable = {
 						name = mnt_wealth_add_existing
 						value = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_add_key)"
@@ -232,7 +232,7 @@ mnt_wealth_remove_local_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_estate_key value = estate_type:$ESTATE$_estate }
 	set_local_variable = { name = mnt_wealth_local_estate_wealth value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_local_estate_wealth
 			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -258,7 +258,7 @@ mnt_wealth_credit_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_credit_current value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_credit_current
 			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -328,37 +328,91 @@ mnt_wealth_remove_sized_modifier = {
 	if = { limit = { has_variable = mnt_wealth_applied_$MODIFIER$ } remove_variable = mnt_wealth_applied_$MODIFIER$ }
 }
 
-mnt_wealth_set_wealth_map_mode_bands = {
-	set_local_variable = { name = mnt_wealth_band_index value = 1 }
+# The wealth and wage map mode ceilings are the largest stored pool and wage rate in the world, and each remembers
+# the location that holds it. A settle above a ceiling raises it and takes it over. When the holder settles below its
+# ceiling, the record may be gone, so one recount finds the new largest value. A save from before the holders were
+# recorded recounts at its first settle.
 
-	while = {
-		count = 5
-
-		set_local_variable = {
-			name = mnt_wealth_band_threshold
-			value = {
-				value = global_var:mnt_wealth_map_mode_max_wealth_pool
-				multiply = local_var:mnt_wealth_band_index
-				divide = 6
+mnt_wealth_raise_wealth_map_mode_ceiling = {
+	if = {
+		limit = {
+			OR = {
+				NOT = { has_global_variable = mnt_wealth_map_mode_max_wealth_pool }
+				var:mnt_wealth_pool > global_var:mnt_wealth_map_mode_max_wealth_pool
 			}
 		}
-
-		add_to_global_variable_map = {
-			name = mnt_wealth_bands
-			key = local_var:mnt_wealth_band_index
-			value = local_var:mnt_wealth_band_threshold
+		set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = var:mnt_wealth_pool }
+		set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool_location value = this }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				NOT = { has_global_variable = mnt_wealth_map_mode_max_wealth_pool_location }
+				AND = {
+					this = global_var:mnt_wealth_map_mode_max_wealth_pool_location
+					var:mnt_wealth_pool < global_var:mnt_wealth_map_mode_max_wealth_pool
+				}
+			}
 		}
-
-		change_local_variable = { name = mnt_wealth_band_index add = 1 }
+		mnt_wealth_recount_map_mode_ceilings = yes
 	}
 }
 
-mnt_wealth_raise_wealth_map_mode_ceiling = {
-	# The ceiling is the largest pool on the map; the bands follow it at once.
+mnt_wealth_raise_wage_map_mode_ceiling = {
 	if = {
-		limit = { var:mnt_wealth_pool > global_var:mnt_wealth_map_mode_max_wealth_pool }
-		set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = var:mnt_wealth_pool }
-		mnt_wealth_set_wealth_map_mode_bands = yes
+		limit = {
+			OR = {
+				NOT = { has_global_variable = mnt_wealth_map_mode_max_wage_rate }
+				var:mnt_wealth_current_wage_rate > global_var:mnt_wealth_map_mode_max_wage_rate
+			}
+		}
+		set_global_variable = { name = mnt_wealth_map_mode_max_wage_rate value = var:mnt_wealth_current_wage_rate }
+		set_global_variable = { name = mnt_wealth_map_mode_max_wage_rate_location value = this }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				NOT = { has_global_variable = mnt_wealth_map_mode_max_wage_rate_location }
+				AND = {
+					this = global_var:mnt_wealth_map_mode_max_wage_rate_location
+					var:mnt_wealth_current_wage_rate < global_var:mnt_wealth_map_mode_max_wage_rate
+				}
+			}
+		}
+		mnt_wealth_recount_map_mode_ceilings = yes
+	}
+}
+
+# Both ceilings and their holders, set to the largest stored values on the map.
+
+mnt_wealth_recount_map_mode_ceilings = {
+	set_local_variable = { name = mnt_wealth_largest_pool value = 0 }
+	set_local_variable = { name = mnt_wealth_largest_wage_rate value = 0 }
+	every_country = {
+		limit = { num_locations > 0 }
+		every_owned_location = {
+			limit = { has_variable = mnt_wealth_pool }
+			if = {
+				limit = { var:mnt_wealth_pool > local_var:mnt_wealth_largest_pool }
+				set_local_variable = { name = mnt_wealth_largest_pool value = var:mnt_wealth_pool }
+				save_temporary_scope_as = mnt_wealth_largest_pool_location
+			}
+			if = {
+				limit = { has_variable = mnt_wealth_current_wage_rate var:mnt_wealth_current_wage_rate > local_var:mnt_wealth_largest_wage_rate }
+				set_local_variable = { name = mnt_wealth_largest_wage_rate value = var:mnt_wealth_current_wage_rate }
+				save_temporary_scope_as = mnt_wealth_largest_wage_rate_location
+			}
+		}
+	}
+	set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = { value = local_var:mnt_wealth_largest_pool min = 1 } }
+	set_global_variable = { name = mnt_wealth_map_mode_max_wage_rate   value = { value = local_var:mnt_wealth_largest_wage_rate min = 0.01 } }
+	if = {
+		limit = { exists = scope:mnt_wealth_largest_pool_location }
+		set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool_location value = scope:mnt_wealth_largest_pool_location }
+	}
+	if = {
+		limit = { exists = scope:mnt_wealth_largest_wage_rate_location }
+		set_global_variable = { name = mnt_wealth_map_mode_max_wage_rate_location value = scope:mnt_wealth_largest_wage_rate_location }
 	}
 }
 

@@ -7,9 +7,9 @@
 mnt_wealth_location_income_and_expenses = {
 	# Apply any owed months (e.g. before the first pass, or under a previous slow owner).
 	mnt_wealth_advance_location_to_now = yes
-	# Read the rates once so a modifier change mid-loop cannot give estates different rates.
-	set_local_variable = { name = mnt_wealth_month_investment_rate        value = mnt_wealth_investment_rate }
-	set_local_variable = { name = mnt_wealth_month_investment_maintenance value = modifier:mnt_wealth_local_investment_maintenance }
+	# The month uses the rates recorded at the last settle, as the display does; the new rates are recorded at the end.
+	set_local_variable = { name = mnt_wealth_month_investment_rate        value = mnt_wealth_recorded_investment_rate }
+	set_local_variable = { name = mnt_wealth_month_investment_maintenance value = mnt_wealth_recorded_investment_maintenance }
 	# Running totals for the estate loops below.
 	set_local_variable = { name = mnt_wealth_kept_income_running_total value = 0 }
 	set_local_variable = { name = mnt_wealth_invested_running_total    value = 0 }
@@ -53,6 +53,14 @@ mnt_wealth_advance_location_to_now = {
 			owner = { save_temporary_scope_as = mnt_wealth_flow_country }
 		}
 
+		# No flow while the country's map is being rebuilt: its counter may hold the other side of a civil war swap
+		# until the day-after re-base, and the baseline is kept so the flow is collected at the next settle instead.
+		set_local_variable = { name = mnt_wealth_advance_flow_allowed value = 1 }
+		if = {
+			limit = { scope:mnt_wealth_flow_country = { has_variable = mnt_wealth_raw_power_rebuilding } }
+			set_local_variable = { name = mnt_wealth_advance_flow_allowed value = 0 }
+		}
+
 		# The rates recorded at the last settle govern the whole period. A negative rate spends nothing.
 		set_local_variable = { name = mnt_wealth_advance_investment_rate    value = { value = var:mnt_wealth_cached_investment_rate min = 0 } }
 		set_local_variable = { name = mnt_wealth_month_investment_maintenance value = var:mnt_wealth_cached_investment_maintenance }
@@ -66,9 +74,9 @@ mnt_wealth_advance_location_to_now = {
 				value = { value = 1 subtract = local_var:mnt_wealth_advance_investment_rate }
 			}
 
-			mnt_wealth_compute_remaining_over_period = {
-				BASE = mnt_wealth_monthly_remaining
-				RESULT = mnt_wealth_period_remaining
+			set_local_variable = {
+				name = mnt_wealth_period_remaining
+				value = { value = local_var:mnt_wealth_monthly_remaining pow = local_var:mnt_wealth_advance_months }
 			}
 
 			set_local_variable = {
@@ -95,7 +103,7 @@ mnt_wealth_advance_location_to_now = {
 		# The flow credited above is counted; the next settle starts from here. Not while the country is mid-rebuild:
 		# nothing was credited, so the baseline stays where it is and the next settle collects the whole period.
 		if = {
-			limit = { NOT = { scope:mnt_wealth_flow_country = { has_variable = mnt_wealth_raw_power_rebuilding } } }
+			limit = { local_var:mnt_wealth_advance_flow_allowed = 1 }
 			mnt_wealth_record_flow_baseline = { COUNTRY = scope:mnt_wealth_flow_country }
 		}
 	}
@@ -107,7 +115,26 @@ mnt_wealth_advance_location_to_now = {
 mnt_wealth_cache_location_rates = {
 	set_variable = { name = mnt_wealth_cached_investment_rate        value = mnt_wealth_investment_rate }
 	set_variable = { name = mnt_wealth_cached_investment_maintenance value = modifier:mnt_wealth_local_investment_maintenance }
+	set_variable = { name = mnt_wealth_cached_investment_efficiency  value = mnt_wealth_investment_efficiency_multiplier }
+	set_variable = { name = mnt_wealth_cached_decay_resistance       value = mnt_wealth_decay_resistance_multiplier }
 	mnt_wealth_for_each_estate_in_power_cache = { EFFECT = mnt_wealth_cache_estate_decay_rate }
+
+	# The monthly change of the pool as a share of it, for the falling wealth stripes of the local wealth map mode,
+	# which reads stored values only. Same terms as mnt_wealth_local_wealth_change, on the pool just settled.
+	set_local_variable = { name = mnt_wealth_wealth_change_share value = 0 }
+	if = {
+		limit = { var:mnt_wealth_pool > 0 }
+		set_local_variable = {
+			name = mnt_wealth_wealth_change_share
+			value = {
+				value = var:mnt_wealth_local_wages
+				add = mnt_wealth_estate_flow_total
+				subtract = { value = var:mnt_wealth_pool multiply = { value = var:mnt_wealth_cached_investment_rate min = 0 } }
+				divide = var:mnt_wealth_pool
+			}
+		}
+	}
+	set_variable = { name = mnt_wealth_cached_wealth_change_share value = local_var:mnt_wealth_wealth_change_share }
 }
 
 mnt_wealth_cache_estate_decay_rate = {
@@ -178,6 +205,7 @@ mnt_wealth_set_location_wages = {
 		limit = { owner = { mnt_wealth_cadence_is_slow = yes } }
 		set_variable = { name = mnt_wealth_kept_income_total value = var:mnt_wealth_local_wages }
 	}
+	mnt_wealth_raise_wage_map_mode_ceiling = yes
 }
 
 mnt_wealth_invest_estate_wealth = {
@@ -185,7 +213,7 @@ mnt_wealth_invest_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_estate_paid value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_estate_paid
 			value = {
@@ -203,7 +231,7 @@ mnt_wealth_invest_estate_wealth = {
 		set_local_variable = { name = mnt_wealth_invest_current value = 0 }
 
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+			limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 			set_local_variable = {
 				name = mnt_wealth_invest_current
 				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -233,7 +261,7 @@ mnt_wealth_set_estate_maintenance = {
 	if = {
 		limit = {
 			var:mnt_wealth_local_raw_power_total > 0
-			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
+			has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
 		}
 		set_local_variable = {
 			name = mnt_wealth_estate_maintenance_share
@@ -260,19 +288,26 @@ mnt_wealth_compute_estate_decay = {
 
 	set_local_variable = { name = mnt_wealth_decay_invested value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_wealth is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
 		change_local_variable = { name = mnt_wealth_decay_invested add = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)" }
 	}
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_since_review is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
 		change_local_variable = { name = mnt_wealth_decay_invested add = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)" }
 	}
 
 	if = {
 		limit = { NOT = { local_var:mnt_wealth_decay_invested = 0 } }
 
+		# The decay rate recorded at the last settle; before the first settle records it, the live rate.
 		set_local_variable = { name = mnt_wealth_decay_rate value = 0 }
-		mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_read_estate_decay_rate }
+		if = {
+			limit = { has_variable_map = mnt_wealth_cached_estate_decay_rate is_key_in_variable_map = { name = mnt_wealth_cached_estate_decay_rate target = local_var:mnt_wealth_estate_key } }
+			set_local_variable = { name = mnt_wealth_decay_rate value = "variable_map(mnt_wealth_cached_estate_decay_rate|local_var:mnt_wealth_estate_key)" }
+		}
+		else = {
+			mnt_wealth_run_effect_with_estate_name = { EFFECT = mnt_wealth_read_estate_decay_rate }
+		}
 
 		set_local_variable = {
 			name = mnt_wealth_estate_decay
@@ -299,8 +334,8 @@ mnt_wealth_bank_estate_investment_progress = {
 		name = mnt_wealth_investment_change
 		value = {
 			value = local_var:mnt_wealth_estate_paid
-			multiply = mnt_wealth_investment_efficiency_multiplier
-			subtract = { value = local_var:mnt_wealth_estate_decay multiply = mnt_wealth_decay_resistance_multiplier }
+			multiply = mnt_wealth_recorded_investment_efficiency
+			subtract = { value = local_var:mnt_wealth_estate_decay multiply = mnt_wealth_recorded_decay_resistance }
 			subtract = local_var:mnt_wealth_estate_maintenance
 		}
 	}
@@ -314,7 +349,7 @@ mnt_wealth_add_investment_progress = {
 	set_local_variable = { name = mnt_wealth_updated_since_review value = local_var:mnt_wealth_investment_change }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_since_review is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
 		change_local_variable = {
 			name = mnt_wealth_updated_since_review
 			add = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)"
@@ -340,7 +375,7 @@ mnt_wealth_compute_estate_kept_wages = {
 	set_local_variable = { name = mnt_wealth_kept_amount value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_cached_local_relative_estate_power is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_kept_amount
 			value = {
@@ -377,7 +412,7 @@ mnt_wealth_resolve_estate_monthly_income = {
 	set_local_variable = { name = mnt_wealth_estate_wealth_before value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_estate_wealth_before
 			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -403,19 +438,24 @@ mnt_wealth_resolve_estate_monthly_income = {
 # power so it keeps its digits in fixed point; the scale comes back off here, after the multiply.
 
 mnt_wealth_compute_location_share_of_estate_flow = {
-	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
-	set_local_variable = { name = mnt_wealth_local_raw_power  value = 0 }
+	set_local_variable = { name = mnt_wealth_local_raw_power value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_local_raw_power
 			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
 		}
 	}
+	mnt_wealth_compute_flow_share_from_local_raw_power = { COUNTRY = $COUNTRY$ }
+}
 
+# The formula itself, for a caller that has already read local_var:mnt_wealth_local_raw_power.
+
+mnt_wealth_compute_flow_share_from_local_raw_power = {
+	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
 	set_local_variable = { name = mnt_wealth_flow_paid_baseline value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_flow_paid_per_million_at_settle is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_at_settle target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_flow_paid_baseline
 			value = "variable_map(mnt_wealth_flow_paid_per_million_at_settle|local_var:mnt_wealth_estate_key)"
@@ -426,7 +466,7 @@ mnt_wealth_compute_location_share_of_estate_flow = {
 		if = {
 			limit = {
 				local_var:mnt_wealth_local_raw_power > 0
-				is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = local_var:mnt_wealth_estate_key }
+				has_variable_map = mnt_wealth_flow_paid_per_million_raw_power is_key_in_variable_map = { name = mnt_wealth_flow_paid_per_million_raw_power target = local_var:mnt_wealth_estate_key }
 			}
 			set_local_variable = {
 				name = mnt_wealth_local_flow_share
@@ -454,7 +494,7 @@ mnt_wealth_distribute_estate_flow_to_wealth = {
 		set_local_variable = { name = mnt_wealth_own_liquid value = 0 }
 
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+			limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 			set_local_variable = {
 				name = mnt_wealth_own_liquid
 				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -495,7 +535,7 @@ mnt_wealth_advance_estate = {
 	# Project forward from the wealth at last review.
 	set_local_variable = { name = mnt_wealth_advance_wealth_at_review value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_advance_wealth_at_review
 			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -515,26 +555,47 @@ mnt_wealth_advance_estate = {
 		}
 	}
 	else_if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_cached_local_relative_estate_power is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_advance_estate_share
 			value = "variable_map(mnt_wealth_cached_local_relative_estate_power|local_var:mnt_wealth_estate_key)"
 		}
 	}
 
-	# Flow owed over the period as a monthly figure, and maintenance, both held constant for the owed period.
-	# None while the country's map is being rebuilt: its counter may hold the other side of a civil war swap until
-	# the day-after re-base, and the baseline is kept so the flow is collected at the next settle instead.
+	# Raw power here, read once for the flow share and the maintenance share.
+	set_local_variable = { name = mnt_wealth_local_raw_power value = 0 }
+	if = {
+		limit = { has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = {
+			name = mnt_wealth_local_raw_power
+			value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_estate_key)"
+		}
+	}
+
+	# Flow owed over the period as a monthly figure, held constant for the owed period.
 	set_local_variable = { name = mnt_wealth_local_flow_share value = 0 }
 	if = {
-		limit = { NOT = { scope:mnt_wealth_flow_country = { has_variable = mnt_wealth_raw_power_rebuilding } } }
-		mnt_wealth_compute_location_share_of_estate_flow = { COUNTRY = scope:mnt_wealth_flow_country }
+		limit = { local_var:mnt_wealth_advance_flow_allowed = 1 }
+		mnt_wealth_compute_flow_share_from_local_raw_power = { COUNTRY = scope:mnt_wealth_flow_country }
+		set_local_variable = {
+			name = mnt_wealth_local_flow_share
+			value = { value = local_var:mnt_wealth_local_flow_share divide = local_var:mnt_wealth_advance_months }
+		}
 	}
-	set_local_variable = {
-		name = mnt_wealth_local_flow_share
-		value = { value = local_var:mnt_wealth_local_flow_share divide = local_var:mnt_wealth_advance_months }
+
+	# Maintenance: the recorded investment maintenance times this estate's share of raw power.
+	set_local_variable = { name = mnt_wealth_estate_maintenance value = 0 }
+	if = {
+		limit = { local_var:mnt_wealth_local_raw_power > 0 var:mnt_wealth_local_raw_power_total > 0 }
+		set_local_variable = {
+			name = mnt_wealth_estate_maintenance
+			value = {
+				value = local_var:mnt_wealth_local_raw_power
+				divide = var:mnt_wealth_local_raw_power_total
+				multiply = local_var:mnt_wealth_month_investment_maintenance
+			}
+		}
 	}
-	mnt_wealth_set_estate_maintenance = yes
 
 	# Monthly income: wage share plus flow share.
 	set_local_variable = {
@@ -559,20 +620,25 @@ mnt_wealth_advance_estate = {
 	}
 
 	# Invested pool at review, including progress not yet applied to the level.
-	set_local_variable = { name = mnt_wealth_advance_invested_pool_at_review value = 0 }
+	set_local_variable = { name = mnt_wealth_advance_invested_at_review value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
-		change_local_variable = { name = mnt_wealth_advance_invested_pool_at_review add = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)" }
+		limit = { has_variable_map = mnt_wealth_invested_wealth is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = { name = mnt_wealth_advance_invested_at_review value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)" }
 	}
+	set_local_variable = { name = mnt_wealth_advance_since_review value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
-		change_local_variable = { name = mnt_wealth_advance_invested_pool_at_review add = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)" }
+		limit = { has_variable_map = mnt_wealth_invested_since_review is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		set_local_variable = { name = mnt_wealth_advance_since_review value = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)" }
+	}
+	set_local_variable = {
+		name = mnt_wealth_advance_invested_pool_at_review
+		value = { value = local_var:mnt_wealth_advance_invested_at_review add = local_var:mnt_wealth_advance_since_review }
 	}
 
 	# Monthly and period survival rates for invested wealth after decay resistance, at the decay rate recorded at the last settle.
 	set_local_variable = { name = mnt_wealth_decay_rate value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_estate_decay_rate target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_cached_estate_decay_rate is_key_in_variable_map = { name = mnt_wealth_cached_estate_decay_rate target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_decay_rate
 			value = "variable_map(mnt_wealth_cached_estate_decay_rate|local_var:mnt_wealth_estate_key)"
@@ -584,47 +650,39 @@ mnt_wealth_advance_estate = {
 			value = 1
 			subtract = {
 				value = local_var:mnt_wealth_decay_rate
-				multiply = mnt_wealth_decay_resistance_multiplier
+				multiply = mnt_wealth_recorded_decay_resistance
 			}
 		}
 	}
-	mnt_wealth_compute_remaining_over_period = {
-		BASE = mnt_wealth_invested_monthly_remaining
-		RESULT = mnt_wealth_invested_period_remaining
+	set_local_variable = {
+		name = mnt_wealth_invested_period_remaining
+		value = { value = local_var:mnt_wealth_invested_monthly_remaining pow = local_var:mnt_wealth_advance_months }
 	}
 
 	# How many months of constant inflow survive after decay. Equals the month count when decay is zero.
 	set_local_variable = { name = mnt_wealth_advance_flat_inflow_sum value = local_var:mnt_wealth_advance_months }
-	set_local_variable = {
-		name = mnt_wealth_advance_invested_pool_change
-		value = { value = 1 subtract = local_var:mnt_wealth_invested_monthly_remaining }
-	}
 	if = {
-		limit = { NOT = { local_var:mnt_wealth_advance_invested_pool_change = 0 } }
+		limit = { NOT = { local_var:mnt_wealth_invested_monthly_remaining = 1 } }
 		set_local_variable = {
 			name = mnt_wealth_advance_flat_inflow_sum
 			value = {
 				value = 1
 				subtract = local_var:mnt_wealth_invested_period_remaining
-				divide = local_var:mnt_wealth_advance_invested_pool_change
+				divide = { value = 1 subtract = local_var:mnt_wealth_invested_monthly_remaining }
 			}
 		}
 	}
 
 	# Same as above but for the shrinking part of investment (from starting wealth being spent down).
 	# Else branch: the general formula divides by zero when the two rates are equal.
-	set_local_variable = {
-		name = mnt_wealth_advance_remaining_gap
-		value = { value = local_var:mnt_wealth_invested_monthly_remaining subtract = local_var:mnt_wealth_monthly_remaining }
-	}
 	if = {
-		limit = { NOT = { local_var:mnt_wealth_advance_remaining_gap = 0 } }
+		limit = { NOT = { local_var:mnt_wealth_invested_monthly_remaining = local_var:mnt_wealth_monthly_remaining } }
 		set_local_variable = {
 			name = mnt_wealth_advance_sloped_inflow_sum
 			value = {
 				value = local_var:mnt_wealth_invested_period_remaining
 				subtract = local_var:mnt_wealth_period_remaining
-				divide = local_var:mnt_wealth_advance_remaining_gap
+				divide = { value = local_var:mnt_wealth_invested_monthly_remaining subtract = local_var:mnt_wealth_monthly_remaining }
 			}
 		}
 	}
@@ -639,17 +697,8 @@ mnt_wealth_advance_estate = {
 		}
 	}
 
-	# The extra investment from starting wealth above steady-state income, which fades as wealth is spent.
-	set_local_variable = {
-		name = mnt_wealth_advance_inflow_slope
-		value = {
-			value = local_var:mnt_wealth_advance_investment_rate
-			multiply = local_var:mnt_wealth_advance_wealth_at_review
-			subtract = local_var:mnt_wealth_advance_estate_income
-		}
-	}
-
 	# Invested pool now: surviving principal + (constant + shrinking inflow) * efficiency - maintenance.
+	# The shrinking inflow is the extra investment from starting wealth above steady-state income.
 	set_local_variable = {
 		name = mnt_wealth_advance_invested_pool_now
 		value = {
@@ -659,10 +708,12 @@ mnt_wealth_advance_estate = {
 				value = local_var:mnt_wealth_advance_estate_income
 				multiply = local_var:mnt_wealth_advance_flat_inflow_sum
 				add = {
-					value = local_var:mnt_wealth_advance_inflow_slope
+					value = local_var:mnt_wealth_advance_investment_rate
+					multiply = local_var:mnt_wealth_advance_wealth_at_review
+					subtract = local_var:mnt_wealth_advance_estate_income
 					multiply = local_var:mnt_wealth_advance_sloped_inflow_sum
 				}
-				multiply = mnt_wealth_investment_efficiency_multiplier
+				multiply = mnt_wealth_recorded_investment_efficiency
 			}
 			subtract = {
 				value = local_var:mnt_wealth_estate_maintenance
@@ -682,10 +733,7 @@ mnt_wealth_advance_estate = {
 		change_local_variable = { name = mnt_wealth_advance_progress add = local_var:mnt_wealth_advance_wealth_now }
 		set_local_variable = { name = mnt_wealth_advance_wealth_now value = 0 }
 	}
-	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
-		change_local_variable = { name = mnt_wealth_advance_progress add = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)" }
-	}
+	change_local_variable = { name = mnt_wealth_advance_progress add = local_var:mnt_wealth_advance_since_review }
 	add_to_variable_map = {
 		name = mnt_wealth_invested_since_review
 		key = local_var:mnt_wealth_estate_key
@@ -699,31 +747,4 @@ mnt_wealth_advance_estate = {
 		value = local_var:mnt_wealth_advance_wealth_now
 	}
 	change_local_variable = { name = mnt_wealth_advance_pool_now add = local_var:mnt_wealth_advance_wealth_now }
-}
-
-# Cached base^months computation. The same base and month count recur across locations.
-
-mnt_wealth_compute_remaining_over_period = {
-	# Key encodes months (high digits) and base rounded to six decimals (low digits) into one number.
-	set_local_variable = {
-		name = mnt_wealth_remaining_cache_key
-		value = {
-			value = local_var:mnt_wealth_advance_months
-			multiply = 10000000
-			add = { value = local_var:$BASE$ multiply = 1000000 }
-			floor = yes
-		}
-	}
-	if = {
-		limit = { is_key_in_global_variable_map = { name = mnt_wealth_remaining_cache target = local_var:mnt_wealth_remaining_cache_key } }
-		set_local_variable = {
-			name = $RESULT$
-			value = "global_variable_map(mnt_wealth_remaining_cache|local_var:mnt_wealth_remaining_cache_key)"
-		}
-	}
-	else = {
-		# pow is one of the most expensive single operations in the system; the cache avoids repeating it.
-		set_local_variable = { name = $RESULT$ value = { value = local_var:$BASE$ pow = local_var:mnt_wealth_advance_months } }
-		add_to_global_variable_map = { name = mnt_wealth_remaining_cache key = local_var:mnt_wealth_remaining_cache_key value = local_var:$RESULT$ }
-	}
 }

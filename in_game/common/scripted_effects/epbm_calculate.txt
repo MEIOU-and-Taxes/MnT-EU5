@@ -21,8 +21,6 @@ epbm_calculate_maintenance = {
 
 		every_building_owned_by_estate = {
 			save_temporary_scope_as = epbm_bldg
-			building_type ?= { save_temporary_scope_as = epbm_bt }
-			location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 
 			epbm_price_building = yes
 
@@ -49,14 +47,12 @@ epbm_calculate_maintenance = {
 		limit = {
 			is_opened = yes
 			NOT = {
-				building_type = { is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
+				building_type = { has_global_variable_map = epbm_blacklist is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
 			}
 			NOT = { building_category = estate_category }
 		}
 
 		save_temporary_scope_as = epbm_bldg
-		building_type ?= { save_temporary_scope_as = epbm_bt }
-		location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 
 		epbm_price_building = yes
 
@@ -67,14 +63,12 @@ epbm_calculate_maintenance = {
 		limit = {
 			is_opened = yes
 			NOT = {
-				building_type = { is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
+				building_type = { has_global_variable_map = epbm_blacklist is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
 			}
 			NOT = { building_category = estate_category }
 		}
 
 		save_temporary_scope_as = epbm_bldg
-		building_type ?= { save_temporary_scope_as = epbm_bt }
-		location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 
 		epbm_price_building = yes
 
@@ -113,14 +107,12 @@ epbm_price_location_buildings = {
 				is_opened = yes
 				is_building_owned_by = location.owner
 				NOT = {
-					building_type = { is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
+					building_type = { has_global_variable_map = epbm_blacklist is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
 				}
 				NOT = { building_category = estate_category }
 			}
 
 			save_temporary_scope_as = epbm_bldg
-			building_type ?= { save_temporary_scope_as = epbm_bt }
-			location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 
 			epbm_price_building = yes
 
@@ -145,8 +137,6 @@ epbm_calculate_estate_and_foreign = {
 
 		every_building_owned_by_estate = {
 			save_temporary_scope_as = epbm_bldg
-			building_type ?= { save_temporary_scope_as = epbm_bt }
-			location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 
 			epbm_price_building = yes
 
@@ -174,14 +164,12 @@ epbm_calculate_estate_and_foreign = {
 		limit = {
 			is_opened = yes
 			NOT = {
-				building_type = { is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
+				building_type = { has_global_variable_map = epbm_blacklist is_key_in_global_variable_map = { name = epbm_blacklist target = this } }
 			}
 			NOT = { building_category = estate_category }
 		}
 
 		save_temporary_scope_as = epbm_bldg
-		building_type ?= { save_temporary_scope_as = epbm_bt }
-		location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 
 		epbm_price_building = yes
 
@@ -229,6 +217,9 @@ epbm_price_building = {
 		save_temporary_scope_as = epbm_pm
 
 		prev = {
+			# Saved here, not by the callers: most buildings have no upkeep method and never reach this point.
+			building_type ?= { save_temporary_scope_as = epbm_bt }
+			location ?= { market ?= { save_temporary_scope_as = epbm_mkt } }
 			set_local_variable = { name = epbm_per_level value = 0 }
 
 			# Check cache on market center

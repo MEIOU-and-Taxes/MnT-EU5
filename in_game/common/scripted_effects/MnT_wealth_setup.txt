@@ -17,8 +17,9 @@ mnt_wealth_seed_owned_locations = {
 }
 
 mnt_wealth_seed_economy_constants = {
-	set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = 500 }
-	mnt_wealth_set_wealth_map_mode_bands = yes
+	# Map mode ceilings: the setup pass raises them to the largest start values.
+	set_global_variable = { name = mnt_wealth_map_mode_max_wealth_pool value = 1 }
+	set_global_variable = { name = mnt_wealth_map_mode_max_wage_rate   value = 0.01 }
 	# Gross output map modes: one ceiling each, raised as locations outgrow it.
 	set_global_variable = { name = mnt_wealth_map_mode_max_gross_output_total value = 50 }
 	set_global_variable = { name = mnt_wealth_map_mode_max_gross_output_urban value = 50 }
@@ -95,7 +96,7 @@ mnt_wealth_seed_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_seed_amount value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_cached_local_relative_estate_power is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_seed_amount
 			value = {
@@ -120,7 +121,7 @@ mnt_wealth_settle_owner_change = {
 	save_temporary_scope_as = mnt_wealth_transfer_loc
 	if = {
 		limit = {
-			NOT = { is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = scope:mnt_wealth_transfer_loc } }
+			NOT = { AND = { has_global_variable_map = mnt_wealth_location_last_service is_key_in_global_variable_map = { name = mnt_wealth_location_last_service target = scope:mnt_wealth_transfer_loc } } }
 		}
 		mnt_wealth_initialize_colonized_location = yes
 	}

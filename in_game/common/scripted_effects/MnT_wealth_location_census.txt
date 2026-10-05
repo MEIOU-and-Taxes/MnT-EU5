@@ -38,10 +38,10 @@ mnt_wealth_classify_building_type = {
 	if = {
 		limit = {
 			NOT = {
-				is_key_in_global_variable_map = {
+				AND = { has_global_variable_map = mnt_wealth_building_makes_goods is_key_in_global_variable_map = {
 					name = mnt_wealth_building_makes_goods
 					target = scope:mnt_wealth_current_building_type
-				}
+				} }
 			}
 		}
 		if = {
@@ -68,7 +68,7 @@ mnt_wealth_collect_building_goods = {
 		every_production_method_of_building = {
 			limit = {
 				exists = produced_goods
-				NOT = { is_key_in_local_variable_map = { name = mnt_wealth_found_goods_map target = produced_goods } }
+				NOT = { AND = { has_local_variable_map = mnt_wealth_found_goods_map is_key_in_local_variable_map = { name = mnt_wealth_found_goods_map target = produced_goods } } }
 			}
 			add_to_local_variable_map = {
 				name = mnt_wealth_found_goods_map
@@ -129,16 +129,20 @@ mnt_wealth_maintain_building_produced_goods_cache = {
 	}
 }
 
+# Each estate's raw power change (new minus old) goes straight into the owner's national map, in
+# mnt_wealth_store_estate_pops. The game-start setup counts pops without it: the setup builds the national map
+# from every location afterwards.
+
 mnt_wealth_retake_estate_census = {
 	owner = { save_temporary_scope_as = mnt_wealth_raw_power_country }
-	mnt_wealth_apply_national_estate_raw_power = { SIGN = -1 }
+	set_local_variable = { name = mnt_wealth_census_updates_national value = yes }
 	mnt_wealth_census_estate_data = yes
-	mnt_wealth_apply_national_estate_raw_power = { SIGN = 1 }
+	remove_local_variable = mnt_wealth_census_updates_national
 }
 
 mnt_wealth_census_estate_data = {
 	# Raw power is the measure of presence: an estate with pops here is present, one holding wealth with no pops left has departed.
-	clear_variable_map = mnt_estate_raw_power
+	# mnt_wealth_store_estate_pops replaces or removes each estate's entry, so the old values stay readable until then.
 	set_variable = { name = mnt_wealth_local_raw_power_total value = 0 }
 	mnt_wealth_count_estate_pops = yes
 	mnt_wealth_refresh_relative_power = yes
@@ -186,7 +190,7 @@ mnt_wealth_collect_departed_estates = {
 mnt_wealth_note_departed_estate = {
 	if = {
 		limit = {
-			NOT = { is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_departed_key } }
+			NOT = { AND = { has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_departed_key } } }
 			NOT = { is_target_in_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_departed_key } }
 		}
 		add_to_local_variable_list = { name = mnt_wealth_departed_estates target = scope:mnt_wealth_departed_key }
@@ -349,6 +353,11 @@ mnt_wealth_store_estate_pops = {
 			local_var:mnt_wealth_pops_$ESTATE$ > 0
 		}
 		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
+		set_local_variable = { name = mnt_wealth_pops_raw_before value = 0 }
+		if = {
+			limit = { has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_pops_key } }
+			set_local_variable = { name = mnt_wealth_pops_raw_before value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_pops_key)" }
+		}
 		set_local_variable = {
 			name = mnt_wealth_pops_per_pop
 			value = "global_variable_map(mnt_wealth_power_per_pop|local_var:mnt_wealth_pops_key)"
@@ -368,6 +377,51 @@ mnt_wealth_store_estate_pops = {
 		}
 
 		change_local_variable = { name = mnt_wealth_pops_raw_total add = local_var:mnt_wealth_pops_raw }
+
+		if = {
+			limit = { has_local_variable = mnt_wealth_census_updates_national }
+			set_local_variable = {
+				name = mnt_wealth_national_raw_power_change
+				value = { value = local_var:mnt_wealth_pops_raw subtract = local_var:mnt_wealth_pops_raw_before }
+			}
+			mnt_wealth_add_census_change_to_national_raw_power = yes
+		}
+	}
+	else_if = {
+		# The estate has departed: its whole old raw power comes off.
+		limit = { has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = estate_type:$ESTATE$_estate } }
+		set_local_variable = { name = mnt_wealth_pops_key value = estate_type:$ESTATE$_estate }
+
+		if = {
+			limit = { has_local_variable = mnt_wealth_census_updates_national }
+			set_local_variable = {
+				name = mnt_wealth_national_raw_power_change
+				value = { value = "variable_map(mnt_estate_raw_power|local_var:mnt_wealth_pops_key)" multiply = -1 }
+			}
+			mnt_wealth_add_census_change_to_national_raw_power = yes
+		}
+
+		remove_from_variable_map = { name = mnt_estate_raw_power key = local_var:mnt_wealth_pops_key }
+	}
+}
+
+# Adds local_var:mnt_wealth_national_raw_power_change to the owner's entry for local_var:mnt_wealth_pops_key.
+
+mnt_wealth_add_census_change_to_national_raw_power = {
+	scope:mnt_wealth_raw_power_country = {
+		set_local_variable = { name = mnt_wealth_raw_power_running value = local_var:mnt_wealth_national_raw_power_change }
+		if = {
+			limit = { has_variable_map = mnt_wealth_national_estate_raw_power is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = local_var:mnt_wealth_pops_key } }
+			change_local_variable = {
+				name = mnt_wealth_raw_power_running
+				add = "variable_map(mnt_wealth_national_estate_raw_power|local_var:mnt_wealth_pops_key)"
+			}
+		}
+		add_to_variable_map = {
+			name = mnt_wealth_national_estate_raw_power
+			key = local_var:mnt_wealth_pops_key
+			value = local_var:mnt_wealth_raw_power_running
+		}
 	}
 }
 
@@ -377,7 +431,7 @@ mnt_wealth_store_estate_census_results = {
 	set_local_variable = { name = mnt_wealth_raw_power_for_one_estate value = 0 }
 	if = {
 		limit = {
-			is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
+			has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key }
 		}
 		set_local_variable = {
 			name = mnt_wealth_raw_power_for_one_estate
@@ -423,7 +477,7 @@ mnt_wealth_release_absent_estate = {
 	mnt_wealth_add_progress_to_invested_wealth = yes
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_wealth is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
 
 		change_local_variable = {
 			name = mnt_wealth_freed_investment
@@ -434,7 +488,7 @@ mnt_wealth_release_absent_estate = {
 	}
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 
 		change_local_variable = {
 			name = mnt_wealth_freed_estate_wealth
@@ -454,7 +508,7 @@ mnt_wealth_release_absent_estate = {
 mnt_wealth_redistribute_to_estate = {
 	set_local_variable = { name = mnt_wealth_relative_power value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_estate_raw_power is_key_in_variable_map = { name = mnt_estate_raw_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_relative_power
 			value = {
@@ -475,7 +529,7 @@ mnt_wealth_redistribute_to_estate = {
 		set_local_variable = { name = mnt_wealth_existing_wealth value = 0 }
 
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+			limit = { has_variable_map = mnt_wealth_invested_wealth is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
 			set_local_variable = {
 				name = mnt_wealth_existing_wealth
 				value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
@@ -499,7 +553,7 @@ mnt_wealth_redistribute_to_estate = {
 		set_local_variable = { name = mnt_wealth_existing_gold value = 0 }
 
 		if = {
-			limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+			limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 			set_local_variable = {
 				name = mnt_wealth_existing_gold
 				value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"

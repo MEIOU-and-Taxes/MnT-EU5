@@ -6,31 +6,26 @@
 # One service bucket per month of the year; twelve maps because map names cannot be computed.
 
 mnt_dispatch_location_and_market_on_actions = {
-	# This month's bucket: months mod twelve. Target locations are collected first into a list, so the bucket map is
-	# never written while it is iterated.
+	# This month's bucket: months mod twelve. A location joins its bucket once and a service writes nothing to the
+	# map, so the map is iterated directly.
 	set_local_variable = {
 		name = mnt_wealth_this_months_locations
 		value = { value = global_var:mnt_wealth_months_elapsed modulo = 12 add = 1 }
 	}
-	clear_local_variable_list = mnt_wealth_target_locations
 	switch = {
 		trigger = local_var:mnt_wealth_this_months_locations
-		1  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_1  mnt_wealth_collect_target_location = yes } }
-		2  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_2  mnt_wealth_collect_target_location = yes } }
-		3  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_3  mnt_wealth_collect_target_location = yes } }
-		4  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_4  mnt_wealth_collect_target_location = yes } }
-		5  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_5  mnt_wealth_collect_target_location = yes } }
-		6  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_6  mnt_wealth_collect_target_location = yes } }
-		7  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_7  mnt_wealth_collect_target_location = yes } }
-		8  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_8  mnt_wealth_collect_target_location = yes } }
-		9  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_9  mnt_wealth_collect_target_location = yes } }
-		10 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_10 mnt_wealth_collect_target_location = yes } }
-		11 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_11 mnt_wealth_collect_target_location = yes } }
-		12 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_12 mnt_wealth_collect_target_location = yes } }
-	}
-	every_in_local_list = {
-		variable = mnt_wealth_target_locations
-		mnt_wealth_dispatch_location = yes
+		1  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_1  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		2  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_2  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		3  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_3  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		4  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_4  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		5  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_5  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		6  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_6  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		7  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_7  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		8  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_8  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		9  = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_9  limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		10 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_10 limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		11 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_11 limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
+		12 = { every_key_in_global_variable_map = { variable = mnt_wealth_service_bucket_12 limit = { has_owner = yes } mnt_wealth_dispatch_location = yes } }
 	}
 
 	# Every human-owned location gets the monthly pulses: one now, one on its spread day.
@@ -48,55 +43,46 @@ mnt_dispatch_location_and_market_on_actions = {
 	}
 }
 
-# A bucket entry is the target when its next service month has arrived. Rescheduled entries sit in the same bucket a year out.
-
-mnt_wealth_collect_target_location = {
-	if = {
-		limit = {
-			has_owner = yes
-			var:mnt_wealth_next_service_month <= global_var:mnt_wealth_months_elapsed
-		}
-		add_to_local_variable_list = { name = mnt_wealth_target_locations target = this }
-	}
-}
-
-# One location's yearly service: count it, fire the pulses for this month (instant now, balanced on some day during 
-# the month, evenly spread), record it, and queue the next one twelve months out. What runs on the pulses is not this file's business.
+# One location's yearly service: count it and queue one balanced on_action on its spread day. Every second service
+# the on_action also carries the biyearly pulse, every fourth also the four-yearly one. What runs on the pulses is not
+# this file's business.
 
 mnt_wealth_dispatch_location = {
 	mnt_wealth_ensure_location_id = yes
 	mnt_wealth_set_dispatch_day = yes
 
-	# One counter per location: every second service is also biyearly, every fourth also four-yearly.
 	change_variable = { name = mnt_wealth_service_counter add = 1 }
-	set_local_variable = { name = mnt_wealth_biyearly_phase    value = { value = var:mnt_wealth_service_counter modulo = 2 } }
-	set_local_variable = { name = mnt_wealth_four_yearly_phase value = { value = var:mnt_wealth_service_counter modulo = 4 } }
-
-	# Fire yearly pulses
-	trigger_event_silently = { on_action = yearly_location_instant_pulse_MnT }
-	trigger_event_silently = { on_action = yearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
-	if = {
-		limit = { local_var:mnt_wealth_biyearly_phase = 0 }
-		# Fire bi-yearly pulses
-		trigger_event_silently = { on_action = biyearly_location_instant_pulse_MnT }
-		trigger_event_silently = { on_action = biyearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+	# The bucket and the day come from id mod 12 and floor(id / 12), and the counter seed is id mod 4, so every location
+	# in a bucket shared one phase and the census ran in 3 months of the year. floor(id / 360) changes once per 30
+	# dispatch days, so adding it gives each day every phase.
+	set_local_variable = {
+		name = mnt_wealth_four_yearly_phase
+		value = {
+			value = var:mnt_wealth_location_id
+			divide = 360
+			floor = yes
+			add = var:mnt_wealth_service_counter
+			modulo = 4
+		}
 	}
+
+	# The instant pulses would fire now, on the dispatch day. Nothing hooks into them, so they are commented out here
+	# and their definitions in MnT_pulse.txt are too. To use one, uncomment its line here and its definition there.
+	# trigger_event_silently = { on_action = yearly_location_instant_pulse_MnT }
+	# if = { limit = { OR = { local_var:mnt_wealth_four_yearly_phase = 0 local_var:mnt_wealth_four_yearly_phase = 2 } } trigger_event_silently = { on_action = biyearly_location_instant_pulse_MnT } }
+	# if = { limit = { local_var:mnt_wealth_four_yearly_phase = 0 } trigger_event_silently = { on_action = four_yearly_location_instant_pulse_MnT } }
+
 	if = {
-		# Fire 4-yearly pulses
 		limit = { local_var:mnt_wealth_four_yearly_phase = 0 }
-		trigger_event_silently = { on_action = four_yearly_location_instant_pulse_MnT }
-		trigger_event_silently = { on_action = four_yearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+		trigger_event_silently = { on_action = yearly_biyearly_and_four_yearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
 	}
-
-	# Track when this location was last updated
-	set_local_variable = { name = mnt_wealth_last_service value = global_var:mnt_wealth_months_elapsed }
-	save_temporary_scope_as = mnt_wealth_service_entity
-	add_to_global_variable_map = {
-		name = mnt_wealth_location_last_service
-		key = scope:mnt_wealth_service_entity
-		value = local_var:mnt_wealth_last_service
+	else_if = {
+		limit = { local_var:mnt_wealth_four_yearly_phase = 2 }
+		trigger_event_silently = { on_action = yearly_and_biyearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
 	}
-	mnt_wealth_write_location_next_service = yes
+	else = {
+		trigger_event_silently = { on_action = yearly_location_balanced_pulse_MnT days = local_var:mnt_wealth_dispatch_day }
+	}
 }
 
 # Locations in the same bucket spread across the month's days by id.
@@ -127,6 +113,7 @@ mnt_wealth_set_days_in_month = {
 
 	if = {
 		limit = {
+			has_global_variable_map = mnt_wealth_days_in_month
 			is_key_in_global_variable_map = {
 				name = mnt_wealth_days_in_month
 				target = local_var:mnt_wealth_calendar_month

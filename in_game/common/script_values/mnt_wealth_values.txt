@@ -8,6 +8,17 @@ mnt_wealth_months_since_campaign_start = {
 	subtract = 4
 }
 
+# The estate savings goal grows smoothly with game time: 2 to the power of the doubling periods passed.
+mnt_wealth_estate_savings_time_multiplier = {
+	value = mnt_wealth_months_since_campaign_start
+	divide = 12
+	divide = mnt_wealth_estate_savings_goal_doubling_years
+	min = 0
+	save_temporary_value_as = mnt_wealth_savings_doubling_periods
+	value = 2
+	pow = scope:mnt_wealth_savings_doubling_periods
+}
+
 mnt_wealth_minimum_wage_rate = {
 	value = modifier:mnt_wealth_local_minimum_wage
 	if = { limit = { has_owner = yes } add = owner.modifier:mnt_wealth_global_minimum_wage }
@@ -34,6 +45,29 @@ mnt_wealth_investment_efficiency_multiplier = {
 }
 
 # 1 / (1 + resistance), floored at 0.5; higher resistance is cheaper decay.
+
+# The rates recorded at the last settle, which the advance applies to the owed months and the display projects with.
+# Before a location's first settle records them, the live value stands in.
+
+mnt_wealth_recorded_investment_rate = {
+	value = mnt_wealth_investment_rate
+	if = { limit = { has_variable = mnt_wealth_cached_investment_rate } value = var:mnt_wealth_cached_investment_rate }
+}
+
+mnt_wealth_recorded_investment_maintenance = {
+	value = modifier:mnt_wealth_local_investment_maintenance
+	if = { limit = { has_variable = mnt_wealth_cached_investment_maintenance } value = var:mnt_wealth_cached_investment_maintenance }
+}
+
+mnt_wealth_recorded_investment_efficiency = {
+	value = mnt_wealth_investment_efficiency_multiplier
+	if = { limit = { has_variable = mnt_wealth_cached_investment_efficiency } value = var:mnt_wealth_cached_investment_efficiency }
+}
+
+mnt_wealth_recorded_decay_resistance = {
+	value = mnt_wealth_decay_resistance_multiplier
+	if = { limit = { has_variable = mnt_wealth_cached_decay_resistance } value = var:mnt_wealth_cached_decay_resistance }
+}
 
 mnt_wealth_decay_resistance_multiplier = {
 	value = 1
@@ -67,7 +101,7 @@ mnt_wealth_estate_flow_total = {
 							is_key_in_variable_map = { name = mnt_estate_raw_power target = scope:mnt_wealth_flow_key }
 						}
 						prev = {
-							is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:mnt_wealth_flow_key }
+							has_variable_map = mnt_wealth_national_estate_raw_power is_key_in_variable_map = { name = mnt_wealth_national_estate_raw_power target = scope:mnt_wealth_flow_key }
 							"variable_map(mnt_wealth_national_estate_raw_power|scope:mnt_wealth_flow_key)" > 0
 						}
 					}
@@ -91,7 +125,7 @@ mnt_wealth_local_estate_wealth_fraction = {
 		if = {
 			limit = {
 				var:mnt_wealth_pool > 0
-				is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate }
+				has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = scope:mnt_wealth_estate }
 			}
 			add = "variable_map(mnt_wealth_estate_wealth|scope:mnt_wealth_estate)"
 			divide = var:mnt_wealth_pool

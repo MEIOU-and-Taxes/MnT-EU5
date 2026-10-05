@@ -88,7 +88,7 @@ mnt_wealth_add_progress_to_invested_wealth = {
 	set_local_variable = { name = mnt_wealth_current_invested value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_wealth is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_current_invested
 			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
@@ -98,7 +98,7 @@ mnt_wealth_add_progress_to_invested_wealth = {
 	set_local_variable = { name = mnt_wealth_current_since_review value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_since_review is_key_in_variable_map = { name = mnt_wealth_invested_since_review target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_current_since_review
 			value = "variable_map(mnt_wealth_invested_since_review|local_var:mnt_wealth_estate_key)"
@@ -126,35 +126,11 @@ mnt_wealth_add_progress_to_invested_wealth = {
 # Each level of investment(I) costs cost_base * I^2
 
 mnt_wealth_recompute_estate_investment_level = {
-	# pow = 0.5 is expensive; only recalculate if the level changes.
-	set_local_variable = { name = mnt_wealth_investment_level_now value = 0 }
-	if = {
-		limit = { has_variable = mnt_wealth_applied_mnt_wealth_investment_$ESTATE$ }
-		set_local_variable = {
-			name = mnt_wealth_investment_level_now
-			value = {
-				value = var:mnt_wealth_applied_mnt_wealth_investment_$ESTATE$
-				multiply = mnt_wealth_investment_rounding_factor
-			}
-		}
-	}
-	else_if = {
-		limit = { has_variable = mnt_wealth_applied_mnt_wealth_neglect_$ESTATE$ }
-		set_local_variable = {
-			name = mnt_wealth_investment_level_now
-			value = {
-				value = var:mnt_wealth_applied_mnt_wealth_neglect_$ESTATE$
-				multiply = mnt_wealth_investment_rounding_factor
-				multiply = -1
-			}
-		}
-	}
-
 	# Negative invested wealth = neglect. Level uses absolute value; sign is restored at the end.
 	set_local_variable = { name = mnt_wealth_level_cost_base value = mnt_wealth_investment_level_cost_base }
 	set_local_variable = { name = mnt_wealth_investment_pool_value      value = 0 }
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_invested_wealth is_key_in_variable_map = { name = mnt_wealth_invested_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_investment_pool_value
 			value = "variable_map(mnt_wealth_invested_wealth|local_var:mnt_wealth_estate_key)"
@@ -171,13 +147,15 @@ mnt_wealth_recompute_estate_investment_level = {
 		}
 	}
 
+	# Level n costs n^2 * base, so the whole level is floor(sqrt(magnitude / base)). pow costs less than the
+	# statements it took to skip it.
 	set_local_variable = {
 		name = mnt_wealth_whole_investment_level
 		value = {
-			value = local_var:mnt_wealth_investment_level_now
-			multiply = local_var:mnt_wealth_investment_level_sign
+			value = local_var:mnt_wealth_investment_pool_magnitude
+			divide = local_var:mnt_wealth_level_cost_base
+			pow = 0.5
 			floor = yes
-			min = 0
 		}
 	}
 	set_local_variable = {
@@ -196,42 +174,6 @@ mnt_wealth_recompute_estate_investment_level = {
 			save_temporary_value_as = mnt_wealth_next_whole_investment_level
 			multiply = scope:mnt_wealth_next_whole_investment_level
 			multiply = local_var:mnt_wealth_level_cost_base
-		}
-	}
-
-	if = {
-		limit = {
-			OR = {
-				local_var:mnt_wealth_investment_pool_magnitude < local_var:mnt_wealth_reached_cost
-				local_var:mnt_wealth_investment_pool_magnitude >= local_var:mnt_wealth_next_investment_level_cost
-			}
-		}
-		set_local_variable = {
-			name = mnt_wealth_whole_investment_level
-			value = {
-				value = local_var:mnt_wealth_investment_pool_magnitude
-				divide = local_var:mnt_wealth_level_cost_base
-				pow = 0.5
-				floor = yes
-			}
-		}
-		set_local_variable = {
-			name = mnt_wealth_reached_cost
-			value = {
-				value = local_var:mnt_wealth_whole_investment_level
-				multiply = local_var:mnt_wealth_whole_investment_level
-				multiply = local_var:mnt_wealth_level_cost_base
-			}
-		}
-		set_local_variable = {
-			name = mnt_wealth_next_investment_level_cost
-			value = {
-				value = local_var:mnt_wealth_whole_investment_level
-				add = 1
-				save_temporary_value_as = mnt_wealth_next_whole_investment_level
-				multiply = scope:mnt_wealth_next_whole_investment_level
-				multiply = local_var:mnt_wealth_level_cost_base
-			}
 		}
 	}
 
@@ -286,7 +228,7 @@ mnt_wealth_drift_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_current_wealth value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_estate_wealth is_key_in_variable_map = { name = mnt_wealth_estate_wealth target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_current_wealth
 			value = "variable_map(mnt_wealth_estate_wealth|local_var:mnt_wealth_estate_key)"
@@ -297,7 +239,7 @@ mnt_wealth_drift_estate_wealth = {
 	set_local_variable = { name = mnt_wealth_target_wealth value = 0 }
 
 	if = {
-		limit = { is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
+		limit = { has_variable_map = mnt_wealth_cached_local_relative_estate_power is_key_in_variable_map = { name = mnt_wealth_cached_local_relative_estate_power target = local_var:mnt_wealth_estate_key } }
 		set_local_variable = {
 			name = mnt_wealth_target_wealth
 			value = {

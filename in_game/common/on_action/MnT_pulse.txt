@@ -42,9 +42,20 @@ biyearly_country_pulse = {
 }
 
 monthly_country_pulse = {
-	on_actions = {
-		monthly_country_pulse_MnT
-		epbm_on_country_monthly
+	on_actions = { monthly_country_pulse_MnT }
+	# Listed on the engine hook, not in a nested on_action: the engine checks event triggers in parallel only here.
+	# Immediates still run serially, in list order, so the valves are set before epbm.1 moves the gold.
+	events = {
+		mnt_wealth_economy.10       # estate treasury flow valves (players monthly)
+		epbm.1                      # estate building maintenance and the estate gold move
+		mnt_income_graph.1
+
+		# Calculate demands of individual countries
+		cost_of_the_court.1
+		# Calculate the demands and estate transfer of individual countries
+		diplomatic_spending.1
+		# monthly_market_pulse_MnT applies the effects and ensures that the calculation results are available
+		# because it runs as a subsystem from the weather_monthly_pulse which fires after monthly_country_pulse
 	}
 }
 
@@ -102,8 +113,8 @@ mnt_court_demand_monthly_market_pulse = {
 	}
 }
 
-# Fired by the wealth scheduler per location: each period as an instant on_action on the dispatch day and a balanced one
-# on the location's spread day. Monthly goes to human-owned locations only. Hook into these to run per location.
+# Fired by the wealth scheduler per location: a balanced on_action on the location's spread day for each period, and
+# for human-owned locations a monthly instant one on the dispatch day too. Hook into these to run per location.
 
 monthly_human_location_instant_pulse_MnT = {
 	on_actions = { mnt_wealth_monthly_human_location_pulse }
@@ -112,8 +123,10 @@ monthly_human_location_instant_pulse_MnT = {
 monthly_human_location_balanced_pulse_MnT = {
 }
 
-yearly_location_instant_pulse_MnT = {
-}
+# Not fired: nothing hooks into it. To use it, uncomment this and the matching trigger_event_silently in
+# mnt_wealth_dispatch_location (MnT_wealth_location_and_market_on_actions.txt).
+# yearly_location_instant_pulse_MnT = {
+# }
 
 yearly_location_balanced_pulse_MnT = {
 	on_actions = {
@@ -123,15 +136,37 @@ yearly_location_balanced_pulse_MnT = {
 	}
 }
 
-biyearly_location_instant_pulse_MnT = {
+# One queued on_action per location service: the scheduler picks the one that carries every period due. Listed in
+# period order, so the reconciliation runs before the census.
+
+yearly_and_biyearly_location_balanced_pulse_MnT = {
+	on_actions = {
+		yearly_location_balanced_pulse_MnT
+		biyearly_location_balanced_pulse_MnT
+	}
 }
+
+yearly_biyearly_and_four_yearly_location_balanced_pulse_MnT = {
+	on_actions = {
+		yearly_location_balanced_pulse_MnT
+		biyearly_location_balanced_pulse_MnT
+		four_yearly_location_balanced_pulse_MnT
+	}
+}
+
+# Not fired: nothing hooks into it. To use it, uncomment this and the matching trigger_event_silently in
+# mnt_wealth_dispatch_location (MnT_wealth_location_and_market_on_actions.txt).
+# biyearly_location_instant_pulse_MnT = {
+# }
 
 biyearly_location_balanced_pulse_MnT = {
 	on_actions = { mnt_wealth_biyearly_location_pulse }
 }
 
-four_yearly_location_instant_pulse_MnT = {
-}
+# Not fired: nothing hooks into it. To use it, uncomment this and the matching trigger_event_silently in
+# mnt_wealth_dispatch_location (MnT_wealth_location_and_market_on_actions.txt).
+# four_yearly_location_instant_pulse_MnT = {
+# }
 
 four_yearly_location_balanced_pulse_MnT = {
 	on_actions = { mnt_wealth_four_yearly_location_pulse }
@@ -212,7 +247,7 @@ pulse_yearly_MnT = {
 
 pulse_yearly_per_country_MnT = {
 	events = {
-		mnt_wealth_economy.11       # AI estate treasury flow valves (yearly)
+		# mnt_wealth_economy.11     # AI estate treasury flow valves (yearly); every country now runs the valve monthly
 		mnt_tribes.1
 		mnt_food.2
 	}
@@ -226,16 +261,6 @@ biyearly_country_pulse_MnT = {
 
 monthly_country_pulse_MnT = {
 	events = {
-		mnt_wealth_economy.10       # estate treasury flow valves (players monthly)
-		mnt_income_graph.1
-
-		# Calculate demands of individual countries
-		cost_of_the_court.1
-		# Calculate the demands and estate transfer of individual countries
-		diplomatic_spending.1
-		# monthly_market_pulse_MnT applies the effects and ensures that the calculation results are available
-		# because it runs as a subsystem from the weather_monthly_pulse which fires after monthly_country_pulse
-
 		delay = { days = 1 }
 
 		# Rank centers of importance after the balanced scoring pass
