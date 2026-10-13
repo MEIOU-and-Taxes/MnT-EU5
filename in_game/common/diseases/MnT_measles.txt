@@ -8,18 +8,18 @@
 
 	#effect to spawn the disease somewhere when we've decided it should spawn.
 	spawn = {
-		random_ownable_location = {
+		#If the great_pestilence has not happened yet, exclude America
+		if = {
 			limit = {
-				#Not empty location
-				population > 1
-				#If the great_pestilence has not happened yet, exclude America
-				trigger_if = {
-					limit = {
-						situation:great_pestilence = {
-							situation_is_active = no
-							situation_has_ended = no
-						}
-					}
+				situation:great_pestilence = {
+					situation_is_active = no
+					situation_has_ended = no
+				}
+			}
+			random_ownable_location = {
+				limit = {
+					#Not empty location
+					population > 1
 					#Endemic regions
 					OR = {
 						continent = continent:asia
@@ -54,6 +54,19 @@
 		
 				#save the outbreak created for later
 				save_scope_as = outbreak_scope
+			}
+		}
+		else = {
+			random_ownable_location = {
+				limit = {
+					population > 1
+				}
+
+				spawn_disease = {
+					disease = scope:disease
+					value = 0.5
+					save_scope_as = outbreak_scope
+				}
 			}
 		}
 	}
