@@ -28,32 +28,51 @@
 						continent = continent:oceania
 					}
 				}
+				spawn_disease = {
+					disease = scope:disease
+					value = 0.5
+
+					#save the outbreak created for later
+					save_scope_as = outbreak_scope
+				}
+			}
+		}
 				#If the Great Pestilence is active, only spawn in Locations that were in contact with Old World diseases.
-				trigger_if = {
-					limit = {
-						situation:great_pestilence = {
-							situation_is_active = yes
-							situation_has_ended = no
-						}
-						#Endemic regions
-						OR = {
-							continent = continent:asia
-							continent = continent:europe
-							continent = continent:africa
-							continent = continent:oceania
-							has_variable = had_great_pestilence_in_location
-						}
+		else_if = {
+			limit = {
+				situation:great_pestilence = {
+					situation_is_active = yes
+					situation_has_ended = no
+				}
+				#Endemic regions
+				OR = {
+					continent = continent:asia
+					continent = continent:europe
+					continent = continent:africa
+					continent = continent:oceania
+					has_variable = had_great_pestilence_in_location
+				}
+			}
+			random_ownable_location = {
+				limit = {
+					#Not empty location
+					population > 1
+					#Endemic regions
+					OR = {
+						continent = continent:asia
+						continent = continent:europe
+						continent = continent:africa
+						continent = continent:oceania
+						has_variable = had_great_pestilence_in_location
 					}
 				}
-				#If we can't find an appropiate location we don't spawn
-			}
-		
-			spawn_disease = {
-				disease = scope:disease
-				value = 0.5
-		
-				#save the outbreak created for later
-				save_scope_as = outbreak_scope
+				spawn_disease = {
+					disease = scope:disease
+					value = 0.5
+
+					#save the outbreak created for later
+					save_scope_as = outbreak_scope
+				}
 			}
 		}
 		else = {
