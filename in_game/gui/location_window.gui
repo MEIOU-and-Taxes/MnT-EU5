@@ -792,22 +792,29 @@ types LocationWindowTypes
 		}
 	}
 
-	type garrison_sortie_button = header_action_button_left {		
+	type garrison_sortie_button = header_action_button_left_uber {
 		blockoverride "icon_texture" {
 			texture = "gfx/interface/buttons/flats/garrison.dds"
 		}
-		blockoverride "button_icon_stretch_sprite" {}
-		blockoverride "header_button_frame_inner" {visible = no}
+		blockoverride "button_icon_stretch_sprite" { }
+		blockoverride "header_button_frame_inner" { visible = no }
 		blockoverride "header_button_icon_size" { size = { 25 25 } }
-		blockoverride "header_button_text_layout" {}
+		blockoverride "header_button_text_layout" { }
 		size = { 25 25 }
-		title = "GARRISON_SORTIE_TT"
-		actor = "[GetPlayer]"
-		parameter = {
-			parameter_name = "target"
-			parameter_value = "[Siege.MakeScope]"
+
+		visible = "[PdxGuiWidget.IsUberButtonVisible]"
+		enabled = "[PdxGuiWidget.IsUberButtonEnabled]"
+
+		scripted_action_tooltip = {
+			click_type = left
+			click_mode = confirm
+			action_name = "garrison_sortie"
+			actor = "[GetPlayer]"
+			parameter = {
+				parameter_name = "target"
+				parameter_value = "[Siege.MakeScope]"
+			}
 		}
-		left_click_and_hold_action = { action_name = "garrison_sortie" }
 	}
 
 	type location_card = hbox {
@@ -3433,9 +3440,10 @@ lateralview = {
 									size = { 32 32 }
 
 									# Province icon as action button — player-owned, non-capital, not in the province that contains the country capital
-									header_action_button_left = {
+									header_action_button_left_uber = {
 										size = { 32 32 }
 										visible = "[And3(Location.GetOwner.IsPlayer, Not(LocationView.GetLocation.IsProvinceCapital), Not(LocationView.GetLocation.GetProvince.GetCapital.IsCapital))]"
+										enabled = "[PdxGuiWidget.IsUberButtonEnabled]"
 										blockoverride "button_icon_stretch_sprite" {}
 										blockoverride "header_button_frame_inner" { visible = no }
 										blockoverride "header_button_icon_size" { size = { 32 32 } }
@@ -3444,12 +3452,16 @@ lateralview = {
 											using = province_texture
 										}
 										blockoverride "icon_overlay" {}
-										actor = "[LocationView.GetPlayer]"
-										parameter = {
-											parameter_name = "target"
-											parameter_value = "[LocationView.GetLocation]"
+										scripted_action_tooltip = {
+											click_type = left
+											click_mode = confirm
+											action_name = "set_province_capital"
+											actor = "[LocationView.GetPlayer]"
+											parameter = {
+												parameter_name = "target"
+												parameter_value = "[LocationView.GetLocation]"
+											}
 										}
-										left_click_and_hold_action = { action_name = "set_province_capital" }
 										tooltipwidget = {
 											ContextualTooltipType = {
 												blockoverride "title_icon" {
@@ -3944,7 +3956,7 @@ lateralview = {
 									visible = "[LocationView.GetLocation.GetOwner.IsPlayer]"
 									datamodel = "[LocationView.GetPlayer.GetInternationalOrganizations]"
 									item = {
-										header_action_button_left = {
+										header_action_button_left_uber = {
 											size = {40 40}
 											blockoverride "button_icon_stretch_sprite" {}
 											blockoverride "header_button_frame_inner" {visible = no}
@@ -3955,19 +3967,22 @@ lateralview = {
 												texture = "[InternationalOrganization.GetIcon]"
 												texture_density = 2
 											}
-											visible = "[And3(UIAction.IsVisible, InternationalOrganization.CanOwnLocations, Not(InternationalOrganization.IsLocationOwned(LocationView.GetLocation)))]"
-											
-											title = "add_location_to_international_organization"
-											actor = "[LocationView.GetPlayer]"
-											parameter = {
-												parameter_name = "target"
-												parameter_value = "[LocationView.GetLocation]"
+											visible = "[And3(PdxGuiWidget.IsUberButtonVisible, InternationalOrganization.CanOwnLocations, Not(InternationalOrganization.IsLocationOwned(LocationView.GetLocation)))]"
+
+											scripted_action_tooltip = {
+												click_type = left
+												click_mode = confirm
+												action_name = "add_location_to_international_organization"
+												actor = "[LocationView.GetPlayer]"
+												parameter = {
+													parameter_name = "target"
+													parameter_value = "[LocationView.GetLocation]"
+												}
+												parameter = {
+													parameter_name = "target_1"
+													parameter_value = "[InternationalOrganization.MakeScope]"
+												}
 											}
-											parameter = {
-												parameter_name = "target_1"
-												parameter_value = "[InternationalOrganization.MakeScope]"
-											}
-											left_click_and_hold_action = { action_name = "add_location_to_international_organization" }
 											tooltipwidget = {
 												ContextualTooltipType = {
 													blockoverride "title_icon_texture" {
@@ -3999,7 +4014,7 @@ lateralview = {
 									visible = "[LocationView.GetLocation.GetOwner.IsPlayer]"
 									datamodel = "[LocationView.GetLocation.GetInternationalOrganizations]"
 									item = {
-										header_action_button_left = {
+										header_action_button_left_uber = {
 											size = {40 40}
 											blockoverride "button_icon_stretch_sprite" {}
 											blockoverride "header_button_frame_inner" {visible = no}
@@ -4011,19 +4026,22 @@ lateralview = {
 												texture = "[InternationalOrganization.GetIcon]"
 												texture_density = 2
 											}
-											visible = "[And3(UIAction.IsVisible, InternationalOrganization.CanOwnLocations, InternationalOrganization.IsLocationOwned(LocationView.GetLocation))]"
-											
-											title = "remove_location_from_international_organization"
-											actor = "[GetPlayer]"
-											parameter = {
-												parameter_name = "target"
-												parameter_value = "[LocationView.GetLocation]"
+											visible = "[And3(PdxGuiWidget.IsUberButtonVisible, InternationalOrganization.CanOwnLocations, InternationalOrganization.IsLocationOwned(LocationView.GetLocation))]"
+
+											scripted_action_tooltip = {
+												click_type = right
+												click_mode = confirm
+												action_name = "remove_location_from_international_organization"
+												actor = "[GetPlayer]"
+												parameter = {
+													parameter_name = "target"
+													parameter_value = "[LocationView.GetLocation]"
+												}
+												parameter = {
+													parameter_name = "target_1"
+													parameter_value = "[InternationalOrganization.MakeScope]"
+												}
 											}
-											parameter = {
-												parameter_name = "target_1"
-												parameter_value = "[InternationalOrganization.MakeScope]"
-											}
-											right_click_and_hold_action = { action_name = "remove_location_from_international_organization" }
 											tooltipwidget = {
 												ContextualTooltipType = {
 													blockoverride "title_icon_texture" {
@@ -4056,7 +4074,7 @@ lateralview = {
 							}
 
 							# PERIPHORA
-							header_action_button_left = {
+							header_action_button_left_uber = {
 								size = {40 40}
 								blockoverride "button_icon_stretch_sprite" {}
 								blockoverride "header_button_frame_inner" {visible = no}
@@ -4069,12 +4087,19 @@ lateralview = {
 								}
 
 								name = "periphora"
-								actor = "[LocationView.GetPlayer]"
-								parameter = {
-									parameter_name = "location"
-									parameter_value = "[LocationView.GetLocation]"
+								visible = "[PdxGuiWidget.IsUberButtonVisible]"
+								enabled = "[PdxGuiWidget.IsUberButtonEnabled]"
+
+								scripted_action_tooltip = {
+									click_type = left
+									click_mode = single
+									action_name = "periphora"
+									actor = "[LocationView.GetPlayer]"
+									parameter = {
+										parameter_name = "location"
+										parameter_value = "[LocationView.GetLocation]"
+									}
 								}
-								left_action = { action_name = "periphora" }
 
 								tooltipwidget = {
 									ContextualTooltipType = {
