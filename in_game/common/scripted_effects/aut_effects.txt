@@ -11,16 +11,19 @@ aut_apply_integration_script = {
 	set_variable = {
 		name = location_integration_gain_base
 		value = {
+			#Base gain
 			value = 0.1
 			if = {
 				limit = {
 					OR = {
+						#Bordering integrated Location
 						any_neighbor_location = {
 							is_ownable = yes
 							has_owner = yes
 							owner ?= scope:owner_scope
 							MnT_location_needs_integration_trigger = no
 						}
+						#Bordering via sea
 						AND = {
 							is_port = yes
 							any_coast_border_location = {
@@ -30,18 +33,34 @@ aut_apply_integration_script = {
 								MnT_location_needs_integration_trigger = no
 							}
 						}
+						#Bordering via lake
+						AND = {
+							is_adjacent_to_lake = yes
+							any_neighbor_location = {
+								is_lake = yes
+								any_neighbor_location = {
+									is_ownable = yes
+									has_owner = yes
+									owner ?= scope:owner_scope
+									MnT_location_needs_integration_trigger = no
+								}
+							}
+						}
 					}
 				}
+				#Gain speed
 				add = 0.20
 				if = {
 					limit = {
 						OR = {
+							#Next to core
 							any_neighbor_location = {
 								is_ownable = yes
 								has_owner = yes
 								owner ?= scope:owner_scope
 								integration_level = core
 							}
+							#Next to core via sea
 							AND = {
 								is_port = yes
 								any_coast_border_location = {
@@ -51,8 +70,22 @@ aut_apply_integration_script = {
 									integration_level = core
 								}
 							}
+							#Next to core via lake
+							AND = {
+								is_adjacent_to_lake = yes
+								any_neighbor_location = {
+									is_lake = yes
+									any_neighbor_location = {
+										is_ownable = yes
+										has_owner = yes
+										owner ?= scope:owner_scope
+										integration_level = core
+									}
+								}
+							}
 						}
 					}
+					#Gain more speed
 					add = 0.10
 				}
 			}
