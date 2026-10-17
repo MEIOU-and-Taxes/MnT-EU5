@@ -663,8 +663,8 @@ lateralview = {
 													# IMPORT
 													button = {
 														size = { 28 28 }
-														enabled = "[And( GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )]"
-														tooltip_enabled = no
+														enabled = "[GoodsProductionLateralView.IsMarketFilterEnabled]"
+														datacontext = "[GoodsProductionLateralView.GetSelectedMarket]"														tooltip_enabled = no
 
 														texture = "gfx/interface/buttons/round_button_texture_alt.dds"
 														texture_density = 2
@@ -700,7 +700,7 @@ lateralview = {
 														ui_direction_color_button = {
 															size = { 65% 65% }
 															parentanchor = center
-															enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )]"
+															enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
 
 															tooltipwidget = {
 																BasicFunctionalTooltip = {}
@@ -709,10 +709,10 @@ lateralview = {
 															action_tooltip = {
 																click_type = left
 																click_mode = single
-																enabled = "[And( GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )]"
-																conditions = "[MakeItFailIf(Not(And(GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )), GoodsProductionLateralView.GetSelectedMarket.GetImportInfo(Player.Self,GoodItem.GetGoods))]"
-																title = "[SelectLocalization(And(GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket ), 'IMPORT_BUTTON_ACTION_TT', 'CANNOT_EXPORT_BUTTON_ACTION_TT')]"
-																on_action = "[SetupImportWithNeedsRight(GoodsProductionLateralView.GetSelectedMarket.Self,GoodItem.GetGoods,'(CFixedPoint)0')]"
+																enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
+																conditions = "[AddLocalizationIf(Not(HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self)), 'TRADE_ORDER_NO_TC_IN_MARKET_TT')]"
+																title = "MARKET_CTXMENU_CREATE_IMPORT_ORDER"
+																on_action = "[CreateImportOrderForGoodInMarket(GoodItem.GetGoods,GoodsProductionLateralView.GetSelectedMarket.Self)]"
 															}
 
 															blockoverride "button_texture"  {
@@ -724,7 +724,7 @@ lateralview = {
 													# EXPORT
 													button = {
 														size = { 28 28 }
-														enabled = "[GoodItem.CanExportToSelectedMarket]"
+														datacontext = "[GoodsProductionLateralView.GetSelectedMarket]"
 														tooltip_enabled = no
 														
 														texture = "gfx/interface/buttons/round_button_texture_alt.dds"
@@ -761,7 +761,7 @@ lateralview = {
 														ui_direction_color_button = {
 															size = { 65% 65% }
 															parentanchor = center
-															enabled = "[GoodItem.CanExportToSelectedMarket]"
+															enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
 
 															tooltipwidget = {
 																BasicFunctionalTooltip = {}
@@ -769,10 +769,10 @@ lateralview = {
 															action_tooltip = {
 																click_type = left
 																click_mode = single
-																enabled = "[GoodItem.CanExportToSelectedMarket]"
-																conditions = "[MakeItFailIf(Not(GoodItem.CanExportToSelectedMarket), GoodsProductionLateralView.GetSelectedMarket.GetExportInfo(Player.Self,GoodItem.GetGoods))]"
-																title = "[SelectLocalization(GoodItem.CanExportToSelectedMarket, 'EXPORT_BUTTON_ACTION_TT', 'CANNOT_EXPORT_BUTTON_ACTION_TT')]"																
-																on_action = "[SetupExportWithNeedsRight(GoodsProductionLateralView.GetSelectedMarket.Self,GoodItem.GetGoods,'(CFixedPoint)0')]"
+																enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
+																conditions = "[AddLocalizationIf(Not(HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self)), 'TRADE_ORDER_NO_TC_IN_MARKET_TT')]"
+																title = "MARKET_CTXMENU_CREATE_EXPORT_ORDER"
+																on_action = "[CreateExportOrderForGoodInMarket(GoodItem.GetGoods,GoodsProductionLateralView.GetSelectedMarket.Self)]"
 															}
 
 															blockoverride "button_texture"  {

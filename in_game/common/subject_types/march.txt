@@ -28,7 +28,13 @@
 		always = yes
 	}
 	join_defensive_wars_always = {
-		always = yes
+		#protect against external threats
+		scope:actor ?= {
+			is_subject_of = scope:recipient
+		}
+		scope:target ?= {
+			NOT = { is_subject_of = scope:recipient }
+		}
 	}
 	has_overlords_ruler = no
 	will_join_independence_wars = yes
@@ -91,7 +97,6 @@
 		
 		num_of_limited_subjects = -5
 		culture_war = 3
-		diplomatic_reputation = 1
 		different_religion = -20
 		same_common_language = 5
 		same_court_language = 10
@@ -121,7 +126,7 @@
 	}
 
 	ai_wants_to_be_overlord = {
-        scope:subject = {
+        scope:subject ?= {
 			add = {
                 desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
                 value = {

@@ -643,12 +643,29 @@ Date: 21/05/2026
 
 ##### 0.2.10
 
+### 1.4 Rio Salado Compatibility
+- Make the mod work
+- Add Camels RGO building and everything it needs
+- Remove navy_demands file; Vanilla upped demands for goods even more than we did making our changes obsolete
+- Remove Faster Universalis hourly tick removal files, since Vanilla implemented this, we will use Vanilla way
+- Vanilla removed Marry Noble interaction, we do not
+
 ### Optimization
 - Use every_ownable_location instead of every_location_in_the_world for calculating Centers of X. Should be significantly faster
 
 ### Features
 - Add a specific Price Type for Urban Amenities
 - Split RGO upgrade costs to all the Vanilla types of expand RGO cost, so no longer farming cost modifier for all of them
+- Add a clause to make integration speed faster when connected via a lake
+
+### Balance
+- Child eduction balancing
+  - 3 tiers of goods stat traits
+  - 2 tiers of bad
+  - 4 mixed stats pretty good trais (less rare)
+  - 1 (Rowdy) trait that is the best for mil but reduces education effect slightly
+- Disable Navy Upkeep doubling (exponentially) every age; might need some increase in goods later but Vanilla thing was bonkers
 
 ### Fixes
 - Fix Levy Scales (reduced Levy Sizes by 25%) not working
+- Fix Ottomans special reform instantly becoming invalid
