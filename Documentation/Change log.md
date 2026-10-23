@@ -685,3 +685,4 @@ Date: 21/05/2026
 - Tribal Camelry balancing:
   - Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
   - Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
+  - Fix the camel recruitment province scope check to prevent repeated script errors.
