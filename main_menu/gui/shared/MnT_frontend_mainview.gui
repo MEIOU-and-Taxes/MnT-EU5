@@ -8,15 +8,23 @@ types Frontend
 		blockoverride "header_button_text_layout" {}
 
 		blockoverride "icon_texture" {
-			texture = "gfx/interface/icons/dlc/dlc_shield.dds"
+			block "button_dlc_mods_texture" { texture = "gfx/interface/icons/dlc/dlc_shield.dds" }
 			# texture_density = 2
+		}
+
+		blockoverride "icon_overlay" {}
+
+		blockoverride "icon_size" {
+			size = { 80% 80% }
 		}
 
 		name = "mods_gui_button"
 
-		action_tooltip = {
-			title = "MAIN_MENU_MODS_AND_DLCS"
-			on_action = "[FrontEndMainView.ToggleOpenMods]"
+		block "button_dlc_mods_action" {
+			action_tooltip = {
+				title = "MAIN_MENU_MODS_AND_DLCS"
+				on_action = "[FrontEndMainView.ToggleOpenMods]"
+			}
 		}
 
 		tooltipwidget = { 
@@ -97,7 +105,15 @@ types Frontend
 		}
 		
 		vbox = {
-			button_dlc_mods = {}
+			button_dlc_mods = {
+				blockoverride "button_dlc_mods_action" {
+					action_tooltip = {
+						title = "MAIN_MENU_MODS_AND_DLCS"
+						on_action = "[GetVariableSystem.Set( 'mods_tab_request', 'dlc' )]"
+						on_action = "[FrontEndMainView.ToggleOpenDLCs]"
+					}
+				}
+			}
 
 			vbox = {
 				spacing = 5
@@ -114,6 +130,12 @@ types Frontend
 				datamodel = "[GetGameDLCs]"
 				item = {
 					button_dlc = { visible = "[And(Not(GameDLC.IsActivated), Not(GameDLC.IsOwned))]" }
+				}
+			}
+
+			button_dlc_mods = {
+				blockoverride "button_dlc_mods_texture" {
+					texture = "gfx/interface/icons/dlc/dlc_foldercastle.dds"
 				}
 			}
 		}
@@ -312,6 +334,7 @@ types Frontend
 				spacing = 5
 				ignoreinvisible = yes
 				sdk_button = {
+					maximumsize = { 205 -1 }
 					text = "CREATE_ACCOUNT"
 					visible = "[Not(StatusIsLoggedIn)]"
 					enabled = "[StatusCanLogin]"
@@ -319,13 +342,32 @@ types Frontend
 					# block "create_account_button_size" {
 						using = button_resize_to_fit_text
 					# }
+					buttonText = {
+						textbox = {
+							using = button_common_textobj_font
+							multiline = yes
+							maximumsize = { 190 -1 }
+							resizeparent = yes
+							margin = { 10 5 }
+						}
+					}
 				}
 				sdk_button = {
+					maximumsize = { 130 -1 }
 					text = "LOGIN"
 					onclick = "[StatusWidget.ToggleLoginWindow]"
 					visible = "[Not(StatusIsLoggedIn)]"
 					enabled = "[StatusCanLogin]"
 					using = button_resize_to_fit_text
+					buttonText = {
+						textbox = {
+							using = button_common_textobj_font
+							multiline = yes
+							maximumsize = { 115 -1 }
+							resizeparent = yes
+							margin = { 10 5 }
+						}
+					}
 				}
 				sdk_button = {
 					maximumsize = { 180 -1 }
