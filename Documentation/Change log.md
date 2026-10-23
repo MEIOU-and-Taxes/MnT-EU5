@@ -1,12 +1,5 @@
 ﻿# Release
 
-#### GUI compatibility
-- Center the compact RGO card within the location infrastructure row.
-- Place the four location center indicators in larger horizontal pairs beside the owner flag below the location name.
-- Show RGO buildings by default in the production table while preserving explicit visibility choices.
-- Migrate the M&T interface to EU5 1.4, restoring economy and map-marker panels while preserving building-based RGO management, production filters, historical graphs, center icons, and estate maintenance breakdowns.
-- Remove obsolete FUM speed controls and redundant marker definitions; retain the precomposed marker and pie-chart visuals.
-
 #### Balancing
 - Remove location building limit
 - Changes to industry-specialization urban rights
@@ -681,6 +674,14 @@ Date: 21/05/2026
 
 ##### 0.2.11
 
+#### 1.4 GUI compatibility
+- Center the compact RGO card within the location infrastructure row.
+- Place the four location center indicators in larger horizontal pairs beside the owner flag below the location name.
+- Show RGO buildings by default in the production table while preserving explicit visibility choices.
+- Migrate the M&T interface to EU5 1.4, restoring economy and map-marker panels while preserving building-based RGO management, production filters, historical graphs, center icons, and estate maintenance breakdowns.
+- Remove obsolete FUM speed controls and redundant marker definitions; retain the precomposed marker and pie-chart visuals.
+
 ### Balance
-- Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
-- Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
+- Tribal Camelry balancing:
+  - Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
+  - Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
