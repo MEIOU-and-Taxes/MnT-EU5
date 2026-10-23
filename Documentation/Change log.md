@@ -666,6 +666,7 @@ Date: 21/05/2026
   - 1 (Rowdy) trait that is the best for mil but reduces education effect slightly
 - Disable Navy Upkeep doubling (exponentially) every age; might need some increase in goods later but Vanilla thing was bonkers
 - Add food output to RGO-Buildings for Camels, Horses and Wool as a modifier, so that their operation makes food but that the food isn't traded together with the goods
+- Rebalanced trade distance cost by reducing trade range from tech and modifying distance calculations. Also results in more believable trade routes. (But for crossing unexplored teritory)
 
 ### Fixes
 - Fix Levy Scales (reduced Levy Sizes by 25%) not working
