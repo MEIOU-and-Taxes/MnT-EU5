@@ -1,5 +1,9 @@
 ﻿# Release
 
+#### Credit
+- Add Credit production from banks and Merchants' Guilds, commercial and loan demand, and borrowing interest based on credit prices and debt sustainability.
+- Give banking countries access to all bank production methods from the start while retaining building technology requirements.
+
 #### GUI compatibility
 - Center the compact RGO card within the location infrastructure row.
 - Place the four location center indicators in larger horizontal pairs beside the owner flag below the location name.
