@@ -85,70 +85,58 @@ mnt_accumulate_credit_loan_demand_for_country = {
 		name = mnt_credit_loan_previous_value
 		value = var:mnt_credit_loan_country_value
 	}
+	set_variable = {
+		name = mnt_credit_loan_previous_market
+		value = capital.market
+	}
 }
 
 mnt_update_credit_loan_demand_for_country = {
+	# Older saves have cached amounts without a market reference. Rebuild once
+	# rather than subtracting those amounts from an unknown market.
 	if = {
-		limit = { exists = capital.market }
-
-		mnt_set_credit_loan_country_values = yes
-
-		if = {
-			limit = { not = { has_variable = mnt_credit_loan_previous_debt } }
-			set_variable = {
-				name = mnt_credit_loan_previous_debt
-				value = 0
-			}
+		limit = {
+			NOT = { exists = var:mnt_credit_loan_previous_market }
+			has_variable = mnt_credit_loan_previous_debt
+			var:mnt_credit_loan_previous_debt > 0
 		}
-		if = {
-			limit = { not = { has_variable = mnt_credit_loan_previous_value } }
-			set_variable = {
-				name = mnt_credit_loan_previous_value
-				value = 0
-			}
-		}
-
+		mnt_recompute_credit_loan_demand_world = yes
+	}
+	else = {
 		save_temporary_scope_as = mnt_credit_loan_country
-		capital.market = {
-			location = {
-				mnt_init_credit_loan_demand_market_values = yes
-				change_variable = {
-					name = mnt_credit_loan_work_debt
-					subtract = scope:mnt_credit_loan_country.var:mnt_credit_loan_previous_debt
+		if = {
+			limit = { exists = var:mnt_credit_loan_previous_market }
+			var:mnt_credit_loan_previous_market = {
+				location = {
+					mnt_init_credit_loan_demand_market_values = yes
+					change_variable = {
+						name = mnt_credit_loan_work_debt
+						subtract = scope:mnt_credit_loan_country.var:mnt_credit_loan_previous_debt
+					}
+					change_variable = {
+						name = mnt_credit_loan_work_value
+						subtract = scope:mnt_credit_loan_country.var:mnt_credit_loan_previous_value
+					}
 				}
-				change_variable = {
-					name = mnt_credit_loan_work_value
-					subtract = scope:mnt_credit_loan_country.var:mnt_credit_loan_previous_value
-				}
-				change_variable = {
-					name = mnt_credit_loan_work_debt
-					add = scope:mnt_credit_loan_country.var:total_credit_loan_debt
-				}
-				change_variable = {
-					name = mnt_credit_loan_work_value
-					add = scope:mnt_credit_loan_country.var:mnt_credit_loan_country_value
-				}
-				set_variable = {
-					name = mnt_credit_loan_market_price
-					value = "goods:credit.price_in_market(scope:mnt_credit_loan_country.capital.market)"
-				}
+				mnt_apply_credit_loan_demand_for_market = yes
 			}
-			mnt_apply_credit_loan_demand_for_market = yes
 		}
-
-		set_variable = {
-			name = mnt_credit_loan_previous_debt
-			value = var:total_credit_loan_debt
-		}
-		set_variable = {
-			name = mnt_credit_loan_previous_value
-			value = var:mnt_credit_loan_country_value
+		mnt_clear_credit_loan_country_cache = yes
+		if = {
+			limit = { exists = capital.market }
+			mnt_accumulate_credit_loan_demand_for_country = yes
+			capital.market = { mnt_apply_credit_loan_demand_for_market = yes }
 		}
 	}
 }
 
 mnt_prepare_credit_loan_demand_market_values = {
+	save_temporary_scope_as = mnt_credit_loan_market
 	location = {
+		set_variable = {
+			name = mnt_credit_loan_market_price
+			value = "goods:credit.price_in_market(scope:mnt_credit_loan_market)"
+		}
 		set_variable = {
 			name = mnt_credit_loan_total_debt
 			value = var:mnt_credit_loan_work_debt
@@ -269,11 +257,14 @@ mnt_recompute_credit_loan_demand_world = {
 		}
 	}
 	every_country = {
-		limit = {
-			num_loans > 0
-			exists = capital.market
+		# Clear zero-debt and landless countries too, so stale contributions
+		# cannot be subtracted again after a repayment or a market change.
+		mnt_clear_credit_loan_country_cache = yes
+		if = {
+			limit = { exists = capital.market }
+			mnt_accumulate_credit_loan_demand_for_country = yes
+			mnt_apply_yearly_credit_interest = yes
 		}
-		mnt_accumulate_credit_loan_demand_for_country = yes
 	}
 	mnt_aggregate_credit_loan_demand_markets = yes
 }
@@ -281,4 +272,10 @@ mnt_recompute_credit_loan_demand_world = {
 mnt_recompute_credit_after_loan_taken = {
 	mnt_update_credit_loan_demand_for_country = yes
 	mnt_apply_yearly_credit_interest = yes
+}
+
+mnt_clear_credit_loan_country_cache = {
+	set_variable = { name = mnt_credit_loan_previous_debt value = 0 }
+	set_variable = { name = mnt_credit_loan_previous_value value = 0 }
+	remove_variable = mnt_credit_loan_previous_market
 }
