@@ -1,6 +1,7 @@
 ﻿# Release
 
 #### Credit
+- Reduce base loan interest from 10% to 5%.
 - Add Credit production from banks and Merchants' Guilds, commercial and loan demand, and borrowing interest based on credit prices and debt sustainability.
 - Give banking countries access to all bank production methods from the start while retaining building technology requirements.
 
