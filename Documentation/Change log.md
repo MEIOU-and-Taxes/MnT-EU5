@@ -7,6 +7,9 @@
 - Add Credit production from banks and Merchants' Guilds, commercial and loan demand, and borrowing interest based on credit prices and debt sustainability.
 - Give banking countries access to all bank production methods from the start while retaining building technology requirements.
 
+#### Hotfix
+- Stop repeated script errors from the missing Proclaim Pase Foral cabinet action and Battle for the Strait situation.
+
 #### Balancing
 - Remove location building limit
 - Changes to industry-specialization urban rights
