@@ -63,6 +63,13 @@ mnt_accumulate_credit_loan_demand_for_country = {
 	save_temporary_scope_as = mnt_credit_loan_country
 	capital.market.location = {
 		mnt_init_credit_loan_demand_market_values = yes
+		if = {
+			limit = { scope:mnt_credit_loan_country.var:total_credit_loan_debt > 0 }
+			add_to_variable_list = {
+				name = mnt_credit_loan_borrowers
+				target = scope:mnt_credit_loan_country
+			}
+		}
 		change_variable = {
 			name = mnt_credit_loan_work_debt
 			add = scope:mnt_credit_loan_country.var:total_credit_loan_debt
@@ -109,6 +116,10 @@ mnt_update_credit_loan_demand_for_country = {
 			var:mnt_credit_loan_previous_market = {
 				location = {
 					mnt_init_credit_loan_demand_market_values = yes
+					remove_list_variable = {
+						name = mnt_credit_loan_borrowers
+						target = scope:mnt_credit_loan_country
+					}
 					change_variable = {
 						name = mnt_credit_loan_work_debt
 						subtract = scope:mnt_credit_loan_country.var:mnt_credit_loan_previous_debt
@@ -194,6 +205,7 @@ mnt_prepare_credit_loan_demand_market_values = {
 
 mnt_clear_credit_loan_demand_market_work_values = {
 	location = {
+		clear_variable_list = mnt_credit_loan_borrowers
 		set_variable = {
 			name = mnt_credit_loan_work_debt
 			value = 0
