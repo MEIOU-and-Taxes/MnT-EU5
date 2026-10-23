@@ -678,3 +678,9 @@ Date: 21/05/2026
 ### Fixes
 - Fix Levy Scales (reduced Levy Sizes by 25%) not working
 - Fix Ottomans special reform instantly becoming invalid
+
+##### 0.2.11
+
+### Balance
+- Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
+- Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
