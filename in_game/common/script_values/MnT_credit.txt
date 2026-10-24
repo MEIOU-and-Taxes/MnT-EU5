@@ -57,6 +57,25 @@ mnt_credit_tooltip_market_supply = {
 	value = "goods_supply_in_market(goods:credit)"
 }
 
-mnt_credit_tooltip_market_demand = {
-	value = "goods_demand_in_market(goods:credit)"
+# Country scope: replace only the cached loan component with the live ledger.
+mnt_credit_lending_demand = {
+	if = {
+		limit = { capital.market.location = { has_variable = mnt_credit_quote_other_demand } }
+		value = "capital.market.location.var:mnt_credit_quote_other_demand"
+		add = "capital.market.location.var:mnt_credit_loan_final_scale"
+	}
+	else = {
+		value = "capital.market.goods_demand_in_market(goods:credit)"
+	}
+}
+
+# Credit has base price 1. The one-unit buffer keeps empty markets finite.
+mnt_credit_lending_quote = {
+	value = mnt_credit_lending_demand
+	add = 1
+	divide = {
+		value = "capital.market.goods_supply_in_market(goods:credit)"
+		add = 1
+	}
+	min = 0.01
 }

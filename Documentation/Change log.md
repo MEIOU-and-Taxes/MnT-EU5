@@ -3,7 +3,7 @@
 #### Credit
 - Show loan demand in a readable table of clickable borrower countries, outstanding debt, and Credit used, with goods icons and totals.
 - Add a compact capital-market Credit display with balance, supply, demand, price, and the interest formula underneath.
-- Refresh loan demand automatically at startup, each month, and after borrowing, renewal, repayment, or bankruptcy.
+- Refresh loan demand and lending rates immediately after borrowing, renewal, repayment, or bankruptcy, including while paused; use a responsive Credit supply-and-demand quote separately from the slower goods price.
 - Banking countries start new games with 1,000 gold.
 - Reduce base loan interest from 10% to 5%.
 - Add Credit production from banks and Merchants' Guilds, commercial and loan demand, and borrowing interest based on credit prices and debt sustainability.

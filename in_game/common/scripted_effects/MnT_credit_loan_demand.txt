@@ -217,7 +217,36 @@ mnt_clear_credit_loan_demand_market_work_values = {
 	}
 }
 
+# Native demand remains cached while paused. Keep its non-loan component
+# until the native total refreshes, then rebase before changing our demand.
+mnt_prepare_credit_quote_market_base = {
+	save_temporary_scope_as = mnt_credit_quote_market
+	location = {
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_variable = mnt_credit_quote_native_demand }
+					NOT = { var:mnt_credit_quote_native_demand = "scope:mnt_credit_quote_market.goods_demand_in_market(goods:credit)" }
+				}
+			}
+			set_variable = {
+				name = mnt_credit_quote_native_demand
+				value = "scope:mnt_credit_quote_market.goods_demand_in_market(goods:credit)"
+			}
+			set_variable = {
+				name = mnt_credit_quote_other_demand
+				value = {
+					value = var:mnt_credit_quote_native_demand
+					subtract = var:mnt_credit_loan_final_scale
+					min = 0
+				}
+			}
+		}
+	}
+}
+
 mnt_apply_credit_loan_demand_for_market = {
+	mnt_prepare_credit_quote_market_base = yes
 	mnt_prepare_credit_loan_demand_market_values = yes
 
 	if = {
@@ -250,6 +279,12 @@ mnt_apply_credit_loan_demand_for_market = {
 			}
 		}
 	}
+	# A shared market's new Credit demand changes the quote for every capital
+	# using that market, including countries which have not borrowed yet.
+	every_location_in_market = {
+		limit = { is_capital = yes exists = owner }
+		owner = { mnt_apply_yearly_credit_interest = yes }
+	}
 }
 
 mnt_aggregate_credit_loan_demand_markets = {
@@ -275,7 +310,6 @@ mnt_recompute_credit_loan_demand_world = {
 		if = {
 			limit = { exists = capital.market }
 			mnt_accumulate_credit_loan_demand_for_country = yes
-			mnt_apply_yearly_credit_interest = yes
 		}
 	}
 	mnt_aggregate_credit_loan_demand_markets = yes
