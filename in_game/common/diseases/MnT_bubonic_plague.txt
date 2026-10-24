@@ -169,6 +169,12 @@
 							value = scope:outbreak
 						}
 					}
+					add_timeline_note = {
+						key = timeline_note_black_death
+						location = this
+						show_in_pop_graph = yes
+						unique = yes
+					}
 				}
 			}
 		}
@@ -338,16 +344,15 @@
 	mortality_rate = { 0.3 0.6 }
 
 	character_mortality_chance = {
-		value = 0.08
+		value = 0.16
 		if = {
 			limit = {
-				NOT = {
-					owner = {
-						has_country_modifier = hiding_from_black_death
-					}
-				}
+				owner.modifier:character_mortality_chance_by_bubonic_plague != 0
 			}
-			add = 0.08
+			multiply = {
+				value = 1
+				add = owner.modifier:character_mortality_chance_by_bubonic_plague
+			}
 		}
 		multiply = "disease_presence(scope:disease)"
 	}

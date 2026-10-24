@@ -29,30 +29,37 @@ template ExpenseSettingTooltip {
 		}
 
 		blockoverride "concept_link" {
-			text = "[MaintenanceSetting.GetName]"
+			raw_text = "[AddTextIf(MaintenanceSetting.IsBureaucracy, bureaucracy)|e][AddTextIf(Not(MaintenanceSetting.IsBureaucracy), MaintenanceSetting.GetName)]"
 		}
 		blockoverride "tooltip_content" {
-
-			# ─── BEGIN BASE GAME CONTENT (unchanged) ─────────────────────────
-
 			TooltipStringPairList = {
 				name = "GetFortsLimitInfo"
-				visible = "[And(MaintenanceSetting.ShowModifier, EqualTo_string( Localize('[fort_maintenance|e]'), MaintenanceSetting.GetName))]"
+				visible = "[And(MaintenanceSetting.ShowModifier, MaintenanceSetting.IsFort)]"
 				textcontext = "[MaintenanceSetting.GetSettingOwner.GetFortsLimitInfo]"
 			}
 
 			TooltipTextBlock = {
 				name = "EXPENSE_MAINT_TT_TEXT_LONG"
-				visible = "[And(MaintenanceSetting.ShowSlider, Or(MaintenanceSetting.IsIO, Or(EqualTo_string( Localize('[diplomatic_maintenance|e]'), MaintenanceSetting.GetName), Or( EqualTo_string( Localize('[court_maintenance|e]'), MaintenanceSetting.GetName), EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName) ))))]"
+				visible = "[And(MaintenanceSetting.ShowSlider, Or4(MaintenanceSetting.IsIO, MaintenanceSetting.IsDiplomatic, MaintenanceSetting.IsCourt, MaintenanceSetting.IsCultural))]"
+
 				blockoverride "text" {
 					text = "EXPENSE_MAINT_TT_TEXT_LONG"
 				}
 			}
 			TooltipTextBlock = {
 				name = "EXPENSE_MAINT_TT_TEXT_LONG_ALT"
-				visible = "[And(MaintenanceSetting.ShowSlider,Not(Or(MaintenanceSetting.IsIO, Or(EqualTo_string( Localize('[diplomatic_maintenance|e]'), MaintenanceSetting.GetName), Or( EqualTo_string( Localize('[court_maintenance|e]'), MaintenanceSetting.GetName), EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName) )))))]"
+				visible = "[And(MaintenanceSetting.ShowSlider, Not(Or5(MaintenanceSetting.IsIO, MaintenanceSetting.IsDiplomatic, MaintenanceSetting.IsCourt, MaintenanceSetting.IsCultural, MaintenanceSetting.IsBureaucracy)))]"
+
 				blockoverride "text" {
 					text = "EXPENSE_MAINT_TT_TEXT_LONG_ALT"
+				}
+			}
+			TooltipTextBlock = {
+				name = "EXPENSE_MAINT_TT_TEXT_LONG_BUREAUCRACY"
+				visible = "[And(MaintenanceSetting.ShowSlider, MaintenanceSetting.IsBureaucracy)]"
+
+				blockoverride "text" {
+					text = "EXPENSE_MAINT_TT_TEXT_LONG_BUREAUCRACY"
 				}
 			}
 			TooltipStringPairList = {
@@ -84,23 +91,8 @@ template ExpenseSettingTooltip {
 
 			TooltipStringPairList = {
 				name = "GetModifierDesc"
-				visible = "[MaintenanceSetting.ShowModifier]"
+				visible = "[And(MaintenanceSetting.ShowModifier, Not(MaintenanceSetting.IsCourt))]"
 				textcontext = "[MaintenanceSetting.GetModifierDesc]"
-			}
-
-			TooltipStringPairList = {
-				name = "BureaucracyMaintenanceCostScale"
-				visible = "[MaintenanceSetting.IsBureaucracy]"
-				blockoverride "block_title" {
-					text = "BUREAUCRACY_MAINTENANCE_COST_SCALE_T"
-				}
-				textcontext = "[MaintenanceSetting.GetMaintenancePriceModifierDesc]"
-			}
-
-			TooltipTextBlock = {
-				name = "BureaucracyInvestmentHeader"
-				visible = "[MaintenanceSetting.IsBureaucracy]"
-				textcontext = "[MaintenanceSetting.GetBureaucracyInvestmentHeader]"
 			}
 
 			TooltipStringPairList = {
@@ -109,23 +101,23 @@ template ExpenseSettingTooltip {
 				textcontext = "MAINTENANCE_INVESTMENT_MIN_MAX"
 			}
 
-			TooltipScrolledStringPairList = {
+			TooltipScrolledBlockList = {
 				name = "GetExpenseBreakdown with title"
-				visible = "[And3(MaintenanceSetting.ShowBreakdown, Not(EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName)), Not(MaintenanceSetting.IsBureaucracy))]"
+				visible = "[And3(MaintenanceSetting.ShowBreakdown, Not(MaintenanceSetting.IsCultural), Not(MaintenanceSetting.IsBureaucracy))]"
 				blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
 				blockoverride "block_title" { text = "LIST_TITLE_SOURCES" }
 				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
 			}
 
-			TooltipScrolledStringPairList = {
+			TooltipScrolledBlockList = {
 				name = "GetExpenseBreakdown bureaucracy"
 				visible = "[And(MaintenanceSetting.ShowBreakdown, MaintenanceSetting.IsBureaucracy)]"
 				blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
 				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
 			}
 
-			TooltipScrolledStringPairList = {
-				visible = "[And(MaintenanceSetting.ShowBreakdown, EqualTo_string( Localize('[cultural_maintenance_s|e]'), MaintenanceSetting.GetName))]"
+			TooltipScrolledBlockList = {
+				visible = "[And(MaintenanceSetting.ShowBreakdown, MaintenanceSetting.IsCultural)]"
 				blockoverride "block_scrollarea" { maximumsize = { -1 600 }}
 				blockoverride "block_title" { text = "LIST_TITLE_SOURCES_CULT" }
 				textcontext = "[MaintenanceSetting.GetExpenseBreakdown]"
@@ -195,19 +187,60 @@ template ExpenseSettingTooltip {
 
 			TooltipScrolledStringPairList = {
 				visible = "[MaintenanceSetting.IsBureaucracy]"
-				blockoverride "block_scrollarea" { maximumsize = { -1 240 } }
+				blockoverride "block_scrollarea" { maximumsize = { -1 150 } }
 				blockoverride "block_title" {
 					text = "BUREAUCRACY_AVAILABLE_ALTERNATIVES_TITLE"
 				}
 				textcontext = "[GetPlayer.GetAvailableBureaucraciesDesc]"
 			}
 
-			# ─── END BASE GAME CONTENT ───────────────────────────────────────
+			caesar_plotline = {
+				visible = "[MaintenanceSetting.HasMaintenanceHistory]"
+				layoutpolicy_horizontal = expanding
+				size = { -1 180 }
 
-			# ═════════════════════════════════════════════════════════════════
-			# EPBM ADDITION: Estate maintenance breakdown
-			# ═════════════════════════════════════════════════════════════════
+				blockoverride "header" {
+					text = "MAINTENANCE_LAST_YEAR"
+				}
+				blockoverride "line_color" {
+					color = { .9 .9 .9 1.0 }
+				}
+				blockoverride "line_plotpoints" {
+					plotpoints = "[MaintenanceSetting.GetMaintenanceHistoryTrend]"
+				}
+				blockoverride "tooltip" {
+					marker = {
+						text_single = {
+							position = { 0 -20 }
+							autoresize = yes
 
+							margin_right = 4
+							margin_top = 4
+							align = left|nobaseline
+							using = bg_number_container_bckg
+							default_format = "#t"
+
+							text = "[MaintenanceSetting.GetMaintenanceDataPointValue(PlotLine.GetSnappedIndexNearMouse)]"
+						}
+					}
+				}
+				blockoverride "maxvalue" {
+					raw_text = "[MaintenanceSetting.GetMaxMaintenanceForPlot|1]@gold!"
+				}
+				blockoverride "minvalue" {
+					raw_text = "[MaintenanceSetting.GetMinMaintenanceForPlot|1]@gold!"
+				}
+				blockoverride "startdate" {
+					text = "[MaintenanceSetting.GetMaintenanceHistoryStartDate]"
+				}
+				blockoverride "enddate" {
+					text = "[MaintenanceSetting.GetMaintenanceHistoryEndDate]"
+				}
+				blockoverride "multiitem" {}
+			}
+
+
+			# EPBM ADDITION: distribution of building maintenance among estates.
 			TooltipListBase = {
 				visible = "[MaintenanceSetting.IsUpkeep]"
 				blockoverride "block_title" { raw_text = "#T Building Maintenance Breakdown#!" }
@@ -221,11 +254,6 @@ template ExpenseSettingTooltip {
 				using = epbm_estate_row_dhimmi
 				using = epbm_estate_row_cossacks
 			}
-
-			# ═════════════════════════════════════════════════════════════════
-			# END EPBM ADDITION
-			# ═════════════════════════════════════════════════════════════════
-
 		}
 	}
 }

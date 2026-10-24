@@ -1,5 +1,8 @@
 ﻿# Release
 
+#### Hotfix
+- Stop repeated script errors from the missing Proclaim Pase Foral cabinet action and Battle for the Strait situation.
+
 #### Balancing
 - Remove location building limit
 - Changes to industry-specialization urban rights
@@ -643,12 +646,53 @@ Date: 21/05/2026
 
 ##### 0.2.10
 
+### 1.4 Rio Salado Compatibility
+- Make the mod work
+- Add Camels RGO building and everything it needs
+- Remove navy_demands file; Vanilla upped demands for goods even more than we did making our changes obsolete
+- Remove Faster Universalis hourly tick removal files, since Vanilla implemented this, we will use Vanilla way
+- Vanilla removed Marry Noble interaction, we do not
+
 ### Optimization
 - Use every_ownable_location instead of every_location_in_the_world for calculating Centers of X. Should be significantly faster
 
 ### Features
 - Add a specific Price Type for Urban Amenities
 - Split RGO upgrade costs to all the Vanilla types of expand RGO cost, so no longer farming cost modifier for all of them
+- Add a clause to make integration speed faster when connected via a lake
+
+### Balance
+- Child eduction balancing
+  - 3 tiers of goods stat traits
+  - 2 tiers of bad
+  - 4 mixed stats pretty good trais (less rare)
+  - 1 (Rowdy) trait that is the best for mil but reduces education effect slightly
+- Disable Navy Upkeep doubling (exponentially) every age; might need some increase in goods later but Vanilla thing was bonkers
+- Add food output to RGO-Buildings for Camels, Horses and Wool as a modifier, so that their operation makes food but that the food isn't traded together with the goods
+- Rebalanced trade distance cost by reducing trade range from tech and modifying distance calculations. Also results in more believable trade routes. (But for crossing unexplored teritory)
 
 ### Fixes
 - Fix Levy Scales (reduced Levy Sizes by 25%) not working
+- Fix Ottomans special reform instantly becoming invalid
+
+##### 0.2.11
+
+#### 1.4 GUI compatibility
+- Center the compact RGO card within the location infrastructure row.
+- Place the four location center indicators in larger horizontal pairs beside the owner flag below the location name.
+- Show RGO buildings by default in the production table while preserving explicit visibility choices.
+- Migrate the M&T interface to EU5 1.4, restoring economy and map-marker panels while preserving building-based RGO management, production filters, historical graphs, center icons, and estate maintenance breakdowns.
+- Remove obsolete FUM speed controls and redundant marker definitions; retain the precomposed marker and pie-chart visuals.
+
+### Balance
+- Tribal Camelry balancing:
+  - Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
+  - Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
+  - Fix the camel recruitment province scope check to prevent repeated script errors.
+
+##### 0.2.12
+
+### Fixes
+- Add missing auto_modifier sea_land_transition_cost_distance_from_capital
+  - This missing caused proximity from capital land -> sea cost to be virtually free
+  - Make value 25 instead of Vanilla's 35 (in M&T you get more proximity but its effects are less strong)
