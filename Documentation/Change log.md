@@ -1,5 +1,14 @@
 ﻿# Release
 
+#### Credit
+- Show loan demand in a readable table of clickable borrower countries, outstanding debt, and Credit used, with goods icons and totals.
+- Add a compact capital-market Credit display with balance, supply, demand, price, and the interest formula underneath.
+- Refresh loan demand and lending rates immediately after borrowing, renewal, repayment, or bankruptcy, including while paused; use a responsive Credit supply-and-demand quote separately from the slower goods price.
+- Banking countries start new games with 1,000 gold.
+- Reduce base loan interest from 10% to 5%.
+- Add Credit production from banks and Merchants' Guilds, commercial and loan demand, and borrowing interest based on credit prices and debt sustainability.
+- Give banking countries access to all bank production methods from the start while retaining building technology requirements.
+
 #### Hotfix
 - Stop repeated script errors from the missing Proclaim Pase Foral cabinet action and Battle for the Strait situation.
 

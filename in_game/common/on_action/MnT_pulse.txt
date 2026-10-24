@@ -11,6 +11,7 @@
 
 weather_monthly_pulse = {
 	on_actions = {
+		MnT_credit_monthly_loan_demand
 		epbm_on_global_monthly
 		aut_init_check 
 		aut_monthly_update
@@ -21,6 +22,8 @@ yearly_country_pulse = {
 	on_actions = {
 		pulse_yearly_MnT
 		pulse_yearly_per_country_MnT
+		MnT_credit_yearly_interest
+		MnT_credit_ai_yearly_borrowing
 		epbm_on_country_yearly
 	}
 }
@@ -36,6 +39,18 @@ monthly_country_pulse = {
 		monthly_country_pulse_MnT
 		epbm_on_country_monthly
 	}
+}
+
+on_loan_taken = {
+	on_actions = { MnT_credit_after_loan_change }
+}
+
+on_loan_renewed = {
+	on_actions = { MnT_credit_after_loan_change }
+}
+
+on_loan_repaid = {
+	on_actions = { MnT_credit_after_loan_change }
 }
 
 # The below runs BEFORE country selection so is_ai and is_human checks will not work!
@@ -70,6 +85,11 @@ on_game_start_MnT = {
 			trigger_event_silently = { id = mnt_food.1 }
 			trigger_event_silently = { id = mnt_tribes.1 }
 			trigger_event_silently = { id = mnt_urban_amenities.1 }
+		}
+		mnt_recompute_credit_loan_demand_world = yes
+		every_country = {
+			limit = { has_reform = government_reform:banking_country }
+			set_gold = 1000
 		}
 	}
 }
@@ -142,7 +162,6 @@ monthly_country_pulse_MnT = {
 		# Ensure that the calculation results are available
 		# Calculate the demands and estate transfer of individual countries
 		diplomatic_spending.1
-		# Ensure that the calculation results are available
 
 		delay = { days = 1 }
 
@@ -150,6 +169,31 @@ monthly_country_pulse_MnT = {
 		cost_of_the_court.2
 		# Aggregate the total diplomatic spending demands in each market
 		diplomatic_spending.2
+	}
+}
+
+MnT_credit_yearly_interest = {
+	effect = {
+		mnt_apply_yearly_credit_interest = yes
+	}
+}
+
+MnT_credit_monthly_loan_demand = {
+	effect = {
+		mnt_recompute_credit_loan_demand_world = yes
+	}
+}
+
+# Refresh synchronously so a paused sequence of loans cannot reuse an old quote.
+MnT_credit_after_loan_change = {
+	effect = {
+		mnt_recompute_credit_after_loan_taken = yes
+	}
+}
+
+MnT_credit_ai_yearly_borrowing = {
+	events = {
+		mnt_credit_ai_borrowing.1
 	}
 }
 
@@ -228,4 +272,8 @@ hide_buildings_on_start = {
 
 on_location_changed_owner = {
 	on_actions = { aut_on_location_conquered }
+}
+
+on_bankruptcy = {
+	on_actions = { MnT_credit_after_loan_change }
 }
