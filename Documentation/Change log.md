@@ -689,3 +689,10 @@ Date: 21/05/2026
   - Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
   - Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
   - Fix the camel recruitment province scope check to prevent repeated script errors.
+
+##### 0.2.12
+
+### Fixes
+- Add missing auto_modifier sea_land_transition_cost_distance_from_capital
+  - This missing caused proximity from capital land -> sea cost to be virtually free
+  - Make value 25 instead of Vanilla's 35 (in M&T you get more proximity but its effects are less strong)
