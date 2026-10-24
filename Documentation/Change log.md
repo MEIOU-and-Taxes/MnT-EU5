@@ -2,6 +2,7 @@
 
 #### Credit
 - Explain market loan demand with its calculation and a clickable list of borrowers, their outstanding debt, and their Credit-demand contributions.
+- Fix the tooltip market reference and borrower-list sizing; use native country links and automatic loan callbacks without console refresh events.
 - Banking countries start new games with 1,000 gold.
 - Reduce base loan interest from 10% to 5%.
 - Add Credit production from banks and Merchants' Guilds, commercial and loan demand, and borrowing interest based on credit prices and debt sustainability.

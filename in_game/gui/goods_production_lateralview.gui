@@ -1164,8 +1164,9 @@ template GoodsDemandInfo_tooltip {
 		blockoverride "tooltip_content" {
 			TooltipTextBlock = {
 				visible = "[EqualTo_string(GoodsDemand.GetNameWithNoTooltip, Localize('mnt_credit_loan_demand1'))]"
+				datacontext = "[GetLocationByKey(GetVariableSystem.Get('mnt_credit_loan_market_location')).GetMarket]"
 				blockoverride "text" {
-					text = "[GetVariableSystem.Get('mnt_credit_loan_demand_tooltip')]"
+					text = "mnt_credit_loan_demand_desc"
 				}
 			}
 			TooltipListBase = {
@@ -1179,6 +1180,7 @@ template GoodsDemandInfo_tooltip {
 					blockoverride "block_scrollarea" { maximumsize = { -1 240 } }
 					blockoverride "scrollarea_content" {
 						vbox = {
+							set_parent_dimension_to_minimum = height
 							layoutpolicy_horizontal = expanding
 							datamodel = "[Location.MakeScope.GetList('mnt_credit_loan_borrowers')]"
 							item = {
@@ -1195,14 +1197,7 @@ template GoodsDemandInfo_tooltip {
 										spacing = 5
 										country_flag_very_small = {}
 										text_single = {
-											text = "[Country.GetNameWithNoTooltip]"
-											alwaystransparent = no
-											action_tooltip = {
-												click_type = left
-												click_mode = single
-												title = "COUNTRY_CLICK_TOOLTIP_LEFT_CLICK"
-												on_action = "[OpenDiplomacy(Country.Self)]"
-											}
+											text = "[Country.GetName]"
 										}
 										expand = {}
 										text_single = {
@@ -1253,13 +1248,11 @@ template DemandsOnMarket_tooltip {
 		}
 
 		blockoverride "tooltip_content" {
-			# Native nested demand links retain only GoodsDemand, not their market.
+			# Nested demand links retain only GoodsDemand; pass the map tag, not GetKey's numeric ID.
 			widget = {
 				size = { 0 0 }
-				datacontext = "[DemandsOnMarketWrap.GetMarket]"
-				textcontext = "[AddLocalizationIf(EqualTo_string(DemandsOnMarketWrap.GetGoods.GetKey, 'credit'), 'mnt_credit_loan_demand_desc')]"
-				ontextcontextchanged = "[GetVariableSystem.SetIf('mnt_credit_loan_demand_tooltip', AddLocalizationIf(EqualTo_string(DemandsOnMarketWrap.GetGoods.GetKey, 'credit'), 'mnt_credit_loan_demand_desc'), EqualTo_string(DemandsOnMarketWrap.GetGoods.GetKey, 'credit'))]"
-				ontextcontextchanged = "[GetVariableSystem.SetIf('mnt_credit_loan_market_location', Market.GetCenterLocation.GetKey, EqualTo_string(DemandsOnMarketWrap.GetGoods.GetKey, 'credit'))]"
+				textcontext = "[DemandsOnMarketWrap.GetMarket.GetCenterLocation.GetTag]"
+				ontextcontextchanged = "[GetVariableSystem.Set('mnt_credit_loan_market_location', DemandsOnMarketWrap.GetMarket.GetCenterLocation.GetTag)]"
 			}
 			block "mnt_demand_tooltip_list" {
 				TooltipScrolledStringPairList = {
