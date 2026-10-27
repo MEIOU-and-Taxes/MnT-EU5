@@ -709,3 +709,4 @@ Date: 21/05/2026
   - Lock it requiring: 
     - Either be the Ottomans (as they had Osman) or the strongest Beylik during the Situation (if another Beylik eclipses the Ottomans)
     - Current date is either before 1350 (the last possible start of the Situation) or the Situation is ongoing
+- Also tune down the modifiers of "Legacy of Osman" a bit as they were stupidly overpowered
