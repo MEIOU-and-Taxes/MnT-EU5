@@ -692,6 +692,15 @@ Date: 21/05/2026
 
 ##### 0.2.12
 
+### Ongoing Camel Unit balancing: 
+- Replace Climate checks for movement speed/combat with vegetation checks
+  - Camels are for now 50% faster in Desert (Vanilla 75% move cost reduction seems absurdly much)
+  - 25% faster in Sparse vegetation (aka steppes)
+  - 25% slower in Jungle and 15% slower in Forest
+  - Combat boni: 15% in Desert and 10% in Sparse
+- For now left Camels (both Regulars and Levies) to be only recruitable in Provinces that produce them
+  - This should prevent full camel armies, and help give the player a sense of 'my camel units come from place x where they breed camels'
+
 ### Fixes
 - Add missing auto_modifier sea_land_transition_cost_distance_from_capital
   - This missing caused proximity from capital land -> sea cost to be virtually free
