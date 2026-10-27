@@ -705,3 +705,7 @@ Date: 21/05/2026
 - Add missing auto_modifier sea_land_transition_cost_distance_from_capital
   - This missing caused proximity from capital land -> sea cost to be virtually free
   - Make value 25 instead of Vanilla's 35 (in M&T you get more proximity but its effects are less strong)
+- Fix the "Legacy of Osman" special Gov Reform still being available after the end of the Rise of the Ottomans Situation
+  - Lock it requiring: 
+    - Either be the Ottomans (as they had Osman) or the strongest Beylik during the Situation (if another Beylik eclipses the Ottomans)
+    - Current date is either before 1350 (the last possible start of the Situation) or the Situation is ongoing
