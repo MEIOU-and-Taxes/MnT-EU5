@@ -714,3 +714,6 @@ Date: 21/05/2026
 - Remove the 25% global lumber output modifier on paper_guild_cloth_maintenance_advance (Banking tech in Age of Renaissance)
   - Our data indicates that there was just an oversupply of lumber worldwide in the game
 - Tune down the modifiers of "Legacy of Osman" a bit as they were stupidly overpowered
+- Buff Sand production output
+  - Quartz sand RGO building: 1 -> 1.25
+  - Bad Sand pit building: 0.6 -> 0.75
