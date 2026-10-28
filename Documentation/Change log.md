@@ -4,6 +4,12 @@
 - Stop repeated script errors from the missing Proclaim Pase Foral cabinet action and Battle for the Strait situation.
 
 #### Balancing
+- Add targeted RGO production-method progression for tea, coffee, cocoa, alum, horses, camels and sand, informed by Jomini analysis of five campaign saves (1662, 1702, 1752, 1802 and 1852) covering all 53 RGO goods. The analysis identified persistent shortages in particular goods rather than a general lack of RGO expansion. Existing methods remain available; improvements consume tools, fuel or supplementary feed instead of increasing generic output or RGO caps.
+  - Reuse Scientific Experimentation, Manufactories and Industrialization; add Applied Crop Botany and Improved Animal Husbandry in the Age of Revolutions.
+  - Preserve the recent sand output buff (normal 1.25; poor 0.75), adding researched washing/screening alternatives at 1.50 and 0.90.
+  - Historical practices justify the methods; numerical input/output coefficients are balance choices. Crop processing, saleable recovery and usable animals are abstractions, not measured yield or birth-rate claims.
+  - Sources: [Kaempfer, 1712](https://www.lindahall.org/about/news/scientist-of-the-day/engelbert-kaempfer/); [Lettsom, 1772](https://www.cambridge.org/core/books/abs/natural-history-of-the-teatree/preserving-the-seeds-for-vegetation/BF7133A7A1DE24FB42ABBA0A2D753DDB); [Ellis, 1774](https://books.google.com/books?id=kp1fAAAAcAAJ); [Quelus, 1719/1730, Part I, II-IV](https://www.gutenberg.org/cache/epub/24588/pg24588-images.html).
+  - Sources: [Historic England, alum works](https://historicengland.org.uk/research/results/reports/6433/AnalyticalFieldSurveyofPrehistoricandPost-MedievalRemainsonFylingdalesMoorNorthYorkshireSurveyReport); [Youatt, 1831](https://wellcomecollection.org/works/f3bz9ua2); [Burckhardt, 1822, p. 296](https://www.gutenberg.org/cache/epub/8884/pg8884.html); [US manufacturing report, 1883, retrospectively describing pre-1837 silica preparation](https://www2.census.gov/library/publications/decennial/1880/vol-02-manufactures/1880_v2-22.pdf).
 - Remove location building limit
 - Changes to industry-specialization urban rights
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
