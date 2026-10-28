@@ -1,16 +1,6 @@
 ﻿# Release
 
-#### Hotfix
-- Stop repeated script errors from the missing Proclaim Pase Foral cabinet action and Battle for the Strait situation.
-
 #### Balancing
-- Add targeted RGO production-method progression for tea, coffee, cocoa, alum, horses, camels and sand, informed by Jomini analysis of five campaign saves (1662, 1702, 1752, 1802 and 1852) covering all 53 RGO goods. The analysis identified persistent shortages in particular goods rather than a general lack of RGO expansion. Existing methods remain available; improvements consume tools, fuel or supplementary feed instead of increasing generic output or RGO caps.
-  - Reuse Scientific Experimentation, Manufactories and Industrialization; add Applied Crop Botany and Improved Animal Husbandry in the Age of Revolutions.
-  - Quartz Crushing Mills now produce 0.90 sand with 0.05 tools; Blast Furnace (Age of Discovery) unlocks stamping and screening at 1.05 sand with 0.07 tools; Industrialization unlocks washing at 1.20 sand with 0.08 tools. Existing methods remain available. Quartz Sand Pits retain 1.25 output and their Industrialization alternative at 1.50.
-  - Quartz stamping and screening draw on [Agricola, De re metallica (1556), Book VIII](https://www.e-rara.ch/ebs/content/pagetext/28966482), which describes mineral crushing, stamping, grinding and sieving; the output and input values are game-balance choices.
-  - Historical practices justify the methods; numerical input/output coefficients are balance choices. Crop processing, saleable recovery and usable animals are abstractions, not measured yield or birth-rate claims.
-  - Sources: [Kaempfer, 1712](https://www.lindahall.org/about/news/scientist-of-the-day/engelbert-kaempfer/); [Lettsom, 1772](https://www.cambridge.org/core/books/abs/natural-history-of-the-teatree/preserving-the-seeds-for-vegetation/BF7133A7A1DE24FB42ABBA0A2D753DDB); [Ellis, 1774](https://books.google.com/books?id=kp1fAAAAcAAJ); [Quelus, 1719/1730, Part I, II-IV](https://www.gutenberg.org/cache/epub/24588/pg24588-images.html).
-  - Sources: [Historic England, alum works](https://historicengland.org.uk/research/results/reports/6433/AnalyticalFieldSurveyofPrehistoricandPost-MedievalRemainsonFylingdalesMoorNorthYorkshireSurveyReport); [Youatt, 1831](https://wellcomecollection.org/works/f3bz9ua2); [Burckhardt, 1822, p. 296](https://www.gutenberg.org/cache/epub/8884/pg8884.html); [US manufacturing report, 1883, retrospectively describing pre-1837 silica preparation](https://www2.census.gov/library/publications/decennial/1880/vol-02-manufactures/1880_v2-22.pdf).
 - Remove location building limit
 - Changes to industry-specialization urban rights
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
@@ -723,4 +713,7 @@ Date: 21/05/2026
 - Tune down the modifiers of "Legacy of Osman" a bit as they were stupidly overpowered
 - Buff Sand production output
   - Quartz sand RGO building: 1 -> 1.25
-  - Bad Sand pit building: 0.6 -> 0.75
+  - Bad Sand pit building: 0.6 -> 0.9
+- Add new improved RGO-building production-methods for tea, coffee, cocoa, alum, horses, camels and sand
+  - Mostly to combat lategame shortages as identified from observer games
+  - We tried to tie it to real historical technological improvements
