@@ -717,3 +717,8 @@ Date: 21/05/2026
 - Add new improved RGO-building production-methods for tea, coffee, cocoa, alum, horses, camels and sand
   - Mostly to combat lategame shortages as identified from observer games
   - We tried to tie it to real historical technological improvements
+
+##### 0.2.13
+
+### Fixes
+- Add missing stab cost efficiency malus to new subject types
