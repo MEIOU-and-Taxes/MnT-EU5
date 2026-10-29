@@ -722,3 +722,6 @@ Date: 21/05/2026
 
 ### Fixes
 - Add missing stab cost efficiency malus to new subject types
+
+### Balance
+- Urban Amenities changes: halved bonuses, halved costs, changed +dev from tiny flat to small +% per level, doubled cap from various sources, added +1 slot per regional centre (continental and world had been +1 & +2, now centres offer +1, +2, +4)
