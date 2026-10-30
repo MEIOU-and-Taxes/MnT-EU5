@@ -96,3 +96,70 @@ mnt_credit_ai_borrowing.1 = {
 		}
 	}
 }
+
+# Native AI sometimes leaves banking companies' treasuries idle. Supplement it
+# with at most one normal paid construction per six months, not free buildings.
+mnt_credit_ai_borrowing.2 = {
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+	trigger = {
+		is_ai = yes
+		has_reform = government_reform:banking_country
+		is_during_bankruptcy = no
+		at_war = no
+		gold >= 500
+		gold >= { value = monthly_income_total multiply = 12 }
+		NOT = { has_variable = mnt_credit_ai_bank_build_cooldown }
+	}
+	immediate = {
+		# Rate-limit unsuccessful searches too; only banking companies run this.
+		set_variable = { name = mnt_credit_ai_bank_build_cooldown value = 1 days = 180 }
+		save_temporary_scope_as = mnt_credit_ai_bank_builder
+		save_temporary_scope_as = actor
+		if = {
+			limit = { has_advance = clearing_house_advance }
+			building_type:mnt_clearing_bank = { save_temporary_scope_as = mnt_credit_ai_bank_type }
+		}
+		else_if = {
+			limit = { has_advance = stock_exchange_advance }
+			building_type:mnt_joint_stock_bank = { save_temporary_scope_as = mnt_credit_ai_bank_type }
+		}
+		else_if = {
+			limit = { has_advance = global_trade_advance }
+			building_type:mnt_public_exchange_bank = { save_temporary_scope_as = mnt_credit_ai_bank_type }
+		}
+		else_if = {
+			limit = { has_advance = basic_financial_instruments }
+			building_type:mnt_deposit_bank = { save_temporary_scope_as = mnt_credit_ai_bank_type }
+		}
+		else = {
+			building_type:banking_office = { save_temporary_scope_as = mnt_credit_ai_bank_type }
+		}
+		if = {
+			limit = { can_build_building = scope:mnt_credit_ai_bank_type }
+			random_country = {
+				limit = {
+					is_real_country = yes
+					at_war = no
+					opinion = { target = scope:mnt_credit_ai_bank_builder value >= 100 }
+					scope:mnt_credit_ai_bank_builder = {
+						opinion = { target = prev value >= 100 }
+					}
+					any_owned_location = { mnt_credit_ai_bank_location = yes }
+				}
+				ordered_owned_location = {
+					limit = { mnt_credit_ai_bank_location = yes }
+					order_by = location_tax_base
+					max = 1
+					check_range_bounds = no
+					construct_building = {
+						building_type = scope:mnt_credit_ai_bank_type
+						owner = scope:mnt_credit_ai_bank_builder
+						payer = scope:mnt_credit_ai_bank_builder
+					}
+				}
+			}
+		}
+	}
+}
