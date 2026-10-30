@@ -1,6 +1,7 @@
 ﻿# Release
 
 #### Credit
+- Replace random AI borrowing with affordable construction loans and cheaper refinancing, limited to one debt operation per six months; lengthen the AI debt-saving horizon to ten years.
 - Show loan demand in a readable table of clickable borrower countries, outstanding debt, and Credit used, with goods icons and totals.
 - Add a compact capital-market Credit display with balance, supply, demand, price, and the interest formula underneath.
 - Refresh loan demand and lending rates immediately after borrowing, renewal, repayment, or bankruptcy, including while paused; use a responsive Credit supply-and-demand quote separately from the slower goods price.

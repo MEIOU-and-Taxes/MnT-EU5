@@ -1,28 +1,98 @@
 ﻿namespace = mnt_credit_ai_borrowing
 
-# Yearly AI-only cheap-credit borrowing. Uses normal estate loans.
+@mnt_credit_ai_cheap_rate = 0.02
+@mnt_credit_ai_rate_gap = 0.005
+@mnt_credit_ai_cooldown_days = 180
+
+# Monthly AI policy. Borrow one normal loan for ongoing civilian construction,
+# or replace one expensive loan, rather than taking five random loans yearly.
 mnt_credit_ai_borrowing.1 = {
 	type = country_event
 	title = hidden_event.t
 	hidden = yes
 	trigger = {
 		is_ai = yes
-		estate_loan_interest < 0.02
-		gold < country_estate_loan_size
-		num_loans < 6
-		country_loan_capacity >= {
-			value = country_estate_loan_size
-			multiply = 5
-		}
+		is_real_country = yes
+		is_during_bankruptcy = no
+		exists = capital.market
+		monthly_income_total > 0
+		NOT = { has_variable = mnt_credit_ai_debt_cooldown }
 	}
 	immediate = {
-		random = {
-			chance = 50
+		mnt_apply_yearly_credit_interest = yes
+		save_temporary_scope_as = mnt_credit_ai_borrower
+		set_local_variable = { name = mnt_credit_ai_rate value = estate_loan_interest }
+
+		if = {
+			limit = {
+				estate_loan_interest < @mnt_credit_ai_cheap_rate
+				gold >= 0
+			}
+			ordered_loan = {
+				limit = {
+					is_bond = no
+					OR = { is_estate_loan = yes exists = owner }
+					remaining_debt > 0
+					months_left >= 12
+					# Require both a half-point saving and a 20% rate reduction.
+					loan_interest >= { value = local_var:mnt_credit_ai_rate add = @mnt_credit_ai_rate_gap }
+					loan_interest >= { value = local_var:mnt_credit_ai_rate divide = 0.8 }
+					# Retain normal borrowing headroom even during the replacement.
+					remaining_debt <= scope:mnt_credit_ai_borrower.country_loan_capacity
+					remaining_debt <= { value = scope:mnt_credit_ai_borrower.monthly_income_total multiply = 12 }
+				}
+				order_by = loan_interest
+				max = 1
+				check_range_bounds = no
+				save_temporary_scope_as = mnt_credit_ai_old_loan
+				set_local_variable = { name = mnt_credit_ai_refinance_amount value = remaining_debt }
+				scope:mnt_credit_ai_borrower = {
+					set_local_variable = { name = mnt_credit_ai_loans_before value = num_loans }
+					set_local_variable = { name = mnt_credit_ai_gold_before value = gold }
+					create_estate_loan = {
+						amount = local_var:mnt_credit_ai_refinance_amount
+						interest = local_var:mnt_credit_ai_rate
+					}
+					# Do not cancel the old loan unless a funded replacement exists.
+					if = {
+						limit = {
+							num_loans > local_var:mnt_credit_ai_loans_before
+							gold >= { value = local_var:mnt_credit_ai_gold_before add = local_var:mnt_credit_ai_refinance_amount }
+						}
+						add_gold = { value = local_var:mnt_credit_ai_refinance_amount multiply = -1 }
+						if = {
+							limit = { scope:mnt_credit_ai_old_loan = { exists = owner } }
+							scope:mnt_credit_ai_old_loan.owner = { add_gold = local_var:mnt_credit_ai_refinance_amount }
+						}
+						else = { distribute_gold_to_banking_estates = local_var:mnt_credit_ai_refinance_amount }
+						# The lender has been paid in full; this is not debt forgiveness.
+						# No repayment creditworthiness bonus is granted for refinancing.
+						cancel_loan = scope:mnt_credit_ai_old_loan
+						mnt_recompute_credit_after_loan_taken = yes
+					}
+					set_variable = { name = mnt_credit_ai_debt_cooldown value = 1 days = @mnt_credit_ai_cooldown_days }
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_variable = mnt_credit_ai_debt_cooldown }
+				at_war = no
+				estate_loan_interest < @mnt_credit_ai_cheap_rate
+				monthly_balance > 0
+				gold >= 0
+				gold < { value = monthly_income_total multiply = 3 }
+				country_estate_loan_size > 0
+				country_estate_loan_size <= country_loan_capacity
+				country_estate_loan_size <= { value = monthly_income_total multiply = 6 }
+				# Keep at least 75% of the current surplus after servicing the loan.
+				monthly_balance >= { value = country_estate_loan_size multiply = estate_loan_interest multiply = 4 }
+				total_debt <= { value = monthly_income_total multiply = 12 subtract = country_estate_loan_size }
+				any_owned_location = { num_civil_constructions > 0 }
+			}
 			create_estate_loan = { }
-			create_estate_loan = { }
-			create_estate_loan = { }
-			create_estate_loan = { }
-			create_estate_loan = { }
+			set_variable = { name = mnt_credit_ai_debt_cooldown value = 1 days = @mnt_credit_ai_cooldown_days }
 		}
 	}
 }
