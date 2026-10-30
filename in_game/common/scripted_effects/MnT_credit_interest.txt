@@ -10,38 +10,46 @@
 }
 
 mnt_apply_credit_interest_modifier = {
+	set_local_variable = { name = mnt_credit_market_interest_size value = 0 }
+	if = {
+		limit = { exists = capital.market }
+		set_local_variable = {
+			name = mnt_credit_market_interest_size
+			value = mnt_credit_market_interest_adjustment
+		}
+	}
 	if = {
 		limit = {
-			exists = capital.market
-		}
-		add_country_modifier = {
-			modifier = mnt_credit_interest_market_price
-			months = 13
-			mode = replace
-			size = {
-				value = mnt_credit_lending_quote
-				subtract = 1
-				multiply = 0.075
+			OR = {
+				NOT = { has_country_modifier = mnt_credit_interest_market_price }
+				NOT = { has_variable = mnt_credit_market_interest_renewed }
+				NOT = {
+					country_modifier_strength = {
+						modifier = mnt_credit_interest_market_price
+						value = local_var:mnt_credit_market_interest_size
+					}
+				}
 			}
 		}
-	} else = {
 		add_country_modifier = {
 			modifier = mnt_credit_interest_market_price
 			months = 13
 			mode = replace
-			size = 0
+			size = local_var:mnt_credit_market_interest_size
 		}
+		# Renew before 13-month expiry even if the value stays unchanged.
+		set_variable = { name = mnt_credit_market_interest_renewed value = 1 days = 330 }
+		set_local_variable = { name = mnt_credit_interest_changed value = 1 }
 	}
 }
 
 mnt_apply_debt_sustainability_interest_modifier = {
+	set_local_variable = { name = mnt_credit_debt_interest_size value = 0 }
 	if = {
 		limit = { total_debt > 0 }
-		add_country_modifier = {
-			modifier = mnt_debt_sustainability_interest
-			months = 13
-			mode = replace
-			size = {
+		set_local_variable = {
+			name = mnt_credit_debt_interest_size
+			value = {
 				value = total_debt
 				divide = {
 					value = monthly_income_total
@@ -52,24 +60,42 @@ mnt_apply_debt_sustainability_interest_modifier = {
 				max = 0.02
 			}
 		}
-	} else = {
+	}
+	if = {
+		limit = {
+			OR = {
+				NOT = { has_country_modifier = mnt_debt_sustainability_interest }
+				NOT = { has_variable = mnt_credit_debt_interest_renewed }
+				NOT = {
+					country_modifier_strength = {
+						modifier = mnt_debt_sustainability_interest
+						value = local_var:mnt_credit_debt_interest_size
+					}
+				}
+			}
+		}
 		add_country_modifier = {
 			modifier = mnt_debt_sustainability_interest
 			months = 13
 			mode = replace
-			size = 0
+			size = local_var:mnt_credit_debt_interest_size
 		}
+		set_variable = { name = mnt_credit_debt_interest_renewed value = 1 days = 330 }
+		set_local_variable = { name = mnt_credit_interest_changed value = 1 }
 	}
 }
 
 mnt_apply_yearly_credit_interest = {
-	mnt_clear_credit_interest_modifiers = yes
+	set_local_variable = { name = mnt_credit_interest_changed value = 0 }
 	mnt_apply_credit_interest_modifier = yes
 	mnt_apply_debt_sustainability_interest_modifier = yes
-	# Flush the country modifier cache before another loan can be taken paused.
-	change_country_modifier_size = {
-		modifier = mnt_credit_interest_market_price
-		value = 0
-		recalculate_immediately = yes
+	# Only players can take another loan while paused; AI uses normal recalculation.
+	if = {
+		limit = { is_human = yes local_var:mnt_credit_interest_changed = 1 }
+		change_country_modifier_size = {
+			modifier = mnt_credit_interest_market_price
+			value = 0
+			recalculate_immediately = yes
+		}
 	}
 }

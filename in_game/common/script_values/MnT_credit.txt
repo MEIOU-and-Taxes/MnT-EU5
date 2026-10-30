@@ -51,6 +51,27 @@ mnt_credit_lending_demand = {
 	}
 }
 
+# Market contribution to annual interest. Above quote 1, a 5% baseline
+# approaches 50%; quote 2 gives 7.5%. Gentle surplus discounts approach -4 percentage points.
+mnt_credit_market_interest_adjustment = {
+	if = {
+		limit = { mnt_credit_lending_quote > 1 }
+		value = mnt_credit_lending_quote
+		subtract = 1
+		divide = {
+			value = mnt_credit_lending_quote
+			add = 16
+		}
+		multiply = 0.45
+		max = 0.45
+	}
+	else = {
+		value = mnt_credit_lending_quote
+		subtract = 1
+		multiply = 0.04
+	}
+}
+
 # Credit has base price 1. The one-unit buffer keeps empty markets finite.
 mnt_credit_lending_quote = {
 	value = mnt_credit_lending_demand

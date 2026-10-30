@@ -99,6 +99,7 @@ mnt_accumulate_credit_loan_demand_for_country = {
 }
 
 mnt_update_credit_loan_demand_for_country = {
+	mnt_set_credit_loan_country_values = yes
 	# Older saves have cached amounts without a market reference. Rebuild once
 	# rather than subtracting those amounts from an unknown market.
 	if = {
@@ -109,7 +110,17 @@ mnt_update_credit_loan_demand_for_country = {
 		}
 		mnt_recompute_credit_loan_demand_world = yes
 	}
-	else = {
+	else_if = {
+		# Renewals with unchanged debt, technology and market need no demand rebuild.
+		limit = {
+			NOT = {
+				AND = {
+					var:mnt_credit_loan_previous_market ?= capital.market
+					var:mnt_credit_loan_previous_debt ?= var:total_credit_loan_debt
+					var:mnt_credit_loan_previous_value ?= var:mnt_credit_loan_country_value
+				}
+			}
+		}
 		save_temporary_scope_as = mnt_credit_loan_country
 		if = {
 			limit = { exists = var:mnt_credit_loan_previous_market }
@@ -129,15 +140,37 @@ mnt_update_credit_loan_demand_for_country = {
 						subtract = scope:mnt_credit_loan_country.var:mnt_credit_loan_previous_value
 					}
 				}
-				mnt_apply_credit_loan_demand_for_market = yes
+				# A same-market change is applied once, after adding the new amount.
+				if = {
+					limit = { NOT = { this ?= scope:mnt_credit_loan_country.capital.market } }
+					mnt_apply_credit_loan_demand_for_market = yes
+					mnt_refresh_credit_interest_for_market_players = yes
+				}
 			}
 		}
 		mnt_clear_credit_loan_country_cache = yes
 		if = {
 			limit = { exists = capital.market }
 			mnt_accumulate_credit_loan_demand_for_country = yes
-			capital.market = { mnt_apply_credit_loan_demand_for_market = yes }
+			capital.market = {
+				mnt_apply_credit_loan_demand_for_market = yes
+				mnt_refresh_credit_interest_for_market_players = yes
+			}
 		}
+		else = {
+			mnt_apply_yearly_credit_interest = yes
+		}
+	}
+	else = {
+		# Demand is unchanged, but native non-loan demand or supply may have moved.
+		if = {
+			limit = { exists = capital.market }
+			capital.market = {
+				mnt_prepare_credit_quote_market_base = yes
+				mnt_refresh_credit_interest_for_market_players = yes
+			}
+		}
+		else = { mnt_apply_yearly_credit_interest = yes }
 	}
 }
 
@@ -241,43 +274,71 @@ mnt_prepare_credit_quote_market_base = {
 
 mnt_apply_credit_loan_demand_for_market = {
 	mnt_prepare_credit_quote_market_base = yes
+	set_local_variable = { name = mnt_credit_previous_demand value = location.var:mnt_credit_loan_final_scale }
 	mnt_prepare_credit_loan_demand_market_values = yes
 
+	# Replacing an identical temporary demand needlessly invalidates market caches.
 	if = {
 		limit = {
-			location = { var:mnt_credit_loan_final_scale <= 0 }
+			OR = {
+				NOT = { local_var:mnt_credit_previous_demand = location.var:mnt_credit_loan_final_scale }
+				AND = {
+					location = { var:mnt_credit_loan_final_scale > 0 }
+					NOT = { has_temporary_demand = demand:mnt_credit_loan_demand1 }
+					NOT = { has_temporary_demand = demand:mnt_credit_loan_demand2 }
+				}
+				AND = {
+					location = { var:mnt_credit_loan_final_scale <= 0 }
+					OR = {
+						has_temporary_demand = demand:mnt_credit_loan_demand1
+						has_temporary_demand = demand:mnt_credit_loan_demand2
+					}
+				}
+			}
 		}
-		remove_temporary_demand = demand:mnt_credit_loan_demand1
-		remove_temporary_demand = demand:mnt_credit_loan_demand2
+		if = {
+			limit = {
+				location = { var:mnt_credit_loan_final_scale <= 0 }
+			}
+			remove_temporary_demand = demand:mnt_credit_loan_demand1
+			remove_temporary_demand = demand:mnt_credit_loan_demand2
+		}
+		else_if = {
+			limit = {
+				has_temporary_demand = demand:mnt_credit_loan_demand1
+			}
+			remove_temporary_demand = demand:mnt_credit_loan_demand1
+			add_temporary_demand = {
+				type = demand:mnt_credit_loan_demand2
+				months = -1
+				scale = {
+					value = "location.var:mnt_credit_loan_final_scale"
+				}
+			}
+		}
+		else = {
+			remove_temporary_demand = demand:mnt_credit_loan_demand2
+			add_temporary_demand = {
+				type = demand:mnt_credit_loan_demand1
+				months = -1
+				scale = {
+					value = "location.var:mnt_credit_loan_final_scale"
+				}
+			}
+		}
 	}
-	else_if = {
+}
+
+# Market scope: paused borrowing must update all human players sharing the quote.
+# AI interest is updated once per country after the monthly demand aggregation.
+mnt_refresh_credit_interest_for_market_players = {
+	save_temporary_scope_as = mnt_credit_player_market
+	every_country = {
 		limit = {
-			has_temporary_demand = demand:mnt_credit_loan_demand1
+			is_human = yes
+			capital.market ?= scope:mnt_credit_player_market
 		}
-		remove_temporary_demand = demand:mnt_credit_loan_demand1
-		add_temporary_demand = {
-			type = demand:mnt_credit_loan_demand2
-			months = -1
-			scale = {
-				value = "location.var:mnt_credit_loan_final_scale"
-			}
-		}
-	}
-	else = {
-		remove_temporary_demand = demand:mnt_credit_loan_demand2
-		add_temporary_demand = {
-			type = demand:mnt_credit_loan_demand1
-			months = -1
-			scale = {
-				value = "location.var:mnt_credit_loan_final_scale"
-			}
-		}
-	}
-	# A shared market's new Credit demand changes the quote for every capital
-	# using that market, including countries which have not borrowed yet.
-	every_location_in_market = {
-		limit = { is_capital = yes exists = owner }
-		owner = { mnt_apply_yearly_credit_interest = yes }
+		mnt_apply_yearly_credit_interest = yes
 	}
 }
 
@@ -307,11 +368,16 @@ mnt_recompute_credit_loan_demand_world = {
 		}
 	}
 	mnt_aggregate_credit_loan_demand_markets = yes
+	# Refresh each country once, after all markets have their final demand.
+	every_country = { mnt_apply_yearly_credit_interest = yes }
 }
 
 mnt_recompute_credit_after_loan_taken = {
-	mnt_update_credit_loan_demand_for_country = yes
-	mnt_apply_yearly_credit_interest = yes
+	# Also guard direct calls from AI refinancing, outside the loan on_action.
+	if = {
+		limit = { is_human = yes }
+		mnt_update_credit_loan_demand_for_country = yes
+	}
 }
 
 mnt_clear_credit_loan_country_cache = {
