@@ -1,5 +1,6 @@
 ﻿on_game_start = {
 	on_actions = {
+		MnT_credit_starting_banks
 		on_game_start_MnT
 		hide_buildings_on_start
 		epbm_on_initialize
@@ -53,6 +54,87 @@ on_loan_repaid = {
 	on_actions = { MnT_credit_after_loan_change }
 }
 
+# Historical additions to vanilla's 1337 banking network; runs only on a new game.
+MnT_credit_starting_banks = {
+	effect = {
+		# These historical banking towns are rural settlements in vanilla setup.
+		location:barletta = {
+			if = {
+				limit = { location_rank = location_rank:rural_settlement }
+				change_location_rank = location_rank:town
+			}
+		}
+		location:famagusta = {
+			if = {
+				limit = { location_rank = location_rank:rural_settlement }
+				change_location_rank = location_rank:town
+			}
+		}
+		location:mechelen = {
+			if = {
+				limit = { location_rank = location_rank:rural_settlement }
+				change_location_rank = location_rank:town
+			}
+		}
+
+		location:naples = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:palma = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:barletta = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:pisa = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:venice = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:tunis = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:genoa = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+
+		location:naples = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:BRD }
+		}
+		location:famagusta = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:BRD }
+		}
+
+		location:paris = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:ACC }
+		}
+		location:bruges = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:ACC }
+		}
+
+		# Other researched bankers are represented by local burgher banking houses.
+		location:florence = { # Buonaccorsi headquarters
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:naples = { # Buonaccorsi, licensed 1332
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:avignon = { # Girolami-Corbizzi
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:mechelen = { # Montemagno
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:barcelona = { # Savarrés and Llorenç
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 2 }
+		}
+		location:strasbourg = { # Vivelin the Red
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+	}
+}
+
 # The below runs BEFORE country selection so is_ai and is_human checks will not work!
 on_game_start_MnT = {
 	effect = {
@@ -89,7 +171,33 @@ on_game_start_MnT = {
 		mnt_recompute_credit_loan_demand_world = yes
 		every_country = {
 			limit = { has_reform = government_reform:banking_country }
-			set_gold = 1000
+			set_gold = 5000
+			save_temporary_scope_as = mnt_starting_bank
+			every_owned_foreign_building_location = {
+				owner = {
+					save_temporary_scope_as = mnt_starting_bank_host
+					# Vanilla Good Relations supplies 50 opinion per scale unit.
+					# Top up once per host, even when it contains several offices.
+					if = {
+						limit = { opinion = { target = scope:mnt_starting_bank value < 100 } }
+						add_opinion = {
+							target = scope:mnt_starting_bank
+							modifier = opinion_good_relations
+							scale = { value = 100 subtract = "opinion(scope:mnt_starting_bank)" divide = 50 }
+						}
+					}
+					scope:mnt_starting_bank = {
+						if = {
+							limit = { opinion = { target = scope:mnt_starting_bank_host value < 100 } }
+							add_opinion = {
+								target = scope:mnt_starting_bank_host
+								modifier = opinion_good_relations
+								scale = { value = 100 subtract = "opinion(scope:mnt_starting_bank_host)" divide = 50 }
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
