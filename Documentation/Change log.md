@@ -698,3 +698,39 @@ Date: 21/05/2026
   - Make sure that Tribal Camelry Levies are the same size as Tribal Cavelry (which we reduced vs Vanilla)
   - Make Tribal Camelry Levies only recruitable in Provinces which produce Camels, not entire Markets
   - Fix the camel recruitment province scope check to prevent repeated script errors.
+
+##### 0.2.12
+
+### Ongoing Camel Unit balancing: 
+- Replace Climate checks for movement speed/combat with vegetation checks
+  - Camels are for now 50% faster in Desert (Vanilla 75% move cost reduction seems absurdly much)
+  - 25% faster in Sparse vegetation (aka steppes)
+  - 25% slower in Jungle and 15% slower in Forest
+  - Combat boni: 15% in Desert and 10% in Sparse
+- For now left Camels (both Regulars and Levies) to be only recruitable in Provinces that produce them
+  - This should prevent full camel armies, and help give the player a sense of 'my camel units come from place x where they breed camels'
+
+### Fixes
+- Add missing auto_modifier sea_land_transition_cost_distance_from_capital
+  - This missing caused proximity from capital land -> sea cost to be virtually free
+  - Make value 25 instead of Vanilla's 35 (in M&T you get more proximity but its effects are less strong)
+- Fix the "Legacy of Osman" special Gov Reform still being available after the end of the Rise of the Ottomans Situation
+  - Lock it requiring: 
+    - Be country TUR (the Ottomans) AND:
+    - Current date is either before 1350 (the last possible start of the Situation) or the Situation is ongoing
+
+### Balance
+- Remove the 25% global lumber output modifier on paper_guild_cloth_maintenance_advance (Banking tech in Age of Renaissance)
+  - Our data indicates that there was just an oversupply of lumber worldwide in the game
+- Tune down the modifiers of "Legacy of Osman" a bit as they were stupidly overpowered
+- Buff Sand production output
+  - Quartz sand RGO building: 1 -> 1.25
+  - Bad Sand pit building: 0.6 -> 0.9
+- Add new improved RGO-building production-methods for tea, coffee, cocoa, alum, horses, camels and sand
+  - Mostly to combat lategame shortages as identified from observer games
+  - We tried to tie it to real historical technological improvements
+
+##### 0.2.13
+
+### Fixes
+- Add missing stab cost efficiency malus to new subject types
