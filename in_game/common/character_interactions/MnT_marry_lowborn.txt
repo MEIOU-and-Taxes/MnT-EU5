@@ -48,9 +48,37 @@
 			is_eligible_for_royal_marriage = yes
 			modifier:block_marrying_lowborn = no
 			NOT = { has_trait = eunuch }
-			scope:actor.ruler_or_heir_if_regent ?= {
-				is_close_relative = root
+			custom_tooltip = {
+				text = marry_lowborn_close_relative_tt
+				scope:actor.ruler_or_heir_if_regent ?= {
+					is_close_relative = root
+				}
 			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = estate
+		source = actor
+		target_flag = estate
+		name = "marry_lowborn_choose_estate"
+		column = {
+			data = name
+		}
+		visible = {
+			scope:actor = {
+				country_has_estate = root.estate_type
+			}
+			estate_type = {
+				NOR = {
+					this = estate_type:crown_estate
+					this = estate_type:nobles_estate
+					this = estate_type:clergy_estate
+					this = estate_type:dhimmi_estate
+				}
+			}
+		}
+		enabled = {
 		}
 	}
 
@@ -107,15 +135,9 @@
 					religion = scope:recipient.religion
 					age = { 16 21 }
 					female = yes
-					random_estate_type_trigger = {
-						NOR = {
-							this = estate_type:nobles_estate
-							this = estate_type:clergy_estate
-							this = estate_type:dhimmi_estate
-						}
-					}
-					
-					marry_character = scope:recipient 
+					estate = scope:estate.estate_type
+
+					marry_character = scope:recipient
 				}
 			}
 			if = {
@@ -128,7 +150,7 @@
 					}
 				}
 				if = {
-					limit = { 
+					limit = {
 						scope:recipient = {
 							has_dynasty = yes
 							OR = {
@@ -141,7 +163,7 @@
 					add_prestige = prestige_extreme_penalty
 				}
 				else_if = {
-					limit = { 
+					limit = {
 						scope:recipient = {
 							has_dynasty = yes
 						}
@@ -150,7 +172,7 @@
 					add_prestige = prestige_mild_penalty
 				}
 				else_if = {
-					limit = { 
+					limit = {
 						scope:recipient = {
 							has_estate = estate_type:nobles_estate
 						}
@@ -162,7 +184,14 @@
 				add_legitimacy = legitimacy_weak_penalty
 				add_prestige = prestige_weak_penalty
 			}
+			add_estate_satisfaction = {
+				type = scope:estate.estate_type
+				value = estate_satisfaction_mild_bonus
+			}
+			add_estate_satisfaction = {
+				type = estate_type:nobles_estate
+				value = estate_satisfaction_mild_penalty
+			}
 		}
 	}
-	
 }	

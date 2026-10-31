@@ -28,10 +28,16 @@
 		NOT = { scope:actor ?= { is_subject_of = scope:recipient } }
 	}
 	join_offensive_wars_can_call = {
-		always = yes
+		scope:recipient ?= { is_subject_of = scope:actor }
 	}
 	join_defensive_wars_always = {
-		always = yes
+		#protect against external threats
+		scope:actor ?= {
+			is_subject_of = scope:recipient
+		}
+		scope:target ?= {
+			NOT = { is_subject_of = scope:recipient }
+		}
 	}
 	allow_declaring_wars = { 
 		colonial_nation_can_declare_wars_trigger = yes

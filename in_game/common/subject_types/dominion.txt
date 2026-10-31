@@ -23,7 +23,6 @@ dominion = { # like a personal union except the subject has much less power
 	subject_can_cancel = no
 	overlord_can_cancel = yes
 	has_limited_diplomacy = yes
-	overlord_protects_other_subjects = yes
 
 	allow_declaring_wars = { 
 		lordship_of_ireland_can_declare_wars_trigger = yes
@@ -45,6 +44,8 @@ dominion = { # like a personal union except the subject has much less power
 	
 	fleet_basing_rights = yes
 	food_access = yes
+	subject_exempt_from_overlord_import_tariffs = yes
+	overlord_exempt_from_subject_import_tariffs = yes
 	
 	great_power_score_transfer = 0.5 # the amount of Great Power Score that is transferred from the Subject to the Overlord
 
@@ -113,6 +114,22 @@ dominion = { # like a personal union except the subject has much less power
 		}
 	}
 
+	visible_through_diplomacy = {
+		OR = {
+			in_union_with = scope:target
+			has_or_had_tag = ENG
+			has_or_had_tag = GBR
+		}
+	}
+
+	visible_through_treaty = {
+		OR = {
+			in_union_with = scope:target
+			has_or_had_tag = ENG
+			has_or_had_tag = GBR
+		}
+	}
+
 	enabled = {
 		religion.group = scope:target.religion.group
 		trigger_if = {
@@ -170,7 +187,7 @@ dominion = { # like a personal union except the subject has much less power
 
 		num_of_limited_subjects = -5
 		culture_war = 3
-		diplomatic_reputation = 1
+		diplomatic_reputation = 0.8
 		different_religion = -20
 		same_common_language = 5
 		same_court_language = 10
@@ -199,7 +216,7 @@ dominion = { # like a personal union except the subject has much less power
 	}
 
 	ai_wants_to_be_overlord = {
-		scope:subject = {
+		scope:subject ?= {
 			add = {
 				desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
 				value = {

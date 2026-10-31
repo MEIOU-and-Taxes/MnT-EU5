@@ -191,16 +191,13 @@ lateralview = {
 								}
 							}
 						}
-					}
-
-					blockoverride "searchbar_extra_pre_content"{
 						widget = {
 							layoutpolicy_horizontal = expanding
-							size = {-1 37 }
+							size = {-1 43 }
 
 							hbox = {
-								margin = { 5 0 }
-								margin_bottom = 6
+								margin_top = 12
+								margin = { 5 12 }
 								
 								button_regular = {
 									using = layoutpolicy_expanding
@@ -229,6 +226,73 @@ lateralview = {
 											alpha = 0.3
 										}
 									}
+								}
+							}
+						}
+					}
+
+					blockoverride "searchbar_extra_pre_content" {
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 3
+							margin = { 10 2 }
+							margin_top = 0
+							datacontext = "[GoodsProductionLateralView.GetRawGoodsSortSearch.GetSearchBar]"
+
+							# Raw materials
+							goods_quickfilter_button = {
+								layoutpolicy_horizontal = expanding
+
+								datacontext = "[SearchBar.FindFilterByKey('goods_category_raw_material')]"
+								blockoverride "goods_quickfilter_button_highlight" {
+									visible = "[SearchBar.IsFilterEnabledByKey('goods_category_raw_material')]"
+								}
+								blockoverride "goods_quickfilter_button_icon" {
+									texture = "[GetConceptTexture('rgo')]"
+								}
+								blockoverride "goods_quickfilter_button_label" {
+									text = "game_concept_raw_materials"
+								}
+								blockoverride "goods_quickfilter_button_on_action" {
+									on_action = "[SearchBar.ToggleFilterByKey('goods_category_raw_material')]"
+								}
+							}
+
+							# Produced goods
+							goods_quickfilter_button = {
+								layoutpolicy_horizontal = expanding
+
+								datacontext = "[SearchBar.FindFilterByKey('goods_category_produced')]"
+								blockoverride "goods_quickfilter_button_highlight" {
+									visible = "[SearchBar.IsFilterEnabledByKey('goods_category_produced')]"
+								}
+								blockoverride "goods_quickfilter_button_icon" {
+									texture = "gfx/interface/icons/flat_icons/produced_goods.dds"
+								}
+								blockoverride "goods_quickfilter_button_label" {
+									text = "game_concept_produced_goods"
+								}
+								blockoverride "goods_quickfilter_button_on_action" {
+									on_action = "[SearchBar.ToggleFilterByKey('goods_category_produced')]"
+								}
+							}
+
+							# Food bearing goods
+							goods_quickfilter_button = {
+								layoutpolicy_horizontal = expanding
+
+								datacontext = "[SearchBar.FindFilterByKey('goods_food_bearing')]"
+								blockoverride "goods_quickfilter_button_highlight" {
+									visible = "[SearchBar.IsFilterEnabledByKey('goods_food_bearing')]"
+								}
+								blockoverride "goods_quickfilter_button_icon" {
+									texture = "gfx/interface/icons/map_modes/food.dds"
+								}
+								blockoverride "goods_quickfilter_button_label" {
+									text = "market_goods_quickfilter_food_goods"
+								}
+								blockoverride "goods_quickfilter_button_on_action" {
+									on_action = "[SearchBar.ToggleFilterByKey('goods_food_bearing')]"
 								}
 							}
 						}
@@ -338,9 +402,26 @@ lateralview = {
 													parentanchor = center
 													visible = "[Not(GoodsProductionLateralView.IsMarketFilterEnabled)]"
 													texture = "[GetGoodsIcon(GoodItem.GetGoods)]"
-													onclick = "[ShowGoods(GoodItem.GetGoods)]"
 													datacontext = "[GoodItem.GetGoods]"
 													tooltipwidget = { using = Goods_tooltip	}
+
+													action_tooltip = {
+														click_type = left
+														click_mode = single
+														title = "OPEN_GOOD_PANEL"
+														on_action = "[ShowGoods(GoodItem.GetGoods)]"
+													}
+
+													action_tooltip = {
+														click_type = right
+														click_mode = single
+														title = "GOODS_MARKET_CTXMENU_OPEN"
+														on_action = "[PdxGuiWidget.ToggleContextMenu]"
+													}
+
+													contextmenu_widget = {
+														GoodsContextMenu = {}
+													}
 
 													icon = {
 														size = { 10 10 }
@@ -374,6 +455,17 @@ lateralview = {
 														on_action = "[ShowGoods(GoodsMarketEntry.GetGoods)]"
 													}
 												
+													action_tooltip = {
+														click_type = right
+														click_mode = single
+														title = "GOODS_MARKET_CTXMENU_OPEN"
+														on_action = "[PdxGuiWidget.ToggleContextMenu]"
+													}
+
+													contextmenu_widget = {
+														GoodsMarketContextMenu = {}
+													}
+
 													sort_by_small_highlight = {
 														name = "name"
 													}
@@ -394,7 +486,7 @@ lateralview = {
 												datacontext = "[GoodItem.GetGoods]"
 												datacontext = "[Market.GetMarketEntry(GoodItem.GetGoods)]"
 						
-												progressbar = {
+												progressbar_framed = {
 													parentanchor = center
 													size = { 5 22 }
 													using = progress_bar_green_alt
@@ -663,7 +755,8 @@ lateralview = {
 													# IMPORT
 													button = {
 														size = { 28 28 }
-														enabled = "[And( GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )]"
+														enabled = "[GoodsProductionLateralView.IsMarketFilterEnabled]"
+														datacontext = "[GoodsProductionLateralView.GetSelectedMarket]"
 														tooltip_enabled = no
 
 														texture = "gfx/interface/buttons/round_button_texture_alt.dds"
@@ -700,7 +793,7 @@ lateralview = {
 														ui_direction_color_button = {
 															size = { 65% 65% }
 															parentanchor = center
-															enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )]"
+															enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
 
 															tooltipwidget = {
 																BasicFunctionalTooltip = {}
@@ -709,10 +802,10 @@ lateralview = {
 															action_tooltip = {
 																click_type = left
 																click_mode = single
-																enabled = "[And( GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )]"
-																conditions = "[MakeItFailIf(Not(And(GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket )), GoodsProductionLateralView.GetSelectedMarket.GetImportInfo(Player.Self,GoodItem.GetGoods))]"
-																title = "[SelectLocalization(And(GoodsProductionLateralView.IsMarketFilterEnabled, GoodItem.CanImportFromSelectedMarket ), 'IMPORT_BUTTON_ACTION_TT', 'CANNOT_EXPORT_BUTTON_ACTION_TT')]"
-																on_action = "[SetupImportWithNeedsRight(GoodsProductionLateralView.GetSelectedMarket.Self,GoodItem.GetGoods,'(CFixedPoint)0')]"
+																enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
+																conditions = "[AddLocalizationIf(Not(HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self)), 'TRADE_ORDER_NO_TC_IN_MARKET_TT')]"
+																title = "MARKET_CTXMENU_CREATE_IMPORT_ORDER"
+																on_action = "[CreateImportOrderForGoodInMarket(GoodItem.GetGoods,GoodsProductionLateralView.GetSelectedMarket.Self)]"
 															}
 
 															blockoverride "button_texture"  {
@@ -724,7 +817,7 @@ lateralview = {
 													# EXPORT
 													button = {
 														size = { 28 28 }
-														enabled = "[GoodItem.CanExportToSelectedMarket]"
+														datacontext = "[GoodsProductionLateralView.GetSelectedMarket]"
 														tooltip_enabled = no
 														
 														texture = "gfx/interface/buttons/round_button_texture_alt.dds"
@@ -761,7 +854,7 @@ lateralview = {
 														ui_direction_color_button = {
 															size = { 65% 65% }
 															parentanchor = center
-															enabled = "[GoodItem.CanExportToSelectedMarket]"
+															enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
 
 															tooltipwidget = {
 																BasicFunctionalTooltip = {}
@@ -769,10 +862,10 @@ lateralview = {
 															action_tooltip = {
 																click_type = left
 																click_mode = single
-																enabled = "[GoodItem.CanExportToSelectedMarket]"
-																conditions = "[MakeItFailIf(Not(GoodItem.CanExportToSelectedMarket), GoodsProductionLateralView.GetSelectedMarket.GetExportInfo(Player.Self,GoodItem.GetGoods))]"
-																title = "[SelectLocalization(GoodItem.CanExportToSelectedMarket, 'EXPORT_BUTTON_ACTION_TT', 'CANNOT_EXPORT_BUTTON_ACTION_TT')]"																
-																on_action = "[SetupExportWithNeedsRight(GoodsProductionLateralView.GetSelectedMarket.Self,GoodItem.GetGoods,'(CFixedPoint)0')]"
+																enabled = "[And(GoodsProductionLateralView.IsMarketFilterEnabled, HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self))]"
+																conditions = "[AddLocalizationIf(Not(HasTradeCapacityInMarket(GoodsProductionLateralView.GetSelectedMarket.Self)), 'TRADE_ORDER_NO_TC_IN_MARKET_TT')]"
+																title = "MARKET_CTXMENU_CREATE_EXPORT_ORDER"
+																on_action = "[CreateExportOrderForGoodInMarket(GoodItem.GetGoods,GoodsProductionLateralView.GetSelectedMarket.Self)]"
 															}
 
 															blockoverride "button_texture"  {
@@ -982,6 +1075,10 @@ select_menu_left = {
 	}
 
 	blockoverride "close_on_action" { on_action = "[GoodsProductionSelectMarket.OnClose]" }
+	blockoverride "select_header_text" {
+		text = "SELECT_MARKET_HEADER"
+	}
+
 	blockoverride "select_content" {
 		select_menu_header = {
 			blockoverride "select_menu_header_extra" {

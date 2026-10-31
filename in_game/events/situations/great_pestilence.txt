@@ -572,3 +572,65 @@ great_pestilence.7 = { # Forever Lost
 	}
 
 }
+
+great_pestilence.8 = {
+	type = country_event
+	category = situation_event
+
+	title = great_pestilence.8.t
+	desc = great_pestilence.8.desc
+	outcome = neutral
+
+	image = "gfx/interface/illustrations/situation/great_pestilence.dds"
+
+	trigger = {
+		NOT = { country_type = pop }
+		any_owned_location = {
+			location_has_pestilence_trigger = yes
+			is_capital = no
+			NOT = { continent = root.capital.continent }
+			any_pop = {
+				OR = {
+					NOT = { religion = root.religion }
+					NOT = { culture = root.culture }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_owned_location = {
+			limit = {
+				location_has_pestilence_trigger = yes
+				is_capital = no
+				NOT = { continent = root.capital.continent }
+				any_pop = {
+					OR = {
+						NOT = { religion = root.religion }
+						NOT = { culture = root.culture }
+					}
+				}
+			}
+			save_scope_as = target_location
+		}
+	}
+
+	option = {
+		name = great_pestilence.8.a
+		change_gold_effect = { scale = -3 }
+		scope:target_location = {
+			change_development = development_severe_penalty
+		}
+	}
+
+	option = {
+		name = great_pestilence.8.b
+		scope:target_location = {
+			change_development = development_severe_penalty
+			every_pop = {
+				limit = { owner = root }
+				add_pop_satisfaction = pop_satisfaction_severe_penalty
+			}
+		}
+	}
+}

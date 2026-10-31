@@ -4,7 +4,16 @@
 	level = 2
 	annullment_favours_required = 20
 	visible = {
-		country_rank_level >= scope:target.country_rank_level
+		# High Kingship members can subjugate each other regardless of rank
+		OR = {
+			country_rank_level >= scope:target.country_rank_level
+			any_international_organizations_member_of = {
+				international_organization_type = international_organization_type:high_kingship
+				any_international_organization_member = {
+					this = scope:target
+				}
+			}
+		}
 		NOT = { has_advance = samanta_advance }
 		scope:target = { subject_type_is_not_locked = yes }
 
@@ -30,13 +39,30 @@
 	}
 	
 	join_offensive_wars_always = {
-		NOT = { scope:actor ?= { is_subject_of = scope:recipient } }
+		NOR = {
+			scope:actor ?= { is_subject_of = scope:recipient }
+			custom_tooltip = {
+				text = french_subject_prevented_from_call_to_war_join_war_tt
+				scope:recipient ?= { modifier:french_subject_prevented_from_call_to_war = yes }
+			}
+		}
 	}
 	join_offensive_wars_can_call = {
 		scope:actor ?= { is_subject_of = scope:recipient }
 	}
 	join_defensive_wars_always = {
-		always = yes
+		custom_tooltip = {
+			text = french_subject_prevented_from_call_to_war_join_war_tt
+			NOT = { scope:recipient ?= { modifier:french_subject_prevented_from_call_to_war = yes } }
+		}
+		custom_tooltip = {
+			text = wont_be_auto_defended_by_overlord_join_war_tt
+			NOT = { scope:actor ?= { has_variable = wont_be_auto_defended_by_overlord } }
+		}
+		custom_tooltip = {
+			text = wont_join_vs_other_appanages_with_granted_autonomy_to_expand_modifier_during_hyw_tt
+			NOT = { scope:target ?= { has_country_modifier = granted_autonomy_to_expand_modifier } }
+		}
 	}
 	
 	diplomatic_capacity_cost_scale = 1.0
@@ -102,7 +128,7 @@
 
 		num_of_limited_subjects = -5
 		culture_war = 3
-		diplomatic_reputation = 1
+		diplomatic_reputation = 0.8
 		different_religion = -20
 		same_common_language = 5
 		same_court_language = 10
@@ -131,7 +157,7 @@
 	}
 
 	ai_wants_to_be_overlord = {
-        scope:subject = {
+        scope:subject ?= {
 			add = {
                 desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
                 value = {

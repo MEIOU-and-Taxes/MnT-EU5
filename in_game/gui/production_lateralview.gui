@@ -55,7 +55,7 @@ template production_main_tabs {
 	button_main_tab_alt = {
 		using = layoutpolicy_expanding
 		blockoverride "tab_text" {
-			text = "game_concept_locations"
+			text = "URBANIZATION_TAB"
 		}
 		onclick = "[OpenLateralView('town_rights')]"
 		down = "[IsLateralViewOpened('town_rights')]"
@@ -69,15 +69,16 @@ template production_view_subtabs {
 	hbox = {
 		layoutpolicy_horizontal = expanding
 		margin = { 2 0 }
-		margin_bottom = 2
+		margin_top = 7
 		spacing = 5
+
 		# DISPLAYS
 		hbox = {
-			layoutpolicy_vertical = expanding
+			using = layoutpolicy_expanding
 
 			hbox = {
-				layoutpolicy_vertical = expanding
-				spacing = 5
+				using = layoutpolicy_expanding
+				spacing = 6
 				button = {
 					size = {30 30}
 					using = header_button_template
@@ -100,7 +101,7 @@ template production_view_subtabs {
 				}
 
 				button = {
-					size = {30 30}
+					size = { 30 30 }
 					using = header_button_template
 					blockoverride "header_button_template_push_properties"{using = button_tab_toggle_properties_template}
 					blockoverride "header_button_full_content"{}
@@ -120,223 +121,161 @@ template production_view_subtabs {
 					}
 				}
 
-				button = {
-					size = {30 30}
-					using = header_button_template
-					blockoverride "header_button_template_push_properties"{using = button_tab_toggle_properties_template}
-					blockoverride "header_button_full_content"{}
-					blockoverride "header_button_template_texture"{using = pressed_button_texture_light}
-					action_tooltip = {
-						title = "DISPLAY_FOREIGN"
-						on_action = "[ProductionView.Vars.Set( 'display', 'foreign' )]"
-					}
-					tooltipwidget = { BasicFunctionalTooltip = {} }
-
-					down = "[ProductionView.Vars.HasValue( 'display', 'foreign' )]"
-
-					icon = {
-						size = {70% 70%}
-						parentanchor = center
-						texture = "[GetConceptTexture('foreign')]"
-					}
-				}
-
-				button = {
-					size = {30 30}
-					using = header_button_template
-					blockoverride "header_button_template_push_properties"{using = button_tab_toggle_properties_template}
-					blockoverride "header_button_full_content"{}
-					blockoverride "header_button_template_texture"{using = pressed_button_texture_light}
-					action_tooltip = {
-						title = "DISPLAY_ESTATE"
-						on_action = "[ProductionView.Vars.Set( 'display', 'estate' )]"
-					}
-					tooltipwidget = { BasicFunctionalTooltip = {} }
-
-					down = "[ProductionView.Vars.HasValue( 'display', 'estate' )]"
-
-					icon = {
-						size = {70% 70%}
-						parentanchor = center
-						texture = "[GetConceptTexture('estate')]"
-						modify_texture = {
-							visible = "[ProductionView.Vars.HasValue( 'display', 'estate' )]"
-							using = color_gold_texture
-							alpha = 0.4
-						}
-					}
-				}
-			}
-		}
-
-		# EMPLOYMENT
-		hbox = {
-			layoutpolicy_horizontal = expanding
-			spacing = 5
-
-			tooltipmeta = {
-				texture = "gfx/interface/icons/location_icons/new/employment.dds"
-				game_concept = "[employment_system|E]"
-			}
-
-			action_button_regular = {
-				layoutpolicy_horizontal = expanding
-				size = {-1 35}
-
-				title = "change_employment_system"
-				actor = "[Player]"
-				left_action = {
-					action_name = "change_employment_system"
-				}
-
 				hbox = {
-					margin = { 5 4 }
-					icon = {
-						size = {25 25}
-						texture = "gfx/interface/icons/location_icons/new/employment.dds"
-					}
-
-					vbox = {
-						spacing = 1
+					layoutpolicy_horizontal = expanding
+					margin_top = 1
+					spacing = 5
+					button_regular = {
+						size = { -1 33 }
 						layoutpolicy_horizontal = expanding
-						text_single = {
-							layoutpolicy_horizontal = expanding
-							size = { -1 13 }
-							autoresize = no
-							align = left|nobaseline
-							text = "game_concept_employment_system"
-							fontsize = 12
+						blockoverride "button_push_properties" {
+							using = button_tab_toggle_properties_template
+						}
+						action_tooltip = {
+							title = "DISPLAY_FOREIGN"
+							on_action = "[ProductionView.Vars.Set( 'display', 'foreign' )]"
+						}
+						tooltipwidget = { BasicFunctionalTooltip = {} }
+
+						down = "[ProductionView.Vars.HasValue( 'display', 'foreign' )]"
+
+						text = "DISPLAY_FOREIGN"
+
+						icon = {
+							size = {23 23}
+							parentanchor = left|vcenter
+							position = {10 0}
+							texture = "[GetConceptTexture('foreign')]"
+							texture_density = 2
+							glow = {
+								name = "drop_shadow"
+								glow_radius = 3
+								color = {0.0 0.0 0.0 1.0}
+								alpha = 0.3
+							}
+						}
+					}
+
+					button_regular = {
+						size = { -1 33 }
+						layoutpolicy_horizontal = expanding
+						blockoverride "button_push_properties" {
+							using = button_tab_toggle_properties_template
+						}
+						action_tooltip = {
+							title = "DISPLAY_ESTATE"
+							on_action = "[ProductionView.Vars.Set( 'display', 'estate' )]"
+						}
+						tooltipwidget = { BasicFunctionalTooltip = {} }
+
+						down = "[ProductionView.Vars.HasValue( 'display', 'estate' )]"
+
+						text = "DISPLAY_ESTATE"
+
+						icon = {
+							size = {23 23}
+							parentanchor = left|vcenter
+							position = {10 0}
+							texture = "[GetConceptTexture('estate')]"
+							texture_density = 2
+							glow = {
+								name = "drop_shadow"
+								glow_radius = 3
+								color = {0.0 0.0 0.0 1.0}
+								alpha = 0.3
+							}
+							modify_texture = {
+								visible = "[ProductionView.Vars.HasValue( 'display', 'estate' )]"
+								using = color_gold_texture
+								alpha = 0.4
+							}
+						}
+					}
+				}
+
+
+				widget = {
+					size = { 90 30 }
+					using = bg_square_wood_tile
+
+					hbox = {
+						margin = { 3 0 }
+						margin_right = 6
+						expand = {}
+						spacing = 3
+						datacontext = "[Player]"
+						tooltipwidget = {
+							using = ProductionEfficiencyTooltip
 						}
 						text_single = {
-							layoutpolicy_horizontal = expanding
-							size = { -1 13 }
-							autoresize = no
-							align = left|nobaseline
-							text = "[Player.GetEmploymentSystem.GetName]"
-							fontsize = 12
+							using = layoutpolicy_expanding
+							maximumsize = { 55 -1 }
+							align = nobaseline|right
+							text = "[Player.GetModifierValueNoFormat('global_production_efficiency')]"
+						}
+						icon = {
+							size = { 20 20 }
+							texture = "[GetConceptTexture('production_efficiency')]"
 						}
 					}
 				}
 			}
 		}
 
-		# AUTOMATIONS
-		hbox = {
-			spacing = 5
-			card_header_button_04 = {
-				allow_outside = yes
-				size = { 31 31 }
-				using = bg_card_header_01
-				blockoverride "header_pattern" {
-					texture = "gfx/interface/cards/headers/header_pattern_04.dds"
-					alpha = 0.1
-				}
-				action_tooltip = {
-					click_type = left
-					click_mode = single
-					on_action = "[GetScriptedGui('mnt_force_show_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
-					on_action = "[GetScriptedGui('mnt_force_show_non_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
-					on_action = "[OpenLateralViewWithFilter('production', 'can_build_any_building')]"
-					title = "SHOW_BUILDABLE_BUILDINGS"
-				}
-				tooltipwidget = { BasicFunctionalTooltip = {} }
+		# # EMPLOYMENT
+		# hbox = {
+		# 	layoutpolicy_horizontal = expanding
+		# 	spacing = 5
 
-				icon = {
-					parentanchor = center
-					size = { 22 22 }
-					texture = "gfx/interface/icons/flat_icons/building_panel/build_visible.dds"
-				}
-			}
+		# 	tooltipmeta = {
+		# 		texture = "gfx/interface/icons/location_icons/new/employment.dds"
+		# 		game_concept = "[employment_system|E]"
+		# 	}
 
-			card_header_button_04 = {
-				allow_outside = yes
-				size = { 31 31 }
-				using = bg_card_header_01
-				blockoverride "header_pattern" {
-					texture = "gfx/interface/cards/headers/header_pattern_04.dds"
-					alpha = 0.1
-				}
-				background = {
-					visible = "[GetScriptedGui('mnt_is_rgo_buildings_visible').IsShown(GuiScope.SetRoot(Player.MakeScope).End)]"
-					using = color_gold_texture
-					blend_mode = add
-					alpha = 0.25
-				}
-				action_tooltip = {
-					click_type = left
-					click_mode = single
-					on_action = "[GetScriptedGui('mnt_toggle_rgo_buildings_visibility').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
-					title = "[SelectLocalization(GetScriptedGui('mnt_is_rgo_buildings_visible').IsShown(GuiScope.SetRoot(Player.MakeScope).End), 'HIDE_RGO_BUILDINGS', 'SHOW_RGO_BUILDINGS')]"
-				}
-				tooltipwidget = { BasicFunctionalTooltip = {} }
+		# 	targetted_button_regular = {
+		# 		layoutpolicy_horizontal = expanding
+		# 		size = {-1 35}
 
-				icon = {
-					parentanchor = center
-					size = { 22 22 }
-					texture = "gfx/interface/icons/map_modes/raw_material.dds"
-					modify_texture = {
-						visible = "[GetScriptedGui('mnt_is_rgo_buildings_visible').IsShown(GuiScope.SetRoot(Player.MakeScope).End)]"
-						using = color_gold_texture
-						alpha = 0.8
-					}
-				}
-			}
+		# 		visible = "[PdxGuiWidget.IsUberButtonVisible]"
+		# 		enabled = "[PdxGuiWidget.IsUberButtonEnabled]"
 
-			hbox = {
-				margin = { 7 7 }
-				spacing = 5
-				using = bg_square_wood_tile
-				using = bg_cabinet_card_frame
-				icon = {
-					size = { 22 22 }
-					texture = "gfx/interface/icons/outliner/categories/buildings.dds"
-				}
+		# 		scripted_action_tooltip = {
+		# 			click_type = left
+		# 			click_mode = single
+		# 			action_name = "change_employment_system"
+		# 			actor = "[Player]"
+		# 		}
 
-				button_checkbox_auto = {
-					size = { 22 22 }
-					# enabled = "[Not(IsSystemAutomatedByPlayStyle('buildings'))]"
-					down = "[IsPlayerAIEnabled('buildings')]"
-					action_tooltip = {
-						title = "[GetPlayerAITooltip('buildings')]"
-						on_action = "[TogglePlayerAI('buildings')]"
-					}
-					action_tooltip = {
-						click_type = right
-						title = "OPEN_AUTOMATION"
-						on_action = "[ToggleLateralView('automation')]"
-					}
-					tooltipwidget = { BasicFunctionalTooltip = {} }
-				}
-			}
+		# 		hbox = {
+		# 			margin = { 5 4 }
+		# 			icon = {
+		# 				size = {25 25}
+		# 				texture = "gfx/interface/icons/location_icons/new/employment.dds"
+		# 			}
 
-
-			hbox = {
-				margin = { 7 7 }
-				spacing = 5
-				using = bg_square_wood_tile
-				using = bg_cabinet_card_frame
-				icon = {
-					size = { 22 22 }
-					texture = "gfx/interface/icons/production_methods/_default.dds"
-				}
-
-				button_checkbox_auto = {
-					size = { 22 22 }
-					# enabled = "[Not(IsSystemAutomatedByPlayStyle('productionmethods'))]"
-					down = "[IsPlayerAIEnabled('productionmethods')]"
-					action_tooltip = {
-						title = "[GetPlayerAITooltip('productionmethods')]"
-						on_action = "[TogglePlayerAI('productionmethods')]"
-					}
-					action_tooltip = {
-						click_type = right
-						title = "OPEN_AUTOMATION"
-						on_action = "[ToggleLateralView('automation')]"
-					}
-					tooltipwidget = { BasicFunctionalTooltip = {} }
-				}
-			}
-		}
+		# 			vbox = {
+		# 				spacing = 1
+		# 				layoutpolicy_horizontal = expanding
+		# 				text_single = {
+		# 					layoutpolicy_horizontal = expanding
+		# 					size = { -1 13 }
+		# 					autoresize = no
+		# 					align = left|nobaseline
+		# 					text = "game_concept_employment_system"
+		# 					fontsize = 12
+		# 				}
+		# 				text_single = {
+		# 					layoutpolicy_horizontal = expanding
+		# 					size = { -1 13 }
+		# 					autoresize = no
+		# 					align = left|nobaseline
+		# 					text = "[Player.GetEmploymentSystem.GetName]"
+		# 					fontsize = 12
+		# 				}
+		# 			}
+		# 		}
+		# 	}
+		# }
 	}
 }
 
@@ -370,9 +309,25 @@ template production_view_poptypes {
 						datacontext = "[PopType]"
 						title = "TOGGLE_BUILDINGS_POP_TYPE"
 					}
+
+					action_tooltip = {
+						click_type = right
+						title = "[SelectLocalization(SearchBar.IsFilterPinnedByKey(PopType.GetKey), 'UNPIN_FILTER', 'PIN_FILTER')]"
+						on_action = "[SearchBar.ToggleFilterPinByKey(PopType.GetKey)]"
+					}
 				}
 				blockoverride "estates_filter_button_texture" {
 					texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, Location.GetOwner.Self)]"
+				}
+				blockoverride "estates_filter_button_pin" {
+					widget = {
+						size = { 14 14 }
+						datacontext = "[ProductionView.GetBuildingsSortSearch.GetSearchBar]"
+						using = estates_filter_button_pin_overlay
+					}
+				}
+				blockoverride "estates_filter_button_searchbar_datacontext" {
+					datacontext = "[ProductionView.GetBuildingsSortSearch.GetSearchBar]"
 				}
 			}
 		}
@@ -380,10 +335,79 @@ template production_view_poptypes {
 	hbox = {
 		layoutpolicy_horizontal = expanding
 		spacing = 2
-		margin = { 2 5 }
+		margin = { 2 0 }
+		margin_bottom = 3
 		visible = "[And3(Not(ProductionView.Vars.HasValue( 'display', 'foreign' )),  Not(ProductionView.Vars.HasValue( 'display', 'estate' )), Not(ProductionView.IsLocationFilterEnabled))]"
 		datamodel = "[GetPopTypes]"
 		datacontext = "[ProductionView.GetSelectedLocation]"
+
+		card_header_button_04 = {
+			size = { 30 30 }
+			using = bg_card_header_01
+			blockoverride "bg_card_header_01_margins" {}
+			blockoverride "header_pattern" {
+				texture = "gfx/interface/cards/headers/header_pattern_04.dds"
+				alpha = 0.1
+			}
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+				# on_action = "[OpenLateralViewWithFilter('production', 'can_build_any_building')]"
+				on_action = "[GetScriptedGui('mnt_force_show_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
+				on_action = "[GetScriptedGui('mnt_force_show_non_rgo_category_off').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
+				on_action = "[OpenLateralViewWithFilter('production', 'can_build_any_building')]"
+				title = "SHOW_BUILDABLE_BUILDINGS"
+			}
+			tooltipwidget = { BasicFunctionalTooltip = {} }
+
+			icon = {
+				name = "filter_is_on"
+				using = color_white_texture
+				alpha = 0.3
+				size = { 100% 100% }
+				visible = "[SearchBar.IsFilterEnabledByKey('can_build_any_building')]"
+			}
+
+			icon = {
+				parentanchor = center
+				size = { 22 22 }
+				texture = "gfx/interface/icons/flat_icons/building_panel/build_visible.dds"
+			}
+		}
+
+		card_header_button_04 = {
+			allow_outside = yes
+			size = { 31 31 }
+			using = bg_card_header_01
+			blockoverride "header_pattern" {
+				texture = "gfx/interface/cards/headers/header_pattern_04.dds"
+				alpha = 0.1
+			}
+			background = {
+				visible = "[GetScriptedGui('mnt_is_rgo_buildings_visible').IsShown(GuiScope.SetRoot(Player.MakeScope).End)]"
+				using = color_gold_texture
+				blend_mode = add
+				alpha = 0.25
+			}
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+				on_action = "[GetScriptedGui('mnt_toggle_rgo_buildings_visibility').Execute(GuiScope.SetRoot(Player.MakeScope).End)]"
+				title = "[SelectLocalization(GetScriptedGui('mnt_is_rgo_buildings_visible').IsShown(GuiScope.SetRoot(Player.MakeScope).End), 'HIDE_RGO_BUILDINGS', 'SHOW_RGO_BUILDINGS')]"
+			}
+			tooltipwidget = { BasicFunctionalTooltip = {} }
+
+			icon = {
+				parentanchor = center
+				size = { 22 22 }
+				texture = "gfx/interface/icons/map_modes/raw_material.dds"
+				modify_texture = {
+					visible = "[GetScriptedGui('mnt_is_rgo_buildings_visible').IsShown(GuiScope.SetRoot(Player.MakeScope).End)]"
+					using = color_gold_texture
+					alpha = 0.8
+				}
+			}
+		}
 
 		item = {
 			# ESTATES FILTERS
@@ -626,13 +650,13 @@ lateralview = {
 								}
 							}
 						}
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							using = production_view_subtabs
+						}
 					}
 
 					blockoverride "searchbar_extra_pre_content"{
-						using = production_view_subtabs
-					}
-
-					blockoverride "custom_search_filter"{
 						using = production_view_poptypes
 					}
 
@@ -669,54 +693,234 @@ lateralview = {
 						}
 					}
 
-										blockoverride "scroll_list_layout" {
+					blockoverride "scroll_list_layout" {
+						# Scripted RGO visibility requires rows that collapse when hidden.
 						vbox = {
+							layoutpolicy_horizontal = expanding
 							vbox = {
-								visible = "[And( ProductionView.Vars.NotExistOrHasValue( 'display', 'lists' ), Not(ProductionView.IsLocationFilterEnabled) )]"
+								visible = "[And(ProductionView.Vars.NotExistOrHasValue('display', 'lists'), Not(ProductionView.IsLocationFilterEnabled))]"
 								layoutpolicy_horizontal = expanding
 								datamodel = "[ProductionView.GetBuildingItems]"
+								datamodel_reuse_widgets = yes
 								item = {
 									widget = {
-										visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope
-											.SetRoot(BuildingItem.GetBuildingType.MakeScope)
-											.AddScope('player', GetPlayer.MakeScope)
-											.End
-										)]"
 										size = { -1 48 }
+										visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope.SetRoot(BuildingItem.GetBuildingType.MakeScope).AddScope('player', GetPlayer.MakeScope).End)]"
 										layoutpolicy_horizontal = expanding
-
 										vbox = {
 											margin_top = 5
-											building_type_header = {}
+											hbox = {
+												layoutpolicy_horizontal = expanding
+												spacing = 3
+
+												building_type_header = { layoutpolicy_horizontal = expanding }
+
+												widget = {
+													size = { 35 40 }
+													onmousehierarchyenter = "[ProductionView.RebuildBuildRankingItems(BuildingItem.GetBuildingType)]"
+													using = bg_building_card_colors
+													blockoverride "header_pattern_texture_density" { texture_density = 2.5 }
+
+													card_header_button_04 = {
+														parentanchor = center
+														size = { 100% 100% }
+														datacontext = "[BuildingItem.GetBuildingType]"
+														datacontext = "[ProductionView.GetBuildRankingItems]"
+
+														enabled = "[Or3(And(Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)), Or(BuildingItem.CanBuildAnyBuilding, ProductionView.HasUpgradableFromCurrentTier(BuildingItem.GetBuildingType))), And(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType), ProductionView.CanMassUpgrade(BuildingItem.GetBuildingType)), BuildingItem.AreBuildingsUnderConstruction)]"
+
+														icon = {
+															parentanchor = center
+															size = { 24 24 }
+															visible = "[And(Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)), Not(ProductionView.HasUpgradableFromCurrentTier(BuildingItem.GetBuildingType)))]"
+															texture = "gfx/interface/icons/flat_icons/mass_construct.dds"
+														}
+														icon = {
+															parentanchor = center
+															size = { 24 24 }
+															visible = "[And(Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)), ProductionView.HasUpgradableFromCurrentTier(BuildingItem.GetBuildingType))]"
+															texture = "gfx/interface/icons/flat_icons/mass_construct_upgrade.dds"
+														}
+														icon = {
+															parentanchor = center
+															size = { 24 24 }
+															visible = "[Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)]"
+															texture = "gfx/interface/icons/flat_icons/mass_upgrade.dds"
+														}
+
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = default
+															visible = "[And(BuildingItem.CanBuildAnyBuilding, Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
+															enabled = "[ProductionView.HasBestBuildLocationFor(BuildingItem.GetBuildingType)]"
+															title = "BUILDING_BEST_IN_LOCATION_ACTION_BUTTON"
+															on_action = "[ProductionView.BuildBestFromRankingItemsDefault(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = ctrl
+															visible = "[And(BuildingItem.CanBuildAnyBuilding, Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
+															enabled = "[ProductionView.HasBestBuildLocationFor(BuildingItem.GetBuildingType)]"
+															title = "BUILD_IN_BEST_LOCATION_ACTION_CTRL"
+															on_action = "[ProductionView.BuildBestFromRankingItemsCtrl(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = shift
+															visible = "[And(BuildingItem.CanBuildAnyBuilding, Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
+															enabled = "[ProductionView.HasBestBuildLocationFor(BuildingItem.GetBuildingType)]"
+															title = "BUILD_IN_BEST_LOCATION_ACTION_SHIFT"
+															on_action = "[ProductionView.BuildBestFromRankingItemsShift(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = default
+															visible = "[And(Not(BuildingItem.CanBuildAnyBuilding), Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
+															enabled = no
+															title = "BUILDING_BEST_IN_LOCATION_ACTION_BUTTON"
+															description = "BUILDING_IN_LOCATION_ACTION_NO_LOCATION"
+														}
+
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = alt
+															visible = "[Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType))]"
+															enabled = "[ProductionView.HasUpgradableFromCurrentTier(BuildingItem.GetBuildingType)]"
+															title = "UPGRADE_OBSOLETE_FROM_CURRENT_ACTION"
+															description = "UPGRADE_OBSOLETE_FROM_CURRENT_ACTION_DESC"
+															on_action = "[ProductionView.UpgradeObsoleteFromCurrentTier(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = default
+															visible = "[And(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType), ProductionView.CanMassUpgrade(BuildingItem.GetBuildingType))]"
+															enabled = "[ProductionView.CanMassUpgrade(BuildingItem.GetBuildingType)]"
+															title = "UPGRADING_BEST_IN_LOCATION_ACTION_BUTTON"
+															on_action = "[ProductionView.BuildBestFromRankingItemsDefault(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = default
+															visible = "[And(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType), Not(ProductionView.CanMassUpgrade(BuildingItem.GetBuildingType)))]"
+															enabled = no
+															title = "UPGRADING_BEST_IN_LOCATION_ACTION_BUTTON"
+															description = "UPGRADING_IN_LOCATION_ACTION_NO_LOCATION_PROD"
+														}
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = ctrl
+															visible = "[Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)]"
+															enabled = "[ProductionView.CanMassUpgrade(BuildingItem.GetBuildingType)]"
+															title = "UPGRADE_IN_BEST_LOCATION_ACTION_CTRL"
+															on_action = "[ProductionView.BuildBestFromRankingItemsCtrl(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+														action_tooltip = {
+															click_type = left
+															click_mode = single
+															click_modifier = shift
+															visible = "[Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)]"
+															enabled = "[ProductionView.CanMassUpgrade(BuildingItem.GetBuildingType)]"
+															title = "UPGRADE_IN_BEST_LOCATION_ACTION_SHIFT"
+															on_action = "[ProductionView.BuildBestFromRankingItemsShift(BuildingItem.GetBuildingType)]"
+															on_action = "[PlayAudioEffect('UI_action_building_build')]"
+														}
+
+														action_tooltip = {
+															click_type = right
+															click_mode = single
+															click_modifier = default
+															visible = "[ProductionView.HasLastBuildLocationItemFor(BuildingItem.GetBuildingType)]"
+															title = "DEQUEUE_LAST_BUILDING_ACTION"
+															description = "[GetCancelConstructionInfo(ProductionView.GetBuildRankingItems.GetLastConstruction)]"
+															on_action = "[CancelConstruction(ProductionView.GetBuildRankingItems.GetLastConstruction)]"
+														}
+														action_tooltip = {
+															click_type = right
+															click_mode = single
+															click_modifier = default
+															visible = "[Not(ProductionView.HasLastBuildLocationItemFor(BuildingItem.GetBuildingType))]"
+															enabled = no
+															title = "DEQUEUE_LAST_BUILDING_ACTION"
+															description = "DEQUEUE_BUILDING_PRODUCTION_ACTION_NONE"
+														}
+														action_tooltip = {
+															click_type = right
+															click_mode = single
+															click_modifier = ctrl
+															visible = "[ProductionView.HasLastBuildLocationItemFor(BuildingItem.GetBuildingType)]"
+															title = "DEQUEUE_LATESTS_BUILDING_TYPE_ACTION"
+															description = "[GetCancelConstructionInfo(ProductionView.GetBuildRankingItems.GetLastConstruction)]"
+															on_action = "[ProductionView.CancelAllLastBuildLocations]"
+														}
+														action_tooltip = {
+															click_type = right
+															click_mode = single
+															click_modifier = ctrl
+															visible = "[Not(ProductionView.HasLastBuildLocationItemFor(BuildingItem.GetBuildingType))]"
+															enabled = no
+															title = "DEQUEUE_LATESTS_BUILDING_TYPE_ACTION"
+															description = "DEQUEUE_BUILDING_PRODUCTION_ACTION_NONE"
+														}
+
+														tooltipwidget = {
+															using = mass_build_ranking_and_dequeue_tt
+															blockoverride "extra_build_content" {
+																TooltipTextBlock = {
+																	visible = "[And(Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)), GreaterThan_int32(ProductionView.GetTotalRemainingUpgradeLevels(BuildingItem.GetBuildingType), '(int32)0'))]"
+																	blockoverride "text" {
+																		text = "BUILDING_MASS_UPGRADE_REMAINING_PROD"
+																	}
+																	blockoverride "textblock_background_tint" {
+																		modify_texture = {
+																			using = color_turquoise_texture
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
 										}
 									}
 								}
 							}
 							vbox = {
-								visible = "[And( ProductionView.Vars.NotExistOrHasValue( 'display', 'lists' ), ProductionView.IsLocationFilterEnabled )]"
+								visible = "[And(ProductionView.Vars.NotExistOrHasValue('display', 'lists'), ProductionView.IsLocationFilterEnabled)]"
 								layoutpolicy_horizontal = expanding
 								datamodel = "[ProductionView.GetBuildingItems]"
+								datamodel_reuse_widgets = yes
 								item = {
 									widget = {
-										visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope
-											.SetRoot(BuildingItem.GetBuildingType.MakeScope)
-											.AddScope('player', GetPlayer.MakeScope)
-											.End
-										)]"
+										visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope.SetRoot(BuildingItem.GetBuildingType.MakeScope).AddScope('player', GetPlayer.MakeScope).End)]"
 										size = { -1 60 }
 										layoutpolicy_horizontal = expanding
 										widget = {
 											size = { 97% 55 }
 											layoutpolicy_horizontal = expanding
 											parentanchor = bottom|left
-
 											location_filtered_header_with_candidate = {}
 											location_filtered_header_no_candidate = {}
 										}
 									}
 								}
 							}
-
 							expand = {}
 						}
 					}
@@ -871,13 +1075,13 @@ lateralview = {
 								}
 							}
 						}
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							using = production_view_subtabs
+						}
 					}
 
 					blockoverride "searchbar_extra_pre_content"{
-						using = production_view_subtabs
-					}
-
-					blockoverride "custom_search_filter"{
 						using = production_view_poptypes
 					}
 
@@ -1058,24 +1262,20 @@ lateralview = {
 													margin = { 5 10 }
 													margin_bottom = 2
 
-						fixedgridbox = {
-							layoutpolicy_horizontal = expanding
-							visible = "[And(CategoryBuildingTypesItem.IsExpanded, Not(ProductionView.IsLocationFilterEnabled))]"
-							ignoreinvisible = yes
-							flipdirection = yes
-							datamodel_wrap = 9
+													fixedgridbox = {
+														layoutpolicy_horizontal = expanding
+														visible = "[And(CategoryBuildingTypesItem.IsExpanded, Not(ProductionView.IsLocationFilterEnabled))]"
+														ignoreinvisible = yes
+														flipdirection = yes
+														datamodel_wrap = 9
 														addcolumn = 54
 														addrow = 60
 
 														datamodel = "[CategoryBuildingTypesItem.GetBuildingItems]"
-							item = {
-								widget = {
-									visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope
-										.SetRoot(BuildingItem.GetBuildingType.MakeScope)
-										.AddScope('player', GetPlayer.MakeScope)
-										.End
-									)]"
-									size = { 50 55 }
+														item = {
+															widget = {
+																visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope.SetRoot(BuildingItem.GetBuildingType.MakeScope).AddScope('player', GetPlayer.MakeScope).End)]"
+																size = { 50 55 }
 																datacontext = "[BuildingItem.GetBuildingType]"
 																allow_outside = yes
 
@@ -1113,9 +1313,8 @@ lateralview = {
 																					TooltipContentSection = {
 																						visible = "[BuildingItem.HasBuildingsLackingInput]"
 
-																						TooltipScrolledStringPairList = {
+																						TooltipStringPairList = {
 																							textcontext = "[BuildingItem.GetBuildingsInputGoodsInformation]"
-																							blockoverride "block_scrollarea" { maximumsize = { -1 120 } }
 																							blockoverride "textblock_background_tint"  {
 																								modify_texture = {
 																									using = color_red_texture
@@ -1273,24 +1472,20 @@ lateralview = {
 															}
 														}
 													}
-						fixedgridbox = {
-							layoutpolicy_horizontal = expanding
-							visible = "[And(CategoryBuildingTypesItem.IsExpanded, ProductionView.IsLocationFilterEnabled)]"
-							ignoreinvisible = yes
-							flipdirection = yes
-							datamodel_wrap = 9
+													fixedgridbox = {
+														layoutpolicy_horizontal = expanding
+														visible = "[And(CategoryBuildingTypesItem.IsExpanded, ProductionView.IsLocationFilterEnabled)]"
+														ignoreinvisible = yes
+														flipdirection = yes
+														datamodel_wrap = 9
 														addcolumn = 54
 														addrow = 64
 
 														datamodel = "[CategoryBuildingTypesItem.GetBuildingItems]"
-							item = {
-								widget = {
-									visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope
-										.SetRoot(BuildingItem.GetBuildingType.MakeScope)
-										.AddScope('player', GetPlayer.MakeScope)
-										.End
-									)]"
-									size = { 50 61 }
+														item = {
+															widget = {
+																visible = "[GetScriptedGui('mnt_is_building_shown').IsShown(GuiScope.SetRoot(BuildingItem.GetBuildingType.MakeScope).AddScope('player', GetPlayer.MakeScope).End)]"
+																size = { 50 61 }
 																datacontext = "[BuildingItem.GetBuildingType]"
 																allow_outside = yes
 
@@ -1386,9 +1581,8 @@ lateralview = {
 																					TooltipContentSection = {
 																						visible = "[BuildingItem.HasBuildingsLackingInput]"
 
-																						TooltipScrolledStringPairList = {
+																						TooltipStringPairList = {
 																							textcontext = "[BuildingItem.GetBuildingsInputGoodsInformation]"
-																							blockoverride "block_scrollarea" { maximumsize = { -1 120 } }
 																							blockoverride "textblock_background_tint"  {
 																								modify_texture = {
 																									using = color_red_texture
@@ -1404,8 +1598,6 @@ lateralview = {
 																			size = { 100% 100% }
 																			visible = "[BuildingItem.HasBuildings]"
 																			enabled = "[BuildingItem.HasBuildings]"
-																			onclick = "[BuildingItem.ShowBuildings]"
-
 
 																			datacontext = "[BuildingItem.GetBuilding]"
 																			tooltipwidget = {
@@ -1826,13 +2018,13 @@ lateralview = {
 								}
 							}
 						}
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							using = production_view_subtabs
+						}
 					}
 
 					blockoverride "searchbar_extra_pre_content"{
-						using = production_view_subtabs
-					}
-
-					blockoverride "custom_search_filter"{
 						using = production_view_poptypes
 					}
 
@@ -2009,13 +2201,13 @@ lateralview = {
 								}
 							}
 						}
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							using = production_view_subtabs
+						}
 					}
 
 					blockoverride "searchbar_extra_pre_content"{
-						using = production_view_subtabs
-					}
-
-					blockoverride "custom_search_filter"{
 						using = production_view_poptypes
 					}
 
@@ -2187,7 +2379,6 @@ types Buildings {
 			layoutpolicy_horizontal = expanding
 			layoutpolicy_vertical = expanding
 			ignoreinvisible = yes
-			margin_right = 15
 
 			hbox = {
 				margin = {2 1}
@@ -2206,7 +2397,7 @@ types Buildings {
 						parentanchor = center
 
 						datacontext = "[BuildingItem.GetBuildingItemUIAction]"
-						visible = "[Or(ProductionView.IsLocationFilterEnabled, Not(ProductionView.HasBestBuildLocation))]"
+						visible = yes
 
 						onmousehierarchyenter = "[BuildingItem.OnMouseEnter(PdxGuiWidget.AccessSelf)]"
 						using = button_action_provider
@@ -2246,63 +2437,6 @@ types Buildings {
 							on_action = "[SelectLocationToBuildDefault(BuildingItem.GetBuildingType)]"
 							on_action = "[SelectLocationToBuildWithLocation(BuildingItem.GetBuildingType, ProductionView.GetSelectedLocation.GetId, '(bool)no')]"
 							on_action = "[PlayAudioEffect('UI_action_building_build')]"
-						}
-					}
-
-					card_header_button_buildings = {
-						size = { 100% 40 }
-
-						parentanchor = center
-
-						datacontext = "[BuildingItem.GetBuildingItemUIAction]"
-						visible = "[And(Not(ProductionView.IsLocationFilterEnabled), ProductionView.HasBestBuildLocation)]"
-
-						onmousehierarchyenter = "[BuildingItem.OnMouseEnter(PdxGuiWidget.AccessSelf)]"
-						using = button_action_provider
-
-						datacontext = "[BuildingItem.GetBuildingType]"
-						datacontext = "[ProductionView.GetBuildRankingItems]"
-						datacontext = "[ProductionView.GetBestBuildLocation]"
-
-						tooltipwidget = {
-							using = BuildingType_production_tooltip
-						}
-
-						action_tooltip = {
-							click_type = left
-							click_mode = single
-							visible = "[And(Not(ProductionView.IsLocationFilterEnabled), BuildingItem.CanBuildAnyBuilding)]"
-							title = "BUILD_BUILDING_HEADER"
-							on_action = "[SelectLocationToBuildDefault(BuildingItem.GetBuildingType)]"
-							on_action = "[PlayAudioEffect('UI_action_building_build')]"
-						}
-
-						action_tooltip = {
-							click_type = left
-							click_mode = single
-							visible = "[And(Not(ProductionView.IsLocationFilterEnabled), Not(BuildingItem.CanBuildAnyBuilding))]"
-							title = "CAN_NOT_BUILD_ANY_BUILDING"
-							on_action = "[SelectLocationToBuildDefault(BuildingItem.GetBuildingType)]"
-						}
-
-						action_tooltip = {
-							click_type = left
-							click_mode = single
-							visible = "[ProductionView.IsLocationFilterEnabled]"
-							title = "BUILD_BUILDING_HEADER"
-							on_action = "[SelectLocationToBuildDefault(BuildingItem.GetBuildingType)]"
-							on_action = "[SelectLocationToBuildWithLocation(BuildingItem.GetBuildingType, ProductionView.GetSelectedLocation.GetId, '(bool)no')]"
-							on_action = "[PlayAudioEffect('UI_action_building_build')]"
-						}
-
-						action_tooltip = {
-							click_type = right
-							click_mode = single
-							title = "BUILDING_IN_LOCATION_ACTION"
-							cost = "BUILDING_IN_LOCATION_ACTION_COST"
-							description = "[CanBuildOrExpandBuildingInfo(BuildingType.Self, ProductionView.GetBestBuildLocation)]"
-							on_action = "[BuildOrExpandBuildingDefault(BuildingType.Self, ProductionView.GetBestBuildLocation)]"
-							enabled = "[CanBuildOrExpandBuilding(BuildingType.Self, ProductionView.GetBestBuildLocation)]"
 						}
 					}
 
@@ -2373,7 +2507,7 @@ types Buildings {
 						hbox = {
 							spacing = 5
 							margin = { 35 0 }
-							margin_right = 10
+							margin_right = 15
 							datacontext = "[BuildingItem.GetBuildingType]"
 							
 							widget = {
@@ -2394,7 +2528,8 @@ types Buildings {
 							}
 
 							text_single = {
-								size = {129 30}
+								layoutpolicy_horizontal = expanding
+								size = {-1 30}
 								autoresize = no
 								align = left|nobaseline
 								default_format = "#yellow_titles"
@@ -2405,11 +2540,34 @@ types Buildings {
 								}
 							}
 
+							icon = { #capital
+								size = { 22 22 }
+								datacontext = "[BuildingType]"
+								visible = "[BuildingType.BuildOnlyInCapital]"
+								texture = "[GetConceptTexture('capital')]"
+
+								tooltipwidget = {
+									SimpleContextualTooltipType = {
+										blockoverride "title_icon" {
+											icon = {
+												using = tooltip_title_icon_size
+												texture = "[GetConceptTexture('capital')]"
+											}
+										}
+										blockoverride "concept_link" {
+											text = "[capital|e]"
+										}
+
+										lowpriotextcontext = "BUILDING_TYPE_ONLY_IN_CAPITAL"
+									}
+								}
+							}
+
 							widget = {
-								size = {80 25}
+								size = {70 25}
 								hbox = {
 									button_square_checkbox = {
-										visible = "[And(BuildingItem.HasBuildings, BuildingItem.GetBuildingType.IsMultipleLevels)]"
+										visible = "[And3(BuildingItem.HasBuildings, BuildingItem.GetBuildingType.IsMultipleLevels, Not(BuildingItem.GetBuildingType.OnlyEstatesCanBuild))]"
 										size = { 20 20 }
 										tooltipwidget = {
 											using = AutoExpand_Building_Tooltip
@@ -2437,6 +2595,7 @@ types Buildings {
 
 										action_tooltip = {
 											on_action = "[ToggleAutoExpandBuildings(BuildingItem.GetBuildingsFunc)]"
+											description = "[GetAutoExpandBuildingsAutomationWarning]"
 											title = "[SelectLocalization( AreBuildingsAutoExpand(BuildingItem.GetBuildingsFunc), 'TOGGLE_AUTO_EXPAND_ALL_ON', 'TOGGLE_AUTO_EXPAND_ALL_OFF' )]"
 										}
 									}
@@ -2522,7 +2681,7 @@ types Buildings {
 
 							# PROFIT
 							widget = {
-								size = {120 40}
+								size = {110 40}
 								hbox = {
 									visible = "[And(BuildingItem.GetBuildingType.IsProducing, BuildingItem.HasPossibleBuildings)]"
 									spacing = 3
@@ -2596,7 +2755,7 @@ types Buildings {
 
 							# LEVELS
 							widget = {
-								size = { 75 40 }
+								size = { 70 40 }
 								hbox = {
 									expand = {}
 									spacing = 5
@@ -2640,69 +2799,77 @@ types Buildings {
 										}
 									}
 
-									icon = {
-										visible = "[And3(BuildingItem.CanBuildAnyBuilding, BuildingItem.GetBuildingType.BuildOnlyInCapital, Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
-										texture = "gfx/interface/icons/flat_icons/building_panel/build_capital.dds"
-										size = { 24 24 }
+									text_single = {
+										align = right|nobaseline
+										maximumsize = {30 -1}
+										visible = "[GreaterThan_CFixedPoint(BuildingItem.GetTotalLevelsUnderUpgrade, '(CFixedPoint)0')]"
+										raw_text = "#G -[BuildingItem.GetTotalLevelsUnderUpgrade|0]#!"
+										fontsize = 15
 									}
 
-									icon = {
-										visible = "[And(BuildingItem.CanBuildAnyBuilding, Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType))]"
-										texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
-										modify_texture = {
-											using = color_gold_texture
-										}
-										modify_texture = {
-											using = overlay_window_texture
-											blend_mode = overlay
-											alpha = 0.9
-										}
-										size = { 24 24 }
-									}
+									# icon = {
+									# 	visible = "[And3(BuildingItem.CanBuildAnyBuilding, BuildingItem.GetBuildingType.BuildOnlyInCapital, Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
+									# 	texture = "gfx/interface/icons/flat_icons/building_panel/build_capital.dds"
+									# 	size = { 24 24 }
+									# }
 
-									icon = {
-										visible = "[And3(BuildingItem.CanBuildAnyBuilding, Not(BuildingItem.GetBuildingType.BuildOnlyInCapital), Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
-										texture = "gfx/interface/icons/flat_icons/building_panel/build.dds"
-										size = { 24 24 }
-									}
+									# icon = {
+									# 	visible = "[And(BuildingItem.CanBuildAnyBuilding, Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType))]"
+									# 	texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
+									# 	modify_texture = {
+									# 		using = color_gold_texture
+									# 	}
+									# 	modify_texture = {
+									# 		using = overlay_window_texture
+									# 		blend_mode = overlay
+									# 		alpha = 0.9
+									# 	}
+									# 	size = { 24 24 }
+									# }
 
-									icon = {
-										visible = "[And(Not(BuildingItem.CanBuildAnyBuilding), BuildingItem.GetBuildingType.BuildOnlyInCapital)]"
-										texture = "gfx/interface/icons/flat_icons/building_panel/not_build_capital.dds"
-										size = { 24 24 }
+									# icon = {
+									# 	visible = "[And3(BuildingItem.CanBuildAnyBuilding, Not(BuildingItem.GetBuildingType.BuildOnlyInCapital), Not(Player.CanUpgradeBuildingType(BuildingItem.GetBuildingType)))]"
+									# 	texture = "gfx/interface/icons/flat_icons/building_panel/build.dds"
+									# 	size = { 24 24 }
+									# }
 
-										modify_texture = {
-											using = overlay_window_texture
-											blend_mode = overlay
-											alpha = 0.7
-										}
+									# icon = {
+									# 	visible = "[And(Not(BuildingItem.CanBuildAnyBuilding), BuildingItem.GetBuildingType.BuildOnlyInCapital)]"
+									# 	texture = "gfx/interface/icons/flat_icons/building_panel/not_build_capital.dds"
+									# 	size = { 24 24 }
 
-										modify_texture = {
-											texture = "gfx/interface/buttons/buttons_texture.dds"
-											texture_density = 2
-											blend_mode = overlay
-											alpha = 0.6
-										}
-									}
+									# 	modify_texture = {
+									# 		using = overlay_window_texture
+									# 		blend_mode = overlay
+									# 		alpha = 0.7
+									# 	}
 
-									icon = {
-										visible = "[And(Not(BuildingItem.CanBuildAnyBuilding), Not(BuildingItem.GetBuildingType.BuildOnlyInCapital))]"
-										texture = "gfx/interface/icons/flat_icons/building_panel/not_build.dds"
-										size = { 24 24 }
+									# 	modify_texture = {
+									# 		texture = "gfx/interface/buttons/buttons_texture.dds"
+									# 		texture_density = 2
+									# 		blend_mode = overlay
+									# 		alpha = 0.6
+									# 	}
+									# }
 
-										modify_texture = {
-											using = overlay_window_texture
-											blend_mode = overlay
-											alpha = 0.7
-										}
+									# icon = {
+									# 	visible = "[And(Not(BuildingItem.CanBuildAnyBuilding), Not(BuildingItem.GetBuildingType.BuildOnlyInCapital))]"
+									# 	texture = "gfx/interface/icons/flat_icons/building_panel/not_build.dds"
+									# 	size = { 24 24 }
 
-										modify_texture = {
-											texture = "gfx/interface/buttons/buttons_texture.dds"
-											texture_density = 2
-											blend_mode = overlay
-											alpha = 0.6
-										}
-									}
+									# 	modify_texture = {
+									# 		using = overlay_window_texture
+									# 		blend_mode = overlay
+									# 		alpha = 0.7
+									# 	}
+
+									# 	modify_texture = {
+									# 		texture = "gfx/interface/buttons/buttons_texture.dds"
+									# 		texture_density = 2
+									# 		blend_mode = overlay
+									# 		alpha = 0.6
+									# 	}
+									# }
 								}
 							}
 						}
@@ -3086,14 +3253,16 @@ types Buildings {
 		datamodel = "[BuildingItem.GetBuildingCandidates]"
 		item = {
 			widget = {
-				size = { -1 55 }
+				size = { -1 60 }
 				layoutpolicy_horizontal = expanding
 
 				hbox = {
 					layoutpolicy_horizontal = expanding
 					layoutpolicy_vertical = expanding
 					using = bg_cabinet_card_frame
-					margin = {5 5}
+					margin = {2 5}
+					margin_right = 4
+					margin_bottom = 3
 
 					datacontext = "[BuildingCandidate.GetBuilding]"
 					datacontext = "[Building.GetType]"
@@ -3149,9 +3318,8 @@ types Buildings {
 										using = Building_tooltip
 									}
 									piechart = {
-										visible = "[Not(BuildingCandidate.IsForeign)]"
 										using = bg_circle
-										size = { 33 33 }
+										size = { 36 36 }
 										parentanchor = center
 										datacontext = "[BuildingCandidate.GetBuilding]"
 										using = piechart_angles
@@ -3184,6 +3352,18 @@ types Buildings {
 								visible = "[BuildingItem.HasBuildingsLackingInput]"
 								using = bg_circle
 							}
+
+							widget = {
+								size = { 22 14 }
+								parentanchor = bottom|left
+								position = { 2 -2 }
+								visible = "[BuildingCandidate.IsForeign]"
+								datacontext = "[BuildingCandidate.GetBuilding.GetOwner]"
+
+								country_flag_mini = {
+									parentanchor = center
+								}
+							}
 						}
 					}
 
@@ -3196,7 +3376,7 @@ types Buildings {
 
 						widget = {
 							layoutpolicy_horizontal = expanding
-							size = { -1 45 }
+							size = { -1 50 }
 
 							tooltipwidget = {
 								using = Building_tooltip
@@ -3223,24 +3403,13 @@ types Buildings {
 
 							hbox = {
 								layoutpolicy_horizontal = expanding
-								maximumsize = { -1 45 }
+								maximumsize = { -1 50 }
 								ignoreinvisible = yes
 								spacing = 6
 								margin_left = 3
-								margin_right = 5
-
-								widget = {
-									size = { 35 30 }
-									visible = "[BuildingCandidate.IsForeign]"
-									datacontext = "[BuildingCandidate.GetBuilding.GetOwner]"
-
-									country_flag_small = {
-										parentanchor = center
-									}
-								}
+								margin_right = 3
 
 								vbox = { #name
-									layoutpolicy_horizontal = expanding
 									spacing = 4
 									margin_top = 1
 
@@ -3250,7 +3419,7 @@ types Buildings {
 
 										text_single = {
 											autoresize = no
-											size = { 155 15 }
+											size = { 120 15 }
 											align = left|nobaseline
 											default_format = "#yellow_titles"
 											text = "[BuildingCandidate.GetBuilding.GetName]"
@@ -3293,307 +3462,315 @@ types Buildings {
 
 										expand = {}
 									}
-
-									# hbox = {
-									# 	datacontext = "[LocationToBuildItem.GetBuildingType.GetPopType]"
-										
-									# 	hbox = {
-									# 		spacing = 3
-									# 		layoutpolicy_vertical = expanding
-									# 		text_single = {
-									# 			layoutpolicy_vertical = expanding
-									# 			maximumsize = { 60 -1 }
-									# 			align = center|nobaseline
-									# 			autoresize = yes
-									# 			fontsize = 13
-									# 			text = "[Location.GetExpectedUnEmployed(PopType.Self)]"
-									# 			sort_by_highlight = {
-									# 				size = { 105% 200% }
-									# 				name = "population"
-									# 			}
-									# 		}
-		
-									# 		icon = {
-									# 			size = { 15 15 }
-									# 			texture = "[GetGraphicalCultureTextureForCountryPopType(PopType.Self, Location.GetOwner.Self)]"
-									# 		}
-									# 	}
-									# 	tooltipwidget = {
-									# 		using = locationview_employed_tt
-									# 	}
-									# }
 								}
 
-								# expand = {}
+								expand = {}
 	
 								hbox = {
-									spacing = 5
+									spacing = 4
 
-									hbox = {
-										spacing = 5
-										layoutpolicy_horizontal = expanding
+									vbox = {
+										margin = { 5 0 }
+										ignoreinvisible = yes
 
-										hbox = {
-											margin_right = 3
-											spacing = 6
+										button_square_checkbox = {
+											visible = "[And(BuildingItem.HasBuildings, BuildingItem.GetBuildingType.IsProducing)]"
+											size = { 20 16 }
+											enabled = "[CanSubsidizeBuildings(BuildingItem.GetBuildingsFunc)]"
+											tooltipwidget = {
+												using = Building_Subsidized_Tooltip
+											}
+
+											blockoverride "check_texture" {
+												texture = "gfx/interface/icons/flat_icons/building_panel/subsidized.dds"
+											}
+											blockoverride "checked_icon_size" {
+												size = { 14 14 }
+											}
+											blockoverride "unchecked_icon_size" {
+												size = { 14 14 }
+											}
+											blockoverride "checked_visible" {
+												visible = "[AreBuildingsSubsidized(BuildingItem.GetBuildingsFunc)]"
+											}
+											blockoverride "unchecked_visible" {
+												visible = "[Not(AreBuildingsSubsidized(BuildingItem.GetBuildingsFunc))]"
+											}
+											background = {
+												texture = "gfx/interface/buttons/checkbox_bg_square.dds"
+												texture_density = 2
+
+												modify_texture = {
+													using = color_market_grey_texture
+													blend_mode = add
+													alpha = 0.5
+												}
+											}
+
+											action_tooltip = {
+												on_action = "[ToggleSubsidizeBuildings(BuildingItem.GetBuildingsFunc)]"
+												on_action = "[PlayAudioEffect(Concatenate('UI_action_building_subsidize', GetToggleSuffix(AreBuildingsSubsidized(BuildingItem.GetBuildingsFunc))))]"
+												enabled = "[CanSubsidizeBuildings(BuildingItem.GetBuildingsFunc)]"
+												title = "[SelectLocalization( BuildingCandidate.GetBuilding.IsSubsidized, 'TOGGLE_SUBSIDIZE_ON', 'TOGGLE_SUBSIDIZE_OFF' )]"
+											}
+										}
+
+										button_square_checkbox = {
+											visible = "[And(BuildingItem.HasBuildings, BuildingItem.ShowCloseAll)]"
+											size = { 20 16 }
+											enabled = "[CanToggleBuildings(BuildingItem.GetBuildingsFunc)]"
+											tooltipwidget = {
+												using = Building_Open_Tooltip
+											}
+
+											blockoverride "check_texture" {
+												texture = "gfx/interface/icons/achievements/padlock.dds"
+											}
+											blockoverride "checked_icon_size" {
+												size = { 14 14 }
+											}
+											blockoverride "unchecked_icon_size" {
+												size = { 14 14 }
+											}
+											blockoverride "checked_visible" {
+												visible = "[AreBuildingsClosed(BuildingItem.GetBuildingsFunc)]"
+											}
+											blockoverride "unchecked_visible" {
+												visible = "[Not(AreBuildingsClosed(BuildingItem.GetBuildingsFunc))]"
+											}
+											background = {
+												texture = "gfx/interface/buttons/checkbox_bg_square.dds"
+												texture_density = 2
+
+												modify_texture = {
+													using = color_market_grey_texture
+													blend_mode = add
+													alpha = 0.5
+												}
+											}
+
+											action_tooltip = {
+												on_action = "[ToggleBuildings(BuildingItem.GetBuildingsFunc)]"
+												enabled = "[CanToggleBuildings(BuildingItem.GetBuildingsFunc)]"
+												title = "[SelectLocalization( BuildingCandidate.GetBuilding.IsOpen, 'TOGGLE_CLOSE_ON', 'TOGGLE_CLOSE_OFF' )]"
+											}
+										}
+
+										button_square_checkbox = {
+											visible = "[And(ObjectsEqual(Building.GetOwner, Player.Self), BuildingType.IsMultipleLevels)]"
+											size = { 20 16 }
+											tooltipwidget = { using = AutoExpand_Building_Tooltip }
+
+											blockoverride "check_texture" {
+												texture = "gfx/interface/icons/flat_icons/mass_upgrade.dds"
+											}
+											blockoverride "checked_icon_size" {
+												size = { 14 14 }
+											}
+											blockoverride "unchecked_icon_size" {
+												size = { 14 14 }
+											}
+											blockoverride "checked_visible" {
+												visible = "[IsAutoExpand(Building.Self)]"
+											}
+											blockoverride "unchecked_visible" {
+												visible = "[Not(IsAutoExpand(Building.Self))]"
+											}
+											background = {
+												texture = "gfx/interface/buttons/checkbox_bg_square.dds"
+												texture_density = 2
+
+												modify_texture = {
+													using = color_market_grey_texture
+													blend_mode = add
+													alpha = 0.5
+												}
+											}
+
+											action_tooltip = {
+												click_type = left
+												title = "[SelectLocalization(IsAutoExpand(Building.Self), 'TOGGLE_AUTO_EXPAND_ON', 'TOGGLE_AUTO_EXPAND_OFF')]"
+												on_action = "[ToggleAutoExpandBuilding(Building.Self)]"
+												description = "[GetAutoExpandBuildingsAutomationWarning]"
+											}
+										}
+									}
+
+									vbox = {
+										datacontext = "[BuildingCandidate.GetLocationToBuildItem]"
+										visible = "[LocationToBuildItem.HasConstructedBuildingLevels]"
+										spacing = 1
+										datamodel = "[LocationToBuildItem.GetBuildingSlots]"
+										item = {
+											production_method_slot_circle = {}
+										}
+									}
+
+									widget = { #efficiency
+										size = { 70 -1 }
+										layoutpolicy_vertical = expanding
+										vbox = {
 											layoutpolicy_horizontal = expanding
-
-											widget = { # profit/income/upkeep
-												size = { 60 36 }
-												hbox = { #profit/income
-													expand = {}
-													visible = "[BuildingItem.GetBuildingType.IsProducing]"
-							
-													vbox = {#profitable
-														visible = "[GreaterThan_CFixedPoint(Building.GetProfit, '(CFixedPoint)0')]"
-	
-														tooltipwidget = {
-															using = BuildingProfit_Tooltip
-														}
-	
-														text_single = { #profit
-															size = { 60 18 }
-															autoresize = no
-															align = nobaseline|right
-															fontsize = 14
-															raw_text = "+[Building.GetProfitPerLevel|2]@wealth!"
-											
-															sort_by_highlight = {
-																size = { 105% 100% }
-																name = "profit"
-															}
-														}
-		
-														text_single = { #income
-															size = { 60 18 }
-															autoresize = no
-															align = nobaseline|right
-															fontsize = 14
-															raw_text = "[Building.GetIncomeToOwnerPerLevel|+=2]@income!"
-											
-															sort_by_highlight = {
-																size = { 105% 100% }
-																name = "income"
-															}
-														}
-													}
-							
-													text_single = { #unprofitable and not subsidized
-														visible = "[And(LessThanOrEqualTo_CFixedPoint(Building.GetProfit, '(CFixedPoint)0'), Not(Building.IsSubsidized))]"
-														maximumsize = { 60 18 }
-														fontsize = 14
-														raw_text = "[Building.GetIncomeToOwnerPerLevel|+=2]@income!"
-							
-														tooltipwidget = {
-															using = BuildingProfit_Tooltip
-														}
-										
-														sort_by_highlight = {
-															size = { 105% 200% }
-															name = "income"
-														}
-													}
-							
-													text_single = { # subsidized
-														visible = "[And(LessThanOrEqualTo_CFixedPoint(Building.GetProfit, '(CFixedPoint)0'), Building.IsSubsidized)]"
-														maximumsize = { 60 18 }
-														fontsize = 14
-														raw_text = "#L [Building.GetIncomeToOwnerPerLevel|2]#!@income!"
-														tooltipwidget = {
-															using = BuildingProfit_Tooltip
-														}
-										
-														sort_by_highlight = {
-															size = { 105% 200% }
-															name = "income"
-														}
-													}
-												}
-
-												hbox = { #upkeep
-													expand = {}
-													visible = "[Not(BuildingItem.GetBuildingType.IsProducing)]"
-							
+											layoutpolicy_vertical = expanding
+											vbox = {
+												visible = "[Building.IsProducing]"
+												layoutpolicy_horizontal = expanding
+												datamodel = "[Building.GetProductionMethods]"
+												spacing = 6
+												item = {
 													text_single = {
-														maximumsize = { 60 18 }
+														size = { 70 18 }
+														autoresize = no
+														#raw_text = "[Building.GetBuildingProductionEfficiency(ActiveProductionMethod.GetMethod)|+=2%]@efficiency!"
+														text = "BUILDING_PROD_EFFICIENCY"
+														align = nobaseline|right
+														default_format = "@bold!"
 														fontsize = 14
-														raw_text = "#R [Building.GetUpkeep|2]#!@expense!"
 														tooltipwidget = {
-															using = Building_upkeep_tooltip
+															using = building_production_efficiency_tooltip
+														}
+
+														using = bg_number_container_bckg
+														blockoverride "number_container_extra" {
+															margin = { 1 0 }
+															margin_left = 0
 														}
 										
-														# sort_by_highlight = {
-														# 	size = { 105% 200% }
-														# 	name = "income"
-														# }
+														sort_by_highlight = {
+															size = { 105% 200% }
+															name = "production_efficiency"
+														}
 													}
 												}
 											}
-	
-											widget = { #efficiency
-												size = { 70 44 }
-												vbox = {
-													layoutpolicy_horizontal = expanding
-													vbox = { #built
-														visible = "[Building.IsProducing]"
-														layoutpolicy_horizontal = expanding
-														datamodel = "[Building.GetProductionMethods]"
-														item = {
-															text_single = {
-																size = { 70 18 }
-																autoresize = no
-																#raw_text = "[Building.GetBuildingProductionEfficiency(ActiveProductionMethod.GetMethod)|+=2%]@efficiency!"
-																text = "BUILDING_PROD_EFFICIENCY"
-																align = nobaseline|right
-																default_format = "@bold!"
-																fontsize = 14
-																tooltipwidget = {
-																	using = building_production_efficiency_tooltip
-																}
-		
-																sort_by_highlight = {
-																	size = { 105% 200% }
-																	name = "production_efficiency"
-																}
-															}
-														}
+											# hbox = {
+											# 	margin_right = 2
+											# 	margin_left = 12
+											# 	progressbar_framed = {
+											# 		visible = "[Building.GetHasEstablishmentRamp]"
+											# 		# layoutpolicy_horizontal = expanding
+											# 		size = { 56 6 }
+											# 		using = progress_bar_goldish_blue
+											# 		min = 0
+											# 		max = 1
+											# 		value = "[FixedPointToFloat(Building.GetEstablishmentProgressFraction)]"
+											# 		direction = horizontal
+											# 		tooltipwidget = {
+											# 			SimpleContextualStringPairTooltipType = {
+											# 				blockoverride "title_icon" {
+											# 					icon = {
+											# 						using = tooltip_title_icon_size
+											# 						texture = "gfx/interface/icons/flat_icons/building_panel/establishment.dds"
+											# 					}
+											# 				}
+											# 				blockoverride "concept_link" {
+											# 					text = "[establishment|e]"
+											# 				}
+											# 				blockoverride "tooltip_textcontext" {
+											# 					textcontext = "[Building.GetEstablishmentTooltip]"
+											# 				}
+											# 			}
+											# 		}
+											# 	}
+											# }
+										}
+									}
+
+									widget = { # profit/income/upkeep
+										size = { 60 36 }
+										hbox = { #profit/income
+											expand = {}
+											visible = "[BuildingItem.GetBuildingType.IsProducing]"
+							
+											vbox = {#profitable
+												visible = "[GreaterThan_CFixedPoint(Building.GetProfit, '(CFixedPoint)0')]"
+										
+												tooltipwidget = {
+													using = BuildingProfit_Tooltip
+												}
+
+												text_single = { #profit
+													size = { 60 18 }
+													autoresize = no
+													align = nobaseline|right
+													fontsize = 14
+													raw_text = "+[Building.GetProfitPerLevel|2]@wealth!"
+
+													sort_by_highlight = {
+														size = { 105% 100% }
+														name = "profit"
 													}
-													hbox = {
-														margin_right = 2
-														margin_left = 12
-														progressbar = {
-															visible = "[Building.GetHasEstablishmentRamp]"
-															# layoutpolicy_horizontal = expanding
-															size = { 56 6 }
-															using = progress_bar_goldish_blue
-															min = 0
-															max = 1
-															value = "[FixedPointToFloat(Building.GetEstablishmentProgressFraction)]"
-															direction = horizontal
-															tooltipwidget = {
-																SimpleContextualStringPairTooltipType = {
-																	blockoverride "title_icon" {
-																		icon = {
-																			using = tooltip_title_icon_size
-																			texture = "gfx/interface/icons/flat_icons/building_panel/establishment.dds"
-																		}
-																	}
-																	blockoverride "concept_link" {
-																		text = "[establishment|e]"
-																	}
-																	blockoverride "tooltip_textcontext" {
-																		textcontext = "[Building.GetEstablishmentTooltip]"
-																	}
-																}
-															}
-														}
+												}
+
+												text_single = { #income
+													size = { 60 18 }
+													autoresize = no
+													align = nobaseline|right
+													fontsize = 14
+													raw_text = "[Building.GetIncomeToOwnerPerLevel|+=2]@income!"
+
+													sort_by_highlight = {
+														size = { 105% 100% }
+														name = "income"
 													}
+												}
+											}
+
+											text_single = { #unprofitable and not subsidized
+												visible = "[And(LessThanOrEqualTo_CFixedPoint(Building.GetProfit, '(CFixedPoint)0'), Not(Building.IsSubsidized))]"
+												maximumsize = { 60 18 }
+												fontsize = 14
+												raw_text = "[Building.GetIncomeToOwnerPerLevel|+=2]@income!"
+
+												tooltipwidget = {
+													using = BuildingProfit_Tooltip
+												}
+
+												sort_by_highlight = {
+													size = { 105% 200% }
+													name = "income"
+												}
+											}
+
+											text_single = { # subsidized
+												visible = "[And(LessThanOrEqualTo_CFixedPoint(Building.GetProfit, '(CFixedPoint)0'), Building.IsSubsidized)]"
+												maximumsize = { 60 18 }
+												fontsize = 14
+												raw_text = "#L [Building.GetIncomeToOwnerPerLevel|2]#!@income!"
+												tooltipwidget = {
+													using = BuildingProfit_Tooltip
+												}
+
+												sort_by_highlight = {
+													size = { 105% 200% }
+													name = "income"
 												}
 											}
 										}
 
-									}
+										hbox = { #upkeep
+											expand = {}
+											visible = "[Not(BuildingItem.GetBuildingType.IsProducing)]"
 
-									widget = {
-										size = { 42 44 }
-
-										hbox = {
-											spacing = 2
-											widget = { # AutoExpand slot
-												size = { 20 44 }
-												button_square_checkbox = {
-													visible = "[And(ObjectsEqual(Building.GetOwner, Player.Self), BuildingType.IsMultipleLevels)]"
-													size = { 20 20 }
-													parentanchor = center
-													widgetanchor = center
-													tooltipwidget = { using = AutoExpand_Building_Tooltip }
-													blockoverride "check_texture" {
-														texture = "gfx/interface/icons/flat_icons/mass_upgrade.dds"
-													}
-													blockoverride "checked_visible" {
-														visible = "[IsAutoExpand(Building.Self)]"
-													}
-													blockoverride "unchecked_visible" {
-														visible = "[Not(IsAutoExpand(Building.Self))]"
-													}
-													background = {
-														texture = "gfx/interface/buttons/checkbox_bg_square.dds"
-														texture_density = 2
-														modify_texture = {
-															using = color_market_grey_texture
-															blend_mode = add
-															alpha = 0.5
-														}
-													}
-													action_tooltip = {
-														click_type = left
-														title = "[SelectLocalization(IsAutoExpand(Building.Self), 'TOGGLE_AUTO_EXPAND_ON', 'TOGGLE_AUTO_EXPAND_OFF')]"
-														on_action = "[ToggleAutoExpandBuilding(Building.Self)]"
-													}
-												}
-											}
-
-											vbox = { # Subsidize + Close
-												spacing = 1
-
-												button_square_checkbox = {
-													visible = "[And(BuildingItem.HasBuildings, BuildingItem.GetBuildingType.IsProducing)]"
-													size = { 20 20 }
-													enabled = "[CanSubsidizeBuildings(BuildingItem.GetBuildingsFunc)]"
-													tooltipwidget = {
-														using = Building_Subsidized_Tooltip
-													}
-
-													blockoverride "check_texture" {
-														texture = "gfx/interface/icons/flat_icons/building_panel/subsidized.dds"
-													}
-													blockoverride "checked_visible" {
-														visible = "[AreBuildingsSubsidized(BuildingItem.GetBuildingsFunc)]"
-													}
-													blockoverride "unchecked_visible" {
-														visible = "[Not(AreBuildingsSubsidized(BuildingItem.GetBuildingsFunc))]"
-													}
-
-													action_tooltip = {
-														on_action = "[ToggleSubsidizeBuildings(BuildingItem.GetBuildingsFunc)]"
-														on_action = "[PlayAudioEffect(Concatenate('UI_action_building_subsidize', GetToggleSuffix(AreBuildingsSubsidized(BuildingItem.GetBuildingsFunc))))]"
-														enabled = "[CanSubsidizeBuildings(BuildingItem.GetBuildingsFunc)]"
-														title = "[SelectLocalization( BuildingCandidate.GetBuilding.IsSubsidized, 'TOGGLE_SUBSIDIZE_ON', 'TOGGLE_SUBSIDIZE_OFF' )]"
-													}
+											text_single = {
+												maximumsize = { 60 18 }
+												fontsize = 14
+												raw_text = "#R [Building.GetUpkeep|2]#!@expense!"
+												tooltipwidget = {
+													using = Building_upkeep_tooltip
 												}
 
-												button_square_checkbox = {
-													visible = "[And(BuildingItem.HasBuildings, BuildingItem.ShowCloseAll)]"
-													size = { 20 20 }
-													enabled = "[CanToggleBuildings(BuildingItem.GetBuildingsFunc)]"
-													tooltipwidget = {
-														using = Building_Open_Tooltip
-													}
-
-													blockoverride "check_texture" {
-														texture = "gfx/interface/icons/achievements/padlock.dds"
-													}
-													blockoverride "checked_visible" {
-														visible = "[AreBuildingsClosed(BuildingItem.GetBuildingsFunc)]"
-													}
-													blockoverride "unchecked_visible" {
-														visible = "[Not(AreBuildingsClosed(BuildingItem.GetBuildingsFunc))]"
-													}
-
-													action_tooltip = {
-														on_action = "[ToggleBuildings(BuildingItem.GetBuildingsFunc)]"
-														enabled = "[CanToggleBuildings(BuildingItem.GetBuildingsFunc)]"
-														title = "[SelectLocalization( BuildingCandidate.GetBuilding.IsOpen, 'TOGGLE_CLOSE_ON', 'TOGGLE_CLOSE_OFF' )]"
-													}
-												}
+												# sort_by_highlight = {
+												# 	size = { 105% 200% }
+												# 	name = "income"
+												# }
 											}
 										}
 									}
-
 
 									widget = { #builder
 										layoutpolicy_vertical = expanding
-										size = { 98 -1 }
+										size = { 120 -1 }
 										alwaystransparent = no
 										filter_mouse = left|right
 										widget = {
@@ -3608,7 +3785,9 @@ types Buildings {
 											hbox = {
 												spacing = 5
 												using = bg_text_mask_container_brown
-												margin = {4 5}
+												margin = {3 5}
+												parentanchor = center
+												size = { 60 -1 }
 
 												button_square_minus = {
 													size = { 20 20 }
@@ -3637,15 +3816,15 @@ types Buildings {
 												button_square_minus = {
 													size = { 20 20 }
 													visible = "[GreaterThan_int32(Building.GetLevelsUnderConstruction, '(int32)0')]"
-													enabled = "[CanCancelConstruction(Building.GetUnderConstructionForPlayer.Self)]"
+													enabled = "[CanCancelBuildingConstruction(Building.Self)]"
 													action_tooltip = {
 														click_mode = single
 														click_type = left
 														title = "DEQUEUE_BUILDING_ACTION"
 														visible = "[GreaterThan_int32(Building.GetLevelsUnderConstruction, '(int32)0')]"
-														enabled = "[CanCancelConstruction(Building.GetUnderConstructionForPlayer.Self)]"
-														description = "[GetCancelConstructionInfo(Building.GetUnderConstructionForPlayer.Self)]"
-														on_action = "[CancelConstruction(Building.GetUnderConstructionForPlayer.Self)]"
+														enabled = "[CanCancelBuildingConstruction(Building.Self)]"
+														description = "[GetCancelBuildingConstructionInfo(Building.Self)]"
+														on_action = "[CancelBuildingConstruction(Building.Self)]"
 													}
 
 													tooltipwidget = { BasicFunctionalTooltip = {} }
@@ -3654,62 +3833,128 @@ types Buildings {
 													}
 												}
 
-												text_single = {
-													size = { 40 20 }
-													autoresize = no
-													visible = "[And(Not(BuildingCandidate.GetBuilding.IsUnderConstruction), Not(And(BuildingCandidate.GetBuilding.CanPlayerUpgrade, BuildingCandidate.GetBuilding.IsPlayerUpgrading)))]"
-													raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y] / [BuildingCandidate.GetMaxLevel|0Y]"
-													align = center
-													default_format = "#overview_text"
+												vbox = {
+													using = layoutpolicy_expanding
 
-													tooltipwidget = {
-														using = BuildingMaxLevel_Tooltip
+													widget = {
+														size = { 55 20 }
+														layoutpolicy_vertical = expanding
+														text_single = {
+															size = { 55 20 }
+															parentanchor = center
+															autoresize = no
+															visible = "[And(Not(BuildingCandidate.GetBuilding.IsUnderConstruction), Not(And(BuildingCandidate.GetBuilding.CanPlayerUpgrade, BuildingCandidate.GetBuilding.IsPlayerUpgrading)))]"
+															raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y] / [BuildingCandidate.GetMaxLevel|0Y]"
+															align = center
+															default_format = "#overview_text"
+
+															tooltipwidget = {
+																using = BuildingMaxLevel_Tooltip
+															}
+
+															sort_by_highlight = {
+																name = "level"
+															}
+														}
+
+														text_single = {
+															size = { 55 20 }
+															parentanchor = center
+															autoresize = no
+															visible = "[And3(Not(BuildingCandidate.GetBuilding.IsUnderConstruction), BuildingCandidate.GetBuilding.CanPlayerUpgrade, BuildingCandidate.GetBuilding.IsPlayerUpgrading)]"
+															raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y](#G -[BuildingCandidate.GetBuilding.GetLevelsUnderUpgrade|0]#!) / [BuildingCandidate.GetMaxLevel|0Y]"
+															align = center
+															default_format = "#overview_text"
+
+															tooltipwidget = {
+																using = BuildingMaxLevel_Tooltip
+															}
+
+															sort_by_highlight = {
+																name = "level"
+															}
+														}
+
+														text_single = {
+															size = { 55 20 }
+															parentanchor = center
+															autoresize = no
+															visible = "[BuildingCandidate.GetBuilding.IsUnderConstruction]"
+															raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y] ([BuildingCandidate.GetBuilding.GetLevelsUnderConstruction|0+=]) / [BuildingCandidate.GetMaxLevel|0Y]"
+															align = center
+															default_format = "#overview_text"
+
+															tooltipwidget = {
+																using = BuildingMaxLevel_Tooltip
+															}
+
+															sort_by_highlight = {
+																name = "level"
+															}
+														}
 													}
 
-													sort_by_highlight = {
-														name = "level"
-													}
-												}
-
-												text_single = {
-													size = { 40 20 }
-													autoresize = no
-													visible = "[And3(Not(BuildingCandidate.GetBuilding.IsUnderConstruction), BuildingCandidate.GetBuilding.CanPlayerUpgrade, BuildingCandidate.GetBuilding.IsPlayerUpgrading)]"
-													raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y](#G -[BuildingCandidate.GetBuilding.GetLevelsUnderUpgrade|0]#!) / [BuildingCandidate.GetMaxLevel|0Y]"
-													align = center
-													default_format = "#overview_text"
-
-													tooltipwidget = {
-														using = BuildingMaxLevel_Tooltip
-													}
-
-													sort_by_highlight = {
-														name = "level"
-													}
-												}
-
-												text_single = {
-													size = { 40 20 }
-													autoresize = no
-													visible = "[BuildingCandidate.GetBuilding.IsUnderConstruction]"
-													raw_text = "[BuildingCandidate.GetBuilding.GetLevel|0Y] ([BuildingCandidate.GetBuilding.GetLevelsUnderConstruction|0+=]) / [BuildingCandidate.GetMaxLevel|0Y]"
-													align = center
-													default_format = "#overview_text"
-
-													tooltipwidget = {
-														using = BuildingMaxLevel_Tooltip
+													building_expansion_risk_badge = {
+														datacontext = "[BuildingCandidate.GetBuilding.GetType]"
+														datacontext = "[BuildingCandidate.GetBuilding.GetLocation]"
+														blockoverride "building_expansion_risk_badge_visible" {
+															visible = "[And(BuildingCandidate.GetBuilding.GetType.IsProducing, CanExpandBuilding(BuildingCandidate.GetBuilding))]"
+														}
+														blockoverride "building_expansion_risk_badge_no_risk_label" {
+															text = "BUILDING_CONSTRUCTION_RISK_LABEL_NONE_BUILDING_CANDIDATE"
+														}
+														blockoverride "building_expansion_risk_badge_green_label" {
+															text = "BUILDING_CONSTRUCTION_RISK_LABEL_GREEN_BUILDING_CANDIDATE"
+														}
+														blockoverride "building_expansion_risk_badge_yellow_label" {
+															text = "BUILDING_CONSTRUCTION_RISK_LABEL_YELLOW_BUILDING_CANDIDATE"
+														}
+														blockoverride "building_expansion_risk_badge_red_label" {
+															text = "BUILDING_CONSTRUCTION_RISK_LABEL_RED_BUILDING_CANDIDATE"
+														}
+														blockoverride "building_expansion_risk_badge_impact_warning_visible" {
+															visible = "[BuildingCandidate.HasGoodsImpactedByConstruction]"
+														}
 													}
 
-													sort_by_highlight = {
-														name = "level"
-													}
 												}
 
 												button_square_plus = {
-													size = { 20 20 }
+													size = { 21 21 }
 													visible = "[Not(BuildingCandidate.GetBuilding.CanPlayerUpgrade)]"
-													blockoverride "square_icon_size" {
-														size = {13 13}
+													blockoverride "square_icon_content" {
+														icon = {
+															visible = "[Not(GreaterThan_CFixedPoint(GetRemainingUpgradeLevels(BuildingCandidate.GetBuilding.GetType, BuildingCandidate.GetBuilding.GetLocation), '(CFixedPoint)0'))]"
+															size = { 12 12 }
+															parentanchor = center
+															texture = "gfx/interface/buttons/flats/add.dds"
+															texture_density = 2
+															modify_texture = { using = color_gold_texture }
+															modify_texture = { using = overlay_window_texture blend_mode = overlay alpha = 0.9 }
+															background = {
+																texture = "gfx/interface/buttons/flats/add.dds"
+																texture_density = 2
+																margin_bottom = 1
+																modify_texture = { using = color_black_texture }
+															}
+															glow = { name = "drop_shadow" glow_radius = 3 color = {0.0 0.0 0.0 1.0} alpha = 0.2 }
+														}
+														icon = {
+															visible = "[GreaterThan_CFixedPoint(GetRemainingUpgradeLevels(BuildingCandidate.GetBuilding.GetType, BuildingCandidate.GetBuilding.GetLocation), '(CFixedPoint)0')]"
+															size = { 12 12 }
+															parentanchor = center
+															texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
+															texture_density = 2
+															modify_texture = { using = color_gold_texture }
+															modify_texture = { using = overlay_window_texture blend_mode = overlay alpha = 0.9 }
+															background = {
+																texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
+																texture_density = 2
+																margin_bottom = 1
+																modify_texture = { using = color_black_texture }
+															}
+															glow = { name = "drop_shadow" glow_radius = 3 color = {0.0 0.0 0.0 1.0} alpha = 0.2 }
+														}
 													}
 													enabled = "[CanExpandBuilding(Building.Self)]"
 													action_tooltip = {
@@ -3748,10 +3993,10 @@ types Buildings {
 												}
 
 												button_square_plus = {
-													size = { 20 20 }
+													size = { 21 21 }
 													visible = "[BuildingCandidate.GetBuilding.CanPlayerUpgrade]"
 													blockoverride "square_icon_size" {
-														size = {13 13}
+														size = {12 12}
 													}
 													blockoverride "plusminus_icon" {
 														texture = "gfx/interface/buttons/flats/upgrade_button2.dds"
@@ -4005,7 +4250,7 @@ types Buildings {
 
 		widget = {
 			layoutpolicy_horizontal = expanding
-			size = { -1 55 }
+			size = { -1 60 }
 			block "location_context"
 			{
 				datacontext = "[ProductionView.GetSelectedLocation]"
@@ -4017,7 +4262,7 @@ types Buildings {
 				margin = {2 1}
 
 				widget = {
-					size = { -1 49 }
+					size = { -1 54 }
 					layoutpolicy_horizontal = expanding
 
 					using = bg_building_card_colors
@@ -4045,6 +4290,25 @@ types Buildings {
 
 						datacontext = "[BuildingItem.GetBuildingType]"
 
+						action_tooltip = {
+							click_type = left
+							click_mode = single
+							click_modifier = ctrl
+							title = "BUILDING_IN_LOCATION_ACTION_CTRL"
+							description = "[CanBuildOrExpandBuildingInfo(BuildingItem.GetBuildingType, Location.Self)]"
+							enabled = "[CanBuildOrExpandBuilding(BuildingItem.GetBuildingType, Location.Self)]"
+							on_action = "[BuildOrExpandBuildingCtrl(BuildingItem.GetBuildingType, Location.Self)]"
+						}
+						action_tooltip = {
+							click_type = left
+							click_mode = single
+							click_modifier = shift
+							title = "BUILDING_IN_LOCATION_ACTION_SHIFT"
+							description = "[CanBuildOrExpandBuildingInfo(BuildingItem.GetBuildingType, Location.Self)]"
+							enabled = "[CanBuildOrExpandBuilding(BuildingItem.GetBuildingType, Location.Self)]"
+							on_action = "[BuildOrExpandBuildingShift(BuildingItem.GetBuildingType, Location.Self)]"
+						}
+
 						tooltipwidget = {
 							using = BuildingType_tooltip
 							blockoverride "production_method_simple_good_tooltip" { 
@@ -4059,28 +4323,16 @@ types Buildings {
 						hbox = {
 							layoutpolicy_horizontal = expanding
 							layoutpolicy_vertical = expanding
-							spacing = 5
-							margin_right = 10
+							spacing = 6
+							margin_right = 8
 
 							# icon
-							vbox = {
-								layoutpolicy_horizontal = expanding
-								layoutpolicy_vertical = expanding
-								ignoreinvisible = yes
-								margin = {5 0}
-								maximumsize = { 50 -1 }
-
-								# using = bg_cabinet_card_frame
-								blockoverride "market_card_extra" {
-									visible	= no
-								}
-								blockoverride "market_card_frame_extra" {
-									mirror = horizontal
-									margin = {-3 -3}
-								}
+							widget = {
+								size = { 55 30 }
 
 								icon = {
 									size = { 29 29 }
+									parentanchor = center
 									texture = "[GetBuildingIcon(BuildingItem.GetBuildingType.Self)]"
 
 									sort_by_highlight = {
@@ -4091,7 +4343,7 @@ types Buildings {
 
 							text_single = {
 								autoresize = no
-								size = { 160 15 }
+								size = { 140 15 }
 								align = left|nobaseline
 								default_format = "#yellow_titles"
 								text = "[BuildingItem.GetBuildingType.GetNameWithNoTooltip]"
@@ -4100,27 +4352,46 @@ types Buildings {
 
 							expand = {}
 
-							# text_single = {
-							# 	autoresize = no
-							# 	size = {80 25}
-							# 	datacontext = "[BuildingItem.GetBuildingType]"
-							# 	visible = "[BuildingItem.GetBuildingType.IsProducing]"
-							# 	fontsize = 14
-							# 	align = center|nobaseline
-							# 	raw_text = "[GetBuildingTypeTaxBaseInLocation(BuildingItem.GetBuildingType, Location.Self)|+=2]@tax_base!"
-							# 	tooltipwidget = {
-							# 		using = BuildingTypeProfit_Tooltip
-							# 	}
-							# 	sort_by_highlight = {
-							# 		size = { 100% 110% }
-							# 		name = "profit"
-							# 	}
-							# }
-
 							hbox = {
 								margin_right = 3
-								spacing = 5
-								layoutpolicy_horizontal = expanding
+								spacing = 6
+
+								widget = {
+									size = { 24 24 }
+								}
+
+								widget = { #efficiency
+									datacontext = "[BuildingItem.GetBuildingType]"
+									datacontext = "[Location]"
+									size = { 70 44 }
+									vbox = { #unbuilt
+										visible = "[BuildingItem.GetBuildingType.IsProducing]"
+										layoutpolicy_horizontal = expanding
+										layoutpolicy_vertical = expanding
+										text_single = {
+											size = { 70 18 }
+											autoresize = no
+											align = nobaseline|right
+											default_format = "@bold!"
+											fontsize = 14
+											text = "BUILDING_TYPE_POSSIBLE_PROD_EFFICIENCY"
+											tooltipwidget = {
+												SimpleContextualStringPairTooltipType = {
+													blockoverride "title_icon" {
+														icon = {
+															using = tooltip_title_icon_size
+															texture = "gfx/interface/icons/flat_icons/building_panel/production_efficiency.dds"
+														}
+													}
+													blockoverride "concept_link" {
+														text = "[production_efficiency|e]"
+													}
+													lowpriotextcontext = "[BuildingItem.GetBuildingType.ProductionEfficiencyInfo(Location.GetOwnerPtr, Location.Self)]"
+												}
+											}
+										}
+									}
+								}
 
 								widget = { #profit / income
 									size = { 60 36 }
@@ -4172,40 +4443,10 @@ types Buildings {
 										}
 									}
 								}
-
-								widget = { #efficiency
-									datacontext = "[BuildingItem.GetBuildingType]"	
-									datacontext = "[Location]"	
-									size = { 70 36 }
-									hbox = { #unbuilt
-										visible = "[BuildingItem.GetBuildingType.IsProducing]"
-										expand = {}
-										text_single = {
-											maximumsize = { 70 18 }
-											default_format = "@bold!"
-											fontsize = 14
-											text = "BUILDING_TYPE_POSSIBLE_PROD_EFFICIENCY"
-											tooltipwidget = {
-												SimpleContextualStringPairTooltipType = {
-													blockoverride "title_icon" {
-														icon = {
-															using = tooltip_title_icon_size
-															texture = "gfx/interface/icons/flat_icons/building_panel/production_efficiency.dds"
-														}
-													}
-													blockoverride "concept_link" {
-														text = "[production_efficiency|e]"
-													}
-													lowpriotextcontext = "[BuildingItem.GetBuildingType.ProductionEfficiencyInfo(Location.GetOwnerPtr, Location.Self)]"
-												}
-											}
-										}
-									}
-								}
 							}
 
 							widget = {
-								size = { 140 25 }
+								size = { 110 25 }
 
 								hbox = {
 									layoutpolicy_horizontal = expanding
@@ -4233,8 +4474,6 @@ types Buildings {
 									}
 								}
 							}
-
-
 						}
 					}
 				}
@@ -4524,6 +4763,8 @@ types Buildings {
 							ondoubleclick = "[PanToLocation(Market.GetCenterLocation)]"
 						}
 
+						onmousehierarchyenter = "[PdxGuiWidget.SetTradeLinesMarket(Market.Self)]"
+
 						tooltipwidget = {
 							using = Market_tooltip
 						}
@@ -4578,7 +4819,7 @@ types Buildings {
 					spacing = 3
 
 					button = { #UNUSED TRADE ALERT
-						visible = "[GreaterThan_CFixedPoint(Market.GetAvailableManualTradeCapacity(Player.Self),'(CFixedPoint)1.0')]"
+						visible = "[GreaterThan_CFixedPoint(Market.GetAvailableTradeCapacity(Player.Self),'(CFixedPoint)1.0')]"
 						using = trade_capacity_button_action
 						using = market_banner
 
@@ -4644,12 +4885,12 @@ types Buildings {
 					}
 
 					button = { #FOOD ALERT
-						visible = "[Or(Market.HasStarvingProvinces, Market.WillRunOutOfFoodStochpile)]"
+						visible = "[Or(Market.HasStarvingProvinces, Market.WillRunOutOfFoodStockpile)]"
 						using = market_banner
 						using = food_needs_button_action
 						blockoverride "market_banner_color" {
 							modify_texture = {
-									visible = "[And(Not(Market.HasStarvingProvinces), Market.WillRunOutOfFoodStochpile)]"
+									visible = "[And(Not(Market.HasStarvingProvinces), Market.WillRunOutOfFoodStockpile)]"
 									using = color_yellow_texture
 									alpha = 0.6
 								}
@@ -4685,6 +4926,11 @@ types Buildings {
 							layoutpolicy_horizontal = expanding
 							size = { -1 25 }
 		
+							down = "[IsLateralViewOpenedWithParams('trade', 'subtab = trades')]"
+							blockoverride "button_push_properties" {
+								using = button_tab_toggle_properties_template
+							}
+
 							using = trade_capacity_button_action
 							hbox = {
 								using = trade_capacity_button_text
@@ -4711,32 +4957,17 @@ types Buildings {
 				button_regular = {
 					size = { 85 25 }
 					# using = trade_capacity_button_action
+
+					down = "[IsLateralViewOpenedWithParams('market', 'low_tab = merchants')]"
+					blockoverride "button_push_properties" {
+						using = button_tab_toggle_properties_template
+					}
+
 					hbox = {
 						layoutpolicy_horizontal = expanding
 						margin_right = 4
 						margin_left = 4
 						spacing = 2
-						# expand = {}
-
-						# text_single = {
-						# 	visible = "[GreaterThan_int32(Market.GetMerchantRanking(Player.Self), '(int32)0')]"
-						# 	# maximumsize = {40 -1}
-						# 	align = center
-						# 	layoutpolicy_horizontal = expanding
-						# 	# autoresize = no
-						# 	fontsize = 15
-						# 	raw_text = "[Market.GetMerchantRanking(Player.Self)|OW]/[GetDataModelSize(Market.GetMerchants)|W]"
-						# }
-
-						# text_single = {
-						# 	visible = "[Not(GreaterThan_int32(Market.GetMerchantRanking(Player.Self), '(int32)0'))]"
-						# 	# maximumsize = {40 -1}
-						# 	align = center
-						# 	layoutpolicy_horizontal = expanding
-						# 	# autoresize = no
-						# 	fontsize = 15
-						# 	raw_text = "- / [GetDataModelSize(Market.GetMerchants)|W]"
-						# }
 
 						hbox = {
 							spacing = 2
@@ -4783,6 +5014,12 @@ types Buildings {
 				button_regular = {
 					name = "buildings_market_card_button"
 					size = { 37 25 }
+
+					down = "[IsLateralViewOpened('production')]"
+					blockoverride "button_push_properties" {
+						using = button_tab_toggle_properties_template
+					}
+
 					tooltipwidget = {
 						BasicFunctionalTooltip = {}
 					}
@@ -4805,6 +5042,12 @@ types Buildings {
 				button_regular = {
 					name = "goods_market_card_button"
 					size = { 37 25 }
+
+					down = "[IsLateralViewOpened('goods_production')]"
+					blockoverride "button_push_properties" {
+						using = button_tab_toggle_properties_template
+					}
+
 					tooltipwidget = {
 						BasicFunctionalTooltip = {}
 					}
@@ -4826,9 +5069,15 @@ types Buildings {
 				button_regular = {
 					name = "food_needs_button"
 					size = { 90 25 }
+
+					down = "[IsLateralViewOpened('food_production')]"
+					blockoverride "button_push_properties" {
+						using = button_tab_toggle_properties_template
+					}
+
 					onclick = "[ShowFoodProductionViewWithMarket(Market.Self, '(bool)yes')]"
 					tooltipwidget = {
-						using = market_food_balance_tooltip
+						using = Market_food_change_tooltip
 					}
 					action_tooltip = {
 						visible = "[GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0')]"
@@ -4909,6 +5158,7 @@ types Buildings {
 		spacing = 3
 		using = bg_cabinet_card_frame
 
+		block "market_scroll_buttons" {
 		vbox = {
 			layoutpolicy_vertical = expanding
 			spacing = 3
@@ -5009,6 +5259,7 @@ types Buildings {
 				}
 			}
 		}
+		}
 
 		block "market_filter_buttons" {
 			vbox = {
@@ -5061,9 +5312,21 @@ types Buildings {
 		layoutpolicy_horizontal = expanding
 		size = { -1 30 }
 		using = bg_building_card_colors
+
+		block "estates_filter_button_searchbar_datacontext" {}
+
 		card_header_button_04 = {
 			allow_outside = yes
 			size = { 100% 100% }
+
+			icon = {
+				name = "filter_is_on"
+				using = color_white_texture
+				alpha = 0.3
+				size = { 100% 100% }
+				visible = "[SearchBar.IsFilterEnabledByKey(PopType.GetKey)]"
+			}
+
 			block "estates_filter_button_action" {
 				action_tooltip = {
 					click_type = left
@@ -5132,7 +5395,7 @@ types Buildings {
 							raw_text = "[Location.GetTotalPopTypeSize(PopType.Self)|s]"
 						}
 
-						progressbar = {
+						progressbar_framed = {
 							visible = "[And(Not(EqualTo_CFixedPoint(Location.GetTotalPopTypeSizeValue(PopType.Self), '(CFixedPoint)0')), GreaterThan_CFixedPoint(Location.GetExpectedUnEmployedValue(PopType.Self), '(CFixedPoint)0'))]"
 							layoutpolicy_horizontal = expanding
 							size = { -1 5 }
@@ -5143,7 +5406,7 @@ types Buildings {
 							direction = horizontal
 						}
 
-						progressbar = {
+						progressbar_framed = {
 							visible = "[And(Not(EqualTo_CFixedPoint(Location.GetTotalPopTypeSizeValue(PopType.Self), '(CFixedPoint)0')), Not(GreaterThan_CFixedPoint(Location.GetExpectedUnEmployedValue(PopType.Self), '(CFixedPoint)0')))]"
 							layoutpolicy_horizontal = expanding
 							size = { -1 5 }
@@ -5164,7 +5427,9 @@ types Buildings {
 		block "flag_estate_building_card_extra"{}
 
 		country_flag_small = {
-			visible = "[BuildingType.IsForeign]"
+			block "flag_estate_building_card_flag_visible" {
+				visible = "[BuildingType.IsForeign]"
+			}
 			datacontext = "[Building.GetOwner]"
 			block "flag_estate_building_card_flag_size" {
 				size = {31 20}
@@ -5205,6 +5470,10 @@ select_menu_left = {
 	}
 
 	blockoverride "close_on_action" { on_action = "[ProductionSelectMarket.OnClose]" }
+	blockoverride "select_header_text" {
+		text = "SELECT_MARKET_HEADER"
+	}
+
 	blockoverride "select_content" {
 		select_menu_header = {
 			blockoverride "select_menu_header_extra" {
@@ -5342,27 +5611,17 @@ template trade_capacity_button_text {
 		layoutpolicy_horizontal = expanding
 		layoutstretchfactor_horizontal = 1
 		text_single = {
-			visible = "[And(GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0'), GreaterThan_CFixedPoint(Market.GetMerchantAvailableCapacity(Player.Self),'(CFixedPoint)0.1'))]"
+			visible = "[GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0')]"
 			size = { -1 20 }
 			layoutpolicy_horizontal = expanding
 			autoresize = no
 			fontsize = 14
 			align = center
-			raw_text = "[Market.GetMerchantTotalCapacity(Player.Self)|2]@trade_capacity!"
+			raw_text = "[Market.GetMerchantTotalCapacity(Player.Self)|~]@trade_capacity!"
 
 			block "merchant_capacity_sort_highlight_01" {}
 		}
-		text_single = {
-			visible = "[And(Not(GreaterThan_CFixedPoint(Market.GetMerchantAvailableCapacity(Player.Self),'(CFixedPoint)0.1')), GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0'))]"
-			size = { -1 20 }
-			layoutpolicy_horizontal = expanding
-			autoresize = no
-			fontsize = 14
-			align = center
-			raw_text = "[Market.GetTotalMerchantCapacity(Player.Self)|2G]@trade_capacity!"
 
-			block "merchant_capacity_sort_highlight_02" {}
-		}
 		text_single = {
 			visible = "[And(IsMarketInRange(Market.Self), Not(GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0')))]"
 			size = { -1 20 }
@@ -5413,7 +5672,7 @@ template trade_capacity_button_text {
 			autoresize = no
 			fontsize = 14
 			align = center|nobaseline
-			raw_text = "[Multiply_CFixedPoint(Merchant.GetTotalTradeProfit, Player.GetModifier('trade_income'))|2+=]@income!"
+			raw_text = "[Merchant.GetProjectedTradeIncome|~+=]@income!"
 			block "trade_income_sort_highlight" {}
 		}
 	}
@@ -5472,7 +5731,7 @@ template building_needs_button_action {
 		visible = "[Or(GreaterThan_CFixedPoint(Market.GetCountryPopulation(Player.Self),'(CFixedPoint)0'), GreaterThan_CFixedPoint(Market.GetTotalMerchantCapacity(Player.Self),'(CFixedPoint)0'))]"
 		click_type = left
 		click_mode = single
-		title = "MARKET_HUB_GOTO_GOV_NEEDS"
+		title = "MARKET_HUB_GOTO_BUILDING_NEEDS"
 		on_action = "[ShowGoodsProductionViewWithMarketAndFilter(Market.Self, 'building_needs', '(bool)yes')]"
 	}
 
@@ -5552,10 +5811,7 @@ template food_needs_button_action {
 
 template market_banner {
 	size = { 21 30 }
-	texture = "gfx/interface/buttons/banner_button_vertical.dds"
-	texture_density = 2
-	spriteType = corneredstretched
-	spriteborder = { 44 50 }
+	using = bg_banner_button_vertical_texture
 
 	block "market_banner_color" {
 		modify_texture = {
@@ -5581,10 +5837,7 @@ template market_banner {
 	}
 
 	background = {
-		texture = "gfx/interface/buttons/banner_button_vertical.dds"
-		texture_density = 2
-		spriteType = corneredstretched
-		spriteborder = { 44 50 }
+		using = bg_banner_button_vertical_texture
 		margin_right = 1
 		alpha = 0.5
 
