@@ -1,0 +1,81 @@
+﻿namespace = mnt_credit_dynamic_buildings
+
+@mnt_credit_ai_cheap_rate = 0.02
+@mnt_credit_ai_rate_gap = 0.005
+@mnt_credit_ai_cooldown_days = 180
+
+namespace = mnt_credit_dynamic_buildings
+
+credit_dynamic_buildings.1 = {
+    type = country_event
+    title = hidden_event.t
+    hidden = yes
+    trigger = {
+        great_power_ranking = 1
+    }
+    immediate = {
+        every_market_in_world = {
+            save_temporary_scope_as = current_market
+
+            # Reset market work totals
+            set_local_variable = { name = mkt_dynamic_supply value = 0 }
+            set_local_variable = { name = mkt_dynamic_demand value = 0 }
+
+            # Sum across all locations in this market
+            every_location_in_market = {
+                if = {
+                    limit = { "modifier:local_credit_supply" > 0 }
+                    change_local_variable = {
+                        name = mkt_dynamic_supply
+                        add = mnt_location_dynamic_credit_supply_calc
+                    }
+                }
+                if = {
+                    limit = { "modifier:local_credit_demand" > 0 }
+                    change_local_variable = {
+                        name = mkt_dynamic_demand
+                        add = mnt_location_dynamic_credit_demand_calc
+                    }
+                }
+            }
+
+            # Cache totals on the market center location for tooltips and interest quotes
+            location = {
+                set_variable = {
+                    name = mnt_credit_market_building_supply
+                    value = local_var:mkt_dynamic_supply
+                }
+                set_variable = {
+                    name = mnt_credit_market_building_demand
+                    value = local_var:mkt_dynamic_demand
+                }
+            }
+
+            # Inject the Demand into the market using the alternating temporary demand pattern
+            if = {
+                limit = { local_var:mkt_dynamic_demand > 0 }
+                if = {
+                    limit = { has_temporary_demand = demand:mnt_credit_building_demand1 }
+                    remove_temporary_demand = demand:mnt_credit_building_demand1
+                    add_temporary_demand = {
+                        type = demand:mnt_credit_building_demand2
+                        months = -1
+                        scale = local_var:mkt_dynamic_demand
+                    }
+                }
+                else = {
+                    remove_temporary_demand = demand:mnt_credit_building_demand2
+                    add_temporary_demand = {
+                        type = demand:mnt_credit_building_demand1
+                        months = -1
+                        scale = local_var:mkt_dynamic_demand
+                    }
+                }
+            }
+            else = {
+                remove_temporary_demand = demand:mnt_credit_building_demand1
+                remove_temporary_demand = demand:mnt_credit_building_demand2
+            }
+        }
+    }
+}

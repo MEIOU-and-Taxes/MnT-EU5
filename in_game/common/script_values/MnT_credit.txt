@@ -78,7 +78,80 @@ mnt_credit_lending_quote = {
 	add = 1
 	divide = {
 		value = "capital.market.goods_supply_in_market(goods:credit)"
+
+        # Add the dynamic building supply variable cached on the market center
+        add = "capital.market.location.var:mnt_credit_market_building_supply"
+
 		add = 1
 	}
 	min = 0.01
+}
+
+# Calculate final supply contribution of a single location
+mnt_location_dynamic_credit_supply_calc = {
+    value = modifier:local_credit_supply
+
+    # Peasant enfranchisement penalty (rural only)
+    if = {
+        limit = {
+            location_rank = location_rank:rural_settlement
+            exists = owner
+        }
+        multiply = {
+            value = 0.20
+            add = {
+                value = owner.peasant_enfranchisement
+                multiply = 0.80
+                min = 0.0
+                max = 0.80
+            }
+        }
+    }
+
+    # Serfdom vs Free subjects scaling
+    if = {
+        limit = { exists = owner }
+        multiply = {
+            value = 1.0
+            add = {
+                value = owner.societal_value:serfdom_vs_free_subjects
+                multiply = 0.8
+                min = 0
+                max = 0.8
+            }
+        }
+    }
+
+    # Capital economy vs Traditional economy scaling
+    if = {
+        limit = { exists = owner }
+        multiply = {
+            value = 1.0
+            add = {
+                value = owner.societal_value:capital_economy_vs_traditional_economy
+                multiply = -0.005
+                min = -0.5
+                max = 0.5
+            }
+        }
+    }
+}
+
+# Calculate final demand contribution of a single location
+mnt_location_dynamic_credit_demand_calc = {
+    value = modifier:local_credit_demand
+
+    # Capitalist economies demand more commercial working capital
+    if = {
+        limit = { exists = owner }
+        multiply = {
+            value = 1.0
+            add = {
+                value = owner.societal_value:capital_economy_vs_traditional_economy
+                multiply = -0.0025
+                min = -0.5
+                max = 0.5
+            }
+        }
+    }
 }
