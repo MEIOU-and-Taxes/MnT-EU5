@@ -1,5 +1,6 @@
 ﻿on_game_start = {
 	on_actions = {
+		MnT_credit_starting_banks
 		on_game_start_MnT
 		hide_buildings_on_start
 		epbm_on_initialize
@@ -11,6 +12,7 @@
 
 weather_monthly_pulse = {
 	on_actions = {
+		MnT_credit_monthly_loan_demand
 		epbm_on_global_monthly
 		aut_init_check 
 		aut_monthly_update
@@ -21,6 +23,7 @@ yearly_country_pulse = {
 	on_actions = {
 		pulse_yearly_MnT
 		pulse_yearly_per_country_MnT
+		MnT_credit_yearly_interest
 		epbm_on_country_yearly
 	}
 }
@@ -33,8 +36,102 @@ biyearly_country_pulse = {
 
 monthly_country_pulse = {
 	on_actions = {
+		MnT_credit_ai_monthly_borrowing
 		monthly_country_pulse_MnT
 		epbm_on_country_monthly
+	}
+}
+
+on_loan_taken = {
+	on_actions = { MnT_credit_after_loan_change }
+}
+
+on_loan_renewed = {
+	on_actions = { MnT_credit_after_loan_change }
+}
+
+on_loan_repaid = {
+	on_actions = { MnT_credit_after_loan_change }
+}
+
+# Historical additions to vanilla's 1337 banking network; runs only on a new game.
+MnT_credit_starting_banks = {
+	effect = {
+		# These historical banking towns are rural settlements in vanilla setup.
+		location:barletta = {
+			if = {
+				limit = { location_rank = location_rank:rural_settlement }
+				change_location_rank = location_rank:town
+			}
+		}
+		location:famagusta = {
+			if = {
+				limit = { location_rank = location_rank:rural_settlement }
+				change_location_rank = location_rank:town
+			}
+		}
+		location:mechelen = {
+			if = {
+				limit = { location_rank = location_rank:rural_settlement }
+				change_location_rank = location_rank:town
+			}
+		}
+
+		location:naples = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:palma = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:barletta = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:pisa = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:venice = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:tunis = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+		location:genoa = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:PRZ }
+		}
+
+		location:naples = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:BRD }
+		}
+		location:famagusta = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:BRD }
+		}
+
+		location:paris = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:ACC }
+		}
+		location:bruges = {
+			change_building_level_in_location = { building = building_type:banking_office value = 1 owner = c:ACC }
+		}
+
+		# Other researched bankers are represented by local burgher banking houses.
+		location:florence = { # Buonaccorsi headquarters
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:naples = { # Buonaccorsi, licensed 1332
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:avignon = { # Girolami-Corbizzi
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:mechelen = { # Montemagno
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
+		location:barcelona = { # Savarrés and Llorenç
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 2 }
+		}
+		location:strasbourg = { # Vivelin the Red
+			change_building_level_in_location = { building = building_type:mnt_burgher_banking_office value = 1 }
+		}
 	}
 }
 
@@ -70,6 +167,37 @@ on_game_start_MnT = {
 			trigger_event_silently = { id = mnt_food.1 }
 			trigger_event_silently = { id = mnt_tribes.1 }
 			trigger_event_silently = { id = mnt_urban_amenities.1 }
+		}
+		mnt_recompute_credit_loan_demand_world = yes
+		every_country = {
+			limit = { has_reform = government_reform:banking_country }
+			set_gold = 5000
+			save_temporary_scope_as = mnt_starting_bank
+			every_owned_foreign_building_location = {
+				owner = {
+					save_temporary_scope_as = mnt_starting_bank_host
+					# Vanilla Good Relations supplies 50 opinion per scale unit.
+					# Top up once per host, even when it contains several offices.
+					if = {
+						limit = { opinion = { target = scope:mnt_starting_bank value < 100 } }
+						add_opinion = {
+							target = scope:mnt_starting_bank
+							modifier = opinion_good_relations
+							scale = { value = 100 subtract = "opinion(scope:mnt_starting_bank)" divide = 50 }
+						}
+					}
+					scope:mnt_starting_bank = {
+						if = {
+							limit = { opinion = { target = scope:mnt_starting_bank_host value < 100 } }
+							add_opinion = {
+								target = scope:mnt_starting_bank_host
+								modifier = opinion_good_relations
+								scale = { value = 100 subtract = "opinion(scope:mnt_starting_bank_host)" divide = 50 }
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -142,7 +270,6 @@ monthly_country_pulse_MnT = {
 		# Ensure that the calculation results are available
 		# Calculate the demands and estate transfer of individual countries
 		diplomatic_spending.1
-		# Ensure that the calculation results are available
 
 		delay = { days = 1 }
 
@@ -150,6 +277,34 @@ monthly_country_pulse_MnT = {
 		cost_of_the_court.2
 		# Aggregate the total diplomatic spending demands in each market
 		diplomatic_spending.2
+	}
+}
+
+MnT_credit_yearly_interest = {
+	effect = {
+		mnt_apply_yearly_credit_interest = yes
+	}
+}
+
+MnT_credit_monthly_loan_demand = {
+	effect = {
+		mnt_recompute_credit_loan_demand_world = yes
+	}
+}
+
+# Only human players need synchronous quotes between loans while paused.
+# AI debt and interest are refreshed by the existing monthly world update.
+MnT_credit_after_loan_change = {
+	trigger = { is_human = yes }
+	effect = {
+		mnt_recompute_credit_after_loan_taken = yes
+	}
+}
+
+MnT_credit_ai_monthly_borrowing = {
+	events = {
+		mnt_credit_ai_borrowing.1
+		mnt_credit_ai_borrowing.2
 	}
 }
 
@@ -228,4 +383,8 @@ hide_buildings_on_start = {
 
 on_location_changed_owner = {
 	on_actions = { aut_on_location_conquered }
+}
+
+on_bankruptcy = {
+	on_actions = { MnT_credit_after_loan_change }
 }

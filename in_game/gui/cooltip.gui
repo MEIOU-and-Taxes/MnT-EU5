@@ -1,0 +1,5294 @@
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltipDefault"
+	using = game_concept_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LegitimacyExpenseSettingTooltip"
+	container = {
+		datacontext = "[Country.GetEconomy]"
+		using = LegitimacyExpenseSettingParentTooltip
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "PrestigeExpenseSettingTooltip"
+	container = {
+		datacontext = "[Country.GetEconomy]"
+		using = PrestigeExpenseSettingParentTooltip
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "StabilityExpenseSettingTooltip"
+	container = {
+		datacontext = "[Country.GetEconomy]"
+		using = StabilityExpenseSettingParentTooltip
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "SailorsLocationsTooltip"
+	using = SailorsLocations_Tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ManpowerLocationsTooltip"
+	using = ManpowerLocations_Tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterDeathReasonTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "BREAKDOWN_REASONS_DEATH_TITLE"
+		}
+		blockoverride "title_icon" {
+			icon = {
+				texture = "gfx/interface/icons/character_roles/death.dds"
+				using = tooltip_title_icon_size
+			}
+		}
+		blockoverride "concept_link" {
+			text = [character|E]
+		}
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "[Character.GetDeathReason]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "DecisionTooltip"
+	# Mirrors the lateral view's button tooltip (game/in_game/gui/decisions_lateralview.gui).
+	# GetDecisionTooltipCountry prefers the player and falls back to the multiplayer lobby's
+	# selected country, so the requirements + options resolve everywhere the tooltip can fire.
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "[Decision.GetNameWithNoTooltip]"
+		}
+		blockoverride "title_icon" {
+			icon = {
+				texture = "gfx/interface/icons/flat_icons/action.dds"
+				using = tooltip_title_icon_size
+			}
+		}
+		blockoverride "tooltip_content" {
+
+
+			TooltipDebugTextBlock = {
+				blockoverride "text" {
+					debug_text = "[Decision.GetDebugText]"
+				}
+			}
+
+			TooltipScrolledRequirementsList = {
+				textcontext = "[Decision.GetAllowDescriptionForCountry(GetDecisionTooltipCountry)]"
+				blockoverride "block_title" {
+					text = "[SelectLocalization(Decision.IsAllowedForCountry(GetDecisionTooltipCountry), 'REQUIREMENT_ARE_MET', 'REQUIREMENT_ARE_NOT_MET')]"
+					background = {
+						visible = "[Decision.IsAllowedForCountry(GetDecisionTooltipCountry)]"
+						using = color_mid_light_green_texture
+						alpha = 0.9
+					}
+					background = {
+						visible = "[Not(Decision.IsAllowedForCountry(GetDecisionTooltipCountry))]"
+						using = color_mid_red_texture
+						alpha = 0.7
+					}
+				}
+				blockoverride "block_scrollarea" { maximumsize = { -1 450 }}
+			}
+
+			TooltipScrolledGroupedRowList = {
+				textcontext = "[Decision.GetOutcomesListForCountry(GetDecisionTooltipCountry)]"
+				tooltipmeta = {
+					texture = "[GetConceptTexture('event_option')]"
+					game_concept = "[event_option|e]"
+				}
+				blockoverride "block_title" {
+					text = "DECISION_TT_OUTCOMES"
+				}
+				blockoverride "block_scrollarea" { maximumsize = { -1 300 }}
+			}
+
+			TooltipFlavorTextBlock = {
+				blockoverride "text" {
+					text = "[Decision.GetDesc]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_unit_category"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_unit_category_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('unit_category')]" }
+	blockoverride "block_title" { text = "game_concept_unit_category_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_climate"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_climate_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('climate')]" }
+	blockoverride "block_title" { text = "game_concept_climate_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_government_type"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_government_type_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('government_type')]" }
+	blockoverride "block_title" { text = "game_concept_government_type_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_subject_type"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_subject_type_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('subject_type')]" }
+	blockoverride "block_title" { text = "game_concept_subject_types" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_integration_status"
+
+	ConceptTooltipType = {
+		blockoverride "title_text" {
+			text = "[GameConceptTooltip.GetOriginalAliasName]"
+		}
+
+		blockoverride "concept_link" {
+			visible = "[GameConceptTooltip.HasFamily]"
+			text = "[GameConceptTooltip.GetFamilyLink|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "game_concept_integration_status_desc_intro"
+				}
+			}
+
+			TooltipRowList = {
+				textcontext = "game_concept_integration_status_list"
+			}
+
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "game_concept_integration_status_lower_desc"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_conquer"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_conquer_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowModifierEffect('integration_conquered')]" }
+	blockoverride "block_title" { text = "game_concept_conquer_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_colonized"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_colonized_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowModifierEffect('integration_colonized')]" }
+	blockoverride "block_title" { text = "game_concept_colonized_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_integration"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_integration_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowModifierEffect('integration_integrated')]" }
+	blockoverride "block_title" { text = "game_concept_integration_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_core"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_core_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowModifierEffect('integration_core')]" }
+	blockoverride "block_title" { text = "game_concept_core_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_dice"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_dice_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "game_concept_dice_desc" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_international_organization_type"
+	using = game_concept_tooltip_with_db_values
+	blockoverride "tooltip_minimumsize" {
+		blockoverride "tooltip_minimumsize" {
+			minimumsize = { 420 -1 }
+		}
+	}
+	blockoverride "block_scrollarea" {
+		maximumsize = { -1 210 }
+	}
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabaseWithIcon('international_organization_type')]" }
+	blockoverride "text" { text = "game_concept_international_organization_type_upper_title" }
+	blockoverride "block_title" { text = "game_concept_international_organization_type_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_holy_site_type"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_holy_site_type_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('holy_site_type')]" }
+	blockoverride "block_title" { text = "game_concept_holy_site_type_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_pop_type"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_pop_type_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('pop_type')]" }
+	blockoverride "block_title" { text = "game_concept_pop_type_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_age"
+
+	ConceptTooltipType = {
+		blockoverride "title_text" {
+			text = "[GameConceptTooltip.GetOriginalAliasName]"
+		}
+
+		blockoverride "concept_link" {
+			visible = "[GameConceptTooltip.HasFamily]"
+			text = "[GameConceptTooltip.GetFamilyLink|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "game_concept_age_upper_desc"
+				}
+			}
+
+			TooltipRowList = {
+				textcontext = "[ShowDatabase('age')]"
+				blockoverride "block_title" { text = "game_concept_age_list_title" }
+			}
+
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "game_concept_age_lower_desc"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_trait"
+
+	ConceptTooltipType = {
+		blockoverride "title_text" {
+			text = "[GameConceptTooltip.GetOriginalAliasName]"
+		}
+
+		blockoverride "concept_link" {
+			visible = "[GameConceptTooltip.HasFamily]"
+			text = "[GameConceptTooltip.GetFamilyLink|e]"
+		}
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[GetConceptTexture('trait')]"
+			}
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "game_concept_trait_upper_desc"
+				}
+			}
+
+			TooltipListBase = {
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[ruler_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('ruler'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_ruler_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('ruler'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('ruler'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('ruler')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[general_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('general'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_general_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('general'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('general'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('general')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[admiral_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('admiral'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_admiral_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('admiral'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('admiral'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('admiral')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[explorer_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('explorer'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_explorer_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('explorer'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('explorer'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('explorer')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[artist_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('artist'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_artist_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('artist'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('artist'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('artist')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[child_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('child'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_child_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('child'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('child'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('child')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[religious_figure_traits|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('religious_figure'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_religious_figure_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('religious_figure'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('religious_figure'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('religious_figure')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[health_trait|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('health'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_health_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('health'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('health'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('health')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[cabinet_trait|e]"
+					}
+					text_single = {
+						autoresize = yes
+						text = "[GetDataModelSize(GetTraitTypeList('cabinet'))|L]"
+
+						tooltipwidget = {
+							ContextualTooltipType = {
+								blockoverride "title_text" { text = "game_concept_cabinet_traits" }
+								blockoverride "tooltip_content" {
+									TooltipScrolledRowList = {
+										blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+										blockoverride "block_title" { visible = no }
+										blockoverride "rowlist_datamodel_is_empty" { visible = "[IsDataModelEmpty(GetTraitTypeList('cabinet'))]"}
+										blockoverride "rowlist_datamodel_has_items" { visible = "[DataModelHasItems(GetTraitTypeList('cabinet'))]"}
+										blockoverride "rowlist_datamodel" { datamodel = "[GetTraitTypeList('cabinet')]" }
+										blockoverride "rowlist_item" { text = "[Trait.GetName]" }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_role"
+
+	ConceptTooltipType = {
+		blockoverride "title_text" {
+			text = "[GameConceptTooltip.GetOriginalAliasName]"
+		}
+
+		blockoverride "concept_link" {
+			visible = "[GameConceptTooltip.HasFamily]"
+			text = "[GameConceptTooltip.GetFamilyLink|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "game_concept_role_desc"
+				}
+			}
+
+			TooltipRowList = {
+				textcontext = "game_concept_role_list"
+				blockoverride "block_title" { text = "game_concept_role_list_title" }
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_artist"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_artist_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('artist')]" }
+	blockoverride "block_title" { text = "game_concept_artist_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_work_of_art"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_work_of_art_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('work_of_art')]" }
+	blockoverride "block_title" { text = "game_concept_work_of_art_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_food_raw_material"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_food_raw_material_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('food_raw_goods')]" }
+	blockoverride "block_title" { text = "game_concept_food_raw_material_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_country_type"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_country_type_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "game_concept_country_type_list" }
+	blockoverride "block_title" { text = "game_concept_country_type_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_tolerance"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_tolerance_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "game_concept_tolerance_list" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_country_rank"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_country_rank_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabaseWithIcon('country_rank')]" }
+	blockoverride "block_title" { text = "game_concept_country_rank_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_location_rank"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_location_rank_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabaseWithIcon('location_rank')]" }
+	blockoverride "block_title" { text = "game_concept_location_rank_list_title" }
+
+	blockoverride "extra_rowlists" {
+		TooltipRowList = {
+			blockoverride "block_title" { text = "game_concept_location_rank_province_capital_list_title" }
+			textcontext = "game_concept_location_rank_province_capital_list"
+		}
+
+		TooltipRowList = {
+			blockoverride "block_title" { text = "game_concept_location_rank_capital_list_title" }
+			textcontext = "game_concept_location_rank_capital_list"
+		}
+	}
+}
+
+# container = {
+# 	alwaystransparent = no
+# 	name = "GameConceptTooltip_rival"
+# 	using = game_concept_tooltip_with_db_values
+
+# 	blockoverride "text" { text = "game_concept_rival_desc" }
+# 	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('country_rank')]" }
+# 	blockoverride "block_title" { text = "game_concept_rival_lower_desc_title" }
+# }
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_societal_value"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_societal_value_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('societal_values')]" }
+	blockoverride "block_title" { text = "game_concept_societal_value_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_ai_personality"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_ai_personality_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowDatabase('ai_personality')]" }
+	blockoverride "block_title" { text = "game_concept_ai_personality_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_ai_disposition"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_ai_disposition_upper_desc" }
+	blockoverride "rowlist_datacontext" { textcontext = "[ShowValues('ai_disposition')]" }
+	blockoverride "block_title" { text = "game_concept_ai_disposition_list_title" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GameConceptTooltip_bureaucracy"
+	using = game_concept_tooltip_with_db_values
+
+	blockoverride "text" { text = "game_concept_bureaucracy_desc" }
+	blockoverride "block_scrollarea" { maximumsize = { -1 400 }}
+	blockoverride "rowlist_datacontext" {
+		visible = "[IsPlayerValid]"
+		textcontext = "[GetPlayer.GetAvailableBureaucraciesDesc]"
+	}
+	blockoverride "block_title" { text = "BUREAUCRACY_AVAILABLE_ALTERNATIVES_TITLE" }
+}
+
+container = {
+	alwaystransparent = no
+	name = "BooleanModifierTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "[ModifierType.GetNameWithNoTooltip]"
+		}
+		blockoverride "concept_link" {
+			text = "[modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipDebugTextBlock = {
+				blockoverride "text" {
+					debug_text = "[ModifierType.GetDebugText]"
+				}
+			}
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "[ModifierType.GetDesc]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "ModifierTypeTooltip"
+
+	ConceptTooltipType = {
+
+		blockoverride "tooltip_title" {
+			ConceptTooltipHeader = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_concept_title_icon_size
+						texture = "[ModifierType.GetIcon]"
+						tintcolor = "[ExtraTooltipInfo.GetTintColor]"
+
+						glow = {
+							name = "drop_shadow"
+							glow_radius = 3
+							color = {0.0 0.0 0.0 1.0}
+							alpha = 0.3
+						}
+					}
+				}
+
+				blockoverride "title_text" {
+					text = "[ModifierType.GetNameWithNoTooltip]"
+				}
+			}
+
+			TooltipLockProgress = {}
+		}
+
+		blockoverride "concept_link" {
+			text = "[modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipDebugTextBlock = {
+				blockoverride "text" {
+					debug_text = "[ModifierType.GetDebugText]"
+				}
+			}
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "[ModifierType.GetFlavorDesc]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "ModifierTypeWithSourceTooltip"
+
+	ConceptTooltipType = {
+
+		blockoverride "tooltip_title" {
+			ConceptTooltipHeader = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_concept_title_icon_size
+						texture = "[ModifierSourceWrap.GetModifierType.GetIcon]"
+						tintcolor = "[ExtraTooltipInfo.GetTintColor]"
+					}
+				}
+			}
+
+			TooltipLockProgress = {}
+		}
+
+		blockoverride "title_text" {
+			text = "[ModifierSourceWrap.GetModifierType.GetNameWithNoTooltip]"
+		}
+
+		blockoverride "concept_link" {
+			text = "[modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				visible = "[Not(StringIsEmpty(ModifierSourceWrap.GetBreakdown))]"
+				textcontext = "[ModifierSourceWrap.GetBreakdown]"
+			}
+
+			TooltipStringPairList = {
+				visible = "[Not(StringIsEmpty(ModifierSourceWrap.GetScalingBreakdown))]"
+				textcontext = "[ModifierSourceWrap.GetScalingBreakdown]"
+			}
+
+			TooltipTextBlock = {
+				visible = "[StringIsEmpty(ModifierSourceWrap.GetScalingBreakdown)]"
+				blockoverride "text" {
+					text = "[ModifierSourceWrap.GetModifierType.GetFlavorDesc]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "BiasModifierTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "[BiasType.GetNameWithNoTooltip]"
+		}
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[GetConceptTexture('event_option')]"
+			}
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledBlockList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 400 }}
+				textcontext = "[BiasType.GetDesc]"
+			}
+		}
+	}
+}
+
+# M&T: this tooltip is loaded by filename; preserve all other EU5 1.4 roots.
+container = {
+	alwaystransparent = no
+	name = "StaticModifierTooltip"
+	ContextualTooltipType = {
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[StaticModifier.GetIcon]"
+
+				glow = {
+					name = "drop_shadow"
+					glow_radius = 3
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.3
+				}
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "[StaticModifier.GetNameWithNoTooltip]"
+		}
+
+		blockoverride "concept_link" {
+			text = "[modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				visible = "[Not(EqualTo_string(StaticModifier.GetNameWithNoTooltip, Localize('STATIC_MODIFIER_NAME_mnt_credit_interest_market_price')))]"
+				textcontext = "[StaticModifier.GetDesc]"
+			}
+
+			vbox = {
+				visible = "[EqualTo_string(StaticModifier.GetNameWithNoTooltip, Localize('STATIC_MODIFIER_NAME_mnt_credit_interest_market_price'))]"
+				layoutpolicy_horizontal = expanding
+				spacing = 10
+				TooltipTextBlock = {
+					blockoverride "text" { text = "mnt_credit_interest_intro" }
+				}
+				TooltipListBase = {
+					blockoverride "block_title" {
+						visible = yes
+						text = "mnt_credit_interest_market_title"
+					}
+					TooltipTableField = {
+						blockoverride "row_size" {
+							minimumsize = { -1 56 }
+							maximumsize = { -1 56 }
+						}
+						blockoverride "field_content" {
+							margin = { 10 0 }
+							spacing = 8
+							icon = {
+								size = { 28 28 }
+								texture = "gfx/interface/icons/trade_goods/icon_goods_credit.dds"
+								tooltip = "[ShowGoodsName('credit')]"
+							}
+							vbox = {
+								size = { 100 50 }
+								layoutpolicy_horizontal = fixed
+								text_single = {
+									size = { 100 22 }
+									layoutpolicy_horizontal = fixed
+									align = center|nobaseline
+									using = Font_Size_Small
+									text = "mnt_credit_interest_balance"
+								}
+								hbox = {
+									spacing = 4
+									text_single = {
+										size = { 76 24 }
+										layoutpolicy_horizontal = fixed
+										align = right|nobaseline
+										text = "[Subtract_CFixedPoint(GetPlayer.GetCapital.GetMarket.MakeScope.ScriptValue('mnt_credit_tooltip_market_supply'), GetPlayer.MakeScope.ScriptValue('mnt_credit_lending_demand'))|+=2]"
+									}
+									icon = {
+										size = { 20 20 }
+										texture = "gfx/interface/icons/flat_icons/trade_market/goods_balance.dds"
+									}
+								}
+							}
+							vbox = {
+								size = { 100 50 }
+								layoutpolicy_horizontal = fixed
+								text_single = {
+									size = { 100 22 }
+									layoutpolicy_horizontal = fixed
+									align = center|nobaseline
+									using = Font_Size_Small
+									text = "mnt_credit_interest_supply"
+								}
+								hbox = {
+									spacing = 4
+									text_single = {
+										size = { 76 24 }
+										layoutpolicy_horizontal = fixed
+										align = right|nobaseline
+										text = "[GetPlayer.GetCapital.GetMarket.MakeScope.ScriptValue('mnt_credit_tooltip_market_supply')|2]"
+									}
+									icon = {
+										size = { 20 20 }
+										texture = "gfx/interface/icons/flat_icons/trade_market/supply.dds"
+									}
+								}
+							}
+							vbox = {
+								size = { 100 50 }
+								layoutpolicy_horizontal = fixed
+								text_single = {
+									size = { 100 22 }
+									layoutpolicy_horizontal = fixed
+									align = center|nobaseline
+									using = Font_Size_Small
+									text = "mnt_credit_interest_demand"
+								}
+								hbox = {
+									spacing = 4
+									text_single = {
+										size = { 76 24 }
+										layoutpolicy_horizontal = fixed
+										align = right|nobaseline
+										text = "[GetPlayer.MakeScope.ScriptValue('mnt_credit_lending_demand')|2]"
+									}
+									icon = {
+										size = { 20 20 }
+										texture = "gfx/interface/icons/flat_icons/trade_market/demand.dds"
+									}
+								}
+							}
+							vbox = {
+								size = { 100 50 }
+								layoutpolicy_horizontal = fixed
+								text_single = {
+									size = { 100 22 }
+									layoutpolicy_horizontal = fixed
+									align = center|nobaseline
+									using = Font_Size_Small
+									text = "mnt_credit_interest_price"
+								}
+								text_single = {
+									size = { 100 24 }
+									layoutpolicy_horizontal = fixed
+									align = center|nobaseline
+									raw_text = "[GetPlayer.GetCapital.GetMarket.MakeScope.ScriptValue('mnt_credit_tooltip_market_price')|2]@gold!"
+								}
+							}
+						}
+					}
+				}
+				TooltipTextBlock = {
+					blockoverride "text" { text = "mnt_credit_interest_formula" }
+				}
+			}
+			TooltipFlavorTextBlock = {
+				visible = "[And(StaticModifier.HasFlavorText, Not(EqualTo_string(StaticModifier.GetNameWithNoTooltip, Localize('STATIC_MODIFIER_NAME_mnt_credit_interest_market_price'))))]"
+				blockoverride "text" {
+					text = "[StaticModifier.GetFlavorDesc]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "AutoModifierTooltip"
+	ContextualTooltipType = {
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[StaticAutoModifier.GetIcon]"
+
+				glow = {
+					name = "drop_shadow"
+					glow_radius = 3
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.3
+				}
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "[StaticAutoModifier.GetName]"
+		}
+
+		blockoverride "concept_link" {
+			text = "[modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				textcontext = "[StaticAutoModifier.GetDesc]"
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "ScaledStaticModifierTooltip"
+	ContextualTooltipType = {
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[ScaledStaticModifierWrap.GetIcon]"
+
+				glow = {
+					name = "drop_shadow"
+					glow_radius = 3
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.3
+				}
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "[ScaledStaticModifierWrap.GetModifier.GetName]"
+		}
+
+		blockoverride "concept_link" {
+			text = "[modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+
+			TooltipStringPairList = {
+				textcontext = "[ScaledStaticModifierWrap.GetEffect]"
+			}
+			TooltipFlavorTextBlock = {
+				visible = "[ScaledStaticModifierWrap.GetModifier.HasFlavorText]"
+				blockoverride "text" {
+					text = "[ScaledStaticModifierWrap.GetModifier.GetFlavorDesc]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryTooltip"
+	using = CountryTooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryTooltipTextLink"
+	using = CountryTooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryContextMenu"
+	CountryContextMenu = {}
+}
+
+container = {
+	alwaystransparent = no
+	name = "ConstructionTooltip"
+	using = Construction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "VegetationTooltip"
+	using = Vegetation_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TopographyTooltip"
+	using = Topography_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligionTooltip"
+	using = religion_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligionGroupTooltip"
+	using = religion_group_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CultureTooltip"
+	using = culture_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CultureGroupTooltip"
+	using = culture_group_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DialectTooltip"
+	using = dialect_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageFamilyTooltip"
+	using = language_family_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationTooltip"
+	using = location_tooltip_alt
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationIntegrationTooltip"
+	using = location_core_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationContextMenu"
+	LocationContextMenu = {}
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeaZoneContextMenu"
+	SeaZoneContextMenu = {}
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "LocationFoodTooltip"
+	using = location_food_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopulationInLocationTooltip"
+	using = population_location_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PriceTooltip"
+	using = price_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "RegimentTooltip"
+	using = SubUnit_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ShipTooltip"
+	using = SubUnit_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubUnitMoraleTooltip"
+	using = subunit_morale_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TownsOrCitiesTooltip"
+	using = towns_or_cities_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceTooltip"
+	using = province_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceFoodTooltip"
+	using = province_food_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubUnitCategoryTooltip"
+	using = SubUnitCategory_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubUnitFamilyTooltip"
+	using = SubUnitFamily_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubUnit_tooltip"
+	using = SubUnit_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubUnitType_tooltip"
+	using = SubUnitType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageTooltip"
+	using = LanguageTooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageTooltipBreakdown"
+	using = LanguageTooltipBreakdown
+}
+
+container = {
+	alwaystransparent = no
+	name = "ClimateTooltip"
+	using = Climate_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryRankTooltip"
+	using = CountryRank_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "HegemonyTooltip"
+	using = Hegemony_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMaritimeTooltip"
+	using = MaritimePresenceLabel_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketTooltip"
+	using = Market_tooltip
+}
+container = {
+	alwaystransparent = no
+	name = "MarketFoodTooltip"
+	using = Market_food_change_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountrySubjectTooltip"
+	using = CountrySubject_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketContextMenu"
+	MarketContextMenu = {}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsContextMenu"
+	GoodsContextMenu = {}
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsMarketContextMenu"
+	GoodsMarketContextMenu = {}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LawTooltip"
+	using = Law_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PolicyTooltip"
+	using = Policy_player_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ScriptedPeaceTreatyTooltip"
+	using = ScriptedPeaceTreaty_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LawWithContextTooltip"
+	using = LawWithContext_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PolicyWithContextTooltip"
+	using = PolicyWithContext_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PolicyTriggerTooltip"
+	using = PolicyTrigger_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SpecialStatusTooltip"
+	using = SpecialStatus_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PaymentTooltip"
+	using = Payment_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LandOwnershipRuleTooltip"
+	using = LandOwnershipRule_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ParliamentIssueWithContextTooltip"
+	using = ParliamentIssueWithContext_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PaymentWithContextTooltip"
+	using = PaymentWithContext_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PaymentPayerPriceTooltip"
+	using = PaymentPayerPrice_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "IOPaymentsTooltip"
+	using = IO_Payments_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ArtistTooltip"
+	using = Artist_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousFigureTooltip"
+	using = ReligiousFigure_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GovernmentReformTooltip"
+	using = GovernmentReform_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CabinetActionTooltip"
+	using = CabinetAction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitAbilityTooltip"
+	using = UnitAbility_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SupplyDepotTooltip"
+	using = SupplyDepot_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstatePrivilegeTooltip"
+	using = EstatePrivilege_tooltip
+	datacontext = "[GetNullUIAction]"
+}
+
+container = {
+	alwaystransparent = no
+	name = "RecruitmentMethodTooltip"
+	using = RecruitmentMethod_tooltip
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "UnitFormationPreferenceTooltip"
+	using = UnitFormationPreference_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AgeTooltip"
+	using = Age_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AgeReformsTooltip"
+	using = AgeReforms_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AiPersonalityTooltip"
+	using = AiPersonality_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AiDispositionTooltip"
+	using = AiDisposition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AiDispositionValueTooltip"
+	using = AiDispositionValue_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "InstitutionTooltip"
+	using = Institution_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AdvanceDefinitionTooltip"
+	using = AdvanceDefinition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AntagonismBombSpecTooltip"
+	using = AntagonismBombSpec_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AntagonismTwoCountriesTooltip"
+	using = AntagonismTwoCountriesTooltip_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DispositionPairTooltip"
+	using = disposition_pair_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TradeConnectionTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "[TradeConnectionWrap.GetHomeName] - [TradeConnectionWrap.GetName]"
+		}
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[GetConceptTexture('trade')]"
+			}
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledStringPairList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 420 } }
+				textcontext = "[TradeConnectionWrap.GetTooltip]"
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterTooltip"
+	using = Character_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterContextMenu"
+	CharacterContextMenu = {}
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterRulingHistoryTooltip"
+	using = CharacterRulingHistory_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterInteractionTooltip"
+	using = CharacterInteraction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterAbilityRulerTooltip"
+	using = CharacterAbilityRuler_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterAbilityGeneralTooltip"
+	using = CharacterAbilityGeneral_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterAbilityAdmiralTooltip"
+	using = CharacterAbilityAdmiral_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterAbilityExplorerTooltip"
+	using = CharacterAbilityExplorer_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterAbilityArtistTooltip"
+	using = CharacterAbilityArtist_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterAbilityNoRoleTooltip"
+	using = CharacterAbilityNoRole_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DynastyTooltip"
+	using = Dynasty_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GovernmentTypeTooltip"
+	using = GovernmentType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GovernmentTypeAdvancesTooltip"
+	using = GovernmentTypeAdvances_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GovernmentTypeHeirSelectionsTooltip"
+	using = GovernmentTypeHeirSelections_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GovernmentTypeLawsTooltip"
+	using = GovernmentTypeLaws_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GovernmentTypePoliciesTooltip"
+	using = GovernmentTypePolicies_tooltip
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "HeirSelectionTooltip"
+	using = HeirSelection_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationRankTooltip"
+	using = LocationRankTag_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsTooltip"
+	using = Goods_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsCardstooltip"
+	using = Goods_Cards_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SpecificGoodsMarketTooltip"
+	using = SpecificGoodsMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SpecificGoodsOnMarketWrapTooltip"
+	container = {
+		datacontext = "[SpecificGoodsOnMarketWrap.GetMarket]"
+		datacontext = "[SpecificGoodsOnMarketWrap.GetGoods]"
+		using = SpecificGoodsMarket_tooltip
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "FoodStockpileTooltip"
+	using = Market_food_change_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationModifierTooltip"
+	using = LocationModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryModifierTooltip"
+	using = CountryModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AiUtilityTooltip"
+	using = AiUtility_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BuildingPromoteTimeTooltip"
+	using = BuildingPromoteTime_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ArmyLevyPopBreakdownTooltip"
+	using = ArmyLevyPopBreakdown_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "NavyLevyPopBreakdownTooltip"
+	using = NavyLevyPopBreakdown_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitDefCostTooltip"
+	using = UnitDefCost_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopNeedsBreakdownTooltip"
+	ContextualTooltipType = {
+		lowpriotextcontext = "[SPopNeedsBreakdownWrapper.GetBreakdown]"
+		ontextcontextchanged = "[SetBlockListWithTitleFromTextContext(PdxGuiWidget.AccessSelf)]"
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[GetGoodsIcon(SPopNeedsBreakdownWrapper.GetGoods)]"
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "[SPopNeedsBreakdownWrapper.GetTitle]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledBlockList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+				blockoverride "block_title" {
+					visible = no
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationCountryModifierTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[LocationCountryModifierWrap.GetIcon]"
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "[LocationCountryModifierWrap.GetName]"
+		}
+
+		blockoverride "concept_link" {
+			text = "[location_modifier|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				datacontext = "[StringToStringPairList(LocationCountryModifierWrap.GetTooltip)]"
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationCountryDoubleModifierTooltip"
+	using = LocationCountryDoubleModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationDoubleModifierTooltip"
+	using = LocationDoubleModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationPercentCountryModifierTooltip"
+	using = LocationPercentCountryModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryCountryModifierTooltip"
+	using = CountryCountryModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BuildingTooltip"
+	using = Building_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BuildingIncomeTooltip"
+	using = BuildingIncome_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BuildingProfitTooltip"
+	using = BuildingProfit_Tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BuildingTypeTooltip"
+	using = BuildingType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BuildingCategoryTooltip"
+	using = BuildingCategory_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopTypeTooltip"
+	using = PopType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateTooltip"
+	using = Estate_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateSatisfactionTooltip"
+	using = estate_satisfaction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateRelativePowerTooltip"
+	using = estate_relative_power_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateIncomeTooltip"
+	using = estate_income_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateOpinionTooltip"
+	using = EstateOpinion_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopEstateLocationPowerTooltip"
+	using = PopEstateLocationPower_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CrownPowerPerLocationTooltip"
+	using = CrownPowerPerLocation_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CabinetTooltip"
+	using = Cabinet_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LoanTooltip"
+	using = loan_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TradeTooltip"
+	using = Trade_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CityGraphicsTooltip"
+	using = City_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AdjacencyDistanceTooltip"
+	using = adjacency_distance_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMigrationTooltip"
+	using = location_migration_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AdjacencyMarketAccessTooltip"
+	using = adjacency_market_access_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeaCurrentTooltip"
+	using = sea_current_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "RiverDirectionTooltip"
+	using = river_driection_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitPriceTooltip"
+	using = unitprice_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligionModifierTooltip"
+	using = ReligionModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "InternationalOrganizationModifierTooltip"
+	using = InternationalOrganizationModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceModifierTooltip"
+	using = ProvinceModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CharacterModifierTooltip"
+	using = CharacterModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DynastyModifierTooltip"
+	using = DynastyModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MovementModifierTooltip"
+	using = MovementModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AmbitionModifierTooltip"
+	using = AmbitionModifier_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsOnMarketTooltip"
+	using = GoodsOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsOnMarketPopTooltip"
+	using = GoodsOnMarketPop_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsPriceOnMarketTooltip"
+	using = GoodsPriceOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsMarketBalanceTooltip"
+	using = GoodsMarketBalance_Tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsMarketBalanceLocalTooltip"
+	using = GoodsMarketBalanceLocal_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DemandCategoryTooltip"
+	using = DemandCategory_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DemandTooltip"
+	using = GoodsDemandInfo_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubUnitArrayTooltip"
+	using = SubUnitArray_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "WarCombatsTooltip"
+	using = WarCombats_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CombatSubUnitArrayTooltip"
+	using = CombatSubUnitArray_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "WorkOfArtTooltip"
+	using = WorkOfArt_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "WorkOfArtTypeTooltip"
+	using = WorkOfArtType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateTypeTooltip"
+	using = EstateType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MissionTooltip"
+	using = Mission_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MissionTaskTooltip"
+	using = MissionTask_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceDefinitionTooltip"
+	using = ProvinceDefinition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ScriptedGeographyTooltip"
+	using = ScriptedGeography_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaTooltip"
+	using = Area_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "RegionTooltip"
+	using = Region_tooltip
+
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubContinentTooltip"
+	using = Sub_Continent_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ContinentTooltip"
+	using = Continent_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "WarTooltip"
+	using = War_tooltip
+}
+container = {
+	alwaystransparent = no
+	name = "WarGoalTooltip"
+	using = WarGoal_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryInteractionTooltip"
+	using = CountryInteraction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ScriptedRelationTypeTooltip"
+	using = ScriptedRelationType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ScriptedRelationTypeWithTooltip"
+	using = ScriptedRelationTypeWith_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LevySetupTooltip"
+	using = LevySetup_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ArmyLevyTooltip"
+	using = location_army_levy_tt
+}
+
+container = {
+	alwaystransparent = no
+	name = "NavyLevyTooltip"
+	using = location_navy_levy_tt
+}
+
+container = {
+	alwaystransparent = no
+	name = "MercenaryTooltip"
+	using = Mercenary_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "WeatherSystemTooltip"
+	using = WeatherSystem_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CardinalTooltip"
+	using = Cardinal_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousOrderTooltip"
+	using = ReligiousOrder_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousOrderTypeTooltip"
+	using = ReligiousOrderType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CallingTooltip"
+	using = Calling_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CasusBelliTooltip"
+	using = CasusBelli_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GenericActionTooltip"
+	using = GenericAction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaPreferenceTooltip"
+	using = AreaPreference_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ColonialCharterTooltip"
+	using = ColonialCharter_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "RegencyTooltip"
+	using = Regency_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "FormableCountryTooltip"
+	using = FormableCountry_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SituationTooltip"
+	using = Situation_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitTemplateTooltip"
+	using = UnitTemplate_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MilitaryObjectiveTooltip"
+	using = MilitaryObjective_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "RebelTooltip"
+	using = Rebel_tooltip
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "RebelGroupTooltip"
+	using = RebelGroup_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TraitTooltip"
+	using = Trait_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SocietalValueTooltip"
+	using = SocietalValue_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousSchoolTooltip"
+	using = ReligiousSchool_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousFactionTooltip"
+	using = ReligiousFaction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousFocusTooltip"
+	using = ReligiousFocus_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligiousAspectTooltip"
+	using = ReligiousAspect_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ImperialCircleTooltip"
+	using = ImperialCircle_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "InternationalOrganizationTooltip"
+	using = InternationalOrganization_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "InternationalOrganizationTypeTooltip"
+	using = InternationalOrganizationType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GodTooltip"
+	using = God_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GodWithReligionTooltip"
+	using = GodWithReligion_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AvatarTooltip"
+	using = Avatar_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "BureaucracyTypeTooltip"
+	using = BureaucracyType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "OmenTooltip"
+	using = Omen_tooltip
+}
+container = {
+	alwaystransparent = no
+	name = "RoadTypeTooltip"
+	using = RoadType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EmploymentSystemTooltip"
+	using = EmploymentSystem_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SubjectMilitaryStanceTooltip"
+	using = SubjectMilitaryStance_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DiseaseOutbreakTooltip"
+	using = DiseaseOutbreak_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DiseaseTooltip"
+	using = Disease_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MovementTooltip"
+	using = Movement_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MovementDefinitionTooltip"
+	using = MovementDefinition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AmbitionTooltip"
+	using = Ambition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "AmbitionDefinitionTooltip"
+	using = AmbitionDefinition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "HolySiteTooltip"
+	using = HolySite_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "HolySiteDefinitionTooltip"
+	using = HolySiteDefinition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "HolySiteTypeTooltip"
+	using = HolySiteType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ResolutionTooltip"
+	using = Resolution_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketAccessTooltip"
+	using = MarketAccess_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PrivateerTooltip"
+	using = Privateer_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "GoodsSellPriceTooltip"
+	using = GoodsSellPrice_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ChildEducationTooltip"
+	using = ChildEducation_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ExplorationTooltip"
+	using = Exploration_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MigrationTooltip"
+	using = Migration_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MissingGoodsOnMarketTooltip"
+	using = MissingGoodsOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DemandsOnMarketTooltip"
+	using = DemandsOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DemandsOnMarketNoTradesTooltip"
+	using = DemandsOnMarketNoTrades_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TradeDemandOnMarketTooltip"
+	using = TradeDemandOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketPopNeedsTooltip"
+	using = market_pop_needs_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationSupplyTooltip"
+	using = location_supply_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SupplyOnMarketTooltip"
+	using = SupplyOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TradeSupplyOnMarketTooltip"
+	using = TradeSupplyOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProducedOnMarketTooltip"
+	using = ProducedOnMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryPopulationTooltip"
+	container = {
+		datacontext = "[Country.GetPopulationChart.GetPopsPiechartWidget]"
+		using = PopulationTooltip
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationPopulationTooltip"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = LocationPopulationTooltip
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneTooltip"
+	using = seazone_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "WastelandTooltip"
+	using = Wasteland_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SocietalValueInCountryTooltipTextLink"
+	using = societal_value_in_country_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DHEEventTooltip"
+	using = DHEEvent_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DisasterTooltip"
+	using = Disaster_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "DisasterTypeTooltip"
+	using = DisasterType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "Expedition_tooltip"
+	using = Expedition_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ExpeditionType_tooltip"
+	using = ExpeditionType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ChivalricOrderTooltip"
+	using = ChivalricOrder_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ColonialCharterGoalTooltip"
+	using = ColonialCharterGoal_tooltip
+}
+
+
+
+container = {
+	alwaystransparent = no
+	name = "TownRightsTooltip"
+	using = TownRights_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TownRightsTypeTooltip"
+	using = TownRightsType_tooltip
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "SubjectTypeTooltip"
+	using = SubjectType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProductionMethodTooltip"
+	using = ProductionMethod_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ParliamentAgendaTooltip"
+	using = ParliamentAgenda_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ActiveParliamentAgendaTooltip"
+	using = ActiveParliamentAgenda_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "IOActiveParliamentAgendaTooltip"
+	using = ActiveParliamentAgenda_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ParliamentIssueTooltip"
+	using = ParliamentIssue_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ParliamentTypeTooltip"
+	using = ParliamentType_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationTaxBaseTooltip"
+	using = location_tax_base_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "TaxBaseTooltip"
+	using = TaxBaseTooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MerchantPowerInMarketTooltip"
+	using = MerchantPowerInMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MerchantCapacityInMarketTooltip"
+	using = MerchantCapacityInMarket_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "SupplyLimitTooltip"
+	using = SupplyLimit_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateSatisfactionEquilibriumTooltipWrap"
+	using = EstateSatisfactionEquilibrium_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "EstateSatisfactionChangeTooltipWrap"
+	using = EstateSatisfactionChange_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitTooltip"
+	using = Unit_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitMaintenanceTooltip"
+	using = unit_maintenance_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitRepairTooltip"
+	using = unit_repair_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceLevySizeTooltip"
+	using = province_levy_size_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "UnitsTooltip"
+	using = Units_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CombatTooltip"
+	using = Combat_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "CombatMoraleTooltip"
+	using = CombatMorale_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopSatisfactionTooltip"
+	using = PopSatisfaction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopulationCapacityTooltip"
+	using = PopulationCapacity_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MigrationAttractionTooltip"
+	using = MigrationAttraction_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MonthlyControlTooltip"
+	using = MonthlyControl_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "MaxControlTooltip"
+	using = MaxControl_tooltip
+}
+container = {
+	alwaystransparent = no
+	name = "PopTooltip"
+	using = Pop_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "PopLiteracyTooltip"
+	using = PopLiteracy_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "OneBuildingInMarketUpkeepTooltip"
+	using = OneBuildingInMarketUpkeep_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "ConstructionPriceImpactTooltip"
+	using = ConstructionPriceImpact_tooltip
+}
+
+container = {
+	alwaystransparent = no
+	name = "StringPairListTooltip"
+
+	ContextualTooltipType = {
+		lowpriotextcontext = "[TooltipString.GetString]"
+		ontextcontextchanged = "[SetBlockListWithTitleFromTextContext(PdxGuiWidget.AccessSelf)]"
+
+		blockoverride "title_text" {
+			text = "[Select_CString(BlockList.GetTitle.IsStringViewNotEmptyOrNull, BlockList.GetTitle.GetString, Select_CString(PdxGuiWidget.HasTooltipMetaTitle, PdxGuiWidget.GetTooltipMetaTitle, Localize('BREAKDOWN')))]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledBlockList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+				blockoverride "block_title" {
+					visible = no
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "SectionListTooltip"
+
+	ContextualTooltipType = {
+		lowpriotextcontext = "[TooltipString.GetString]"
+		ontextcontextchanged = "[SetSectionListFromTextContext(PdxGuiWidget.AccessSelf)]"
+
+		blockoverride "title_text" {
+			text = "[Select_CString(SectionList.GetTitle.IsStringViewNotEmptyOrNull, SectionList.GetTitle.GetString, Select_CString(PdxGuiWidget.HasTooltipMetaTitle, PdxGuiWidget.GetTooltipMetaTitle, Localize('BREAKDOWN')))]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipContentSection = {
+				datamodel = "[SectionList.GetSections]"
+				visible = "[LessThan_int32(GetDataModelSize(SectionList.GetSections), '(int32)3')]"
+
+				item = {
+					TooltipBlockList = {
+						blockoverride "block_title" {
+							text = "[SectionListSection.GetTitle.GetStringView]"
+						}
+						textcontext = "[SectionListSection.GetBody.GetStringView]"
+					}
+				}
+			}
+
+			TooltipStringPairList = {
+				visible = "[GreaterThanOrEqualTo_int32(GetDataModelSize(SectionList.GetSections), '(int32)3')]"
+				textcontext = "[SectionList.GetCollapsedText]"
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "ArrowListTooltip"
+
+	ContextualTooltipType = {
+		blockoverride "title_icon_texture" {
+			texture = "gfx/interface/icons/location_icons/distance_capital.dds"
+		}
+
+		blockoverride "title_text" {
+			text = "MAP_ARROWS"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledStringPairList = {
+				ontextcontextchanged = "[SetStringPairListFromTextContext(PdxGuiWidget.AccessSelf)]"
+				textcontext = "[TooltipString.GetString]"
+				blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "EventOptionsTooltip"
+
+	ContextualTooltipType = {
+		lowpriotextcontext = "[TooltipString.GetString]"
+		ontextcontextchanged = "[SetBlockListWithTitleFromTextContext(PdxGuiWidget.AccessSelf)]"
+
+		blockoverride "title_text" {
+			text = "[Select_CString(BlockList.GetTitle.IsStringViewNotEmptyOrNull, BlockList.GetTitle.GetString, Select_CString(PdxGuiWidget.HasTooltipMetaTitle, PdxGuiWidget.GetTooltipMetaTitle, Localize('BREAKDOWN')))]"
+		}
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[GetConceptTexture('event_option')]"
+			}
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledBlockList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+				blockoverride "block_title" {
+					visible = no
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "RowListTooltip"
+
+	ContextualTooltipType = {
+		lowpriotextcontext = "[TooltipString.GetString]"
+		ontextcontextchanged = "[SetBlockListWithTitleFromTextContext(PdxGuiWidget.AccessSelf)]"
+
+		blockoverride "title_text" {
+			text = "[Select_CString(BlockList.GetTitle.IsStringViewNotEmptyOrNull, BlockList.GetTitle.GetString, Select_CString(PdxGuiWidget.HasTooltipMetaTitle, PdxGuiWidget.GetTooltipMetaTitle, Localize('BREAKDOWN')))]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledBlockList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 420 }}
+				blockoverride "block_title" {
+					visible = no
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "RequirementsListTooltip"
+
+	ContextualTooltipType = {
+		lowpriotextcontext = "[TooltipString.GetString]"
+		ontextcontextchanged = "[SetRequirementsListFromTextContextWithTitle(PdxGuiWidget.AccessSelf)]"
+
+		blockoverride "tooltip_title" {}
+		blockoverride "tooltip_content_margin" { margin = { 0 0 } }
+		blockoverride "action_text_wide" { using = tooltip_max_width_title_wide }
+		blockoverride "tooltip_content" {
+			TooltipScrolledRequirementsList = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 600 }}
+				blockoverride "block_title" {
+					text = "LIST_TITLE_REQUIREMENTS"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "TextBlockTooltip"
+
+	ContextualTooltipType = {
+		lowpriotextcontext = "[TooltipString.GetString]"
+
+		blockoverride "tooltip_title" {}
+		blockoverride "tooltip_content_margin" { margin = { 0 0 } }
+		blockoverride "action_text_wide" { using = tooltip_max_width_title_wide }
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				visible = "[Not(StringIsEmpty(TooltipString.GetString))]"
+				blockoverride "text" {
+					text = "[TooltipString.GetString]"
+				}
+			}
+		}
+	}
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "DebugRawTextTooltip"
+
+	ContextualTooltipType = {
+		blockoverride "tooltip_title" {}
+		blockoverride "tooltip_content_margin" { margin = { 0 0 } }
+		blockoverride "action_text_wide" { using = tooltip_max_width_title_wide }
+		blockoverride "tooltip_ui_action_block" {}
+		blockoverride "tooltip_content" {
+			TooltipScrolledDebugTextBlock = {
+				blockoverride "block_scrollarea" { maximumsize = { -1 600 }}
+				blockoverride "text" {
+					debug_text = "[TooltipString.GetString]"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LateralViewLinkTooltip"
+	BasicFunctionalTooltip = {}
+}
+
+###############################################################################
+## MAP Tooltips
+###############################################################################
+
+@map_tooltip_alpha = 1
+
+container = {
+	alwaystransparent = no
+	name = "TerraIncognitaMapTooltip"
+
+	SimpleContextualTooltipType = {
+		lowpriotextcontext = "TERRA_INCOGNITA_TOOLTIP"
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "gfx/interface/icons/flat_icons/geopolitics/known_world.dds"
+
+				glow = {
+					name = "drop_shadow"
+					glow_radius = 3
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.3
+				}
+			}
+		}
+		blockoverride "concept_link" {
+			text = "[terra_incognita|e]"
+		}
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltipDefault"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_select_target_location"
+	using = select_interaction_target_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_ai_conquer_desire"
+	using = location_tooltip_alt
+	blockoverride "tooltip_location_specific" {
+		TooltipStringPairList = {
+			textcontext = "[GetAiConquerDesireDesc(Location.Self)]"
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_location_modifiers"
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "[Location.GetRankIcon]"
+			}
+		}
+		blockoverride "title_text" { text = "[Location.GetName]" }
+		blockoverride "concept_link" { text = "[location|e]" }
+		blockoverride "title_button" {
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('location_modifiers')]"
+			}
+		}
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				textcontext = "[GetLocationModifiersMapModeDesc(Location.Self)]"
+			}
+		}
+		blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_weather"
+	using = location_tooltip_alt
+	blockoverride "tooltip_location_specific" {
+		TooltipContentSection = {
+			datamodel = "[GetWeatherSystemsInLocation(Location.Self)]"
+			item = {
+				TooltipBlockList = {
+					blockoverride "block_title" {
+						text = "[WeatherSystem.GetLocationInfo(Location.Self)]"
+					}
+					textcontext = "[WeatherSystem.GetTooltip]"
+				}
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_war"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_holy_sites"
+	using = HolySitesLocation_Tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_victory_cards"
+	using = victory_cards_location_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_naval_range"
+	container = {
+		visible = "[Location.IsLand]"
+		using = location_tooltip_alt
+		blockoverride "title_button" {
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('naval_range')]"
+			}
+		}
+	}
+	container = {
+		visible = "[Not(Location.IsLand)]"
+		using = seazone_tooltip
+		blockoverride "title_button" {
+			mapmode_tooltip_button = {
+				datacontext = "[GetMapMode('naval_range')]"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_privateering"
+	container = {
+		visible = "[Not(Location.IsLand)]"
+		using = seazone_tooltip
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_diplomacy"
+
+	container = {
+		visible = "[And(Location.HasOwner, Not(EqualTo_string(Location.GetOwner.GetTag, GetSelectedCountryOrByLocation.GetTag)))]"
+		datacontext = "[Location.GetOwner]"
+		using = CountryMapModeDiplomacyTooltip
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_opinion"
+
+	container = {
+		visible = "[And(Location.HasOwner, Not(EqualTo_string(Location.GetOwner.GetTag, GetSelectedCountryOrByLocation.GetTag)))]"
+		datacontext = "[Location.GetOwner]"
+		using = CountryMapModeDiplomacyTooltip
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_country_culture"
+
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetOwner.GetCulture]"
+		using = culture_tooltip
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_nobles"
+	container = {
+		datacontext = "[GetPopTypeByName('nobles')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_clergy"
+	container = {
+		datacontext = "[GetPopTypeByName('clergy')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_burghers"
+	container = {
+		datacontext = "[GetPopTypeByName('burghers')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_laborers"
+	container = {
+		datacontext = "[GetPopTypeByName('laborers')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_peasants"
+	container = {
+		datacontext = "[GetPopTypeByName('peasants')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_tribesmen"
+	container = {
+		datacontext = "[GetPopTypeByName('tribesmen')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_slaves"
+	container = {
+		datacontext = "[GetPopTypeByName('slaves')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_soldiers"
+	container = {
+		datacontext = "[GetPopTypeByName('soldiers')]"
+		using = LocationPopItem_Breakdown
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_rebels"
+	using = RebelsLocationTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_pop_types"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = LocationPopulationTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_road_builder"
+	container = {
+		datacontext = "[RoadBuilderModeGetView]"
+		container = {
+			datacontext = "[RoadBuilder.GetItemForLocation(Location.Self)]"
+			using = road_destination_entry_tooltip
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_road_builder"
+	container = {
+		datacontext = "[RoadBuilderModeGetView]"
+		container = {
+			datacontext = "[RoadBuilder.GetItemForLocation(Location.Self)]"
+			using = road_destination_entry_tooltip
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "WastelandMapTooltip_road_builder"
+	container = {
+		datacontext = "[RoadBuilderModeGetView]"
+		container = {
+			datacontext = "[RoadBuilder.GetItemForLocation(Location.Self)]"
+			using = road_destination_entry_tooltip
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceOnlyHighlight"
+	using = province_tooltip
+	blockoverride "province_tooltip_visible" { visible = no }
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceMapTooltipDefault"
+	using = province_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "ProvinceMapTooltip_select_target_province"
+	using = select_interaction_target_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaMapTooltipDefault"
+	using = Area_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaMapTooltip_area"
+	using = Area_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaMapTooltip_select_target_area"
+	using = select_interaction_target_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "RegionMapTooltipDefault"
+	using = Region_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "RegionMapTooltip_region"
+	using = Region_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "RegionMapTooltip_select_target_region"
+	using = select_interaction_target_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltipDefault"
+	using = seazone_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneWastelandMapTooltipDefault"
+	using = Wasteland_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "WastelandMapTooltipDefault"
+	using = Wasteland_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CorridorMapTooltipDefault"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SiegeRollModifierTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				using = icon_chance
+			}
+		}
+
+		blockoverride "title_text" {
+			text = "SIEGE_DICE_ROLL_MODIFIER"
+		}
+
+		blockoverride "concept_link" {
+			text = "[siege|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				TooltipListColumnContent = {
+					TooltipTableColumn = {
+						blockoverride "field_left" {
+							datacontext = "[SiegeRollModifierWrapItem]"
+
+							tooltipwidget = {
+								SimpleContextualTooltipType = {
+									blockoverride "title_icon" {
+										icon = {
+											using = tooltip_title_icon_size
+											texture = "[SiegeRollModifierWrapItem.GetIcon]"
+										}
+									}
+									lowpriotextcontext =  "[Localize(SiegeRollModifierWrapItem.GetModifierDesc)]"
+								}
+							}
+							icon = {
+								size = { 24 24 }
+								texture = "[SiegeRollModifierWrapItem.GetIcon]"
+							}
+						}
+
+						blockoverride "field_text" {
+							datacontext = "[SiegeRollModifierWrapItem]"
+							# default_format = "#subtle_name"
+							text = "[Localize(SiegeRollModifierWrapItem.GetModifierName)]"
+						}
+
+						blockoverride "field_right" { expand = {} }
+					}
+
+					TooltipTableColumn = {
+						blockoverride "field_left" { expand = {} }
+						blockoverride "field_text" {
+							datacontext = "[SiegeRollModifierWrapItem]"
+							raw_text = "[SiegeRollModifierWrapItem.GetModifierValue()|+=0]"
+						}
+					}
+
+					blockoverride "column_datamodel"  { datamodel = "[SiegeRollModifierWrap.GetRows]" }
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationUpkeepTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "[LocationUpkeepWrap.GetLocation.GetName]"
+		}
+
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "gfx/interface/icons/country_types/building.dds"
+			}
+		}
+
+		blockoverride "concept_link" {
+			text = "[building_maintenance|e]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipScrolledContentSection = {
+				visible = "[DataModelHasItems(LocationUpkeepWrap.GetBuildings)]"
+				blockoverride "block_scrollarea" {
+					maximumsize = { -1 420 }
+				}
+
+				blockoverride "section_content" {
+					TooltipListColumnContent = {
+						TooltipTableColumn = {
+							blockoverride "column_title" {
+								visible = no
+							}
+
+							blockoverride "field_left" {
+								datacontext = "[LocationUpKeepBuildingItem]"
+								icon = {
+									size = { 24 24 }
+									texture = "[GetBuildingIcon(LocationUpKeepBuildingItem.GetBuilding.GetType)]"
+								}
+							}
+
+							blockoverride "field_text" {
+								datacontext = "[LocationUpKeepBuildingItem]"
+								text = "[LocationUpKeepBuildingItem.GetBuilding.GetName]"
+							}
+
+							blockoverride "field_right" { expand = {} }
+						}
+
+						TooltipTableColumn = {
+							blockoverride "column_title" {
+								visible = no
+							}
+
+							blockoverride "field_left" { expand = {} }
+							blockoverride "field_text" {
+								datacontext = "[LocationUpKeepBuildingItem]"
+								raw_text = "#R -[LocationUpKeepBuildingItem.GetUpkeep|L2]#!@expense!"
+								datacontext = "[LocationUpKeepBuildingItem.GetBuilding]"
+								tooltipwidget = {
+									using = Building_upkeep_tooltip
+								}
+							}
+						}
+
+						blockoverride "column_datamodel" { datamodel = "[LocationUpkeepWrap.GetBuildings]" }
+					}
+				}
+			}
+
+			TooltipListEmptyContent = {
+				visible = "[IsDataModelEmpty(LocationUpkeepWrap.GetBuildings)]"
+				blockoverride "empty_list_text" {
+					text = "LOCATION_UPKEEP_NO_BUILDINGS"
+				}
+			}
+		}
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "AnnexationCostTooltip"
+	using = Annexation_cost_tooltip
+}
+
+## CUSTOM TAGTOOLTIPS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "SimpleCustomTagTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				visible = "[SimpleCustomTagTooltipWrapper.HasIcon]"
+				using = tooltip_title_icon_size
+				texture = "[SimpleCustomTagTooltipWrapper.GetIcon]"
+			}
+		}
+
+		blockoverride "title_text" {
+			visible = "[Not(StringIsEmpty(SimpleCustomTagTooltipWrapper.GetTitle))]"
+			text = "[SimpleCustomTagTooltipWrapper.GetTitle]"
+		}
+
+		blockoverride "concept_link" {
+			visible = "[Not(StringIsEmpty(SimpleCustomTagTooltipWrapper.GetConcept))]"
+			text = "[SimpleCustomTagTooltipWrapper.GetConcept]"
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				visible = "[Not(StringIsEmpty(SimpleCustomTagTooltipWrapper.GetBody))]"
+				blockoverride "text" {
+					text = "[SimpleCustomTagTooltipWrapper.GetBody]"
+				}
+			}
+			TooltipStringPairList = {
+				visible = "[Not(StringIsEmpty(SimpleCustomTagTooltipWrapper.GetList))]"
+				textcontext = "[SimpleCustomTagTooltipWrapper.GetList]"
+			}
+			TooltipFlavorTextBlock = {
+				visible = "[Not(StringIsEmpty(SimpleCustomTagTooltipWrapper.GetFlavor))]"
+				blockoverride "text" {
+					text = "[SimpleCustomTagTooltipWrapper.GetFlavor]"
+				}
+			}
+		}
+	}
+}
+
+## LOCATION MAP TOOLTIPS
+###########################################################
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_tax_base"
+	using = location_tax_base_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_naked"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_locations"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_terrain"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_development"
+	using = location_development_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_control"
+	using = location_control_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_crown_power"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = location_crown_power_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_proximity"
+	using = LocationProximity_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_net_building_profit"
+	using = location_tax_base_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_potential_tax_base"
+	using = location_tax_base_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_uncontrolled_wealth"
+	using = LocationUncontrolledWealth_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_peasant_enfranchisement"
+	using = location_peasant_enfranchisement_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_town_rights"
+	using = location_town_rights_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_max_control"
+	using = location_control_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_missing_control"
+	using = location_control_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_roads"
+	using = location_road_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_rivers"
+	using = RiverModifier_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_migration"
+	using = MigrationAttraction_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_population"
+	using = population_location_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_prosperity"
+	using = location_prosperity_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_market"
+	using = location_market_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_market_access"
+	using = location_market_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_culture"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = LocationPopulationCultureTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_colonial"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = LocationColonial_Tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_location_religion"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = LocationPopulationReligionTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_location_religion_group"
+	container = {
+		datacontext = "[Location.GetPopulationChart.GetPopsPiechartWidget]"
+		using = LocationPopulationReligionTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_climate"
+	using = Climate_mapmode_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_topography"
+	using = Topography_mapmode_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_vegetation"
+	using = Vegetation_mapmode_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_disease"
+	using = location_disease_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_movements"
+	using = location_movements_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_danger"
+	using = location_danger_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_winter"
+	using = location_winter_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_winter"
+	using = location_winter_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_maritime"
+	using = LocationMaritime_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_maritime"
+	using = LocationMaritime_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_supply"
+	using = supply_limit_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_build"
+	container = {
+		datacontext = "[BuildModeGetConstructScoreRanking]"
+		container = {
+			visible = "[ConstructScoreRanking.IsValid]"
+			using = construct_building_ranking_tt
+		}
+		container = {
+			visible = "[Not(ConstructScoreRanking.IsValid)]"
+			datacontext = "[BuildModeGetBuildingType]"
+			using = construct_building_in_location_tt
+
+			blockoverride "construct_building_in_location_tt_extra"{
+				TooltipTextBlock = { #NOT FILTERED LOCATION
+					visible = "[BuildModeHasUnfilteredItem(Location.Self)]"
+					textcontext = "NOT_FILTERED_BUILDING"
+
+					blockoverride "textblock_background_tint"  {
+						modify_texture = {
+							using = color_white_texture
+						}
+					}
+				}
+			}
+		}
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_recruit"
+	container = {
+		visible = "[RecruitInLocationLateralView.IsMercenary]"
+		datacontext = "[RecruitModeGetView]"
+		using = mercenary_recruit_map_tt
+	}
+	container = {
+		visible = "[And(Not(RecruitInLocationLateralView.IsUnitTemplate), Not(RecruitInLocationLateralView.IsMercenary))]"
+		datacontext = "[RecruitModeGetView]"
+		datacontext = "[RecruitModeGetRecruitScoreRanking]"
+		container = {
+			visible = "[RecruitScoreRanking.IsValid]"
+			using = unit_recruit_ranking_tt
+		}
+		container = {
+			visible = "[Not(RecruitScoreRanking.IsValid)]"
+			container = {
+				using = unit_recruit_map_tt
+			}
+		}
+	}
+	container = {
+		visible = "[RecruitInLocationLateralView.IsUnitTemplate]"
+		datacontext = "[RecruitModeGetView]"
+		datacontext = "[RecruitModeGetRecruitScoreRanking]"
+		using = UnitTemplate_map_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_area"
+	container = {
+		datacontext = "[Location.GetArea]"
+		using = Area_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeaZoneMapTooltip_area"
+	container = {
+		datacontext = "[Location.GetArea]"
+		using = Area_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaOnlyHighlight"
+	container = {
+		datacontext = "[Location.GetArea]"
+		using = Area_tooltip
+	}
+	blockoverride "area_tooltip_visible"  { visible = no }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_region"
+	container = {
+		datacontext = "[Location.GetRegion]"
+		using = Region_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_region"
+	container = {
+		datacontext = "[Location.GetRegion]"
+		using = Region_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_sub_continent"
+	container = {
+		datacontext = "[Location.GetSubContinent]"
+		using = Sub_Continent_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_sub_continent"
+	container = {
+		datacontext = "[Location.GetSubContinent]"
+		using = Sub_Continent_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_continent"
+	container = {
+		datacontext = "[Location.GetSubContinent]"
+		using = Sub_Continent_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_continent"
+	container = {
+		datacontext = "[Location.GetSubContinent]"
+		using = Sub_Continent_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_provinces"
+	container = {
+		datacontext = "[Location.GetProvinceDefinition]"
+		using = ProvinceDefinition_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_provinces"
+	container = {
+		datacontext = "[Location.GetProvinceDefinition]"
+		using = ProvinceDefinition_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_works_of_art"
+	using = location_art_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_natural_harbor_suitability"
+	using = NaturalHarborSuitability_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_harbor_capacity"
+	using = HarborCapacity_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_raw_material"
+	container = {
+		datacontext = "[Location.GetRawMaterial]"
+		using = Goods_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_language"
+	container = {
+		datacontext = "[Location.GetDominantLanguage]"
+		using = LanguageTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_language_family"
+	container = {
+		datacontext = "[Location.GetDominantLanguage.GetFamily]"
+		using = language_family_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_language_power"
+	container = {
+		datacontext = "[Location.GetDominantLanguage]"
+		using = LanguagePower_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_market_language"
+	container = {
+		datacontext = "[Location.GetMarket.GetLanguage]"
+		using = LanguageTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_dialect"
+	container = {
+		datacontext = "[Location.GetDominantDialect]"
+		using = dialect_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_country_religion"
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetOwner.GetReligion]"
+		using = religion_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_common_language"
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetOwner]"
+		datacontext = "[Location.GetOwner.GetCommonLanguage]"
+		using = LanguageTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_liturgical_language"
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetOwner]"
+		datacontext = "[Location.GetOwner.GetLiturgicalLanguage]"
+		using = liturgical_language_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_literacy"
+	container = {
+		visible = "[Location.HasOwner]"
+		using = LocationLiteracy_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_institution"
+	container = {
+		visible = "[Location.HasOwner]"
+		using = institution_in_location_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_offer_peace"
+	container = {
+		visible = "[Location.HasOwner]"
+		using = offer_peace_location_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_food"
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetProvince]"
+		using = province_food_tooltip
+	}
+	container = {
+		visible = "[Not(Location.HasOwner)]"
+		using = location_tooltip_alt
+		blockoverride "location_not_owned" {
+			text_multi = {
+				max_width = 500
+				autoresize = yes
+				text = "LOCATION_TOOLTIP_NOT_OWNED_FOOD"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_food_productivity"
+	container = {
+		visible = "[Location.HasOwner]"
+		using = location_food_tooltip
+	}
+	container = {
+		visible = "[Not(Location.HasOwner)]"
+		using = location_tooltip_alt
+		blockoverride "location_not_owned" {
+			text_multi = {
+				max_width = 500
+				autoresize = yes
+				text = "LOCATION_TOOLTIP_NOT_OWNED_FOOD"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_local_population_growth"
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "gfx/interface/icons/location_icons/new/population_growth.dds"
+			}
+		}
+		blockoverride "title_text" {
+			datacontext = "[Location]"
+			text = "POP_GROWTH_TT_HEADER_TEXT"
+		}
+		blockoverride "concept_link" {
+			text = [population_growth|E]
+		}
+		blockoverride "tooltip_content" {
+			TooltipStringPairList = {
+				blockoverride "block_title" {
+					text = "MAPMODE_POP_GROWTH_TT_TEXT"
+				}
+				textcontext = "[Location.GetPopGrowthInfo]"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_integration"
+	container = {
+		datacontext = "[PdxGuiWidget]"
+		visible = "[Location.HasOwner]"
+		using = location_core_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_stability"
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetOwner]"
+		using = StabilityResourceTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_satisfaction"
+	container = {
+		visible = "[Location.HasOwner]"
+		using = AverageSatisfaction_tooltip
+	}
+			blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_cities"
+	container = {
+		visible = "[Location.HasOwner]"
+		datacontext = "[Location.GetRank]"
+		using =  LocationRank_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_political"
+	container = {
+		using = location_tooltip_alt
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+# Timeline mapmode cooltip — shows the historical owner of the hovered location at the
+# playback panel's current cursor date, along with the date itself. Pulls owner via
+# `GetTimelinePlaybackPanel.GetOwnerAtCursorForLocation(Location.Self)` from the panel's
+# cached world snapshot.
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_timeline_ownership"
+	datacontext = "[GetTimelinePlaybackPanel]"
+	ContextualTooltipType = {
+		blockoverride "title_icon_texture" {
+			texture = "[GetConceptTexture('location')]"
+		}
+		blockoverride "title_text" {
+			text = "[Location.GetName]"
+		}
+		blockoverride "concept_link" {
+			text = "[location|e]"
+		}
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				TooltipManualTableField = {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						default_format = "#low"
+						raw_text = "[TimelinePlaybackPanel.GetCursorDateString]"
+					}
+				}
+
+				TooltipManualTableField = {
+					visible = "[Not(StringIsEmpty(TimelinePlaybackPanel.GetHistoricalOwnerNameForLocation(Location.Self)))]"
+
+					text_single = {
+						text = "LOCATION_OWNER_TT"
+					}
+
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						default_format = "#yellow_titles"
+						raw_text = "[TimelinePlaybackPanel.GetHistoricalOwnerNameForLocation(Location.Self)]"
+					}
+				}
+			}
+
+			TooltipDebugStringPairList = {
+				textcontext = "[TimelinePlaybackPanel.GetTimelineDebugTextForLocation(Location.Self)]"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "TimelineCountryMapTooltipDefault"
+	using = PopulationTimelineTooltip
+	blockoverride "title_icon" { TimelineCountryFlag = { size = { 72 48 } } }
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneMapTooltip_timeline_ownership"
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "WastelandMapTooltip_timeline_ownership"
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneWastelandMapTooltip_timeline_ownership"
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_build_rgo"
+	container = {
+		datacontext = "[ExpandModeGetConstructScoreRanking]"
+		container = {
+			visible = "[ConstructScoreRanking.IsValid]"
+			using = expand_rgo_ranking_tt
+		}
+		container = {
+			visible = "[Not(ConstructScoreRanking.IsValid)]"
+			using = location_rgo_button_tooltip
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_selected_goods"
+	using = location_rgo_button_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_build_rgo_in_goods"
+	using = location_rgo_button_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_tactical"
+	using = Tactical_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_fort"
+	using = Tactical_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_building_based"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_pop_based"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationMapTooltip_army_based"
+	using = location_tooltip_alt
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+## LOCATION CONTEXT MENUS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "TerraIncognitaContextMenuTooltip"
+	TerraIncognitaContextMenu = {}
+	blockoverride "contextmenu_precontent" { using = pinned_mapmodes }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LocationContextMenuDefault"
+	LocationContextMenu = {}
+	blockoverride "contextmenu_precontent" { using = pinned_mapmodes }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SeazoneContextMenuDefault"
+	SeazoneContextMenu = {}
+	blockoverride "contextmenu_precontent" { using = pinned_mapmodes }
+}
+
+## COUNTRY MAP TOOLTIPS
+###########################################################
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_rebels"
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				using = tooltip_title_icon_size
+				texture = "gfx/interface/icons/rebels/fist.dds"
+			}
+		}
+		blockoverride "title_text" {
+			text = "REBEL_MAPMODE_COUNTRY_TITLE"
+		}
+		blockoverride "tooltip_content" {
+			TooltipScrolledStringPairList = {
+				visible = "[Location.HasMapmodeSpecificTooltip]"
+				layoutpolicy_horizontal = expanding
+				blockoverride "block_scrollarea" {
+					maximumsize = { -1 400 }
+				}
+				textcontext = "[Location.GetMapmodeSpecificTooltip]"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltipDefault"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_select_target_country"
+	using = select_interaction_target_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_country_truce"
+
+	container = {
+		visible = "[StringIsEmpty(GetSelectedCountryOrByLocation.GetTruceToolTip(Country.Self))]"
+		using = CountryTooltip
+	}
+
+	container = {
+		visible = "[Not(StringIsEmpty(GetSelectedCountryOrByLocation.GetTruceToolTip(Country.Self)))]"
+
+		ContextualTooltipType = {
+			blockoverride "title_icon_texture" { texture = "gfx/interface/icons/diplomatic_status/truce.dds" }
+			blockoverride "title_text" { text = "TRUCE_WITH_COUNTRY_TITLE" }
+			blockoverride "concept_link" { text = "[truce|E]" }
+			blockoverride "tooltip_content" {
+				TooltipTextBlock = {
+					blockoverride "text" {
+						text = "[GetSelectedCountryOrByLocation.GetTruceToolTip(Country.Self)]"
+					}
+				}
+			}
+		}
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_war"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_holy_sites"
+	using = HolySites_Tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_great_powers"
+	container = {
+		visible = "[Country.IsGreatPower]"
+		using = great_power_info_tooltip
+	}
+	container = {
+		visible = "[Country.IsRegionalPower]"
+		using = regional_power_info_tooltip
+	}
+	container = {
+		visible = "[Not(Or(Country.IsGreatPower, Country.IsRegionalPower))]"
+		using = non_great_power_info_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_pop_types"
+	container = {
+		datacontext = "[Country.GetPopulationChart.GetPopsPiechartWidget]"
+		using = CountryPopulationTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_government"
+	container = {
+		visible = "[Country.IsValid]"
+		datacontext = "[Country.GetGovernment.GetGovernmentType]"
+		using = GovernmentType_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_antagonism"
+	container = {
+		visible = "[Not(EqualTo_string(Country.GetTag, GetSelectedCountryOrByLocation.GetTag))]"
+		using = AntagonismTooltipBase
+		blockoverride "title_text" { text = "ANTAGONISM_TOOLTIP_T_3" }
+		blockoverride "antagonism_datacontext" {
+			textcontext = "[Country.GetDiplomacy.GetAntagonismDescription(GetSelectedCountryOrByLocation)]"
+		}
+	}
+
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_country_rank"
+	container = {
+		visible = "[Country.IsValid]"
+		datacontext = "[Country.GetRank]"
+		using = CountryRank_tooltip
+		blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+	}
+}
+
+
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_threat"
+
+	container = {
+		visible = "[Country.IsValid]"
+		using = CountryIsThreat_tooltip
+		blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+	}
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_terrain"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_players"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_diplomacy"
+	container = {
+		visible = "[Not(EqualTo_string(Country.GetTag, GetSelectedCountryOrByLocation.GetTag))]"
+		using = CountryMapModeDiplomacyTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_opinion"
+	container = {
+		visible = "[Not(EqualTo_string(Country.GetTag, GetSelectedCountryOrByLocation.GetTag))]"
+		using = CountryMapModeDiplomacyTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_country_culture"
+	container = {
+		datacontext = "[Country.GetCulture]"
+		using = culture_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_political"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_tax_base"
+	using = TaxBaseTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+
+
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_development"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_advances"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			datacontext = "[Country]"
+			text = "[Country.GetNameWithNoTooltip]"
+		}
+		blockoverride "title_icon" {
+			country_flag_small = {
+				datacontext = "[Country]"
+			}
+		}
+		blockoverride "concept_link" {
+			text = "[advances|E]"
+		}
+		blockoverride "tooltip_content" {
+			TooltipScrolledStringPairList = {
+				block "content_datacontext" {}
+				blockoverride "block_scrollarea" { maximumsize = { -1 350 } minimumsize = { -1 30 } }
+
+				textcontext = "[GetAdvancesMapModeInfo(Country.Self)]"
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_economical_base"
+	using = EconomicalBaseTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_location_religion"
+	container = {
+		datacontext = "[Country.GetPopulationChart.GetPopsPiechartWidget]"
+		using = CountryPopulationReligionTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_location_religion_group"
+	container = {
+		datacontext = "[Country.GetPopulationChart.GetPopsPiechartWidget]"
+		using = CountryPopulationReligionTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_country_religion"
+	container = {
+		datacontext = "[Country.GetReligion]"
+		using = religion_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_power_projection"
+	using = power_projection_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_population"
+	container = {
+		datacontext = "[Country.GetPopulationChart.GetPopsPiechartWidget]"
+		using = PopulationTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_stability"
+	container = {
+		datacontext = "[Country.GetEconomy]"
+		using = StabilityResourceTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_culture"
+	container = {
+		datacontext = "[Country.GetPopulationChart.GetPopsPiechartWidget]"
+		using = CountryPopulationCultureTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+#container = {
+#	alwaystransparent = no
+#	name = "CountryMapTooltip_select_country_diplomacy"
+#	container = {
+#		visible = "[SelectCountryDiplomacy_HasDiplomaticActionItem(Country.Self)]"
+#		datacontext = "[SelectCountryDiplomacy_GetDiplomaticActionItem(Country.Self)]"
+#		using = DiploAcceptanceTooltip
+#	}
+#	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+#}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_court_language"
+	container = {
+		visible = "[Country.IsValid]"
+		datacontext = "[Country]"
+		datacontext = "[Country.GetCourtLanguage]"
+		using = court_language_tooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_dynasty"
+	container = {
+		visible = "[And(Country.IsValid, Country.GetGovernment.GetRuler.HasDynasty)]"
+		datacontext = "[Country.GetGovernment.GetRuler.GetDynasty]"
+		using = Dynasty_tooltip
+	}
+	container = {
+		visible = "[And(Country.IsValid, Country.GetGovernment.HasSuccessionDynasty)]"
+		datacontext = "[Country.GetGovernment.GetSuccessionDynasty]"
+		using = Dynasty_tooltip
+		blockoverride "striped_explanation_visible" { visible = yes }
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_building_based"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_pop_based"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_army_based"
+	using = CountryTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_ai_personality_mapmode"
+	container = {
+		visible = "[And(Country.IsValid, Not(Country.HasHumanController))]"
+		datacontext = "[Country.GetAiPersonality]"
+		using = AiPersonality_tooltip
+	}
+	container = {
+		visible = "[And(Country.IsValid, Country.HasHumanController)]"
+		ContextualTooltipType = {
+			blockoverride "concept_link" {
+				text = "[country_personality|e]"
+			}
+
+			blockoverride "title_text" {
+				text = "[Country.GetPersonalityMapmodeTitle]"
+			}
+
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/icons/map_modes/ai_personalities.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipFlavorTextBlock = {
+					blockoverride "text" {
+						text = "[Country.GetPersonalityMapmodeTooltip]"
+					}
+				}
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CountryMapTooltip_ai_disposition_mapmode"
+	container = {
+		visible = "[And(Country.IsValid, Not(Country.IsLocalPlayer))]"
+		using = AiDisposition_tooltip
+		# 4B: title shows the hovered country's disposition toward the perspective country
+		# (the selected country, or the player when nothing is selected).
+		blockoverride "title_text" {
+			text = "[Select_CString(IsPlayerValid, Country.GetDispositionTowardMapPerspective, Localize('ai_disposition_mapmode'))]"
+		}
+		# The detailed second-person breakdown only makes sense from the player's own perspective.
+		# When reading a third party's stances (a foreign country is selected), show the label alone.
+		blockoverride "tooltip_content" {
+			TooltipFlavorTextBlock = {
+				visible = "[Not(IsPlayerValid)]"
+				blockoverride "text" {
+					text = "AI_DISPOSITION_NO_PLAYER_COUNTRY"
+				}
+			}
+			TooltipFlavorTextBlock = {
+				visible = "[And(IsPlayerValid, IsDispositionMapPerspectivePlayer)]"
+				blockoverride "text" {
+					text = "[Country.GetDispositionToPlayerDesc]"
+				}
+			}
+			TooltipScrolledStringPairList = {
+				visible = "[And3(IsPlayerValid, IsDispositionMapPerspectivePlayer, Not(StringIsEmpty(Country.GetDispositionToPlayerBreakdown)))]"
+				textcontext = "[Country.GetDispositionToPlayerBreakdown]"
+			}
+			TooltipRowList = {
+				visible = "[And3(IsPlayerValid, IsDispositionMapPerspectivePlayer, Not(StringIsEmpty(Country.GetDispositionToPlayerExpect)))]"
+				textcontext = "[Country.GetDispositionToPlayerExpect]"
+			}
+			TooltipRowList = {
+				visible = "[And3(IsPlayerValid, IsDispositionMapPerspectivePlayer, Not(StringIsEmpty(Country.GetObjectivesDisplayText)))]"
+				textcontext = "[Country.GetObjectivesDisplayText]"
+			}
+			TooltipFlavorTextBlock = {
+				visible = "[And(IsPlayerValid, Not(IsDispositionMapPerspectivePlayer))]"
+				blockoverride "text" {
+					text = "AI_DISPOSITION_MAP_STALENESS_NOTE"
+				}
+			}
+		}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+## COUNTRY CONTEXT MENUS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "CountryContextMenuDefault"
+	CountryContextMenu = {}
+	blockoverride "contextmenu_precontent" { using = pinned_mapmodes }
+}
+
+## MARKET MAP TOOLTIPS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "MarketMapTooltipDefault"
+	using = Market_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "AreaMapTooltip_select_target_market"
+	using = select_interaction_target_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketMapTooltip_market"
+	using = Market_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketMapTooltip_market_language"
+	container = {
+		datacontext = "[Market.GetLanguage]"
+		using = LanguageTooltip
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "MarketMapTooltip_market_good_prices"
+	container = {
+		datacontext = "[GoodsDetailsModeGetView]"
+		datacontext = "[GoodsDetailsLateralView.GetGoods]"
+		using = SpecificGoodsMarket_tooltip
+		blockoverride "good_details_flavor_text" {}
+	}
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+## CULTURE GROUPS MAP TOOLTIPS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "CultureGroupMapTooltipDefault"
+	using = culture_groups_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CultureGroupMapTooltip_culture_group"
+	using = culture_groups_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+## MARKET CONTEXT MENUS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "MarketContextMenuDefault"
+	MarketContextMenu = {}
+	blockoverride "contextmenu_precontent" { using = pinned_mapmodes }
+}
+
+## OTHER MAP TOOLTIPS
+###############################################################################
+
+container = {
+	alwaystransparent = no
+	name = "LanguageFamilyMapTooltipDefault"
+	using = language_family_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageFamilyMapTooltip_language_family"
+	using = language_family_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageMapTooltipDefault"
+	using = LanguageTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageMapTooltip_language"
+	using = LanguageTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageMapTooltip_common_language"
+	using = LanguageTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "LanguageMapTooltip_liturgical_language"
+	using = LanguageTooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CultureMapTooltipDefault"
+	using = culture_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "CultureMapTooltip_culture"
+	using = culture_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GraphicalCultureMapTooltipDefault"
+	using = graphical_culture_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "GraphicalCultureMapTooltip_graphical_culture"
+	using = graphical_culture_map_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligionMapTooltipDefault"
+	using = religion_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligionMapTooltip_location_religion"
+	using = religion_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "ReligionMapTooltip_country_religion"
+	using = religion_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "DialectMapTooltipDefault"
+	using = dialect_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "DialectMapTooltip_dialect"
+	using = dialect_tooltip
+	blockoverride "bg_tooltip_alpha" { alpha = @map_tooltip_alpha }
+}
+
+container = {
+	alwaystransparent = no
+	name = "SpyNetworkFogTooltip"
+	ContextualTooltipType = {
+		blockoverride "title_text" {
+			text = "INTEL_FOG_TOOLTIP_HEADER"
+		}
+		blockoverride "concept_link" {
+			text = "[spy_network_fog|e]"
+		}
+		blockoverride "tooltip_content" {
+			TooltipTextBlock = {
+				blockoverride "text" {
+					text = "INTEL_FOG_TOOLTIP_BODY"
+				}
+			}
+		}
+	}
+}

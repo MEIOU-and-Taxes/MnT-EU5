@@ -1,0 +1,84 @@
+﻿MnT_credit_output_from_inflation = {
+	value = inflation
+	multiply = 5
+}
+
+# Monthly Credit per unit of debt: 1 per 1,000, falling to 0.5 with advances.
+mnt_credit_loan_demand_multiplier = {
+	if = {
+		limit = { has_advance = clearing_house_advance }
+		value = 0.0005
+	}
+	else_if = {
+		limit = { has_advance = stock_exchange_advance }
+		value = 0.0006
+	}
+	else_if = {
+		limit = { has_advance = global_trade_advance }
+		value = 0.0007
+	}
+	else_if = {
+		limit = { has_advance = basic_financial_instruments }
+		value = 0.0008
+	}
+	else_if = {
+		limit = { has_advance = banking_advance }
+		value = 0.0009
+	}
+	else = {
+		value = 0.001
+	}
+}
+
+# Read-only market-scope values used by the Credit-price interest tooltip.
+mnt_credit_tooltip_market_price = {
+	value = "goods:credit.price_in_market(root)"
+}
+
+mnt_credit_tooltip_market_supply = {
+	value = "goods_supply_in_market(goods:credit)"
+}
+
+# Country scope: replace only the cached loan component with the live ledger.
+mnt_credit_lending_demand = {
+	if = {
+		limit = { capital.market.location = { has_variable = mnt_credit_quote_other_demand } }
+		value = "capital.market.location.var:mnt_credit_quote_other_demand"
+		add = "capital.market.location.var:mnt_credit_loan_final_scale"
+	}
+	else = {
+		value = "capital.market.goods_demand_in_market(goods:credit)"
+	}
+}
+
+# Market contribution to annual interest. Above quote 1, a 10% baseline
+# approaches 50%; quote 2 gives 12.5%. Surplus discounts approach -9 percentage points (1% baseline).
+mnt_credit_market_interest_adjustment = {
+	if = {
+		limit = { mnt_credit_lending_quote > 1 }
+		value = mnt_credit_lending_quote
+		subtract = 1
+		divide = {
+			value = mnt_credit_lending_quote
+			add = 14
+		}
+		multiply = 0.40
+		max = 0.40
+	}
+	else = {
+		value = mnt_credit_lending_quote
+		subtract = 1
+		multiply = 0.09
+	}
+}
+
+# Credit has base price 1. The one-unit buffer keeps empty markets finite.
+mnt_credit_lending_quote = {
+	value = mnt_credit_lending_demand
+	add = 1
+	divide = {
+		value = "capital.market.goods_supply_in_market(goods:credit)"
+		add = 1
+	}
+	min = 0.01
+}
