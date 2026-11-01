@@ -1,0 +1,5198 @@
+template marker_unit_side_color {
+	modify_texture = {
+		using = color_grey_texture
+		alpha = 0.35
+		visible = "[Unit.GetCountry.IsNeutral]"
+	}
+
+	modify_texture = {
+		using = color_enemy_red_texture
+		alpha = 1
+		visible = "[Player.IsEnemy(Unit.GetCountry.Self)]"
+	}
+
+	modify_texture = {
+		using = color_allied_blue_texture
+		alpha = 1
+		visible = "[Unit.GetCountry.IsAllied]"
+	}
+
+	modify_texture = {
+		using = color_light_green_texture
+		alpha = 0.3
+		visible = "[Unit.GetCountry.IsPlayer]"
+	}
+}
+
+template marker_unit_side_color_transporting {
+	modify_texture = {
+		using = color_grey_texture
+		alpha = 0.35
+		visible = "[Unit.GetCountry.IsNeutral]"
+	}
+
+	modify_texture = {
+		using = color_enemy_red_texture
+		alpha = 1
+		visible = "[Player.IsEnemy(Unit.GetCountry.Self)]"
+	}
+
+	modify_texture = {
+		using = color_allied_blue_texture
+		alpha = 1
+		visible = "[And(Unit.GetCountry.IsAllied, Not(Unit.IsTransportingOurUnits))]"
+	}
+
+	modify_texture = {
+		using = color_light_green_texture
+		alpha = 0.3
+		visible = "[Or(Unit.GetCountry.IsPlayer, Unit.IsTransportingOurUnits)]"
+	}
+}
+
+template marker_country_side_color {
+	modify_texture = {
+		using = color_grey_texture
+		alpha = 0.35
+		visible = "[Country.IsNeutral]"
+	}
+
+	modify_texture = {
+		using = color_enemy_red_texture
+		alpha = 1
+		visible = "[Player.IsEnemy(Country.Self)]"
+	}
+
+	modify_texture = {
+		using = color_allied_blue_texture
+		alpha = 1
+		visible = "[Country.IsAllied]"
+	}
+
+	modify_texture = {
+		using = color_light_green_texture
+		alpha = 0.3
+		visible = "[Country.IsPlayer]"
+	}
+}
+
+template marker_siege_side_color {
+	modify_texture = {
+		using = color_grey_texture
+
+		block "blocked_neutral_siege_alpha" {
+			alpha = 0.35
+		}
+		visible = "[Or(Siege.GetSiegeDefender.IsNeutral, Siege.GetLocation.HasCombat)]"
+		block "marker_siege_color_blend" {}
+	}
+
+	modify_texture = {
+		using = color_red_texture
+		# block "player_siege_alpha" {
+			alpha = 0.4
+		# }
+		visible = "[And(Siege.GetSiegeDefender.IsPlayer, Not(Siege.GetLocation.HasCombat))]"
+		block "marker_siege_color_blend" {}
+	}
+
+	modify_texture = {
+		using = color_mid_blue_texture
+		# block "allied_siege_alpha" {
+		# 	alpha = 1.0
+		# }
+		visible = "[And(Siege.GetSiegeDefender.IsAllied, Not(Siege.GetLocation.HasCombat))]"
+		block "marker_siege_color_blend" {}
+	}
+
+	modify_texture = {
+		using = color_light_green_texture
+		block "enemy_siege_alpha" {
+			alpha = 0.3
+		}
+		visible = "[And(Player.IsEnemy(Siege.GetSiegeDefender.Self), Not(Siege.GetLocation.HasCombat))]"
+		block "marker_siege_color_blend" {}
+	}
+}
+
+template marker_bg_circle {
+	background = {
+		texture = "gfx/interface/component_tiles/hud_corners/circle_background.dds"
+		texture_density = 2
+		alpha = 1
+		margin = { 2 2 }
+
+		block "marker_bg_circle_extra_modifiers" {
+			modify_texture = {
+				using = color_mid_blue_texture
+			}
+		}
+
+		modify_texture = {
+			texture = "gfx/interface/component_overlay/gold_overlay_circle.dds"
+			texture_density = 2
+			spriteType = stretched
+			spriteborder = { 250 250 }
+			blend_mode = overlay
+			alpha = 0.7
+		}
+	}
+
+	background = {
+		texture = "gfx/interface/component_tiles/hud_corners/circle_shadow.dds"
+		texture_density = 2
+		margin = { 5 5 }
+		alpha = 0.5
+	}
+
+	background = {
+		texture = "gfx/interface/component_tiles/hud_corners/circle_frame.dds"
+		texture_density = 2
+		alpha = 1
+		modify_texture = {
+			using = color_gold_texture
+		}
+
+		using = overlay_gold
+	}
+}
+
+window = {
+	name = "map_marker_layer" # Referenced from code
+	size = { 100% 100% }
+	layer = map_marker
+
+	alwaystransparent = yes
+	filter_mouse = none
+
+	using = Animation_Show_Hide_UI
+}
+
+window = {
+	name = "inactive_widgets_storage" # Referenced from code
+	size = { 100% 100% }
+	layer = map_marker
+
+	alwaystransparent = yes
+	visible = no
+	max_update_rate = -2 # Don't update data properties.
+}
+
+### PARLIAMENT
+widget = {
+	name = "parliament_marker"
+	max_update_rate = 4
+	using = bg_circle_piechart
+
+	size = "[Min_CVector2f(Multiply_CVector2f(GetInverseZoom2, '(CVector2f)9333, 9333'), '(CVector2f)50, 50')]"
+	position = { 0 2 }
+
+	visible = "[ParliamentMarker.IsVisible]"
+
+	piechart = {
+		parentanchor = center
+		block "piechart_size" {
+			size = { 90% 90% }
+		}
+		using = piechart_angles
+
+		pieslice_no_highlight = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[ParliamentMarker.GetCountry.GetGovernment.GetParliament.GetParliamentDurationProgress]"
+			color = { 0.01 0.6 0.9 1 }
+			alwaystransparent = yes
+		}
+
+		pieslice_no_highlight = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)1.0', FixedPointToFloat(ParliamentMarker.GetCountry.GetGovernment.GetParliament.GetParliamentDurationProgress))]"
+			color = { 0.0 0.1 0.1 1 }
+			alwaystransparent = yes
+		}
+	}
+
+	button = {
+		visible = "[ParliamentMarker.IsPlayerParliament]"
+		parentanchor = center
+		allow_outside = yes
+		block "button_size" {
+			size = { 55% 55% }
+		}
+		texture = "gfx/interface/icons/flat_icons/parliament.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			using = ParliamentInSession_tooltip
+		}
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "AUTOMATED_SYSTEM_PARLIAMENT_CLICK"
+			on_action = "[OpenLateralViewWithParams('government', 'tabcontent = parliament')]"
+		}
+	}
+
+	button = {
+		visible = "[Not(ParliamentMarker.IsPlayerParliament)]"
+		parentanchor = center
+		allow_outside = yes
+		block "button_size" {
+			size = { 55% 55% }
+		}
+		texture = "gfx/interface/icons/flat_icons/parliament.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			using = HostileParliamentInSession_tooltip
+			# using = ParliamentInSession_tooltipdd
+		}
+	}
+}
+
+### Holy Site
+widget = {
+	name = "holy_site_marker"
+	max_update_rate = 4
+	allow_outside = yes
+	size = { 40 40 }
+	position = { 0 0 }
+
+	icon = {
+		parentanchor = center
+		size = { 40 40 }
+		texture = "gfx/interface/icons/location_icons/holy_sites.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			container = {
+				alwaystransparent = no
+				datacontext = "[HolySiteMarker.GetLocation]"
+				using = HolySitesLocation_Tooltip
+			}
+		}
+	}
+
+	text_single = {
+		datacontext = "[HolySiteMarker.GetLocation]"
+		visible = "[LessThanOrEqualTo_int32(GetZoomStep, '(int32)7')]"
+		parentanchor = right|vcenter
+		position = { 4 0 }
+		snap_to_pixels = no
+		default_format = "#high"
+		text = "[GetDataModelSize(Location.GetHolySites)]"
+		using = Font_Size_Medium
+	}
+}
+
+### Religious Order presence (commandery / hospice / abbey)
+widget = {
+	name = "religious_order_marker"
+	allow_outside = yes
+	size = "[Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)4'), '(CVector2f)32, 32', Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)5'), '(CVector2f)30, 30', Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)6'), '(CVector2f)28, 28', Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)7'), '(CVector2f)26, 26', '(CVector2f)24, 24'))))]"
+	position = { 0 0 }
+
+	datacontext = "[ReligiousOrderMarker.GetDisplayOrder]"
+
+	icon = {
+		parentanchor = bottom|hcenter
+		widgetanchor = center
+		size = "[Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)4'), '(CVector2f)32, 32', Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)5'), '(CVector2f)30, 30', Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)6'), '(CVector2f)28, 28', Select_CVector2f(LessThanOrEqualTo_int32(GetZoomStep, '(int32)7'), '(CVector2f)26, 26', '(CVector2f)24, 24'))))]"
+		texture = "[ReligiousOrder.GetIcon]"
+		texture_density = 2
+
+		alwaystransparent = no
+		onmousehierarchyenter = "[ReligiousOrder.HighlightOnMap(PdxGuiWidget.AccessSelf)]"
+
+		tooltipwidget = {
+			using = ReligiousOrder_tooltip
+		}
+
+		icon = {
+			visible = "[And(IsBuildDebug, ReligiousOrder.IsUsingDefaultIcon)]"
+			parentanchor = center
+			size = { 100% 100% }
+			texture = "[ReligiousOrder.GetIcon]"
+			texture_density = 2
+			color = "[ReligiousOrder.GetColorVector]"
+			alpha = 0.65
+		}
+	}
+}
+
+### Cardinal seat
+widget = {
+	name = "cardinal_marker"
+	allow_outside = yes
+	size = { 32 32 }
+	position = { 0 0 }
+
+	datacontext = "[CardinalMarker.GetDisplayCardinal]"
+
+	icon = {
+		parentanchor = center
+		size = { 32 32 }
+		texture = "gfx/interface/icons/international_organizations/cardinals.dds"
+		texture_density = 2
+
+		tooltipwidget = {
+			container = {
+				alwaystransparent = no
+				text_single = {
+					default_format = "#high"
+					text = "[Character.GetName]"
+					using = Font_Size_Medium
+				}
+			}
+		}
+	}
+}
+
+### Expedition current-location portrait
+widget = {
+	name = "expedition_marker"
+	allow_outside = yes
+	size = { 56 78 }
+	position = { 0 0 }
+
+	datacontext = "[ExpeditionMarker.GetDisplayExpedition]"
+
+	portrait_standard_head_button = {
+		using = character_portrait_bg
+		datacontext = "[Expedition.GetLeader]"
+		size = { 56 66 }
+		allow_outside = yes
+
+		icon = {
+			block "character_frame_texture" {
+				texture = "gfx/interface/component_decoration/character_frames/character_frame_1.dds"
+			}
+			texture_density = 2
+			size = { 100% 100% }
+		}
+
+		blockoverride "portrait_click" {
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				title = "OUTLINER_OPEN_EXPEDITIONS"
+				on_action = "[ExpeditionMarker.OpenExpeditionsLateralView]"
+			}
+		}
+
+		blockoverride "character_contextmenu" {}
+		blockoverride "rightclick" {}
+
+		blockoverride "character_tooltip" {
+			tooltip_enabled = yes
+			tooltipwidget = {
+				datacontext = "[ExpeditionMarker.GetDisplayExpedition]"
+				using = Expedition_tooltip
+			}
+		}
+		widget = {
+			size = { 40 24 }
+			parentanchor = hcenter|bottom
+			position = {0 12}
+			datacontext = "[Expedition.GetType]"
+			using = bg_paper_card
+			using = expedition_card_header_color
+
+			card_header_button_01 = {
+				size = { 100% 100% }
+
+				tooltipwidget = {
+					using = Expedition_tooltip
+				}
+
+				action_tooltip = {
+					click_type = left
+					click_mode = single
+
+					title = "OUTLINER_OPEN_EXPEDITIONS"
+					on_action = "[ExpeditionMarker.OpenExpeditionsLateralView]"
+				}
+
+				widget = {
+					parentanchor = center
+					size = { 16 16 }
+					using = expedition_category_icon
+					using = bg_circle_piechart
+				}
+			}
+		}
+	}
+}
+
+### Market
+widget = {
+	name = "market_marker"
+	max_update_rate = 4
+	allow_outside = yes
+
+	icon = {
+		allow_outside = yes
+		size = { 20 20 }
+		texture = "[MarketMarker.GetLocation.GetRankIcon]"
+
+		widgetanchor = center
+		parentanchor = center
+
+		tooltip = "[MarketMarker.GetTooltip]"
+
+		flowcontainer = {
+			widgetanchor = right
+			country_flag = {
+				name = "country_flag"
+				parentanchor = top|hcenter
+				size = { 24 16 }
+				tooltip_enabled = no
+				datacontext = "[MarketMarker.GetLocation.GetOwner]"
+
+				blockoverride "flag" {
+					datacontext = "[GetCountryCoatOfArms(MarketMarker.GetLocation.GetOwner.Self)]"
+					texture = "[CoatOfArmsWrapper.GetTexture('(int32)56','(int32)56')]"
+					frame = "[CoatOfArmsWrapper.GetFrame('(int32)56','(int32)56')]"
+					framesize = "[CoatOfArmsWrapper.GetFrameSizeOrFallback('(int32)56','(int32)56','(float)1.0')]"
+				}
+
+				blockoverride "click" {}
+				blockoverride "double_click" {}
+			}
+		}
+
+		flowcontainer = {
+			widgetanchor = right
+
+			country_flag = {
+				size = { 24 16 }
+				name = "country_flag"
+				parentanchor = top|hcenter
+				tooltip_enabled = no
+				datacontext = "[MarketMarker.GetLocation.GetOwner]"
+
+				blockoverride "flag" {
+					datacontext = "[GetCountryCoatOfArms(MarketMarker.GetLocation.GetOwner.Self)]"
+					texture = "[CoatOfArmsWrapper.GetTexture('(int32)56','(int32)56')]"
+					frame = "[CoatOfArmsWrapper.GetFrame('(int32)56','(int32)56')]"
+					framesize = "[CoatOfArmsWrapper.GetFrameSizeOrFallback('(int32)56','(int32)56','(float)1.0')]"
+				}
+
+				blockoverride "click" {}
+				blockoverride "double_click" {}
+			}
+		}
+
+		flowcontainer = {
+			position = { 22 0 }
+			ignoreinvisible = yes
+			text_single = {
+				text = "[MarketMarker.GetLocation.GetNameWithNoTooltip|U]"
+				snap_to_pixels = no
+				default_format = "#map_city_label_capital"
+				tooltip = "[MarketMarker.GetTooltip]"
+
+			}
+		}
+	}
+}
+
+### UNIT
+@unit_marker_frame_height = 30
+@unit_marker_frame_text_margin = 12
+@unit_marker_item_total_units_width = 60
+@unit_marker_morale_progressbar_size = 35
+@unit_marker_item_width = 115
+@unit_marker_item_height = 71
+@unit_marker_item_short_factor = 0.8
+@unit_marker_item_verysmall_factor = 0.55
+
+@unit_marker_item_short_factor_inv = @[1.0 - unit_marker_item_short_factor]
+@unit_marker_siege_banner_short_offset = @[unit_marker_item_width * unit_marker_item_short_factor_inv]
+
+template unit_marker_frame {
+	texture = "gfx/interface/mapitems/unit_frame.dds"
+	texture_density = 2
+
+	spriteType = corneredstretched
+	spriteBorder = { 18 0 }
+
+	alpha = 1
+
+	modify_texture = {
+		using = color_gold_texture
+	}
+
+	using = overlay_gold
+}
+
+template unit_marker_bg {
+	texture = "gfx/interface/mapitems/unit_bg.dds"
+	texture_density = 2
+	spriteType = corneredstretched
+	spriteBorder = { 18 0 }
+
+	glow = {
+		name = "drop_shadow"
+		glow_radius = 6
+		color = { 0.0 0.0 0.0 1.0 }
+		alpha = 0.9
+	}
+}
+
+# template unit_marker_item_total_units {
+# 	# block "total_units_size" {
+# 		size = { @unit_marker_item_total_units_width @unit_marker_frame_height }
+# 	# }
+
+# 	visible = "[UnitMarkerItem.ShowTotalUnits]"
+
+# 	button = {
+# 		#visible = "[UnitMarkerItem.IsClickable]"
+# 		onclick = "[UnitMarkerItem.OnClick]"
+# 		onrightclick = "[UnitMarkerItem.OnRightClick]"
+
+# 		size = { 100% 100% }
+# 		using = unit_marker_bg
+# 		using = marker_unit_side_color
+# 		using = overlay_gold
+# 	}
+
+# 	icon = {
+# 		visible = "[Not(UnitMarkerItem.IsClickable)]"
+
+# 		size = { 100% 100% }
+# 		using = unit_marker_bg
+# 		using = marker_unit_side_color
+# 		using = overlay_gold
+# 	}
+
+# 	text_single = {
+# 		size = { 100% 100% }
+# 		margin_left = @unit_marker_frame_text_margin
+# 		margin_right = @[unit_marker_morale_progressbar_size * 0.6]
+# 		autoresize = no
+# 		align = left|nobaseline
+# 		visible = "[UnitMarkerItem.ShowTotalUnits]"
+# 		text = "[UnitMarkerItem.GetTotalUnits]"
+# 	}
+
+# 	icon = {
+# 		size = { 100% 100% }
+# 		using = unit_marker_frame
+# 	}
+# }
+
+template unit_marker_item_unit_strength {
+	layoutpolicy_horizontal = expanding
+
+	onmousehierarchyenter = "[UnitMarkerItem.OnHover]"
+	onmousehierarchyleave = "[UnitMarkerItem.OnLeave]"
+
+	# block "unit_strength_size" {
+		size = { -1 @unit_marker_frame_height }
+	# }
+
+	background = {
+		using = bg_map_marker_shadow_texture
+		margin_bottom = 15
+		blend_mode = multiply
+		alpha = 0.5
+	}
+	background = {
+		using = bg_map_marker_shadow_texture
+		margin = {5 0}
+		margin_bottom = 15
+		blend_mode = multiply
+		alpha = 0.5
+		visible = "[UnitMarkerItem.IsSelectedOrHighlighted]"
+	}
+
+	background = {
+		using = marker_unit_side_color
+		visible ="[Unit.IsArmy]"
+		using = bg_army_unit_map_texture
+		spriteBorder = { 20 0 }
+		margin_left = -11
+		margin_right = -3
+		margin_top = -2
+		margin_bottom = -2
+
+		modify_texture = {
+			using = overlay_striped_texture
+			blend_mode = overlay
+			alpha = 0.2
+		}
+
+		modify_texture = {
+			using = color_progress_blue_texture
+			alpha = 0.1
+			visible = "[UnitMarkerItem.IsSelectedOrHighlighted]"
+		}
+	}
+
+	background = {
+		using = marker_unit_side_color
+		visible ="[Not(Unit.IsArmy)]"
+		using = bg_navy_unit_map_texture
+		spriteBorder = { 20 0 }
+		margin_left = -3
+		margin_right = -8
+		margin_top = -2
+
+		modify_texture = {
+			using = overlay_striped_texture
+			blend_mode = overlay
+			alpha = 0.2
+		}
+
+		modify_texture = {
+			using = color_progress_blue_texture
+			alpha = 0.1
+			visible = "[UnitMarkerItem.IsSelectedOrHighlighted]"
+		}
+	}
+
+	block "item_unit_text_object" {
+		text_single = {
+			size = { 100% 100% }
+			autoresize = no
+			align = right|nobaseline
+			margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+			margin_right = @unit_marker_frame_text_margin
+			text = "[UnitMarkerItem.GetLabel]"
+			snap_to_pixels = "[IsLowestIconScalingQuality]"
+		}
+	}
+
+	# ARMY NAVY BUTTON OURS
+	widget = {
+		size = {100% 100%}
+
+		unit_marker_army_button = {
+			size = { 100% 100% }
+			name = "unit_marker_for_army"
+			visible = "[And(UnitMarkerItem.IsPlayer, Unit.IsArmy)]"
+
+			tagtooltip_enabled = yes
+			tooltip = "[UnitMarkerItem.GetTooltip]"
+			contextmenu_widget = {
+				UnitMarkerContextMenu = {}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				visible = "[UnitMarkerItem.IsPlayer]"
+				title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+				on_action = "[UnitMarkerItem.OnClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+
+				visible = "[And(And(And(And(Not(UnitMarkerItem.RightClickToJoin),Not(UnitMarkerItem.RightClickToMerge)),Not(UnitMarkerItem.RightClickToEmbark)),Not(UnitMarkerItem.RightClickToChase)), UnitMarkerItem.IsPlayer)]"
+				cursor = "unit_menu"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+				on_action = "[PdxGuiWidget.ToggleContextMenu]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_transport"
+
+				visible = "[UnitMarkerItem.RightClickToEmbark]"
+				title = "EMBARK_ACTION"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_movement"
+
+				visible = "[UnitMarkerItem.RightClickToJoin]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_JOIN"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "merge_unit"
+
+				visible = "[UnitMarkerItem.RightClickToMerge]"
+				title = "MERGE_UNITS"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_chasing"
+
+				visible = "[UnitMarkerItem.RightClickToChase]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_CHASE"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+		}
+
+		unit_marker_navy_button = {
+			size = { 100% 100% }
+			visible = "[And(UnitMarkerItem.IsPlayer, Not(Unit.IsArmy))]"
+
+			tagtooltip_enabled = yes
+			tooltip = "[UnitMarkerItem.GetTooltip]"
+			contextmenu_widget = {
+				UnitMarkerContextMenu = {}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				visible = "[UnitMarkerItem.IsPlayer]"
+				title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+				on_action = "[UnitMarkerItem.OnClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+
+				visible = "[And(And(And(And(Not(UnitMarkerItem.RightClickToJoin),Not(UnitMarkerItem.RightClickToMerge)),Not(UnitMarkerItem.RightClickToEmbark)),Not(UnitMarkerItem.RightClickToChase)), UnitMarkerItem.IsPlayer)]"
+				cursor = "unit_menu"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+				on_action = "[PdxGuiWidget.ToggleContextMenu]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_transport"
+
+				visible = "[UnitMarkerItem.RightClickToEmbark]"
+				title = "EMBARK_ACTION"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_movement"
+
+				visible = "[UnitMarkerItem.RightClickToJoin]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_JOIN"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "merge_unit"
+
+				visible = "[UnitMarkerItem.RightClickToMerge]"
+				title = "MERGE_UNITS"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_chasing"
+
+				visible = "[UnitMarkerItem.RightClickToChase]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_CHASE"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+		}
+	}
+
+	# ARMY NAVY BUTTON ENEMY
+	widget = {
+		size = { 100% 100% }
+		visible = "[Player.IsEnemy(Unit.GetCountry.Self)]"
+
+		unit_marker_army_button = {
+			size = { 100% 100% }
+			visible = "[Unit.IsArmy]"
+			blockoverride "if_notplayer" {
+				upframe = 5
+				overframe = 5
+				downframe = 5
+				disableframe = 5
+			}
+
+			tagtooltip_enabled = yes
+			tooltip = "[UnitMarkerItem.GetTooltip]"
+			contextmenu_widget = {
+				UnitMarkerContextMenu = {}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				visible = "[UnitMarkerItem.IsPlayer]"
+				title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+				on_action = "[UnitMarkerItem.OnClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+
+				visible = "[And(And(And(And(Not(UnitMarkerItem.RightClickToJoin),Not(UnitMarkerItem.RightClickToMerge)),Not(UnitMarkerItem.RightClickToEmbark)),Not(UnitMarkerItem.RightClickToChase)), UnitMarkerItem.IsPlayer)]"
+				cursor = "unit_menu"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+				on_action = "[PdxGuiWidget.ToggleContextMenu]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_transport"
+
+				visible = "[UnitMarkerItem.RightClickToEmbark]"
+				title = "EMBARK_ACTION"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_movement"
+
+				visible = "[UnitMarkerItem.RightClickToJoin]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_JOIN"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "merge_unit"
+
+				visible = "[UnitMarkerItem.RightClickToMerge]"
+				title = "MERGE_UNITS"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_chasing"
+
+				visible = "[UnitMarkerItem.RightClickToChase]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_CHASE"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+		}
+
+		unit_marker_navy_button = {
+			size = { 100% 100% }
+			visible = "[Not(Unit.IsArmy)]"
+			blockoverride "if_notplayer" {
+				upframe = 3
+				overframe = 4
+				downframe = 4
+				disableframe = 3
+			}
+
+			tagtooltip_enabled = yes
+			tooltip = "[UnitMarkerItem.GetTooltip]"
+			contextmenu_widget = {
+				UnitMarkerContextMenu = {}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				visible = "[UnitMarkerItem.IsPlayer]"
+				title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+				on_action = "[UnitMarkerItem.OnClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+
+				visible = "[And(And(And(And(Not(UnitMarkerItem.RightClickToJoin),Not(UnitMarkerItem.RightClickToMerge)),Not(UnitMarkerItem.RightClickToEmbark)),Not(UnitMarkerItem.RightClickToChase)), UnitMarkerItem.IsPlayer)]"
+				cursor = "unit_menu"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+				on_action = "[PdxGuiWidget.ToggleContextMenu]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_transport"
+
+				visible = "[UnitMarkerItem.RightClickToEmbark]"
+				title = "EMBARK_ACTION"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_movement"
+
+				visible = "[UnitMarkerItem.RightClickToJoin]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_JOIN"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "merge_unit"
+
+				visible = "[UnitMarkerItem.RightClickToMerge]"
+				title = "MERGE_UNITS"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_chasing"
+
+				visible = "[UnitMarkerItem.RightClickToChase]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_CHASE"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+		}
+	}
+
+	# ARMY NAVY BUTTON NEUTRAL ALLIED
+	widget = {
+		size = { 100% 100% }
+		visible = "[Or(Unit.GetCountry.IsNeutral, Unit.GetCountry.IsAllied)]"
+
+		button = {
+			size = { 100% 100% }
+			visible = "[Unit.IsArmy]"
+			# blockoverride "if_notplayer" {
+			# 	upframe = 3
+			# 	overframe = 3
+			# 	downframe = 3
+			# 	disableframe = 3
+			# }
+
+			tagtooltip_enabled = yes
+			tooltip = "[UnitMarkerItem.GetTooltip]"
+			contextmenu_widget = {
+				UnitMarkerContextMenu = {}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				visible = "[UnitMarkerItem.IsPlayer]"
+				title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+				on_action = "[UnitMarkerItem.OnClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+
+				visible = "[And(And(And(And(Not(UnitMarkerItem.RightClickToJoin),Not(UnitMarkerItem.RightClickToMerge)),Not(UnitMarkerItem.RightClickToEmbark)),Not(UnitMarkerItem.RightClickToChase)), UnitMarkerItem.IsPlayer)]"
+				cursor = "unit_menu"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+				on_action = "[PdxGuiWidget.ToggleContextMenu]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_transport"
+
+				visible = "[UnitMarkerItem.RightClickToEmbark]"
+				title = "EMBARK_ACTION"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_movement"
+
+				visible = "[UnitMarkerItem.RightClickToJoin]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_JOIN"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "merge_unit"
+
+				visible = "[UnitMarkerItem.RightClickToMerge]"
+				title = "MERGE_UNITS"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_chasing"
+
+				visible = "[UnitMarkerItem.RightClickToChase]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_CHASE"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+		}
+
+		button = {
+			size = { 100% 100% }
+			visible = "[Not(Unit.IsArmy)]"
+			# blockoverride "if_notplayer" {
+			# 	upframe = 5
+			# 	overframe = 5
+			# 	downframe = 5
+			# 	disableframe = 5
+			# }
+
+			tagtooltip_enabled = yes
+			tooltip = "[UnitMarkerItem.GetTooltip]"
+			contextmenu_widget = {
+				UnitMarkerContextMenu = {}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+
+				visible = "[UnitMarkerItem.IsPlayer]"
+				title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+				on_action = "[UnitMarkerItem.OnClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+
+				visible = "[And(And(And(And(Not(UnitMarkerItem.RightClickToJoin),Not(UnitMarkerItem.RightClickToMerge)),Not(UnitMarkerItem.RightClickToEmbark)),Not(UnitMarkerItem.RightClickToChase)), UnitMarkerItem.IsPlayer)]"
+				cursor = "unit_menu"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+				on_action = "[PdxGuiWidget.ToggleContextMenu]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_transport"
+
+				visible = "[UnitMarkerItem.RightClickToEmbark]"
+				title = "EMBARK_ACTION"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_movement"
+
+				visible = "[UnitMarkerItem.RightClickToJoin]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_JOIN"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "merge_unit"
+
+				visible = "[UnitMarkerItem.RightClickToMerge]"
+				title = "MERGE_UNITS"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+
+			action_tooltip = {
+				click_type = right
+				click_mode = single
+				cursor = "unit_chasing"
+
+				visible = "[UnitMarkerItem.RightClickToChase]"
+				title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK_CHASE"
+				on_action = "[UnitMarkerItem.OnRightClick]"
+			}
+		}
+	}
+
+	# PLAYER BUTTON SELECTED
+	widget = {
+		size = {100% 100%}
+		visible = "[UnitMarkerItem.IsSelectedOrHighlighted]"
+
+		icon = {
+			size = {100% 100%}
+			visible = "[And(UnitMarkerItem.IsPlayer, Unit.IsArmy)]"
+			texture = "gfx/interface/buttons/map_widget_army_button.dds"
+			frame_grid = {4 1}
+			frame = 2
+			spriteType = Corneredstretched
+			texture_density = 2
+			spriteborder = { 40 0 }
+		}
+		icon = {
+			size = {100% 100%}
+			visible = "[And(UnitMarkerItem.IsPlayer, Not(Unit.IsArmy))]"
+			texture = "gfx/interface/buttons/map_widget_navy_button.dds"
+			frame_grid = {4 1}
+			frame = 2
+			spriteType = Corneredstretched
+			texture_density = 2
+			spriteborder = { 40 0 }
+		}
+	}
+}
+
+template unit_marker_item_commander {
+	visible = "[UnitMarkerItem.HasLeaderFrame]"
+	# block "unit_commander_size" {
+		size = { 33 @unit_marker_frame_height }
+	# }
+
+	background = {
+		using = bg_navy_unit_map_texture
+		spriteBorder = { 20 20 }
+		margin = {0 -2}
+
+		modify_texture = {
+			using = color_bg_blue_texture
+		}
+
+		modify_texture = {
+			using = overlay_striped_texture
+			blend_mode = overlay
+			alpha = 0.2
+		}
+	}
+
+	button = {
+		size = { 100% 100% }
+
+		tagtooltip_enabled = yes
+		tooltip = "[UnitMarkerItem.GetTooltip]"
+		contextmenu_widget = {
+			UnitMarkerContextMenu = {}
+		}
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+
+			title = "UNIT_CLICK_TOOLTIP_LEFT_CLICK"
+			on_action = "[UnitMarkerItem.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+
+			cursor = "unit_menu"
+			title = "UNIT_CLICK_TOOLTIP_RIGHT_CLICK"
+			on_action = "[PdxGuiWidget.ToggleContextMenu]"
+		}
+	}
+
+	block "item_unit_commander_text_object" {}
+}
+
+template unit_marker_item_transport {
+	block "unit_transport_size" {
+		size = { 37 37 }
+	}
+
+	background = {
+		texture = "gfx/interface/component_tiles/bg_round_corners.dds"
+		texture_density = 2
+		spriteType = corneredstretched
+		spriteBorder = { 20 20 }
+		using = marker_unit_side_color_transporting
+
+		modify_texture = {
+			using = color_grey_texture
+			alpha = 0.3
+			visible = "[UnitMarkerItem.IsSelectedOrHighlighted]"
+		}
+
+		modify_texture = {
+			using = overlay_striped_texture
+			blend_mode = overlay
+			alpha = 0.2
+		}
+	}
+	background = {
+		texture = "gfx/interface/component_tiles/bg_round_corners_frame.dds"
+		texture_density = 2
+		spriteType = Corneredstretched
+		spriteborder = { 10 10 }
+
+		modify_texture = {
+			using = color_new_gold_texture
+			alpha = 1.0
+		}
+		modify_texture = {
+			using = overlay_stone_texture
+			blend_mode = overlay
+			alpha = 0.6
+		}
+		modify_texture = {
+			using = overlay_window_texture
+			blend_mode = overlay
+			alpha = 0.6
+		}
+	}
+	background = {
+		texture = "gfx/interface/component_decoration/bg_corner_flavor_08.dds"
+		texture_density = 2
+		spriteType = Corneredstretched
+		spriteborder = { 35 35 }
+		margin = {-1 -1}
+
+		modify_texture = {
+			using = color_new_gold_texture
+			alpha = 1.0
+		}
+		modify_texture = {
+			using = overlay_stone_texture
+			blend_mode = overlay
+			alpha = 0.6
+		}
+		modify_texture = {
+			using = overlay_window_texture
+			blend_mode = overlay
+			alpha = 0.6
+		}
+	}
+
+	button = {
+		size = { 100% 100% }
+
+		tagtooltip_enabled = yes
+		tooltip = "[UnitMarkerItem.GetTooltip]"
+		contextmenu_widget = {
+			UnitMarkerContextMenu = {}
+		}
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+
+			title = "UNIT_TRANSPORTED_TOOLTIP_LEFT_CLICK"
+			on_action = "[UnitMarkerItem.OnSelectLoadedUnits]"
+		}
+	}
+
+	block "item_unit_transport_text_object" {}
+}
+
+template bg_unit_marker_item_modifiers {
+	background = {
+		texture = "gfx/interface/component_tiles/map_markers/map_unit_modifiers.dds"
+		texture_density = 2
+
+		modify_texture = {
+			using = color_dark_blue_texture
+		}
+	}
+}
+
+template unit_marker_item_modifiers {
+	widget = {
+		visible = "[And(UnitMarkerItem.GetUnit.IsNavy, GreaterThan_int32(UnitMarkerItem.GetUnit.GetUsedTransportCapacityValue, '(int32)0'))]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+			datacontext = "[UnitMarkerItem.GetUnit]"
+			tooltipwidget = {
+				SimpleContextualTooltipType = {
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+						}
+					}
+
+					blockoverride "concept_link" {
+						text = "[transport_capacity|e]"
+					}
+
+					lowpriotextcontext = "TRANSPORT_CAPACITY_SIMPLE"
+
+				}
+			}
+
+			icon = {
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				size = { 75% 75% }
+				parentanchor = center
+				color = { 0 0 0 1 }
+			}
+
+			piechart = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				using = piechart_angles
+
+				icon = {
+					parentanchor = center
+					size = { 75% 75% }
+					texture = "gfx/interface/icons/unit_actions/select_transport.dds"
+					texture_density = 2
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+					value = "[UnitMarkerItem.GetUnit.GetUsedTransportCapacityPercentage]"
+					color = { 1 1 1 1 }
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+					value = "[Subtract_float('(float)1.0', UnitMarkerItem.GetUnit.GetUsedTransportCapacityPercentage)]"
+					color = { 1 1 1 1 }
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[GreaterThan_CFixedPoint(UnitMarkerItem.GetBlockadedPercent, '(CFixedPoint)0')]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+			piechart = {
+				visible = "[GreaterThan_CFixedPoint(UnitMarkerItem.GetBlockadedPercent, '(CFixedPoint)0')]"
+
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+
+				using = piechart_angles
+
+				icon = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					size = { 75% 75% }
+					parentanchor = center
+					color = { 0 0 0 1 }
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[Subtract_float('(float)100.0', FixedPointToFloat(UnitMarkerItem.GetBlockadedPercent))]"
+					color = { 0.3 0.3 0.3 1 }
+					alpha = 0.8
+					alwaystransparent = yes
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[UnitMarkerItem.GetBlockadedPercent]"
+					color = { 0.3 0.8 0.3 1 }
+					alpha = 0.8
+					alwaystransparent = yes
+				}
+
+				icon = {
+					parentanchor = center
+					size = { 75% 75% }
+					texture = "gfx/interface/icons/flat_icons/siege_occupation/blockade_2.dds"
+					texture_density = 2
+					alpha = 1
+				}
+
+				datacontext = "[UnitMarkerItem.GetUnit]"
+				tooltipwidget = {
+					using = UnitBlockade_tooltip
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.IsPlayer]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+			piechart = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+
+				using = piechart_angles
+
+				icon = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					size = { 75% 75% }
+					parentanchor = center
+					color = { 0 0 0 1 }
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[UnitMarkerItem.GetUnit.GetFoodPercentage]"
+					color = { 0.3 0.8 0.3 1 }
+					alpha = 0.8
+					alwaystransparent = yes
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[Subtract_float('(float)100.0', UnitMarkerItem.GetUnit.GetFoodPercentage)]"
+					color = { 0.3 0.3 0.3 1 }
+					alpha = 0.8
+					alwaystransparent = yes
+				}
+
+				icon = {
+					visible = "[UnitMarkerItem.IsLosingFood]"
+					parentanchor = center
+					size = { 75% 75% }
+					using = icon_food_deficiency
+					texture_density = 2
+					alpha = 1
+				}
+
+				icon = {
+					visible = "[UnitMarkerItem.IsRegainingFood]"
+					parentanchor = center
+					size = { 75% 75% }
+					texture = "gfx/interface/mapitems/has_attrition_with_food_supply.dds"
+					texture_density = 2
+					alpha = 1
+				}
+
+				icon = {
+					visible = "[Not(Or(UnitMarkerItem.IsLosingFood, UnitMarkerItem.IsRegainingFood))]"
+					parentanchor = center
+					size = { 75% 75% }
+					texture = "gfx/interface/icons/unit_view/food.dds"
+					texture_density = 2
+					alpha = 1
+				}
+
+				datacontext = "[UnitMarkerItem.GetUnit]"
+				tooltipwidget = {
+					using = UnitFood_tooltip
+					blockoverride "unit_food_tooltip_extra"{
+						TooltipTextBlock = {
+							visible = "[UnitMarkerItem.IsLosingFood]"
+							blockoverride "text" {
+								text = "[UnitMarkerItem.GetLosingFoodTT]"
+							}
+						}
+
+						TooltipTextBlock = {
+							visible = "[UnitMarkerItem.IsRegainingFood]"
+							blockoverride "text" {
+								text = "[UnitMarkerItem.GetRegainingFoodTT]"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.HasVisibleObjectiveGroup]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			button = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				texture = "[GetMilitaryObjectiveIcon(UnitMarkerItem.GetMilitaryObjectiveGroup.GetObjective.GetType)]"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "[GetMilitaryObjectiveIcon(UnitMarkerItem.GetMilitaryObjectiveGroup.GetObjective.GetType)]"
+							}
+						}
+						blockoverride "title_text" {
+							text = "[UnitMarkerItem.GetMilitaryObjectiveGroup.GetObjective.GetName]"
+						}
+
+						blockoverride "concept_link" {
+							text = "[military_objectives|e]"
+						}
+
+						lowpriotextcontext = "[UnitMarkerItem.GetMilitaryObjectiveGroup.GetObjective.GetTooltip]"
+
+					}
+				}
+				onmousehierarchyenter = "[UnitMarkerItem.GetMilitaryObjectiveGroup.SetHighlight(PdxGuiWidget.AccessSelf)]"
+				effectname = "NoHighlight"
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.HasDisease]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			datacontext = "[UnitMarkerItem.GetUnit]"
+			tooltipwidget = {
+				ContextualTooltipType = {
+					blockoverride "title_text" {
+						text = "UNIT_DISEASE_HEADER"
+					}
+
+					blockoverride "title_icon" {
+						icon = {
+							using = tooltip_title_icon_size
+							texture = "gfx/interface/icons/map_modes/disease.dds"
+						}
+					}
+
+					blockoverride "concept_link" {
+						text = [disease|e]
+					}
+
+					blockoverride "tooltip_content" {
+						TooltipRowList = {
+							textcontext = "UNIT_PRESENCES_LABEL"
+						}
+
+						overlappingitembox = {
+							size = { 400 80 }
+							spacing = 5
+							ignoreinvisible = yes
+
+							datamodel = "[GetDiseases]"
+							item = {
+								widget = {
+									visible = "[Unit.HasSpecificDisease(Disease.Self)]"
+									allow_outside = yes
+									size = { 60 55 }
+									piechart = {
+										parentanchor = center|vcenter
+										name = "unit_disease"
+										using = bg_circle
+										size = { 48 48 }
+										using = piechart_angles
+
+										tooltipwidget = {
+											using = Disease_tooltip
+										}
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+											value = "[Subtract_float('(float)1.0', FixedPointToFloat(Unit.GetDiseasePresence(Disease.Self)))]"
+											color = { 1 1 1 0.2 }
+											alwaystransparent = yes
+										}
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80_red.dds"
+											value = "[FixedPointToFloat(Unit.GetDiseasePresence(Disease.Self))]"
+											color = { 1 1 1 1 }
+											alwaystransparent = yes
+										}
+
+										icon = {
+											size = { 60% 60% }
+											parentanchor = center
+											texture = "[GetDiseaseIcon(Disease.Self)]"
+										}
+
+										using = bg_circle_piechart
+									}
+									text_single = {
+										position = { 0 55 }
+										maximumsize = { 60 30 }
+										parentanchor = hcenter
+										align = center|nobaseline
+										text = "[Unit.GetDiseasePresence(Disease.Self)|0%]"
+
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "UNIT_DISEASE_SUBUNITS_HEADER"
+												}
+
+												blockoverride "title_icon" {
+													icon = {
+														using = tooltip_title_icon_size
+														texture = "[GetDiseaseIcon(Disease.Self)]"
+													}
+												}
+
+												blockoverride "concept_link" {
+													text = [disease|e]
+												}
+												blockoverride "tooltip_content" {
+													TooltipTextBlock = {
+														blockoverride "text" {
+															text = "UNIT_DISEASE_SUBUNITS_PRESENCE_TT"
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+						TooltipRowList = {
+							visible = "[Unit.HasDiseaseResistance]"
+							textcontext = "UNIT_RESISTANCES_LABEL"
+						}
+
+						overlappingitembox = {
+							size = { 400 80 }
+							spacing = 5
+							ignoreinvisible = yes
+
+							datamodel = "[GetDiseases]"
+							item = {
+								widget = {
+									visible = "[Unit.HasSpecificDiseaseResistance(Disease.Self)]"
+									allow_outside = yes
+									size = { 60 55 }
+									piechart = {
+										parentanchor = center|vcenter
+										name = "unit_disease"
+										using = bg_circle
+										size = { 48 48 }
+										using = piechart_angles
+
+										tooltipwidget = {
+											using = Disease_tooltip
+										}
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+											value = "[Subtract_float('(float)1.0', FixedPointToFloat(Unit.GetDiseaseResistance(Disease.Self)))]"
+											color = { 1 1 1 0.2 }
+											alwaystransparent = yes
+										}
+
+										pieslice_no_highlight = {
+											texture = "gfx/interface/pie_charts/pie_chart_alpha_80_green.dds"
+											value = "[FixedPointToFloat(Unit.GetDiseaseResistance(Disease.Self))]"
+											color = { 1 1 1 1 }
+											alwaystransparent = yes
+										}
+
+										icon = {
+											size = { 60% 60% }
+											parentanchor = center
+											texture = "[GetDiseaseIcon(Disease.Self)]"
+										}
+
+										using = bg_circle_piechart
+									}
+									text_single = {
+										position = { 0 55 }
+										maximumsize = { 60 30 }
+										parentanchor = hcenter
+										align = center|nobaseline
+										text = "[Unit.GetDiseaseResistance(Disease.Self)|0%]"
+
+										tooltipwidget = {
+											ContextualTooltipType = {
+												blockoverride "title_text" {
+													text = "UNIT_DISEASE_SUBUNITS_HEADER"
+												}
+
+												blockoverride "title_icon" {
+													icon = {
+														using = tooltip_title_icon_size
+														texture = "[GetDiseaseIcon(Disease.Self)]"
+													}
+												}
+
+												blockoverride "concept_link" {
+													text = [disease|e]
+												}
+												blockoverride "tooltip_content" {
+													TooltipTextBlock = {
+														blockoverride "text" {
+															text = "UNIT_DISEASE_SUBUNITS_RESISTANCE_TT"
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			icon = {
+				parentanchor = center
+				size = { 75% 75% }
+				texture = "gfx/interface/icons/map_modes/disease.dds"
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.IsMovementLocked]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+			icon = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				texture = "gfx/interface/mapitems/movement_lock.dds"
+				tooltipwidget = {
+					ContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								texture = "gfx/interface/mapitems/movement_lock.dds"
+								using = tooltip_title_icon_size
+							}
+						}
+						blockoverride "title_text" {
+								text = "MOVE_LOCKED_TT_TITLE"
+						}
+						blockoverride "concept_link" {
+							text = [army|e]
+						}
+
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "MOVEMENT_LOCKED"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.IsLargeEnoughForMovementSpeedImpact]"
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "gfx/interface/icons/unit_types/frontage.dds"
+					}
+				}
+				blockoverride "title_text" {
+
+					text = "SLOW_SPEED_T"
+				}
+
+				blockoverride "concept_link" {
+					text = "[frontage|e]"
+				}
+
+				blockoverride "tooltip_content" {
+
+					TooltipStringPairList = {
+						textcontext = "[UnitMarkerItem.GetUnit.GetSizeImpactOnMovementSpeedInfo]"
+					}
+				}
+			}
+		}
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			icon = {
+				parentanchor = center
+				size = { 75% 75% }
+				texture = "gfx/interface/icons/unit_types/frontage.dds"
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.IsLosingSoldiers]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			icon = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				using = icon_attrition
+
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						lowpriotextcontext = "[UnitMarkerItem.GetAttritionTooltip]"
+
+						blockoverride "concept_link" {
+							text = "[attrition|e]"
+						}
+
+						blockoverride "title_icon_texture" {
+							using = icon_attrition
+							using = tooltip_title_icon_size
+						}
+
+						blockoverride "tooltip_content" {
+							TooltipStringPairList = {
+								textcontext = "[TitleDescTooltip.GetDesc.GetStringView]"
+							}
+
+							vbox = {
+								visible = "[UnitMarkerItem.HasAttritionHistory]"
+
+								layoutpolicy_horizontal = expanding
+								textcontext = "[UnitMarkerItem.GetAttritionHistoryTooltip]"
+								ontextcontextchanged = "[SetTitleDescTooltipFromTextContext(PdxGuiWidget.AccessSelf)]"
+
+								TooltipStringPairList = {
+									textcontext = "[TitleDescTooltip.GetDesc.GetStringView]"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.GetUnit.IsStuckInIce]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			icon = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				using = icon_stuck_in_ice
+				datacontext = "[UnitMarkerItem]"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "gfx/interface/mapitems/stuck_in_ice.dds"
+							}
+						}
+
+						blockoverride "concept_link" {
+							text = "[navy|e]"
+						}
+
+						lowpriotextcontext = "STUCK_IN_ICE_SIMPLE"
+
+					}
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.ShowActiveAbility]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 30 30 }
+			}
+
+			icon = {
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				texture = "[UnitMarkerItem.GetActiveAbilityIcon]"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "[UnitMarkerItem.GetActiveAbilityIcon]"
+							}
+						}
+
+						blockoverride "concept_link" {
+							raw_text = "[unit_ability|e]"
+						}
+
+						lowpriotextcontext = "[UnitMarkerItem.GetActiveAbilityTooltip]"
+
+					}
+				}
+			}
+		}
+	}
+
+	using = unit_marker_item_modifiers_small_zoom
+
+	widget = {
+		visible = "[Or(UnitMarkerItem.IsHiddenFromLand, UnitMarkerItem.IsHiddenFromSea)]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+			icon = {
+				visible = "[UnitMarkerItem.IsHiddenFromLandAndSea]"
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				texture = "gfx/interface/mapitems/hidden_from_land_and_sea.dds"
+				datacontext = "[UnitMarkerItem]"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "gfx/interface/mapitems/hidden_from_land_and_sea.dds"
+							}
+						}
+
+						blockoverride "concept_link" {
+							text = "[SelectLocalization( UnitMarkerItem.GetUnit.IsNavy, 'NAVY_HIDDEN_CONCEPT', 'ARMY_HIDDEN_CONCEPT' )]"
+						}
+
+						lowpriotextcontext = "[SelectLocalization( UnitMarkerItem.GetUnit.IsNavy, 'NAVY_HIDDEN_SIMPLE_TOOLTIP', 'ARMY_HIDDEN_SIMPLE_TOOLTIP' )]"
+
+					}
+				}
+			}
+
+			icon = {
+				visible = "[UnitMarkerItem.IsHiddenFromLandOnly]"
+				parentanchor = center
+				position = {0 0}
+				size = { 75% 75% }
+				texture = "gfx/interface/mapitems/hidden_from_land.dds"
+				datacontext = "[UnitMarkerItem]"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "gfx/interface/mapitems/hidden_from_land.dds"
+							}
+						}
+
+						blockoverride "concept_link" {
+							text = "[SelectLocalization( UnitMarkerItem.GetUnit.IsNavy, 'NAVY_HIDDEN_CONCEPT', 'ARMY_HIDDEN_CONCEPT' )]"
+						}
+
+						lowpriotextcontext = "[SelectLocalization( UnitMarkerItem.GetUnit.IsNavy, 'NAVY_HIDDEN_SIMPLE_TOOLTIP', 'ARMY_HIDDEN_SIMPLE_TOOLTIP' )]"
+
+					}
+				}
+			}
+			icon = {
+				visible = "[UnitMarkerItem.IsHiddenFromSeaOnly]"
+				parentanchor = center
+				size = { 75% 75% }
+				position = {0 0}
+				texture = "gfx/interface/mapitems/hidden_from_sea.dds"
+				datacontext = "[UnitMarkerItem]"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "gfx/interface/mapitems/hidden_from_sea.dds"
+							}
+						}
+
+						blockoverride "concept_link" {
+							text = "[SelectLocalization( UnitMarkerItem.GetUnit.IsNavy, 'NAVY_HIDDEN_CONCEPT', 'ARMY_HIDDEN_CONCEPT' )]"
+						}
+
+						lowpriotextcontext = "[SelectLocalization( UnitMarkerItem.GetUnit.IsNavy, 'NAVY_HIDDEN_SIMPLE_TOOLTIP', 'ARMY_HIDDEN_SIMPLE_TOOLTIP' )]"
+
+					}
+				}
+			}
+		}
+	}
+}
+
+template unit_marker_item_modifiers_small_zoom {
+	widget = {
+		visible = "[UnitMarkerItem.IsExiled]"
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			icon = {
+				parentanchor = center
+				size = { 75% 75% }
+				texture = "gfx/interface/mapitems/exiles.dds"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "gfx/interface/mapitems/exiles.dds"
+							}
+						}
+
+						blockoverride "concept_link" {
+							raw_text = "[exile|e]"
+						}
+
+						lowpriotextcontext = "IS_EXILED_TT"
+
+					}
+				}
+			}
+		}
+	}
+
+	widget = {
+		visible = "[UnitMarkerItem.IsRetreating]"
+
+		block "item_container_size" {
+			size = { 22 22 }
+		}
+
+		widget = {
+			parentanchor = center
+			using = bg_unit_marker_item_modifiers
+			block "item_modifiers_size" {
+				size = { 22 22 }
+			}
+
+			icon = {
+				parentanchor = center
+				size = { 75% 75% }
+				texture = "gfx/interface/mapitems/retreating.dds"
+				tooltipwidget = {
+					SimpleContextualTooltipType = {
+						blockoverride "title_icon" {
+							icon = {
+								using = tooltip_title_icon_size
+								texture = "gfx/interface/mapitems/retreating.dds"
+							}
+						}
+
+						blockoverride "concept_link" {
+							text = "[modifier|e]"
+						}
+
+						lowpriotextcontext = "UNIT_IS_RETREAT_TT"
+
+					}
+				}
+			}
+		}
+	}
+}
+
+template unit_marker_item_unit_banners {
+	datamodel = "[UnitMarkerItem.GetAllUnits]"
+	item = {
+		widget = {
+			# block "item_banners_size" {
+				size = { 12 15 }
+			# }
+
+			tooltipwidget = {
+				using = Unit_tooltip
+			}
+
+			icon = {
+				size = { 90% 90% }
+				using = bg_unit_selection_shield_texture
+				visible = "[IsUnitSelected(Unit.Self)]"
+
+				using = bg_unit_selection_shield_shadow
+
+				modify_texture = {
+					using = color_gold_texture
+				}
+
+				modify_texture = {
+					using = overlay_stone_texture
+					blend_mode = overlay
+					alpha = 0.5
+				}
+			}
+
+			icon = {
+				size = { 90% 90% }
+				using = bg_unit_selection_shield_texture
+				visible = "[Not(IsUnitSelected(Unit.Self))]"
+
+				using = bg_unit_selection_shield_shadow
+
+				using = marker_unit_side_color
+
+				modify_texture = {
+					using = overlay_stone_texture
+					blend_mode = overlay
+					alpha = 0.5
+				}
+			}
+		}
+	}
+}
+
+# template unit_marker_morale_piechart_template {
+# 	parentanchor = center
+# 	size = { @unit_marker_morale_progressbar_size @unit_marker_morale_progressbar_size }
+
+# 	using = bg_circle_piechart
+# 	blockoverride "marker_bg_circle_extra_modifiers" {
+# 		using = marker_unit_side_color
+# 	}
+
+# 	piechart = {
+# 		parentanchor = center
+# 		size = { 90% 90% }
+# 		using = piechart_angles
+
+# 		visible = "[UnitMarker.ShouldBeShownFullWidth]"
+# 		tooltipwidget = {
+# 			using = UnitMorale_tooltip
+# 		}
+
+# 		pieslice_no_highlight = {
+# 			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+# 			value = "[UnitMarkerItem.GetAverageMoralePercent]"
+# 			color = { 0.01 0.9 0.3 0.8 }
+# 			alwaystransparent = yes
+# 		}
+
+# 		pieslice_no_highlight = {
+# 			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+# 			value = "[Subtract_float('(float)100.0', UnitMarkerItem.GetAverageMoralePercent)]"
+# 			color = { 0.0 0.1 0.1 1 }
+# 			alwaystransparent = yes
+# 		}
+# 	}
+# }
+
+# template unit_marker_morale_flag_template {
+# 	parentanchor = center
+# 	datacontext = "[Unit.GetCountry]"
+
+# 	blockoverride "click" {
+# 		onclick = "[UnitMarkerItem.OnFlagClick]"
+# 	}
+
+# 	blockoverride "double_click" {
+# 		ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+# 	}
+# }
+
+types unit_marker_types {
+
+	type unit_maker_siege_banner = widget {
+		allow_outside = yes
+		size = { 59 85 }
+
+		background = {
+			using = bg_map_marker_shadow_texture
+			margin_bottom = 15
+			blend_mode = multiply
+			alpha = 0.7
+		}
+
+		circular_widget_button = {
+			parentanchor = top
+			size = { 57 57 }
+
+			background = {
+				texture = "gfx/interface/buttons/bg_button.dds"
+				texture_density = 2
+				modify_texture = {
+					using = color_bg_brown_texture
+					blend_mode = multiply
+				}
+				modify_texture = {
+					using = overlay_paper_03
+					blend_mode = overlay
+					alpha = 0.3
+				}
+			}
+
+			onclick = "[SelectLocation(Siege.GetLocation)]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(Siege.GetLocation)]"
+			datacontext = "[Siege]"
+			tooltipwidget = {
+				container = {
+					alwaystransparent = no
+					container = {
+						using = SiegeMarker_tooltip
+						visible = "[Siege.IsSiege]"
+					}
+
+					container = {
+						using = OccupationMarker_tooltip
+						visible = "[Not(Siege.IsSiege)]"
+					}
+				}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+				title = "GO_TO_SIEGE"
+				on_action = "[SelectLocation(Siege.GetLocation)]"
+			}
+
+			action_tooltip = {
+				click_modifier = shift
+				click_type = left
+				title = "ALERT_HINT"
+				click_modifier_description = "OPEN_HINT_TEXT"
+				using = snd_UI_alert_openAndCycle
+				on_action = "[SelectLocation(Siege.GetLocation)]"
+				on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_siege_and_occupation')]"
+				on_action = "[PdxGuiTriggerAllAnimations('reset_carousel')]"
+			}
+
+			widget = { # siege
+				size = { 47 47 }
+				parentanchor = center
+				piechart = {
+					parentanchor = center
+					size = { 100% 100% }
+					using = piechart_angles
+
+					pieslice_no_highlight = {
+						texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						value = "[Siege.GetSiegePhaseProgress]"
+						color = { 0.01 0.6 0.9 1 }
+						alwaystransparent = yes
+					}
+
+					pieslice_no_highlight = {
+						texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+						value = "[Subtract_float('(float)100.0', Siege.GetSiegePhaseProgress)]"
+						color = { 0.0 0.1 0.1 1 }
+						alwaystransparent = yes
+					}
+				}
+				siege_icon = {
+					parentanchor = center
+					size = { 70% 70% }
+				}
+				icon = {
+					visible = "[Siege.IsTooFewMen]"
+					parentanchor = center
+					size = { 70% 70% }
+					texture = "gfx/interface/icons/flat_icons/disable_icon.dds"
+					using = color_red
+				}
+			}
+		}
+
+		unit_siege_banner_button = {
+			size = { 40 30 }
+			parentanchor = hcenter|bottom
+			position = {0 2}
+
+			using = marker_siege_side_color
+
+			modify_texture = {
+				using = overlay_striped_texture
+				blend_mode = overlay
+				alpha = 0.2
+			}
+
+			tooltipwidget = {
+				container = {
+					container = {
+						using = SiegeMarker_tooltip
+						visible = "[Siege.IsSiege]"
+					}
+
+					container = {
+						using = OccupationMarker_tooltip
+						visible = "[Not(Siege.IsSiege)]"
+					}
+				}
+			}
+
+			action_tooltip = {
+				click_type = left
+				click_mode = single
+				title = "GO_TO_SIEGE"
+				on_action = "[SelectLocation(Siege.GetLocation)]"
+			}
+
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(Siege.GetLocation)]"
+
+			text_single = {
+				visible = "[Not(Siege.IsTooFewMen)]"
+				size = { 30 16 }
+				position = { 0 -2 }
+				autoresize = yes
+				parentanchor = center
+				align = center|nobaseline
+
+				text = "[Siege.GetFallChance|2%]"
+			}
+
+			text_single = {
+				visible = "[Siege.IsTooFewMen]"
+
+				size = { 30 16 }
+				position = { 0 -2 }
+				autoresize = no
+				parentanchor = center
+				align = center|nobaseline
+
+				text = "SIEGE_TOO_FEW_MEN_TXT"
+			}
+		}
+
+		widget = {
+			parentanchor = center
+			size = {55 13}
+			position = {0 13}
+
+			background = {
+				texture = "gfx/interface/component_tiles/map_markers/siege_pole.dds"
+				texture_density = 2
+				spriteborder = {35 0}
+				spriteType = corneredstretched
+			}
+		}
+	}
+
+	type unit_marker_item_modifiers = widget {
+		layoutpolicy_horizontal = expanding
+		size = {-1 26}
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin = { 10 0 }
+			using = unit_marker_item_modifiers
+			ignoreinvisible = yes
+
+			blockoverride "item_container_size" {
+				allow_outside = yes
+				size = { 1 1 }
+			}
+		}
+	}
+
+	type unit_marker_item_units = widget {
+		layoutpolicy_horizontal = expanding
+		size = {-1 15 }
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			margin_left = 5
+			margin_right = 15
+
+			overlappingitembox = {
+				visible = "[GreaterThan_int32(GetDataModelSize(UnitMarkerItem.GetAllUnits), '(int32)1')]"
+
+				layoutpolicy_horizontal = expanding
+				size = { -1 15 }
+				spacing = 5
+				autoresize = yes
+				max_width = 100
+
+				ignoreinvisible = yes
+				alwaystransparent = no
+				using = unit_marker_item_unit_banners
+			}
+		}
+	}
+
+	type unit_marker_item_unit_info = widget {
+		block "unit_marker_item_unit_info_size" {
+			layoutpolicy_horizontal = expanding
+			size = {-1 @unit_marker_frame_height}
+		}
+
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			ignoreinvisible = yes
+			spacing = -5
+
+			# widget = { using = unit_marker_item_total_units }
+			# widget = { size = { 0 @unit_marker_morale_progressbar_size } }
+			widget = {
+				visible = "[And(Not(Unit.IsArmy), UnitMarkerItem.IsTransporting)]"
+				using = unit_marker_item_transport
+			}
+			widget = {
+				# using = bg_unit_marker_item_unit_strength
+				using = unit_marker_item_unit_strength
+			}
+		}
+	}
+
+	type unit_marker_compass = widget {
+		visible = "[UnitMarkerItem.ShouldShowCompass]"
+		size = { 24 24 }
+		using = bg_circle_piechart
+
+		icon = {
+			parentanchor = center
+			size = { 120% 120% }
+			texture = "gfx/interface/component_tiles/map_markers/unit_movement.dds"
+			ignore_layout = yes
+
+			background = {
+				texture = "gfx/interface/component_tiles/map_markers/unit_movement.dds"
+				alpha = 0.4
+				margin_bottom = 2
+				modify_texture = {
+					using = color_black_texture
+					blend_mode = multiply
+				}
+			}
+
+			glow = {
+				glow_radius = 5
+				color = { 1.0 0.85 0.55 1.0 }
+				alpha = 0.6
+
+				block "glow_visible" {
+					visible = no
+				}
+			}
+		}
+
+		icon = {
+			parentanchor = center
+			size = { 110% 110% }
+			texture = "gfx/interface/buttons/round_button_alt.dds"
+
+			modify_texture = {
+				using = color_new_gold_texture
+				blend_mode = normal
+			}
+
+			modify_texture = {
+				using = color_new_gold_texture
+				alpha = 0.4
+			}
+
+			modify_texture = {
+				texture = "gfx/interface/buttons/flats/button_simple.dds"
+				blend_mode = alphamultiply
+				rotate_uv = "[UnitMarker.GetCompassAngle]"
+			}
+		}
+	}
+
+	type unit_marker_item_layout = vbox {
+		# modifiers
+		unit_marker_item_modifiers = {}
+
+		# total units and strength
+		unit_marker_item_unit_info = {}
+
+		# multi units
+		unit_marker_item_units = {}
+	}
+
+	type unit_marker_battle_side_flank = widget {
+		size = { 10 10 }
+		using = bg_square_tile_shadow
+
+		tooltipwidget = {
+			using = CombatSubUnitArray_tooltip
+		}
+
+		background = {
+			texture = "gfx/interface/icons/flat_icons/battle/base.dds"
+			texture_density = 2
+
+			modify_texture = {
+				using = color_black_texture
+				alpha = 0.4
+				blend_mode = overlay
+			}
+
+			# Flank without regiments
+			modify_texture = {
+				visible = "[Or(And3(Not(Combat.IsInBombardPhase), IsDataModelEmpty(CombatSubUnitArray.GetEngaged), IsDataModelEmpty(CombatSubUnitArray.GetNonEngaged)), And(Combat.IsInBombardPhase, IsDataModelEmpty(CombatSubUnitArray.GetCanBombard)))]"
+				using = color_enemy_red_texture
+			}
+
+			# Flank with regiments not engaged
+			modify_texture = {
+				visible = "[And3(Not(Combat.IsInBombardPhase), IsDataModelEmpty(CombatSubUnitArray.GetEngaged), Not(IsDataModelEmpty(CombatSubUnitArray.GetNonEngaged)))]"
+				using = color_mid_yellow_texture
+				alpha = 0.8
+			}
+
+			# Flank with regiments engaged
+			modify_texture = {
+				visible = "[Or(
+				And(Not(Combat.IsInBombardPhase), GreaterThan_CFixedPoint(CombatSubUnitArray.GetEngagedFrontage,'(CFixedPoint)0.0')),
+				And(Combat.IsInBombardPhase, Not(IsDataModelEmpty(CombatSubUnitArray.GetCanBombard))))]"
+				using = color_light_green_texture
+				alpha = 0.4
+			}
+		}
+	}
+
+	# type unit_marker_morale_piechart = widget
+	# {
+	# 	size = { @unit_marker_morale_progressbar_size @unit_marker_morale_progressbar_size }
+
+	# 	using = bg_circle_piechart
+	# 	blockoverride "marker_bg_circle_extra_modifiers" {
+	# 		using = marker_unit_side_color
+	# 	}
+
+	# 	piechart = {
+	# 		parentanchor = center
+	# 		size = { 90% 90% }
+	# 		using = piechart_angles
+	# 		tooltipwidget = {
+	# 			using = UnitMorale_tooltip
+	# 		}
+
+	# 		pieslice_no_highlight = {
+	# 			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+	# 			value = "[UnitMarkerItem.GetAverageMoralePercent]"
+	# 			color = { 0.01 0.9 0.3 0.8 }
+	# 			alwaystransparent = yes
+	# 		}
+
+	# 		pieslice_no_highlight = {
+	# 			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+	# 			value = "[Subtract_float('(float)100.0', UnitMarkerItem.GetAverageMoralePercent)]"
+	# 			color = { 0.0 0.1 0.1 1 }
+	# 			alwaystransparent = yes
+	# 		}
+	# 	}
+	# }
+}
+
+widget = {
+	name = "unit_marker"
+	allow_outside = yes
+	position = { 0 -2 }
+
+	widget = {
+		allow_outside = yes
+		parentanchor = center
+		visible = "[Not(TutorialHasVar('intro_hide_ui_7'))]"
+
+		# Siege banner
+		widget = {
+			visible = "[UnitMarker.HasSiege]"
+			allow_outside = yes
+
+			widget = {
+				datacontext = "[UnitMarker.GetSiege]"
+				parentanchor = right|vcenter
+				widgetanchor = left|vcenter
+				allow_outside = yes
+
+				unit_maker_siege_banner = {
+					visible = "[UnitMarker.ShouldBeShownFullWidth]"
+					widgetanchor = bottom|left
+					parentanchor = left
+					position = { 0 -2 }
+				}
+
+				unit_maker_siege_banner = {
+					position = { @[20 - unit_marker_siege_banner_short_offset] 0 }
+					visible = "[And(UnitMarker.ShouldBeShownShortWidth, Not(UnitMarker.ShouldBeShownSmallSize))]"
+					widgetanchor = vcenter|left
+					parentanchor = center
+				}
+			}
+		}
+
+		# Units list
+		fixedgridbox = {
+			name = "unit_items_grid"
+			addcolumn = @unit_marker_item_width
+			addrow = @unit_marker_item_height
+			datamodel_reuse_widgets = yes
+			allow_outside = yes
+
+			parentanchor = center
+			resizeparent = yes
+
+			datamodel = "[UnitMarker.GetUnits]"
+			item = {
+				widget = {
+					size = { @unit_marker_item_width @unit_marker_item_height }
+					datacontext = "[UnitMarkerItem.GetUnit]"
+					visible = "[Not(And(UnitMarkerItem.GetUnit.IsInTransport,Not(UnitMarkerItem.GetUnit.IsMoving)))]"
+					allow_outside = yes
+
+					#Army Marker
+					vbox = {
+						using = layoutpolicy_expanding
+						visible = "[UnitMarkerItem.GetUnit.IsArmy]"
+						allow_outside = yes
+
+						# Full width
+						unit_marker_item_layout = {
+							using = layoutpolicy_expanding
+							# spacing = -3
+							visible = "[UnitMarker.ShouldBeShownFullWidth]"
+							allow_outside = yes
+
+							widget = {
+								ignore_layout = yes
+								size = { 70 40 }
+								parentanchor = vcenter|left
+								widgetanchor = vcenter|right
+								position = { 12 5 }
+								allow_outside = yes
+								hbox = {
+									allow_outside = yes
+									spacing = 2
+
+									expand = {}
+
+									unit_marker_compass = {}
+
+									widget = {
+										allow_outside = yes
+										using = unit_marker_item_commander
+										blockoverride "item_unit_commander_text_object" {
+											hbox = {
+												widget = {
+													size = { 26 26 }
+
+													# Has General
+													button = {
+														visible = "[UnitMarkerItem.HasLeaderFrame]"
+
+														size = { 26 26 }
+
+														framesize = { 32 32 }
+														frame = "[UnitMarkerItem.GetLeaderFrame]"
+
+														texture = "gfx/interface/mapitems/commander_rank.dds"
+														texture_density = 2
+
+														action_tooltip = {
+															title = "SHOW_CHARACTER"
+															on_action = "[UnitMarkerItem.OnLeaderClick]"
+														}
+
+														datacontext = "[UnitMarkerItem.GetUnit.GetCommander]"
+														tooltipwidget = {
+															using = Character_tooltip
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_modifiers_size" {
+								size = { 28 28 }
+							}
+
+							blockoverride "item_unit_text_object" {
+								hbox = {
+									# margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+									margin = {8 0}
+									margin_right = 7
+									hbox = {
+										spacing = -2
+										country_flag_small = {
+											datacontext = "[Unit.GetCountry]"
+											size = { 40 28 }
+
+											blockoverride "click" {
+												onclick = "[UnitMarkerItem.OnFlagClick]"
+											}
+
+											blockoverride "double_click" {
+												ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+											}
+										}
+
+										widget = {
+											size = { 8 26 }
+											allow_outside = yes
+
+											unit_composition_bar = {
+												size = { 6 24 }
+											}
+
+											icon = {
+												size = { 100% 100% }
+												texture = "gfx/interface/component_tiles/square_outline_alt.dds"
+												texture_density = 2
+												spriteType = corneredstretched
+												spriteBorder = { 20 20 }
+												modify_texture = {
+													using = color_super_dark_brown_texture
+													blend_mode = multiply
+												}
+											}
+										}
+									}
+
+									vbox = {
+										using = layoutpolicy_expanding
+										margin_bottom = 4
+
+										expand = {}
+
+										text_single = {
+											layoutpolicy_horizontal = expanding
+											autoresize = no
+											size = {-1 20}
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetLabel]"
+										}
+
+										widget = {
+											layoutpolicy_horizontal = expanding
+											size = { -1 5 }
+											progressbar = {
+												visible = "[Unit.HasMaximumMaintenance]"
+												size = { 100% 5 }
+												using = progress_bar_green_alt
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+											progressbar = {
+												visible = "[Not(Unit.HasMaximumMaintenance)]"
+												size = { 100% 5 }
+												progresstexture = "gfx/interface/progressbars/progress_bar_yellow.dds"
+												noprogresstexture = "gfx/interface/progressbars/progress_black.dds"
+												texture_density = 2
+												spriteType = Corneredstretched
+												spriteborder = { 12 0 }
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_unit_transport_text_object" {
+								text_single = {
+									size = { 100% 100% }
+									autoresize = no
+									align = center|nobaseline
+									text = "[UnitMarkerItem.GetTransportedTroops]"
+								}
+							}
+						}
+
+						# Short width
+						widget = {
+							visible = "[And(UnitMarker.ShouldBeShownShortWidth, Not(UnitMarker.ShouldBeShownVerySmallSize))]"
+							size = { @[unit_marker_item_width * unit_marker_item_short_factor] @unit_marker_item_height }
+
+							vbox = {
+								# hbox = {
+								# 	layoutpolicy_horizontal = expanding
+								# 	spacing = 2
+								# 	using = unit_marker_item_modifiers_small_zoom
+								# 	expand = {}
+								# }
+
+								unit_marker_item_unit_info = {
+									unit_marker_compass = {
+										size = { 18 18 }
+										position = { -8 4 }
+									}
+
+									blockoverride "unit_marker_item_unit_info_size"{
+										layoutpolicy_horizontal = expanding
+										size = {-1 @unit_marker_frame_height}
+									}
+									blockoverride "item_modifiers_size" {
+										size = { 22 22 }
+										position = { 0 2 }
+									}
+									blockoverride "unit_transport_size" {
+										size = { 28 28 }
+									}
+
+									blockoverride "item_unit_text_object" {
+										hbox = {
+											margin_left = 10
+											margin_right = 7
+
+											country_flag_small = {
+												datacontext = "[Unit.GetCountry]"
+												size = { 38 26 }
+
+												blockoverride "click" {
+													onclick = "[UnitMarkerItem.OnFlagClick]"
+												}
+
+												blockoverride "double_click" {
+													ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+												}
+											}
+
+											vbox = {
+												using = layoutpolicy_expanding
+												minimumsize = {12 -1}
+												margin_bottom = 4
+
+												expand = {}
+
+												text_single = {
+													layoutpolicy_horizontal = expanding
+													autoresize = yes
+													fontsize = 12
+													maximumsize = {-1 20}
+													align = center|nobaseline
+													text = "[UnitMarkerItem.GetLabel]"
+												}
+												widget = {
+													layoutpolicy_horizontal = expanding
+													size = { -1 5 }
+													progressbar = {
+														visible = "[Unit.HasMaximumMaintenance]"
+														size = { 100% 5 }
+														using = progress_bar_green_alt
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+													progressbar = {
+														visible = "[Not(Unit.HasMaximumMaintenance)]"
+														size = { 100% 5 }
+														using = progress_bar_goldish
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+												}
+											}
+										}
+									}
+
+									blockoverride "item_unit_transport_text_object" {
+										text_single = {
+											size = { 100% 100% }
+											autoresize = no
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetTransportedTroops]"
+										}
+									}
+								}
+
+								expand = {}
+							}
+						}
+					}
+
+					#Navy Marker
+					vbox = {
+						using = layoutpolicy_expanding
+						visible = "[Not(UnitMarkerItem.GetUnit.IsArmy)]"
+						allow_outside = yes
+						margin_right = 5
+
+						# Full width
+						unit_marker_item_layout = {
+							using = layoutpolicy_expanding
+							spacing = -3
+							visible = "[UnitMarker.ShouldBeShownFullWidth]"
+							allow_outside = yes
+
+							widget = {
+								ignore_layout = yes
+								size = { 70 40 }
+								parentanchor = vcenter|left
+								widgetanchor = vcenter|right
+								position = { 4 5 }
+								allow_outside = yes
+								hbox = {
+									allow_outside = yes
+									spacing = 2
+
+									expand = {}
+
+									unit_marker_compass = {}
+
+									widget = {
+										allow_outside = yes
+										using = unit_marker_item_commander
+										blockoverride "item_unit_commander_text_object" {
+											hbox = {
+												widget = {
+													size = { 26 26 }
+
+													# Has General
+													button = {
+														visible = "[UnitMarkerItem.HasLeaderFrame]"
+
+														size = { 26 26 }
+
+														framesize = { 32 32 }
+														frame = "[UnitMarkerItem.GetLeaderFrame]"
+
+														texture = "gfx/interface/mapitems/commander_rank.dds"
+														texture_density = 2
+
+														action_tooltip = {
+															title = "SHOW_CHARACTER"
+															on_action = "[UnitMarkerItem.OnLeaderClick]"
+														}
+
+														datacontext = "[UnitMarkerItem.GetUnit.GetCommander]"
+														tooltipwidget = {
+															using = Character_tooltip
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_modifiers_size" {
+								size = { 28 28 }
+							}
+
+							blockoverride "item_unit_text_object" {
+								hbox = {
+									# margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+									margin = {4 0}
+									margin_right = 8
+									margin_bottom = 2
+									vbox = {
+										using = layoutpolicy_expanding
+										margin_bottom = 2
+
+										expand = {}
+
+										text_single = {
+											layoutpolicy_horizontal = expanding
+											autoresize = no
+											size = {-1 20}
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetLabel]"
+										}
+										widget = {
+											layoutpolicy_horizontal = expanding
+											size = { -1 5 }
+											progressbar = {
+												parentanchor = right
+												visible = "[Unit.HasMaximumMaintenance]"
+												size = { 100% 5 }
+												using = progress_bar_green_alt
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+											progressbar = {
+												parentanchor = right
+												visible = "[Not(Unit.HasMaximumMaintenance)]"
+												size = { 100% 5 }
+												using = progress_bar_goldish
+												value = "[UnitMarkerItem.GetAverageMoralePercent]"
+												tooltipwidget = {
+													using = UnitMorale_tooltip
+												}
+											}
+										}
+									}
+
+									hbox = {
+										spacing = -2
+
+										widget = {
+											size = { 8 26 }
+											allow_outside = yes
+
+											unit_composition_bar = {
+												size = { 6 26 }
+											}
+
+											icon = {
+												size = { 100% 100% }
+												texture = "gfx/interface/component_tiles/square_outline_alt.dds"
+												texture_density = 2
+												spriteType = corneredstretched
+												spriteBorder = { 20 20 }
+												modify_texture = {
+													using = color_super_dark_brown_texture
+													blend_mode = multiply
+												}
+											}
+										}
+
+										country_flag_small = {
+											datacontext = "[Unit.GetCountry]"
+											size = { 42 29 }
+
+											blockoverride "click" {
+												onclick = "[UnitMarkerItem.OnFlagClick]"
+											}
+
+											blockoverride "double_click" {
+												ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+											}
+										}
+									}
+								}
+							}
+
+							blockoverride "item_unit_transport_text_object" {
+								text_single = {
+									size = { 100% 100% }
+									autoresize = no
+									align = center|nobaseline
+									text = "[UnitMarkerItem.GetTransportedTroops]"
+								}
+							}
+						}
+
+						# Short width
+						widget = {
+							visible = "[And(UnitMarker.ShouldBeShownShortWidth, Not(UnitMarker.ShouldBeShownVerySmallSize))]"
+							size = { @[unit_marker_item_width * unit_marker_item_short_factor] @unit_marker_item_height }
+
+							vbox = {
+								# hbox = {
+								# 	layoutpolicy_horizontal = expanding
+								# 	spacing = 2
+								# 	using = unit_marker_item_modifiers_small_zoom
+								# 	expand = {}
+								# }
+
+								unit_marker_item_unit_info = {
+									unit_marker_compass = {
+										size = { 18 18 }
+										position = { -8 4 }
+									}
+
+									blockoverride "unit_marker_item_unit_info_size"{
+										layoutpolicy_horizontal = expanding
+										size = {-1 @unit_marker_frame_height}
+									}
+									blockoverride "item_modifiers_size" {
+										size = { 22 22 }
+										position = { 0 2 }
+									}
+									blockoverride "unit_transport_size" {
+										size = { 28 28 }
+									}
+
+									blockoverride "item_unit_text_object" {
+										hbox = {
+											margin_left = 4
+											margin_right = 7
+
+											vbox = {
+												using = layoutpolicy_expanding
+												minimumsize = {12 -1}
+												margin_bottom = 4
+
+												expand = {}
+
+												text_single = {
+													layoutpolicy_horizontal = expanding
+													autoresize = yes
+													fontsize = 12
+													maximumsize = {-1 20}
+													align = center|nobaseline
+													text = "[UnitMarkerItem.GetLabel]"
+												}
+												widget = {
+													layoutpolicy_horizontal = expanding
+													size = { -1 5 }
+													progressbar = {
+														visible = "[Unit.HasMaximumMaintenance]"
+														parentanchor = right
+														size = { 100% 5 }
+														using = progress_bar_green_alt
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+													progressbar = {
+														visible = "[Not(Unit.HasMaximumMaintenance)]"
+														parentanchor = right
+														size = { 100% 5 }
+														using = progress_bar_goldish
+														value = "[UnitMarkerItem.GetAverageMoralePercent]"
+														tooltipwidget = {
+															using = UnitMorale_tooltip
+														}
+													}
+												}
+											}
+
+											country_flag_small = {
+												datacontext = "[Unit.GetCountry]"
+												size = { 38 26 }
+
+												blockoverride "click" {
+													onclick = "[UnitMarkerItem.OnFlagClick]"
+												}
+
+												blockoverride "double_click" {
+													ondoubleclick = "[UnitMarkerItem.OnRightClick]"
+												}
+											}
+										}
+									}
+
+									blockoverride "item_unit_transport_text_object" {
+										text_single = {
+											size = { 100% 100% }
+											autoresize = no
+											align = center|nobaseline
+											text = "[UnitMarkerItem.GetTransportedTroops]"
+										}
+									}
+								}
+
+								expand = {}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### COMBAT
+template combat_side_marker {
+	vbox = {
+		expand = {}
+
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			datacontext = "[CombatSide.GetCommander]"
+			margin = { 31 0 }
+			block "combat_side_marker_params" {}
+			# widget = {
+			# 	size = { 60 60 }
+
+			# 	portrait_standard_head_button = {
+			# 		visible = "[CombatSide.GetCommander.IsValid]"
+			# 		size = { 60 60 }
+			# 		parentanchor = bottom
+			# 		position = {0 5}
+			# 	}
+			# }
+
+			widget = {
+				size = { 30 28 }
+				widget = {
+					size = { 100% 100% }
+					datacontext = "[CombatSide.GetCommander]"
+					visible = "[Character.IsValid]"
+					tooltip_enabled = "[Character.IsValid]"
+					tooltipwidget = {
+						using = Character_tooltip
+					}
+
+					background = {
+						using = bg_navy_unit_map_texture
+						spriteBorder = { 20 20 }
+
+						modify_texture = {
+							using = color_bg_blue_texture
+						}
+
+						modify_texture = {
+							using = overlay_striped_texture
+							blend_mode = overlay
+							alpha = 0.2
+						}
+					}
+
+					icon = {
+						visible = "[GreaterThan_int32(CombatSide.GetLeaderFrame,'(int32)0')]"
+						parentanchor = center
+						position = {0 0}
+						size = { 26 26 }
+
+						framesize = { 32 32 }
+						frame = "[CombatSide.GetLeaderFrame]"
+
+						texture = "gfx/interface/mapitems/commander_rank.dds"
+						texture_density = 2
+
+					}
+				}
+			}
+
+			expand = {}
+		}
+		hbox = {
+			allow_outside = yes
+			datacontext = "[CombatSide.GetLeadingUnit]"
+			block "combat_side_marker_params" {}
+
+			widget = {
+				size = { 135 30 }
+
+				background = {
+					using = marker_unit_side_color
+					visible ="[Unit.IsArmy]"
+					using = bg_army_unit_map_texture
+					spriteBorder = { 20 0 }
+					block "combat_side_marker_army_margin" {
+						margin_left = -11
+						margin_right = -3
+					}
+					margin_top = -2
+					margin_bottom = -2
+					block "combat_side_marker_mirror" {}
+
+					modify_texture = {
+						using = overlay_cloth_texture
+						blend_mode = overlay
+						alpha = 0.4
+					}
+					using = graphical_culture_pattern
+				}
+
+				background = {
+					using = marker_unit_side_color
+					visible ="[Not(Unit.IsArmy)]"
+					using = bg_navy_unit_map_texture
+					spriteBorder = { 20 0 }
+					block "combat_side_marker_navy_margin" {
+						margin_left = -4
+						margin_right = -8
+					}
+					margin_top = -2
+					margin_bottom = -2
+					block "combat_side_marker_mirror" {}
+
+					modify_texture = {
+						using = overlay_cloth_texture
+						blend_mode = overlay
+						alpha = 0.4
+					}
+					using = graphical_culture_pattern
+				}
+
+				hbox = {
+					margin = { 7 0 }
+					block "combat_side_marker_orientation" {
+						margin_right = 28
+					}
+
+					vbox = {
+						using = layoutpolicy_expanding
+						margin_bottom = 4
+
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							autoresize = no
+							size = {-1 20}
+							align = center
+							# visible = "[CombatSide.IsAttacker]"
+							text = "[CombatSide.GetVisualStrength]"
+						}
+						# text_single = {
+						# 	layoutpolicy_horizontal = expanding
+						# 	autoresize = no
+						# 	maximumsize = {-1 20}
+						# 	align = left|nobaseline
+						# 	visible = "[Not(CombatSide.IsAttacker)]"
+						# 	text = "[CombatSide.GetVisualStrength]"
+						# }
+						hbox = {
+							layoutpolicy_horizontal = expanding
+							widget = {
+								layoutpolicy_horizontal = expanding
+								size = { -1 5 }
+								progressbar = {
+									size = { 100% 5 }
+									block "combat_side_marker_morale_mirror" {
+										mirror = horizontal
+									}
+									noprogresstexture = "gfx/interface/progressbars/progress_bar_red_alt.dds"
+									progresstexture = "gfx/interface/progressbars/progress_bar_green_alt.dds"
+									texture_density = 2
+									spriteType = Corneredstretched
+									spriteborder = { 12 0 }
+									value = "[CombatSide.GetMoralePercent]"
+								}
+
+							}
+						}
+					}
+
+					country_flag_small = {
+						size = { 38 26 }
+						datacontext = "[CombatSide.GetCountry]"
+					}
+				}
+
+				unit_marker_army_button = {
+					size = { 100% 100% }
+					visible = "[Unit.IsArmy]"
+					block "combat_side_marker_mirror" {}
+					onrightclick = "[CombatMarker.OnRightClick]"
+
+					action_tooltip = {
+						title = "OPEN_COMBAT_VIEW"
+						on_action = "[CombatMarker.OnClick]"
+					}
+
+					action_tooltip = {
+						click_type = right
+						click_mode = single
+						visible = "[HasAnyUnitsSelected]"
+						title = "CLICK_ACTION_UNIT_MOVE_TO_BATTLE"
+						on_action = "[CombatMarker.OnRightClick]"
+					}
+
+					tooltipwidget = {
+						BasicFunctionalTooltip = {}
+					}
+				}
+
+				unit_marker_navy_button = {
+					size = { 100% 100% }
+					visible = "[Not(Unit.IsArmy)]"
+					onclick = "[CombatMarker.OnClick]"
+					onrightclick = "[CombatMarker.OnRightClick]"
+					block "combat_side_marker_mirror" {}
+
+					action_tooltip = {
+						title = "OPEN_COMBAT_VIEW"
+						on_action = "[CombatMarker.OnClick]"
+					}
+
+					action_tooltip = {
+						click_type = right
+						click_mode = single
+						visible = "[HasAnyUnitsSelected]"
+						title = "CLICK_ACTION_UNIT_MOVE_TO_BATTLE"
+						on_action = "[CombatMarker.OnRightClick]"
+					}
+
+					tooltipwidget = {
+						BasicFunctionalTooltip = {}
+					}
+				}
+
+				# terrain penalties icon
+				widget = {
+					visible = "[CombatSide.IsDiceModified]"
+					size = {25 25}
+					parentanchor = left|vcenter
+					position = {-14 0}
+					using = bg_circle_outline
+					blockoverride "inside_color" {
+						modify_texture = {
+							using = color_paper_texture
+							blend_mode = multiply
+						}
+					}
+					icon = {
+						block "combat_side_penalty_anchor" {
+							parentanchor = center
+						}
+						size = { 20 20 }
+						texture = "gfx/interface/icons/combat_modifiers/combat_penalty.dds"
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/icons/combat_modifiers/combat_penalty.dds"
+									}
+								}
+								lowpriotextcontext = "COMBAT_MODIFIER_MAP_WIDGET"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+widget = {
+	name = "combat_marker"
+	allow_outside = yes
+	position = { 0 -3 }
+
+	button = {
+		visible = "[Or(CombatMarker.ShouldBeShownFullWidth, And(CombatMarker.ShouldBeShownShortWidth, Not(CombatMarker.ShouldBeShownVerySmallSize)))]"
+		datacontext = "[CombatMarker.GetCombat]"
+		tooltipwidget = {
+			using = Combat_tooltip
+		}
+		parentanchor = center
+		allow_outside = yes
+		onclick = "[CombatMarker.OnClick]"
+		onrightclick = "[CombatMarker.OnRightClick]"
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			visible = "[HasAnyUnitsSelected]"
+			title = "CLICK_ACTION_UNIT_MOVE_TO_BATTLE"
+			on_action = "[CombatMarker.OnRightClick]"
+		}
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(CombatMarker.GetLocation)]"
+
+		background = {
+			texture = "gfx/interface/component_tiles/map_markers/map_marker_glow.dds"
+			texture_density = 2
+			spriteType = corneredstretched
+			spriteBorder = {65 65}
+			margin_bottom = 45
+
+			modify_texture = {
+				using = color_red_texture
+			}
+		}
+		background = {
+			using = bg_map_marker_shadow_texture
+			margin_bottom = 15
+			blend_mode = multiply
+			alpha = 0.5
+		}
+
+		hbox = {
+			resizeparent = yes
+			hbox = {
+				datacontext = "[CombatMarker.GetCombat.GetAttacker]"
+				allow_outside = yes
+
+				using = combat_side_marker
+				blockoverride "combat_side_marker_params" { righttoleft = yes }
+				blockoverride "combat_side_marker_mirror" {mirror = horizontal}
+				blockoverride "combat_side_marker_army_margin" {
+					margin_left = -3
+					margin_right = -11
+				}
+				blockoverride "combat_side_marker_navy_margin" {
+					margin_left = -8
+					margin_right = -4
+				}
+				# blockoverride "combatside_banner_params" {
+				# 	modify_texture = {
+				# 		using = color_red_texture
+				# 		alpha = 0.9
+				# 		blend_mode = multiply
+				# 	}
+				# }
+
+				# blockoverride "combatside_banner_icon" {
+				# 	texture = "gfx/interface/icons/flat_icons/power_projection.dds"
+				# 	texture_density = 2
+
+				# 	modify_texture = {
+				# 		using = color_white_texture
+				# 		alpha = 0.2
+				# 	}
+
+				# 	modify_texture = {
+				# 		using = color_red_texture
+				# 		alpha = 1
+				# 	}
+				# }
+			}
+
+			hbox = {
+				datacontext = "[CombatMarker.GetCombat.GetDefender]"
+				allow_outside = yes
+
+				using = combat_side_marker
+				blockoverride "combat_side_marker_orientation" {
+					righttoleft = yes
+					margin_left = 28
+				}
+				blockoverride "combat_side_penalty_anchor"{
+					parentanchor = right|vcenter
+				}
+				# blockoverride "combat_side_bg_orientation" {mirror = horizontal}
+				blockoverride "combat_side_marker_params" { righttoleft = no }
+				blockoverride "combat_side_marker_morale_mirror" {}
+				# blockoverride "combatside_banner_params" {
+				# 	modify_texture = {
+				# 		texture = "gfx/interface/colors/progress_blue.dds"
+				# 		alpha = 0.9
+				# 		blend_mode = multiply
+				# 	}
+				# }
+
+				# blockoverride "combatside_banner_icon" {
+				# 	texture = "gfx/interface/icons/flat_icons/military_flat_icon.dds"
+				# 	texture_density = 2
+
+				# 	modify_texture = {
+				# 		using = color_white_texture
+				# 		alpha = 0.2
+				# 	}
+
+				# 	modify_texture = {
+				# 		texture = "gfx/interface/colors/progress_blue.dds"
+				# 		alpha = 1
+				# 	}
+				# }
+			}
+		}
+
+		widget = {
+			size = { 58 48 }
+			position = {0 16}
+			parentanchor = center
+
+			using = bg_card_header_01_military
+			blockoverride "header_military_extra" {
+				alpha = 1
+				margin = { -1 -3 }
+			}
+
+			battle_center_button = {
+				size = { 68 66 }
+				parentanchor = center
+				using = goto_battle_action
+				onrightclick = "[CombatMarker.OnRightClick]"
+
+				action_tooltip = {
+					click_type = right
+					click_mode = single
+					visible = "[HasAnyUnitsSelected]"
+					title = "CLICK_ACTION_UNIT_MOVE_TO_BATTLE"
+					on_action = "[CombatMarker.OnRightClick]"
+				}
+
+				hbox = {
+					margin = { 5 0 }
+					spacing = 2
+
+					vbox = {
+						spacing = 2
+						datacontext = "[Combat.GetAttacker]"
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetLeft]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetCenter]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetRight]"
+						}
+					}
+
+					widget = {
+						size = { 20 20 }
+
+						icon = {
+							size = { 100% 100% }
+							parentanchor = center
+							texture = "[GetConceptTexture('battle')]"
+							glow = {
+								name = "drop_shadow"
+								glow_radius = 3
+								color = {0.0 0.0 0.0 1.0}
+								alpha = 0.3
+							}
+						}
+					}
+
+					vbox = {
+						spacing = 2
+						datacontext = "[Combat.GetDefender]"
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetRight]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetCenter]"
+						}
+						unit_marker_battle_side_flank = {
+							datacontext = "[CombatSide.GetLeft]"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### Combat Imminent Marker
+widget = {
+	name = "combat_imminent_marker"
+	allow_outside = yes
+	widget = {
+		size = { 40 40 }
+		parentanchor = center
+
+		tooltip_offset = { 10 0 }
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "[CombatImminentMarker.GetIconTexture]"
+
+						glow = {
+							name = "drop_shadow"
+							glow_radius = 3
+							color = {0.0 0.0 0.0 1.0}
+							alpha = 0.3
+						}
+					}
+				}
+
+				blockoverride "title_button" {
+					hint_button = {
+						action_tooltip = {
+							title = "OPEN_HINT"
+							on_action = "[OpenLateralViewWithParams('hints', 'selected_hint = hint_battle')]"
+						}
+					}
+				}
+
+				blockoverride "title_text" {
+					text = "COMBAT_IMMINENT_TITLE"
+				}
+
+				blockoverride "concept_link" {
+					text = "[combat|e]"
+				}
+
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "[CombatImminentMarker.GetTooltipHeader]"
+						}
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_OUTCOME_TITLE"
+						}
+						textcontext = "[CombatImminentMarker.GetTooltipOutcome]"
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_BOTH_SIDES_TITLE"
+						}
+						textcontext = "COMBAT_IMMINENT_BOTH_SIDES"
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_OUR_BENEFITS"
+						}
+						textcontext = "COMBAT_IMMINENT_OUR_BENEFITS_TEXT"
+					}
+					TooltipRowList = {
+						blockoverride "block_title" {
+							text = "COMBAT_IMMINENT_THEIR_BENEFITS"
+						}
+						textcontext = "COMBAT_IMMINENT_THEIR_BENEFITS_TEXT"
+					}
+				}
+			}
+		}
+
+		button = {
+			parentanchor = center
+			allow_outside = yes
+
+			block "button_size" {
+				size = { 100% 100% }
+			}
+
+			tooltip_enabled = no
+			texture = "[CombatImminentMarker.GetIconTexture]"
+
+			onclick = "[SelectLocation(CombatImminentMarker.GetLocation)]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(CombatImminentMarker.GetLocation)]"
+		}
+	}
+}
+
+### FORT ICON (and province capitals) in tactical map mode
+container = {
+	name = "fort_marker"
+	allow_outside = yes
+
+	datacontext = "[FortMarker.GetLocation]"
+	widget = {
+		hbox = {
+			set_parent_size_to_minimum = yes
+			widget = {
+				size =  { 20 30 }
+				location_rank_icon = {
+					visible = "[Or3(Location.IsProvinceCapital, Location.IsCapital, Location.HasAnyFort)]"
+					parentanchor = center
+					position = { 0 2 }
+					blockoverride "icon_size" {
+						size =  { 20 20 }
+						parentanchor = hcenter|bottom
+					}
+				}
+			}
+			icon = {
+				alwaystransparent = no
+				visible = "[Location.HasAnyFort]"
+				texture = "[GetBuildingIcon(Location.GetBestFortBuilding.GetType)]"
+				size = { 30 30 }
+				onmousehierarchyenter = "[PdxGuiWidget.SetHighlightFort(Location.Self)]"
+
+				glow = {
+					glow_radius = 2
+					color = {0.0 0.0 0.0 1.0}
+					alpha = 0.5
+				}
+
+				tooltipwidget = {
+					using = Garrison_tooltip
+				}
+			}
+		}
+	}
+}
+
+### TOLL MARKER
+container = {
+	name = "toll_marker"
+	max_update_rate = 4
+	allow_outside = yes
+
+	datacontext = "[TollMarker.GetLocation]"
+	button = {
+		parentanchor = center
+		texture = "[GetConceptTexture('sound_toll')]"
+		size = { 30 30 }
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(Location.GetSoundTollController)]"
+
+		glow = {
+			glow_radius = 2
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+
+		tooltipwidget = {
+			using = SoundTollLocationTooltip
+		}
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "GO_TO_LOCATION"
+			on_action = "[ShowLocation(Location.GetSoundTollController)]"
+		}
+	}
+}
+
+### Port Marker
+widget = {
+	name = "port_marker"
+	max_update_rate = 4
+	allow_outside = yes
+
+	button = {
+		widgetanchor = center
+		size = { 30 30 }
+		visible = "[PortMarker.ShouldBeShown]"
+		# down = "[PortMarker.HasVisibleShips]"
+		datacontext = "[PortMarker]"
+
+		icon = { # FUM: Both port icons and their drop shadow pre-composited into one
+			parentanchor = center
+			size = { 120% 120% }
+			texture = "gfx/interface/buttons/flats/fum_port_marker.dds"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			cursor = "unit_movement"
+
+			visible = "[PortMarker.CanMoveNavyHere]"
+			title = "PORT_CLICK_ACTION_UNIT_TRANSPORT"
+			on_action = "[PortMarker.MoveNavyHere]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "gfx/interface/icons/flat_icons/geopolitics/maritime_presence.dds"
+
+						glow = {
+							name = "drop_shadow"
+							glow_radius = 3
+							color = {0.0 0.0 0.0 1.0}
+							alpha = 0.3
+						}
+					}
+				}
+
+				blockoverride "title_text" {
+					text = "PORT_TOOLTIP_NEW"
+				}
+
+				blockoverride "concept_link" {
+					text = "[port|e]"
+				}
+
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "PORT_TOOLTIP_TEXT"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### Raw Goods Marker
+widget = {
+	name = "raw_goods_marker"
+	allow_outside = yes
+	size = "[Min_CVector2f(Multiply_CVector2f(GetInverseZoom2, '(CVector2f)9333, 9333'), '(CVector2f)85, 85')]"
+
+	datacontext = "[RawGoodsMarker]"
+	datacontext = "[RawGoodsMarker.GetLocation]"
+	datacontext = "[RawGoodsMarker.GetLocation.GetRawMaterial]"
+	datacontext = "[RawGoodsMarker.GetLocation.GetMarket]"
+
+	button = {
+		size = { 75% 75% }
+		parentanchor = center
+		texture = "[GetGoodsIcon(Location.GetRawMaterial.Self)]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightGoods(Location.GetRawMaterial.Self)]"
+		tooltipwidget = {
+			using = SpecificGoodsMarket_tooltip
+		}
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "OPEN_GOOD_PANEL"
+			on_action = "[ShowGoods(Location.GetRawMaterial.Self)]"
+		}
+	}
+
+	button = {
+		visible = "[Location.HasSpecificBaseModifier]"
+		parentanchor = bottom|right
+		position = { 0	0 }
+		size = { 50% 50% }
+		icon = {
+			size = { 100% 100% }
+			texture = "[Location.GetSpecificBaseModifier.GetModifier.GetIcon]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightGoods(Location.GetRawMaterial.Self)]"
+			glow = {
+				glow_radius = 3
+				color = {0.0 0.0 0.0 1.0}
+				alpha = 0.5
+			}
+		}
+
+		tooltipwidget = {
+			using = SpecificGoodsMarket_tooltip
+			blockoverride "good_details_extra_info" {
+				TooltipListBase = {
+					TooltipManualTableField = { # SPECIFIC MODIFIERS
+						tooltipwidget = {
+							using = raw_good_location_modifier_tooltip
+						}
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							text = "[location_modifier|e]"
+						}
+
+						icon = {
+							size = { 25 25 }
+							texture = "[Location.GetSpecificBaseModifier.GetModifier.GetIcon]"
+
+							glow = {
+								glow_radius = 3
+								color = {0.0 0.0 0.0 1.0}
+								alpha = 0.5
+							}
+						}
+						text_single = {
+							text = "[Location.GetSpecificBaseModifier.GetName|L]"
+							fontsize = 15
+							using = FontDefaultColor
+						}
+					}
+				}
+			}
+		}
+		# action_tooltip = {
+		# 	click_type = left
+		# 	click_mode = single
+		# 	title = "OPEN_GOOD_PANEL"
+		# 	on_action = "[ShowGoods(Location.GetRawMaterial.Self)]"
+		# }
+	}
+}
+
+### Production Efficiency Marker (shown in build mapmode on locations with an RGO or local output bonus for the building being placed)
+widget = {
+	name = "production_efficiency_marker"
+	allow_outside = yes
+	size = "[Min_CVector2f(Multiply_CVector2f(GetInverseZoom2, '(CVector2f)7000, 7000'), '(CVector2f)45, 45')]"
+
+	datacontext = "[ProductionEfficiencyMarker]"
+	datacontext = "[ProductionEfficiencyMarker.GetLocation]"
+	datacontext = "[ProductionEfficiencyMarker.GetBuildingType]"
+	datacontext = "[ProductionEfficiencyMarker.GetLocationToBuildItem]"
+
+	icon = {
+		parentanchor = center
+		size = { 100% 100% }
+		texture = "gfx/interface/icons/flat_icons/building_panel/production_efficiency.dds"
+
+		modify_texture = {
+			using = color_black_texture
+			blend_mode = multiply
+		}
+
+		icon = {
+			position = { -1 -1 }
+			parentanchor = center
+			size = { 100% 100% }
+			texture = "gfx/interface/icons/flat_icons/building_panel/production_efficiency.dds"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						using = tooltip_title_icon_size
+						texture = "gfx/interface/icons/flat_icons/building_panel/production_efficiency.dds"
+					}
+				}
+				blockoverride "title_text" {
+					text = "RGO_BONUS"
+				}
+				blockoverride "concept_link" {
+					text = "[production_efficiency|e]"
+				}
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						visible = "[LocationToBuildItem.GetBuilding.IsUsingRGOBonus(Location.GetOwnerPtr, Location.Self)]"
+						blockoverride "text" {
+							text = "PROD_METHOD_BONUS_ACTIVE"
+						}
+						blockoverride "textblock_background_tint"  {
+							modify_texture = {
+								using = color_light_green_texture
+							}
+						}
+					}
+					TooltipTextBlock = {
+						visible = "[Not(LocationToBuildItem.GetBuilding.IsUsingRGOBonus(Location.GetOwnerPtr, Location.Self))]"
+						blockoverride "text" {
+							text = "PROD_METHOD_BONUS_POTENTIAL"
+						}
+						blockoverride "textblock_background_tint"  {
+							modify_texture = {
+								using = color_muztard_texture
+							}
+						}
+					}
+					TooltipStringPairlist = {
+						lowpriotextcontext = "[BuildingType.ProductionEfficiencyInfo(Location.GetOwnerPtr, Location.Self)]"
+					}
+				}
+			}
+		}
+	}
+}
+
+### Dynasty Marker
+widget = {
+	name = "dynasty_marker"
+	max_update_rate = 4
+	allow_outside = yes
+	datacontext = "[DynastyMarker]"
+
+	dynasty_shield_mid = {
+		parentanchor = center
+		visible = "[Not(Or(DynastyMarker.IsRegency, DynastyMarker.IsLowborn))]"
+		datacontext = "[DynastyMarker.GetDynasty]"
+	}
+
+	icon = {
+		using = bg_circle
+		parentanchor = center
+		visible = "[DynastyMarker.IsRegency]"
+		size = { 20 20 }
+		texture = "gfx/interface/icons/character_roles/regent.dds"
+	}
+
+	lowborn_coat_of_arms = {
+		visible = "[DynastyMarker.IsLowborn]"
+		parentanchor = center
+	}
+}
+
+### Supply depot
+widget = {
+	name = "supply_depot_marker"
+	allow_outside = yes
+	datacontext = "[SupplyDepotMarker.GetLocation.GetSupplyDepot]"
+	tooltipwidget = {
+		using = SupplyDepot_tooltip
+	}
+
+	widget = {
+		parentanchor = center
+		allow_outside = yes
+
+		widget = {
+			parentanchor = vcenter|left
+			layoutpolicy_horizontal = expanding
+
+			size = { 100 @unit_marker_frame_height }
+
+			icon = {
+				size = { 100% 100% }
+				using = unit_marker_bg
+
+				modify_texture = {
+					using = color_light_green_texture
+					alpha = 0.3
+				}
+
+				using = overlay_gold
+			}
+
+			icon = {
+				size = { 100% 100% }
+				using = unit_marker_frame
+			}
+
+			text_single = {
+				size = { 100% 100% }
+				autoresize = no
+				align = right|nobaseline
+				margin_left = @[unit_marker_morale_progressbar_size * 0.6]
+				margin_right = @unit_marker_frame_text_margin
+
+				text = "[SupplyDepotMarker.GetLocation.GetSupplyDepot.GetFood.GetCurrentFood|2]"
+			}
+		}
+
+		widget =  {
+			size = { @unit_marker_morale_progressbar_size @unit_marker_morale_progressbar_size }
+			parentanchor = center
+
+			using = bg_circle_piechart
+
+			piechart = {
+				parentanchor = center
+				size = { 90% 90% }
+				using = piechart_angles
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[SupplyDepotMarker.GetProgress]"
+					color = { 0.01 0.9 0.3 0.8 }
+					alwaystransparent = yes
+				}
+
+				pieslice_no_highlight = {
+					texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+					value = "[Subtract_float('(float)100.0', SupplyDepotMarker.GetProgress)]"
+					color = { 0.0 0.1 0.1 1 }
+					alwaystransparent = yes
+				}
+
+				icon = {
+					parentanchor = center
+					texture = "gfx/interface/mapitems/has_attrition_with_food_supply.dds"
+					size = { 75% 75% }
+				}
+			}
+		}
+	}
+}
+
+### FortFlipRestore Marker
+widget = {
+	name = "flip_marker"
+	max_update_rate = 4
+	allow_outside = yes
+	position = { 0 0 }
+
+	widget = {
+		size = { 30 30 }
+		widgetanchor = center
+
+		using = bg_circle_piechart
+		blockoverride "marker_bg_circle_extra_modifiers" {
+			modify_texture = {
+				using = color_light_green_texture
+				alpha = 0.3
+			}
+		}
+
+		tooltipwidget = {
+			SimpleContextualRowTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/icons/location_icons/garrison.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "concept_link" {
+					text = "[controller|e]"
+				}
+
+				lowpriotextcontext = "[FortFlipRestoreMarker.GetTooltip]"
+			}
+		}
+
+		button = {
+			parentanchor = center
+			allow_outside = yes
+
+			block "button_size" {
+				size = { 18 18 }
+			}
+
+			tooltip_enabled = no
+			texture = "gfx/interface/icons/location_icons/garrison.dds"
+			texture_density = 2
+
+			onclick = "[SelectLocation(FortFlipRestoreMarker.GetLocation)]"
+			onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(FortFlipRestoreMarker.GetLocation)]"
+		}
+
+		piechart = {
+			parentanchor = center
+			size = { 26 26 }
+			using = piechart_angles
+
+			pieslice_no_highlight = {
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				value = "[FortFlipRestoreMarker.GetProgress]"
+				color = { 0.01 0.9 0.2 1 }
+				alwaystransparent = yes
+			}
+
+			pieslice_no_highlight = {
+				texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+				value = "[Subtract_float('(float)100.0', FortFlipRestoreMarker.GetProgress)]"
+				color = { 0.0 0.1 0.0 1 }
+				alwaystransparent = yes
+			}
+		}
+	}
+}
+
+### CabinetAction Marker
+widget = {
+	name = "cabinet_action_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	datacontext = "[CabinetActionMarker.GetCabinet]"
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[CabinetActionMarker.GetProgress]"
+			color = { 0.01 0.6 0.9 1 }
+			alwaystransparent = yes
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', CabinetActionMarker.GetProgress)]"
+			color = { 0.0 0.1 0.0 1 }
+			alwaystransparent = yes
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		size = { 22 22 }
+		align = center|nobaseline
+		texture = "[GetCabinetActionIcon(Cabinet.GetAction)]"
+		texture_density = 2
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCabinetActionTarget(CabinetActionMarker.GetCabinet)]"
+
+		tooltipwidget = {
+			using = action_progress_tooltip
+		}
+
+		tooltip_offset = { 20 20 }
+
+		datacontext = "[CabinetActionMarker.GetCabinet]"
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+
+			title = "CABINET_ACTION_SIDEMENU"
+			on_action = "[SelectCabinetAction(Cabinet.Self, '(bool)no')]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			conditions = "[MakeItFailIfLoc(Not(IsChangeCabinetActionTargetEnabled(Cabinet.Self)), 'CANNOT_CABINET_ACTION_SIDEMENU_RMB')]"
+			title = "CABINET_ACTION_SIDEMENU_RMB"
+			visible = "[IsChangeCabinetActionTargetVisible(Cabinet.Self)]"
+			enabled = "[IsChangeCabinetActionTargetEnabled(Cabinet.Self)]"
+			on_action = "[ChangeCabinetActionTarget(Cabinet.Self)]"
+		}
+	}
+}
+
+### BlockedVision Marker
+widget = {
+	name = "blocked_vision_marker"
+	max_update_rate = 4
+	size = { 20 20 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	# using = bg_circle_piechart
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/mapitems/hidden_from_land.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+					text = "BLOCKED_VISION_TOOLTIP_TEXT"
+			}
+			blockoverride "concept_link" {
+				text = [fow|e]
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipStringPairList = {
+					textcontext = "[BlockedVisionMarker.GetTooltip]"
+				}
+			}
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/hidden_from_land.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onclick = "[SelectLocation(BlockedVisionMarker.GetLocation)]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(BlockedVisionMarker.GetLocation)]"
+	}
+}
+
+### WinterBlocked Marker
+widget = {
+	name = "winter_blocked_marker"
+	max_update_rate = 4
+	size = { 20 20 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/mapitems/stuck_in_ice.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+					text = "WINTER_BLOCKED_TOOLTIP_TEXT"
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipStringPairList = {
+					textcontext = "[WinterBlockedMarker.GetTooltip]"
+				}
+			}
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/stuck_in_ice.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onclick = "[SelectLocation(WinterBlockedMarker.GetLocation)]"
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightLocation(WinterBlockedMarker.GetLocation)]"
+	}
+}
+
+### Annexation Marker
+widget = {
+	name = "annexation_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	datacontext = "[AnnexationMarker.GetCountry]"
+	tooltip_enabled = "[Country.IsBeingAnnexed]"
+	tooltipwidget = {
+		using = Annexation_tooltip
+	}
+
+	tooltip_offset = { 20 20 }
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+		visible = "[Country.GetDiplomacy.IsBeingAnnexedStalled]"
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[AnnexationMarker.GetProgress]"
+			color = { 0.5 0.5 0.5 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', AnnexationMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+	}
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+		visible = "[Not(Country.GetDiplomacy.IsBeingAnnexedStalled)]"
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[AnnexationMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', AnnexationMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		texture = "gfx/interface/icons/outliner/categories/annexation.dds"
+		texture_density = 2
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(AnnexationMarker.GetCountry)]"
+		tooltip_offset = { 20 20 }
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[AnnexationMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "ABORTANNEXTITLE"
+			on_action = "[AnnexationMarker.OnRightClick]"
+			conditions = "[AnnexationMarker.GetRightClickConditions]"
+			enabled = "[AnnexationMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			using = Annexation_tooltip
+		}
+	}
+}
+
+### Desert Connection Marker
+widget = {
+	name = "desert_connection_marker"
+	max_update_rate = 4
+
+	size = { 25 25}
+	widgetanchor = left
+	position = { 0 2 }
+
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/mapitems/desert_connector.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+				text = "DESERT_CONNECTOR_TOOLTIP"
+			}
+
+			blockoverride "concept_link" {
+				text = [corridor|e]
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipScrolledRowList = {
+					blockoverride "block_title" {
+						text = "[DesertConnectionMarker.GetTooltip]"
+					}
+
+					textcontext = "[DesertConnectionMarker.GetConnectedLocationNames]"
+				}
+			}
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/desert_connector.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onmousehierarchyenter = "[DesertConnectionMarker.HighlightConnections]"
+		onmousehierarchyleave = "[DesertConnectionMarker.ClearHighlightedConnections]"
+	}
+}
+### Canal connection marker
+widget = {
+	name = "canal_connection_marker"
+	max_update_rate = 4
+
+	size = { 25 25}
+	widgetanchor = left
+	position = { 0 2 }
+
+	tooltipwidget = {
+		ContextualTooltipType = {
+			blockoverride "title_icon" {
+				icon = {
+					texture = "gfx/interface/icons/buildings/pound_lock_canal_infrastructure.dds"
+					using = tooltip_title_icon_size
+				}
+			}
+			blockoverride "title_text" {
+				text = "CANAL_LOCATION"
+			}
+
+			blockoverride "concept_link" {
+				visible = no
+			}
+
+			blockoverride "tooltip_content" {
+				TooltipScrolledRowList = {
+					blockoverride "block_title" {
+						text = "[CanalConnectionMarker.GetTooltip]"
+					}
+
+					textcontext = "[CanalConnectionMarker.GetConnectedLocationNames]"
+				}
+				TooltipTextBlock = {
+					blockoverride "text" {
+						text = "CANAL_LOCATION_RESTRICTED"
+					}
+				}
+				TooltipTextBlock = {
+					visible = "[CanalConnectionMarker.GetRestricted]"
+					blockoverride "text" {
+						text = "CANAL_LOCATION_RESTRICTED_FOR_US"
+					}
+					blockoverride "textblock_background_tint"  {
+						modify_texture = {
+							using = color_dark_red_texture
+						}
+					}
+				}
+				TooltipTextBlock = {
+					visible = "[Not(CanalConnectionMarker.GetRestricted)]"
+					blockoverride "text" {
+						text = "CANAL_LOCATION_NOT_RESTRICTED"
+					}
+					blockoverride "textblock_background_tint"  {
+						modify_texture = {
+							using = color_light_green_texture
+						}
+					}
+				}
+			}
+
+		}
+	}
+
+	tooltip_offset = { 20 20 }
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		tooltip_enabled = no
+		texture = "gfx/interface/icons/buildings/pound_lock_canal_infrastructure.dds"
+
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onmousehierarchyenter = "[CanalConnectionMarker.HighlightConnections]"
+		onmousehierarchyleave = "[CanalConnectionMarker.ClearHighlightedConnections]"
+
+	}
+
+	icon = {
+		size = { 150% 150% }
+		parentanchor = center
+		allow_outside = yes
+
+		tooltip_enabled = no
+		texture = "gfx/interface/mapitems/canal_connector_restricted.dds"
+
+		visible = "[CanalConnectionMarker.GetRestricted]"
+
+		texture_density = 2
+
+
+	}
+}
+
+### Colony Charter Marker
+widget = {
+	name = "colony_charter_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[ColonyCharterMarker.GetProgress]"
+			color = { 0.01 0.6 0.9 1 }
+			alwaystransparent = yes
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', ColonyCharterMarker.GetProgress)]"
+			color = { 0.0 0.1 0.0 1 }
+			alwaystransparent = yes
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		size = { 22 22 }
+		align = center|nobaseline
+		texture = "gfx/interface/mapitems/colonial_charter.dds"
+		glow = {
+			name = "drop_shadow"
+			glow_radius = 3
+			color = {0.0 0.0 0.0 1.0}
+			alpha = 0.5
+		}
+		texture_density = 2
+
+		onmousehierarchyenter = "[ColonyCharterMarker.HighlightCharter]"
+		onmousehierarchyleave = "[ColonyCharterMarker.ClearHighlightedCharter]"
+
+		tooltip_offset = { 20 20 }
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "GO_TO_COLONY"
+			on_action = "[ShowProvinceDefinition(ColonyCharterMarker.GetLocation.GetProvinceDefinition)]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "AUTOMATED_SYSTEM_COLONIES_CLICK"
+			on_action = "[OpenLateralViewWithParams('expansion', 'low_tab = colonisation')]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/mapitems/colonial_charter.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "title_text" {
+					text = "COLONIAL_PROGRESS_POT_HEADER"
+				}
+
+				blockoverride "concept_link" {
+					text = [colonial_charter|e]
+				}
+
+				blockoverride "tooltip_content" {
+					TooltipScrolledRowList = {
+						textcontext = "[ColonyCharterMarker.GetTooltip]"
+					}
+				}
+			}
+		}
+	}
+}
+
+### Spy Network Marker
+widget = {
+	name = "building_spy_network_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[BuildingSpyNetworkMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', BuildingSpyNetworkMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			using = spy_network_texture
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(BuildingSpyNetworkMarker.GetCountry)]"
+		tooltipwidget = {
+			using = spy_network_tooltip
+			blockoverride "spy_network_tooltip_countrycontext" {
+				datacontext = "[BuildingSpyNetworkMarker.GetCountry]"
+			}
+			blockoverride "spy_network_tooltip_textcontext" {
+				textcontext = "[BuildingSpyNetworkMarker.GetTooltip]"
+			}
+		}
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[BuildingSpyNetworkMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "CANCEL_BUILD_SPYNETWORKTITLE"
+			on_action = "[BuildingSpyNetworkMarker.OnRightClick]"
+			conditions = "[BuildingSpyNetworkMarker.GetRightClickConditions]"
+			enabled = "[BuildingSpyNetworkMarker.IsRightClickEnabled]"
+		}
+	}
+}
+
+### Casus Belli Marker
+widget = {
+	name = "create_casus_belli_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[CreateCasusBelliMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', CreateCasusBelliMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			texture = "gfx/interface/icons/flat_icons/declare_war/casus_belli.dds"
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(CreateCasusBelliMarker.GetCountry)]"
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[CreateCasusBelliMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "CANCEL_CREATE_CASUS_BELLI_TITLE"
+			on_action = "[CreateCasusBelliMarker.OnRightClick]"
+			conditions = "[CreateCasusBelliMarker.GetRightClickConditions]"
+			enabled = "[CreateCasusBelliMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/icons/flat_icons/declare_war/casus_belli.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "title_text" {
+						text = "ENCYCLOPEDIA_PAGE_CASUS_BELLIS"
+				}
+				blockoverride "concept_link" {
+					text = "[casus_belli|e]"
+				}
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "[CreateCasusBelliMarker.GetTooltip]"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+### Improve Opinion Marker
+widget = {
+	name = "improve_opinion_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[ImproveOpinionMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', ImproveOpinionMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			texture = "gfx/interface/icons/flat_icons/foreigncountry/opinion.dds"
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(ImproveOpinionMarker.GetCountry)]"
+
+		action_tooltip = {
+			click_type = left
+			click_mode = single
+			title = "TAB_TOOLTIP_DIPLOMACY_LEFT_CLICK"
+			on_action = "[ImproveOpinionMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			click_mode = single
+			title = "CANCEL_IMPROVE_RELATIONTITLE"
+			on_action = "[ImproveOpinionMarker.OnRightClick]"
+			conditions = "[ImproveOpinionMarker.GetRightClickConditions]"
+			enabled = "[ImproveOpinionMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			using = improve_opinion_tooltip
+			blockoverride "improve_opinion_tooltip_countrycontext" {
+				datacontext = "[ImproveOpinionMarker.GetCountry]"
+			}
+			blockoverride "improve_opinion_tooltip_textcontext" {
+				textcontext = "[ImproveOpinionMarker.GetTooltip]"
+			}
+		}
+	}
+}
+
+### Currying Favors Marker
+widget = {
+	name = "currying_favors_marker"
+	max_update_rate = 4
+	size = { 40 40 }
+	widgetanchor = left
+	position = { 0 2 }
+
+	using = bg_circle_piechart
+
+	piechart = {
+		parentanchor = center
+		size = { 90% 90% }
+		using = piechart_angles
+
+		icon = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			size = { 97% 97% }
+			parentanchor = center
+			color = { 0.45 0.59  0.67 1 }
+			alpha = 0.3
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[CurryingFavorsMarker.GetProgress]"
+			color = { 0.3 0.8 0.3 1 }
+			alpha = 0.8
+		}
+
+		pieslice = {
+			texture = "gfx/interface/pie_charts/pie_chart_alpha_80.dds"
+			value = "[Subtract_float('(float)100.0', CurryingFavorsMarker.GetProgress)]"
+			color = { 1 1 1 0 }
+		}
+
+		icon = {
+			using = favors_texture
+			size = { 70% 70% }
+			parentanchor = center
+		}
+	}
+
+	button = {
+		parentanchor = center
+		allow_outside = yes
+
+		block "button_size" {
+			size = { 100% 100% }
+		}
+
+		onmousehierarchyenter = "[PdxGuiWidget.SetHighlightCountry(CurryingFavorsMarker.GetCountry)]"
+
+		action_tooltip = {
+			click_type = left
+			title = "OPEN_COUNTRY_PANEL"
+			on_action = "[CurryingFavorsMarker.OnClick]"
+		}
+
+		action_tooltip = {
+			click_type = right
+			title = "CANCEL_CURRY_FAVORSTITLE"
+			on_action = "[CurryingFavorsMarker.OnRightClick]"
+			conditions = "[CurryingFavorsMarker.GetRightClickConditions]"
+			enabled = "[CurryingFavorsMarker.IsRightClickEnabled]"
+		}
+
+		tooltipwidget = {
+			ContextualTooltipType = {
+				blockoverride "title_icon" {
+					icon = {
+						texture = "gfx/interface/icons/flat_icons/foreigncountry/favors.dds"
+						using = tooltip_title_icon_size
+					}
+				}
+				blockoverride "title_text" {
+						text = "DIPLOMACY_CURRYNG_FAVORS"
+				}
+				blockoverride "concept_link" {
+					text = "[favors|e]"
+				}
+				blockoverride "tooltip_content" {
+					TooltipTextBlock = {
+						blockoverride "text" {
+							text = "[CurryingFavorsMarker.GetTooltip]"
+						}
+					}
+				}
+			}
+		}
+	}
+}

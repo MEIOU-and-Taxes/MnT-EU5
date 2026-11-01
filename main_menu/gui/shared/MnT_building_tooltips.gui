@@ -50,35 +50,6 @@ template building_tooltip_detail {
 			TooltipManualTableField = {
 				blockoverride "field_content" {
 					text_single = {
-						text = "[employment|e]"
-					}
-					text_single = {
-						layoutpolicy_horizontal = expanding
-						autoresize = no
-						raw_text = "[Building.GetEmploymentSize|w] / [Building.GetMaxWorkersRequired|w]"
-					}
-					tooltipwidget = {
-						SimpleContextualTooltipType = {
-							blockoverride "title_icon" {
-								icon = {
-									using = tooltip_title_icon_size
-									texture = "[GetGraphicalCultureTextureForCountryPopType(Building.GetType.GetPopType, Building.GetOwner)]"
-								}
-							}
-							blockoverride "concept_link" {
-								text = "[employed|e]"
-							}
-
-							datacontext = "[Building]"
-							textcontext = "BUILDING_EMPLOYMENT_TT"
-						}
-					}
-				}
-			}
-
-			TooltipManualTableField = {
-				blockoverride "field_content" {
-					text_single = {
 						layoutpolicy_horizontal = expanding
 						autoresize = no
 						text = "BUILDING_LEVEL"
@@ -113,6 +84,95 @@ template building_tooltip_detail {
 					}
 				}
 			}
+			TooltipManualTableField = {
+				blockoverride "field_content" {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[employment_with_icon|e]"
+					}
+					text_single = {
+						autoresize = yes
+						raw_text = "[Building.GetEmploymentSize|w] / [Building.GetMaxWorkersRequired|w]"
+					}
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "[GetGraphicalCultureTextureForCountryPopType(Building.GetType.GetPopType, Building.GetOwner)]"
+								}
+							}
+							blockoverride "concept_link" {
+								text = "[employed|e]"
+							}
+
+							datacontext = "[Building]"
+							textcontext = "BUILDING_EMPLOYMENT_TT"
+						}
+					}
+				}
+			}
+
+			TooltipManualTableField = {
+				visible = "[Building.IsProducing]"
+				blockoverride "field_content" {
+					text_single = {
+						layoutpolicy_horizontal = expanding
+						autoresize = no
+						text = "[market_access_with_icon|e]"
+					}
+					text_single = {
+
+						autoresize = yes
+						raw_text = "[Building.GetLocation.GetMarketAccess|0%]"
+						default_format = "#R"
+						visible = "[LessThan_CFixedPoint(Building.GetLocation.GetMarketAccess, '(CFixedPoint)0.5')]"
+					}
+					text_single = {
+						autoresize = yes
+						raw_text = "[Building.GetLocation.GetMarketAccess|0%]"
+						default_format = "#O"
+						visible = "[And(GreaterThanOrEqualTo_CFixedPoint(Building.GetLocation.GetMarketAccess, '(CFixedPoint)0.5'), LessThan_CFixedPoint(Building.GetLocation.GetMarketAccess, '(CFixedPoint)0.9'))]"
+					}
+					text_single = {
+						autoresize = yes
+						raw_text = "[Building.GetLocation.GetMarketAccess|0%]"
+						default_format = "#G"
+						visible = "[GreaterThanOrEqualTo_CFixedPoint(Building.GetLocation.GetMarketAccess, '(CFixedPoint)0.9')]"
+					}
+					tooltipwidget = {
+						ContextualTooltipType = {
+							blockoverride "title_icon" {
+								icon = {
+									using = tooltip_title_icon_size
+									texture = "[GetConceptTexture('market_access')]"
+								}
+							}
+
+							blockoverride "title_text" {
+								text = "[market_access]"
+							}
+							blockoverride "concept_link" {
+								text = "[market_access|e]"
+							}
+							blockoverride "tooltip_content" {
+								TooltipTextBlock = {
+									blockoverride "text" {
+										text = "BUILDING_MARKET_ACCESS_HERE_DESC"
+									}
+								}
+								TooltipTextBlock = {
+									blockoverride "text" {
+										text = "BUILDING_MARKET_ACCESS_MECHANIC_DESC"
+										default_format = "#flavor"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 
 			vbox = {
 				visible = "[Building.IsProducing]"
@@ -124,7 +184,7 @@ template building_tooltip_detail {
 							text_single = {
 								layoutpolicy_horizontal = expanding
 								autoresize = no
-								text = "[production_efficiency|e]"
+								text = "[production_efficiency_with_icon|e]"
 							}
 							text_single = {
 								autoresize = yes
@@ -145,7 +205,7 @@ template building_tooltip_detail {
 					text_single = {
 						layoutpolicy_horizontal = expanding
 						autoresize = no
-						text = "BUILDING_ESTABLISHMENT_LABEL"
+						text = "[establishment_with_icon|e]"
 					}
 					text_single = {
 						autoresize = yes
@@ -176,8 +236,7 @@ template building_tooltip_detail {
 					text_single = {
 						layoutpolicy_horizontal = expanding
 						autoresize = no
-						text = "BUILDING_UPKEEP"
-						default_format = "#W"
+						text = "[building_maintenance_with_icon|e]"
 					}
 					text_single = {
 						autoresize = yes
@@ -201,8 +260,7 @@ template building_tooltip_detail {
 				visible = "[Building.GetType.OnlyEstatesCanBuild]"
 				blockoverride "field_content" {
 					text_single = {
-						text = "BUILDING_UPKEEP"
-						default_format = "#W"
+						text = "[building_maintenance_with_icon|e]"
 					}
 					expand = {}
 					icon = {
