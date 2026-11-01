@@ -144,8 +144,15 @@ on_game_start_MnT = {
 		random_country = { trigger_event_silently = { id = mnt_centers.1 } }
 		location:al_hajr.market = { destroy_market = { } }
 		location:urgench.market = { destroy_market = { } }
-		every_market_in_world = {	#Helicopter-tools to make the world go vroom
-			add_goods_supply = {
+		every_market_in_world = {
+			# Make sure vars exist at game start
+			location = {
+				if = { limit = { NOT = { has_variable = mnt_credit_market_building_supply } }
+					set_variable = { name = mnt_credit_market_building_supply value = 0 } }
+				if = { limit = { NOT = { has_variable = mnt_credit_market_building_demand } }
+					set_variable = { name = mnt_credit_market_building_demand value = 0 } }
+			}
+			add_goods_supply = { # Helicopter-tools to make the world go vroom
 				goods = goods:tools
 				amount = 250
 			}

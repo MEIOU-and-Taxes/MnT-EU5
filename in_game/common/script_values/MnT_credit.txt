@@ -41,14 +41,25 @@ mnt_credit_tooltip_market_supply = {
 
 # Country scope: replace only the cached loan component with the live ledger.
 mnt_credit_lending_demand = {
-	if = {
-		limit = { capital.market.location = { has_variable = mnt_credit_quote_other_demand } }
-		value = "capital.market.location.var:mnt_credit_quote_other_demand"
-		add = "capital.market.location.var:mnt_credit_loan_final_scale"
-	}
-	else = {
-		value = "capital.market.goods_demand_in_market(goods:credit)"
-	}
+    if = {
+        limit = {
+            exists = capital.market
+            exists = capital.market.location
+            capital.market.location = {
+                has_variable = mnt_credit_quote_other_demand
+                has_variable = mnt_credit_loan_final_scale
+            }
+        }
+        value = "capital.market.location.var:mnt_credit_quote_other_demand"
+        add = "capital.market.location.var:mnt_credit_loan_final_scale"
+    }
+    else_if = {
+        limit = { exists = capital.market }
+        value = "capital.market.goods_demand_in_market(goods:credit)"
+    }
+    else = {
+        value = 0
+    }
 }
 
 # Market contribution to annual interest. Above quote 1, a 10% baseline
@@ -72,16 +83,31 @@ mnt_credit_market_interest_adjustment = {
 	}
 }
 
+mnt_credit_total_market_supply = {
+    value = 0
+    if = {
+        limit = {
+            exists = capital.market
+        }
+        add = "capital.market.goods_supply_in_market(goods:credit)"
+        if = {
+            limit = {
+                exists = capital.market.location
+                capital.market.location = {
+                    has_variable = mnt_credit_market_building_supply
+                }
+            }
+            add = "capital.market.location.var:mnt_credit_market_building_supply"
+        }
+    }
+}
+
 # Credit has base price 1. The one-unit buffer keeps empty markets finite.
 mnt_credit_lending_quote = {
 	value = mnt_credit_lending_demand
 	add = 1
 	divide = {
-		value = "capital.market.goods_supply_in_market(goods:credit)"
-
-        # Add the dynamic building supply variable cached on the market center
-        add = "capital.market.location.var:mnt_credit_market_building_supply"
-
+        value = mnt_credit_total_market_supply
 		add = 1
 	}
 	min = 0.01
@@ -100,7 +126,7 @@ mnt_location_dynamic_credit_supply_calc = {
         multiply = {
             value = 0.20
             add = {
-                value = owner.peasant_enfranchisement
+                value = peasant_enfranchisment
                 multiply = 0.80
                 min = 0.0
                 max = 0.80
@@ -153,5 +179,21 @@ mnt_location_dynamic_credit_demand_calc = {
                 max = 0.5
             }
         }
+    }
+}
+
+# Safe helper: returns 0 if the market hasn't calculated dynamic supply yet
+mnt_credit_market_building_supply_safe = {
+    if = {
+        limit = {
+            exists = capital.market.location
+            capital.market.location = {
+                has_variable = mnt_credit_market_building_supply
+            }
+        }
+        value = "capital.market.location.var:mnt_credit_market_building_supply"
+    }
+    else = {
+        value = 0
     }
 }
