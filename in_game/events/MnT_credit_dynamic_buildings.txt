@@ -8,12 +8,16 @@ credit_dynamic_buildings.1 = {
         great_power_ranking = 1
     }
     immediate = {
+        error_log = "--- MNT-Credit: Starting Dynamic Building Credit Pulse ---" #TODO: TEMP
+
         every_market_in_world = {
             save_temporary_scope_as = current_market
 
             # Reset market work totals
             set_local_variable = { name = mkt_dynamic_supply value = 0 }
             set_local_variable = { name = mkt_dynamic_demand value = 0 }
+            set_local_variable = { name = mkt_locs_with_demand value = 0 } #TODO: TEMP
+            set_local_variable = { name = mkt_locs_with_supply value = 0 } #TODO: TEMP
 
             # Sum across all locations in this market
             every_location_in_market = {
@@ -23,6 +27,7 @@ credit_dynamic_buildings.1 = {
                         name = mkt_dynamic_supply
                         add = mnt_location_dynamic_credit_supply_calc
                     }
+                    change_local_variable = { name = mkt_locs_with_supply add = 1 } #TODO: TEMP
                 }
                 if = {
                     limit = { "modifier:local_credit_demand" > 0 }
@@ -30,20 +35,21 @@ credit_dynamic_buildings.1 = {
                         name = mkt_dynamic_demand
                         add = mnt_location_dynamic_credit_demand_calc
                     }
+                    change_local_variable = { name = mkt_locs_with_demand add = 1 } #TODO: TEMP
                 }
             }
 
             # Cache totals on the market center location for tooltips and interest quotes
             location = {
-                set_variable = {
-                    name = mnt_credit_market_building_supply
-                    value = local_var:mkt_dynamic_supply
-                }
-                set_variable = {
-                    name = mnt_credit_market_building_demand
-                    value = local_var:mkt_dynamic_demand
-                }
+                set_variable = { name = mnt_credit_market_building_supply
+                    value = local_var:mkt_dynamic_supply }
+                set_variable = { name = mnt_credit_market_building_demand
+                    value = local_var:mkt_dynamic_demand }
             }
+            # Log market's results
+            if = { limit = { OR = { local_var:mkt_dynamic_demand > 0 } } # local_var:mkt_dynamic_supply > 0 } }
+                error_log = "[THIS.GetMarket.GetNameWithNoTooltip] -> Supply: [SCOPE.GetLocalVariable('mkt_dynamic_supply').GetValue] (from [SCOPE.GetLocalVariable('mkt_locs_with_supply').GetValue] locs) | Demand: [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue] (from [SCOPE.GetLocalVariable('mkt_locs_with_demand').GetValue] locs)"
+            } #TODO: TEMP
 
             # Inject the Demand into the market using the alternating temporary demand pattern
             if = {
@@ -56,6 +62,8 @@ credit_dynamic_buildings.1 = {
                         months = -1
                         scale = local_var:mkt_dynamic_demand
                     }
+                    #TODO: TEMP
+                    error_log = "[THIS.GetMarket.GetNameWithNoTooltip]: Added temporary demand [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]."
                 }
                 else = {
                     remove_temporary_demand = demand:mnt_credit_building_demand2
@@ -64,6 +72,8 @@ credit_dynamic_buildings.1 = {
                         months = -1
                         scale = local_var:mkt_dynamic_demand
                     }
+                    #TODO: TEMP
+                    error_log = "[THIS.GetMarket.GetNameWithNoTooltip]: Added temporary demand [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]."
                 }
             }
             else = {
@@ -71,5 +81,6 @@ credit_dynamic_buildings.1 = {
                 remove_temporary_demand = demand:mnt_credit_building_demand2
             }
         }
+        error_log = "--- MNT-Credit: Finished Dynamic Building Credit Pulse ---" #TODO: TEMP
     }
 }
