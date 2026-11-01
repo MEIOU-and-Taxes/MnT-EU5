@@ -722,3 +722,6 @@ Date: 21/05/2026
 
 ### Fixes
 - Add missing stab cost efficiency malus to new subject types
+
+### Balance
+- Further rebalanced trade routes to actually cost more at long distances. And shifted age 4 trade maintanance bonus to be less overpowering.
