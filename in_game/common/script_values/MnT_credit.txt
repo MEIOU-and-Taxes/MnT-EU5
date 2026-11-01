@@ -85,17 +85,11 @@ mnt_credit_market_interest_adjustment = {
 
 mnt_credit_total_market_supply = {
     value = 0
-    if = {
-        limit = {
-            exists = capital.market
-        }
+    if = { limit = { exists = capital.market }
         add = "capital.market.goods_supply_in_market(goods:credit)"
-        if = {
-            limit = {
+        if = { limit = {
                 exists = capital.market.location
-                capital.market.location = {
-                    has_variable = mnt_credit_market_building_supply
-                }
+                capital.market.location = { has_variable = mnt_credit_market_building_supply }
             }
             add = "capital.market.location.var:mnt_credit_market_building_supply"
         }
@@ -117,47 +111,30 @@ mnt_credit_lending_quote = {
 mnt_location_dynamic_credit_supply_calc = {
     value = modifier:local_credit_supply
 
-    # Peasant enfranchisement penalty (rural only)
+    # Peasant enfranchisement penalty
     if = {
-        limit = {
-            location_rank = location_rank:rural_settlement
-            exists = owner
+        limit = { exists = owner
+            # location_rank = location_rank:rural_settlement #TODO: Should it be rural-only?
         }
-        multiply = {
-            value = 0.20
-            add = {
-                value = peasant_enfranchisment
-                multiply = 0.80
-                min = 0.0
-                max = 0.80
+        multiply = { value = 0
+            add = { value = peasant_enfranchisment # ∈ [0.1, 1]
             }
         }
     }
 
-    # Serfdom vs Free subjects scaling
-    if = {
-        limit = { exists = owner }
-        multiply = {
-            value = 1.0
-            add = {
-                value = owner.societal_value:serfdom_vs_free_subjects
-                multiply = 0.8
-                min = 0
-                max = 0.8
+    if = { limit = { exists = owner }
+    	# Serfdom vs Free subjects scaling
+        multiply = { value = 1.0
+            add = { value = owner.societal_value:serfdom_vs_free_subjects # ∈ [-100, 100]
+                multiply = 0.01  # ∈ [-1, 1]
+				multiply = 0.5
             }
         }
-    }
-
-    # Capital economy vs Traditional economy scaling
-    if = {
-        limit = { exists = owner }
-        multiply = {
-            value = 1.0
-            add = {
-                value = owner.societal_value:capital_economy_vs_traditional_economy
-                multiply = -0.005
-                min = -0.5
-                max = 0.5
+    	# Capital economy vs Traditional economy scaling
+		multiply = { value = 1.0
+            add = { value = owner.societal_value:capital_economy_vs_traditional_economy # ∈ [-100, 100]
+                multiply = 0.01  # ∈ [-1, 1]
+				multiply = -0.5
             }
         }
     }
@@ -170,13 +147,10 @@ mnt_location_dynamic_credit_demand_calc = {
     # Capitalist economies demand more commercial working capital
     if = {
         limit = { exists = owner }
-        multiply = {
-            value = 1.0
-            add = {
-                value = owner.societal_value:capital_economy_vs_traditional_economy
-                multiply = -0.0025
-                min = -0.5
-                max = 0.5
+        multiply = { value = 1.0
+            add = { value = owner.societal_value:capital_economy_vs_traditional_economy # ∈ [-100, 100]
+                multiply = 0.01  # ∈ [-1, 1]
+                multiply = -0.5
             }
         }
     }
@@ -184,8 +158,7 @@ mnt_location_dynamic_credit_demand_calc = {
 
 # Safe helper: returns 0 if the market hasn't calculated dynamic supply yet
 mnt_credit_market_building_supply_safe = {
-    if = {
-        limit = {
+    if = { limit = {
             exists = capital.market.location
             capital.market.location = {
                 has_variable = mnt_credit_market_building_supply
@@ -193,7 +166,5 @@ mnt_credit_market_building_supply_safe = {
         }
         value = "capital.market.location.var:mnt_credit_market_building_supply"
     }
-    else = {
-        value = 0
-    }
+    else = { value = 0 }
 }

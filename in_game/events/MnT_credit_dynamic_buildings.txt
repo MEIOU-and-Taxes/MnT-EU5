@@ -19,22 +19,28 @@ credit_dynamic_buildings.1 = {
             set_local_variable = { name = mkt_locs_with_demand value = 0 } #TODO: TEMP
             set_local_variable = { name = mkt_locs_with_supply value = 0 } #TODO: TEMP
 
+            error_log = "Current market: [THIS.GetMarket.GetNameWithNoTooltip]"
             # Sum across all locations in this market
             every_location_in_market = {
                 if = {
                     limit = { "modifier:local_credit_supply" > 0 }
-                    change_local_variable = {
-                        name = mkt_dynamic_supply
-                        add = mnt_location_dynamic_credit_supply_calc
+                    set_local_variable = { name = loc_dynamic_supply_before
+                        value = modifier:local_credit_supply } #TODO: TEMP
+
+                    set_local_variable = { name = loc_dynamic_supply
+                        value = mnt_location_dynamic_credit_supply_calc } #TODO: TEMP
+
+                    change_local_variable = { name = mkt_dynamic_supply
+                        add = local_var:loc_dynamic_supply
                     }
+                    error_log = "[THIS.GetCountry.GetNameWithNoTooltip]:[THIS.GetLocation.GetNameWithNoTooltip]:E:[THIS.GetLocation.GetPeasantEnfranchisment]:LDS:[SCOPE.GetLocalVariable('loc_dynamic_supply_before').GetValue]→:[SCOPE.GetLocalVariable('loc_dynamic_supply').GetValue]:=MDS:[SCOPE.GetLocalVariable('mkt_dynamic_supply').GetValue]"
+                    # societal_value_type:serfdom_vs_free_subjects = { error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+                    # societal_value_type:capital_economy_vs_traditional_economy = { error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
                     change_local_variable = { name = mkt_locs_with_supply add = 1 } #TODO: TEMP
                 }
-                if = {
-                    limit = { "modifier:local_credit_demand" > 0 }
-                    change_local_variable = {
-                        name = mkt_dynamic_demand
-                        add = mnt_location_dynamic_credit_demand_calc
-                    }
+                if = { limit = { "modifier:local_credit_demand" > 0 }
+                    change_local_variable = { name = mkt_dynamic_demand
+                        add = mnt_location_dynamic_credit_demand_calc }
                     change_local_variable = { name = mkt_locs_with_demand add = 1 } #TODO: TEMP
                 }
             }
@@ -52,10 +58,8 @@ credit_dynamic_buildings.1 = {
             } #TODO: TEMP
 
             # Inject the Demand into the market using the alternating temporary demand pattern
-            if = {
-                limit = { local_var:mkt_dynamic_demand > 0 }
-                if = {
-                    limit = { has_temporary_demand = demand:mnt_credit_building_demand1 }
+            if = { limit = { local_var:mkt_dynamic_demand > 0 }
+                if = { limit = { has_temporary_demand = demand:mnt_credit_building_demand1 }
                     remove_temporary_demand = demand:mnt_credit_building_demand1
                     add_temporary_demand = {
                         type = demand:mnt_credit_building_demand2
