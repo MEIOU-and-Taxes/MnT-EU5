@@ -266,6 +266,7 @@ class MainWindow(QMainWindow):
 			'graph_markets': all_graphs.MK_CONFIG,
 			'graph_population': all_graphs.POP_CONFIG,
 			'graph_road_types': all_graphs.RT_CONFIG,
+			'graph_country_metrics': all_graphs.CM_CONFIG,
 		}
 
 		self.graphs = {}
@@ -375,6 +376,9 @@ class MainWindow(QMainWindow):
 			return
 
 		if self.current_graph_info['title'] == "Market Statistics":
+			return
+
+		if self.current_graph_info['title'] in ("Market Statistics", "Country Metrics"):
 			return
 
 		config = self.current_graph_info['info']['config']

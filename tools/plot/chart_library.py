@@ -8,7 +8,7 @@ from matplotlib.ticker import MaxNLocator
 from tools.plot.MT_grapher import is_path_found, ERROR_FILE_NOT_FOUND
 from tools.plot.custom_widgets import RightClickableComboBox
 from tools.plot.log_parser import parse_data_goods_prices, parse_data_building_types, parse_data_population, \
-	parse_data_markets, parse_data_road_types
+	parse_data_markets, parse_data_road_types, parse_data_country_metrics
 
 IS_LOGGING_YEARLY = True
 FIRST_MOMENT = 1 + 1337 if IS_LOGGING_YEARLY else 4 # Makes FIRST_MOMENT-1 not have 0 buildings in all regions
@@ -26,6 +26,71 @@ POS_SUBPLOT_BOTTOM_EDGE = 0.10
 POS_SUBPLOT_RIGHT_EDGE = 0.95
 SHOW_LEGEND = False
 has_found_statistics = False
+
+# --- Graph Configurations ---
+
+BT_CONFIG = {
+    "parser": parse_data_building_types,
+    "category_key": "building",
+    "value_key": "count",
+    "category_label": "Building Type:",
+    "all_category_str": STR_ALL_BUILDINGS,
+    "value_label": "Count",
+    "add_zero_start": True,
+}
+
+GP_CONFIG = {
+    "parser": parse_data_goods_prices,
+    "category_key": "good",
+    "value_key": "price",
+    "category_label": "Good:",
+    "all_category_str": STR_ALL_GOODS,
+    "value_label": "Price",
+    "add_zero_start": False,
+    "ignore_zeros": True,
+}
+
+MK_CONFIG = {
+    "parser": parse_data_markets,
+    "category_key": "statistic",
+    "value_key": "value",
+    "category_label": "Statistic:",
+    "all_category_str": None,
+    "value_label": "Value",
+    "add_zero_start": False,
+}
+
+POP_CONFIG = {
+	"parser": parse_data_population,
+	"category_key": "statistic",
+	"value_key": "population",
+	"category_label": "Statistic:",
+	"all_category_str": None,
+	"value_label": "Population",
+	"add_zero_start": False,
+	"ignore_zeros": True,
+}
+
+RT_CONFIG = {
+    "parser": parse_data_road_types,
+    "category_key": "road_type",
+    "value_key": "coverage_percentage",
+    "category_label": "Road Type:",
+    "all_category_str": STR_ALL_ROAD_TYPES,
+    "value_label": "Coverage Percentage",
+    "add_zero_start": True,
+    "y_axis_limits": (0, 100),
+}
+
+CM_CONFIG = {
+    "parser": parse_data_country_metrics,
+    "category_key": "metric",
+    "value_key": "value",
+    "category_label": "Metric:",
+    "all_category_str": None,
+    "value_label": "Value",
+    "add_zero_start": False,
+}
 
 # This function will be monkey-patched by the main script
 def get_data(data, str_target):
@@ -75,7 +140,9 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	is_market_chart = 'Food Stockpile' in all_categories
 	is_road_chart = category_key == 'road_type'
 
-	lbl_region = QLabel("Region:")
+	region_label_str = "Country:" if category_key == "metric" else "Region:"
+	lbl_region = QLabel(region_label_str)
+
 	combo_region = ComboBoxClass()
 	all_regions = sorted(list(set(item['region'] for item in all_data)))
 	combo_region.addItem(STR_ALL_REGIONS)
@@ -109,7 +176,7 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 		filter_region = combo_region.currentText()
 		ax.clear()
 
-		if filter_category_type != all_category_str and filter_region != STR_ALL_REGIONS:
+		if all_category_str is not None and filter_category_type != all_category_str and filter_region != STR_ALL_REGIONS:
 			ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a Region, not both.",
 					ha='center', va='center')
 			ax.figure.canvas.draw_idle()
@@ -237,62 +304,6 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
 	combo_region.currentIndexChanged.connect(update_plot)
 	update_plot()
 
-
-# --- Graph Configurations ---
-
-BT_CONFIG = {
-    "parser": parse_data_building_types,
-    "category_key": "building",
-    "value_key": "count",
-    "category_label": "Building Type:",
-    "all_category_str": STR_ALL_BUILDINGS,
-    "value_label": "Count",
-    "add_zero_start": True,
-}
-
-GP_CONFIG = {
-    "parser": parse_data_goods_prices,
-    "category_key": "good",
-    "value_key": "price",
-    "category_label": "Good:",
-    "all_category_str": STR_ALL_GOODS,
-    "value_label": "Price",
-    "add_zero_start": False,
-    "ignore_zeros": True,
-}
-
-MK_CONFIG = {
-    "parser": parse_data_markets,
-    "category_key": "statistic",
-    "value_key": "value",
-    "category_label": "Statistic:",
-    "all_category_str": None,
-    "value_label": "Value",
-    "add_zero_start": False,
-}
-
-POP_CONFIG = {
-	"parser": parse_data_population,
-	"category_key": "statistic",
-	"value_key": "population",
-	"category_label": "Statistic:",
-	"all_category_str": None,
-	"value_label": "Population",
-	"add_zero_start": False,
-	"ignore_zeros": True,
-}
-
-RT_CONFIG = {
-    "parser": parse_data_road_types,
-    "category_key": "road_type",
-    "value_key": "coverage_percentage",
-    "category_label": "Road Type:",
-    "all_category_str": STR_ALL_ROAD_TYPES,
-    "value_label": "Coverage Percentage",
-    "add_zero_start": True,
-    "y_axis_limits": (0, 100),
-}
-
 # Functions prefixed with "graph_" are found in this module by the self.graphs code in MT_grapher.py.
 # The wrapper functions are essential for this mechanism to work.
 # Without them, you would need to manually create and maintain a list of all the chart configs in MT_grapher.py,
@@ -316,6 +327,10 @@ def graph_population(data, ax, filter_layout, filter_widgets_list, on_lines_plot
 def graph_road_types(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
 	"""Road Coverage by Region"""
 	_create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, RT_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
+
+def graph_country_metrics(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, filter_widget_map, get_is_moving_avg, get_period_value):
+    """Country Metrics"""
+    _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared, CM_CONFIG, filter_widget_map, get_is_moving_avg, get_period_value)
 
 def get_error_message():
 	if not is_path_found:
