@@ -14,10 +14,10 @@ class InteractiveLineTooltip:
 		self.ax = ax
 		self.fig = ax.figure
 		self.on_line_click_callback = on_line_click_callback
-		print(f"CursorHoverInfo: Initializing for axes: {ax}")
+		# print(f"CursorHoverInfo: Initializing for axes: {ax}")
 
 		all_lines = self.ax.get_lines()
-		print(f"CursorHoverInfo: Found {len(all_lines)} total line objects in the axes.")
+		# print(f"CursorHoverInfo: Found {len(all_lines)} total line objects in the axes.")
 
 		# Store original line properties and track the last hovered line
 		self.original_line_widths = {}
@@ -37,15 +37,15 @@ class InteractiveLineTooltip:
 		self.annot = None
 		self.cursor_hover_handler = None
 
-		print(f"CursorHoverInfo: Kept {len(self.lines)} lines with valid labels.")
+		# print(f"CursorHoverInfo: Kept {len(self.lines)} lines with valid labels.")
 
 	def setup_tooltip_handler(self):
 		"""Creates a new tooltip handler for the current axes."""
-		print("\n--- Main window is creating tooltip handler ---")
+		# print("\n--- Main window is creating tooltip handler ---")
 
 		# If there are no valid lines, do not set up the hover events
 		if not self.lines:
-			print("CursorHoverInfo: No valid lines found. Tooltip will NOT be activated.")
+			# print("CursorHoverInfo: No valid lines found. Tooltip will NOT be activated.")
 			return
 
 		self.tooltip_cache = self.precalculate_tooltips()
@@ -63,7 +63,7 @@ class InteractiveLineTooltip:
 		self.annot.set_visible(False)
 
 		# Connect the event handlers
-		print("CursorHoverInfo: Activating tooltip event handlers.")
+		# print("CursorHoverInfo: Activating tooltip event handlers.")
 		self.fig.canvas.mpl_connect("motion_notify_event", self.on_hover)
 		self.fig.canvas.mpl_connect("axes_leave_event", self.on_leave)
 		self.fig.canvas.mpl_connect('button_press_event', self.on_click)
@@ -232,7 +232,7 @@ class InteractiveLineTooltip:
 		"""
 		Processes the plotted lines to create a cache of sorted data for every year, to avoid recalculating data on every mouse movement
 		"""
-		print("CursorHoverInfo: Pre-calculating tooltip data... ", end="")
+		# print("CursorHoverInfo: Pre-calculating tooltip data... ", end="")
 		cache = {}
 		if not self.lines: return {}
 		all_x_data = np.concatenate([line.get_xdata() for line in self.lines])
@@ -250,5 +250,4 @@ class InteractiveLineTooltip:
 			if x_val_data:
 				x_val_data.sort(key=lambda item: item['y_val'], reverse=True)
 				cache[x_val] = x_val_data
-		print("Done.")
 		return cache

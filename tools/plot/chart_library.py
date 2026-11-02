@@ -92,6 +92,9 @@ CM_CONFIG = {
     "add_zero_start": False,
 }
 
+has_printed_mismatch_warning = False
+has_checked_first_valid_country = False
+
 # This function will be monkey-patched by the main script
 def get_data(data, str_target):
 	raise NotImplementedError("get_data function was not assigned")

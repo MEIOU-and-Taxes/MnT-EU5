@@ -1,6 +1,8 @@
 import re
+from itertools import zip_longest
 
-country_headers = [
+# Define the headers in the exact order they appear in the log
+headers = [
 	"year", "tag", "name", "capital_area", "country_type", "government_type", "income", "current_research",
 	"has_feudalism", "has_legalism", "has_meritocracy", "has_renaissance", "has_banking", "has_professional_armies",
 	"has_new_world", "has_printing_press", "has_pike_and_shot", "has_confessionalism", "has_global_trade",
@@ -62,6 +64,9 @@ rt_data_cache = None
 tg_data_cache = None
 cm_data_cache = None
 
+# --- Persistent stores that survive log rotation ---
+tg_cumulative_store = {}  # Key: (year, tag) -> record
+
 def clear_all_caches():
 	"""Resets all data caches to force reparsing on the next call."""
 	global bt_data_cache, gp_data_cache, pop_data_cache, mk_data_cache, rt_data_cache, tg_data_cache, cm_data_cache
@@ -83,7 +88,10 @@ def _parse_dynamic_numeric_value(value_str):
 	if not isinstance(value_str, str):
 		return value_str # Return as-is if not a string
 
-	cleaned_str = value_str.strip().replace(',', '')
+	# Strip Paradox ASCII control codes (0x15/NAK, §) and common color markers
+	cleaned_str = re.sub(r'[\x00-\x1f§]|%?NAK[A-Z!]%?', '', value_str)
+	cleaned_str = cleaned_str.strip().replace(',', '').replace('%', '').replace('+', '')
+
 	if not cleaned_str:
 		return 0.0
 
@@ -111,51 +119,148 @@ def parse_data_countries(data):
 	Parses all country data (::TG::) lines from the log data.
 	This is a very wide dataset with over 160 columns.
 	"""
-	global tg_data_cache
-	if tg_data_cache is not None:
-		return tg_data_cache
+	global tg_data_cache, tg_cumulative_store
+	has_printed_mismatch_warning, has_checked_first_valid_country = False, False
 
 	print("Parsing country data for the first time...")
-	# Define the headers in the exact order they appear in the log
-
 	parsed_data = []
 	current_record = None
 	lines_after_TG = 16
+	pending_chunks = []
 
+	# Helper to convert numbers and commit country record to dataset
+	def commit_country(record):
+		if record is not None:
+			for key, val in record.items():
+				if key not in string_columns:
+					record[key] = _parse_dynamic_numeric_value(val)
+			parsed_data.append(record)
+
+	# --- Main Log Parsing Loop ---
 	for line in data.splitlines():
-		if '::TG::' in line:
-			# If a new country record starts, finalize and store the previous one
-			# if current_record:
-			# 	parsed_data.append(current_record)
+		# Clean any stray null characters caused by engine buffer limits
+		if '\x00' in line:
+			line = line.replace('\x00', '')
 
-			# Start a new record
+		values = None
+
+		# Chunked Format: Collect ::TG1:: through ::TG4::
+		if '::TG1::' in line:
+			if current_record is not None:
+				commit_country(current_record)
+				current_record = None
+			match = re.search(r'::TG1::(.*)', line)
+			if match:
+				pending_chunks = [match.group(1).strip()]
+			lines_after_TG = 99
+			continue
+
+		elif '::TG2::' in line and pending_chunks:
+			match = re.search(r'::TG2::(.*)', line)
+			if match:
+				pending_chunks.append(match.group(1).strip())
+			lines_after_TG = 99
+			continue
+
+		elif '::TG3::' in line and len(pending_chunks) == 2:
+			match = re.search(r'::TG3::(.*)', line)
+			if match:
+				pending_chunks.append(match.group(1).strip())
+			lines_after_TG = 99
+			continue
+
+		elif '::TG4::' in line and len(pending_chunks) == 3:
+			match = re.search(r'::TG4::(.*)', line)
+			if match:
+				pending_chunks.append(match.group(1).strip())
+				# Stitch the 4 parts back into one list of values
+				full_line = ":".join(pending_chunks)
+				values = full_line.split(':')
+			pending_chunks = []
+
+		# Legacy/Single Format: In case logs still use un-split ::TG::
+		elif '::TG::' in line:
+			if current_record is not None:
+				commit_country(current_record)
+				current_record = None
 			match = re.search(r'::TG::(.*)', line)
-			if not match: continue
+			if match:
+				values = match.group(1).strip().split(':')
 
-			values = match.group(1).strip().split(':')
-			if len(values) != len(country_headers):
-				print(f"Warning: Skipping malformed country data line. Expected {len(country_headers)} columns, found {len(values)}.")
+		# Process completed TG header line (from TG4 or single TG)
+		if values is not None:
+			# Safety Check: Column count vs Expected Header count
+			if len(values) != len(headers):
+				if not has_printed_mismatch_warning:
+					has_printed_mismatch_warning = True
+					tag_id = f" for tag '{values[1]}'" if len(values) > 1 else ""
+					print(f"\nWarning: Column mismatch detected{tag_id}.")
+					print(f"Expected {len(headers)} columns, but found {len(values)} elements.")
+					print("--- Read Element (A)\tExpected Header ID (B) ---")
+					for val, header in zip_longest(values, headers, fillvalue="<MISSING>"):
+						print(f"{val}\t{header}")
+					print("---------------------------------------------------")
+					print("(Further mismatch tables suppressed for this session)\n")
+
+				current_record = None
+				lines_after_TG = 99
+				continue
+
+			# Diagnostic: On first valid match, print non-numerical columns
+			if not has_checked_first_valid_country:
+				has_checked_first_valid_country = True
+				tag_name = values[1] if len(values) > 1 else "Unknown"
+				print(f"\n[Info] Successfully matched country line for '{tag_name}'.")
+				print("Non-numerical variables (cannot be plotted on graphs):")
+				print("Variable (ID)\tValue")
+				print("---------------------------------------------------")
+				non_num_count = 0
+				for header, val in zip(headers, values):
+					parsed_val = _parse_dynamic_numeric_value(val)
+					if not isinstance(parsed_val, (int, float)):
+						print(f"{header}\t{val}")
+						non_num_count += 1
+				print(f"Total non-numerical variables: {non_num_count}")
+				print("---------------------------------------------------\n")
+
 			lines_after_TG = -1
+			current_record = dict(zip(headers, values))
 
-			current_record = dict(zip(country_headers, values))
-
+		# Read the 16 Societal Values that follow each country
 		elif lines_after_TG <= 15:
-			# This is a societal value line for the current country
+			if current_record is None:
+				lines_after_TG += 1
+				continue
+
 			match = re.search(r"(-?\d+(?:\.\d+)?)$", line)
 			if match:
 				value = float(match.group(1))
 				current_record[societal_value_names[lines_after_TG]] = value
 				if lines_after_TG == 15:
-					# Convert appropriate values to numeric types
-					for key, value in current_record.items():
-						if key not in string_columns:
-							current_record[key] = _parse_dynamic_numeric_value(value)
-					parsed_data.append(current_record)
+					commit_country(current_record)
+					current_record = None
+
 		lines_after_TG += 1
 
-	tg_data_cache = parsed_data
-	print(f"Found and cached {len(tg_data_cache)} country data entries.")
-	return parsed_data
+	# If the log ended mid-write, save the pending country record
+	if current_record is not None:
+		commit_country(current_record)
+
+	# Merge newly read data into the cumulative store (prevents log rotation from deleting past years)
+	for record in parsed_data:
+		year = record.get("year")
+		tag = record.get("tag")
+		if year and tag:
+			tg_cumulative_store[(year, tag)] = record
+
+	# Sort all historical data chronologically by year
+	all_records = list(tg_cumulative_store.values())
+	all_records.sort(key=lambda r: int(r.get("year", 0)))
+
+	tg_data_cache = all_records
+	print(
+		f"Total historical country records remembered: {len(tg_data_cache)} across years: {sorted(list(set(r.get('year') for r in tg_data_cache)))}")
+	return tg_data_cache
 
 
 def parse_data_building_types(data):
@@ -364,3 +469,9 @@ def parse_data_country_metrics(data):
 	cm_data_cache = transformed_data
 	print(f"Found and cached {len(cm_data_cache)} country metric entries.")
 	return transformed_data
+
+def reset_cumulative_history():
+	"""Call this if you want to wipe memory when starting a completely new game."""
+	global tg_cumulative_store
+	tg_cumulative_store.clear()
+	clear_all_caches()

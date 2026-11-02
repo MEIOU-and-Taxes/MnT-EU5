@@ -11,7 +11,7 @@ from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtCore import Qt, QUrl, QTimer
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
@@ -27,6 +27,7 @@ from tools.plot import log_parser
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
+REFRESH_PERIOD = 5000
 TARGET_FILE_NAME_ROOT = 'error'
 columns_not_to_multiply_by_num_of_locations = ['num_locations', 'year', 'age', 'century', 'decade']
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
@@ -202,6 +203,15 @@ class MainWindow(QMainWindow):
 		self.load_key_configs()
 		self.load_graph_definitions()
 		self.display_info_screen()
+
+		# --- Auto-reload watcher state ---
+		self.last_log_state = None
+
+		# --- Auto-reload watcher state ---
+		self.timer_auto_reload = QTimer(self)
+		self.timer_auto_reload.setInterval(REFRESH_PERIOD)
+		self.timer_auto_reload.timeout.connect(self.check_log_updates)
+		self.timer_auto_reload.start()
 
 	def load_key_configs(self):
 		try:
@@ -934,33 +944,55 @@ class MainWindow(QMainWindow):
 		finally:
 			self.btn_charts.setDown(False)
 
+	def get_all_log_files(self):
+		"""
+		Finds active and rotated log files in chronological order:
+		error.5.log -> error.4.log -> ... -> error.1.log -> error.log
+		"""
+		file_list = []
+
+		# Rotated game logs: error.<number>.log (e.g. error.5.log down to error.1.log)
+		rotated_pattern = os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.*.log")
+		rotated_files = glob.glob(rotated_pattern)
+		if rotated_files:
+			# Sort by the number in descending order (highest number is oldest)
+			def get_log_num(path):
+				nums = re.findall(r'\.(\d+)\.log$', os.path.basename(path))
+				return int(nums[0]) if nums else -1
+
+			rotated_files.sort(key=get_log_num, reverse=True)
+			file_list.extend(rotated_files)
+
+		# Manual backups if any exist: error_<number>.log
+		manual_pattern = os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}_*.log")
+		manual_files = glob.glob(manual_pattern)
+		if manual_files:
+			manual_files.sort(key=lambda x: int(re.findall(r'\d+', os.path.basename(x))[-1]))
+			file_list.extend(manual_files)
+
+		# Active log: error.log (newest lines)
+		active_log_path = os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.log")
+		if os.path.exists(active_log_path):
+			file_list.append(active_log_path)
+
+		return file_list
 
 	def read_all_logs(self):
-		"""Read file(s) from a specified directory."""
+		"""Reads all files in chronological order."""
 		content_list = []
-		is_path_found = False
-		search_pattern = os.path.join(self.log_folder, TARGET_FILE_NAME_ROOT + "_*.log")
-		files = glob.glob(search_pattern)
-		if files:
-			files.sort(key=lambda x: re.findall(r'\d+', x)[0])
+		files = self.get_all_log_files()
 
 		for fn in files:
-			with open(fn, "r", encoding="utf-8") as f:
-				content_list.append(f.read())
-				is_path_found = True
+			try:
+				# Use errors='replace' to safely handle partial writes at EOF
+				with open(fn, "r", encoding="utf-8", errors="replace") as f:
+					content_list.append(f.read())
+			except (IOError, PermissionError) as e:
+				print(f"Warning: Could not read {fn}: {e}")
 
-		game_log_path = os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.log")
-		try:
-			with open(game_log_path, "r", encoding="utf-8") as f:
-				content_list.append(f.read())
-				files.append(game_log_path)
-				is_path_found = True
-		except FileNotFoundError:
-			pass
+		if not files:
+			print(f'No log files found in "{self.log_folder}"')
 
-		print(f'Read {len(files) + (1 if os.path.exists(game_log_path) else 0)} log file(s) from "{self.log_folder}"')
-		if not is_path_found:
-			QMessageBox.critical (self, "No logs found", "Could not find any log files to read.")
 		return files, "".join(content_list)
 
 	def _load_location_data(self, filepath="locations.csv"):
@@ -1088,6 +1120,30 @@ class MainWindow(QMainWindow):
 
 			self.reload_log()
 
+	def check_log_updates(self):
+		"""Checks if any log file was modified or changed size. If so, reloads."""
+		files = self.get_all_log_files()
+		if not files:
+			return
+
+		# Create a fingerprint of file sizes and modification times
+		current_state = []
+		for f in files:
+			try:
+				stat = os.stat(f)
+				current_state.append((f, stat.st_size, stat.st_mtime))
+			except OSError:
+				return  # File being rotated or locked by the game, retry next second
+
+		if self.last_log_state is None:
+			self.last_log_state = current_state
+			return
+
+		# If file size or timestamp changed, refresh data
+		if current_state != self.last_log_state:
+			self.last_log_state = current_state
+			self.reload_log(is_interactive=False)
+
 
 class LoadingDialog(QDialog):
 	"""A simple, frameless dialog to show while the main application is loading."""
@@ -1137,3 +1193,4 @@ if __name__ == '__main__':
 		print(e)
 		traceback.print_exc()
 		input("\nPress enter to close...")
+
