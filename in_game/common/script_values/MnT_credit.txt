@@ -1,4 +1,6 @@
-﻿MnT_credit_output_from_inflation = {
+﻿# TODO: Influence trading_hub, entrepot, local_markets.
+
+MnT_credit_output_from_inflation = {
 	value = inflation
 	multiply = 5
 }
@@ -104,31 +106,13 @@ mnt_location_dynamic_credit_supply_calc = {
     value = modifier:local_credit_supply
 
     # Peasant enfranchisement penalty
-    if = {
-        limit = { exists = owner
-            # location_rank = location_rank:rural_settlement #TODO: Should it be rural-only?
-        }
-        multiply = { value = 0
-            add = { value = peasant_enfranchisment # ∈ [0.1, 1]
-            }
-        }
+    if = { limit = { exists = owner }
+        multiply = { value = 0 add = { value = peasant_enfranchisment } } # ∈ [0.1, 1]
     }
 
+    # Combined societal values impact
     if = { limit = { exists = owner }
-    	# Serfdom vs Free subjects scaling
-        multiply = { value = 1.0
-            add = { value = owner.societal_value:serfdom_vs_free_subjects # ∈ [-100, 100]
-                multiply = 0.01  # ∈ [-1, 1]
-				multiply = 0.5
-            }
-        }
-    	# Capital economy vs Traditional economy scaling
-		multiply = { value = 1.0
-            add = { value = owner.societal_value:capital_economy_vs_traditional_economy # ∈ [-100, 100]
-                multiply = 0.01  # ∈ [-1, 1]
-				multiply = -0.5
-            }
-        }
+        multiply = { value = 1.0 add = modifier:global_credit_supply_rate min = 0 }
     }
 }
 
@@ -136,14 +120,9 @@ mnt_location_dynamic_credit_supply_calc = {
 mnt_location_dynamic_credit_demand_calc = {
     value = modifier:local_credit_demand
 
-    # Capitalist economies demand more commercial working capital
+    # Impact from societal values
     if = { limit = { exists = owner }
-        multiply = { value = 1.0
-            add = { value = owner.societal_value:capital_economy_vs_traditional_economy # ∈ [-100, 100]
-                multiply = 0.01  # ∈ [-1, 1]
-                multiply = -0.5
-            }
-        }
+        multiply = { value = 1.0 add = modifier:global_credit_demand_rate min = 0 }
     }
 }
 
