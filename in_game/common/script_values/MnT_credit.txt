@@ -36,12 +36,9 @@ mnt_credit_tooltip_market_price = {
 }
 
 mnt_credit_tooltip_market_supply = {
-	value = "goods_supply_in_market(goods:credit)"
-    if = { limit = {
-            exists = location
-            location = { has_variable = mnt_credit_market_building_supply }
-        }
-        add = "location.var:mnt_credit_market_building_supply"
+	value = 0
+    if = { limit = { exists = capital.market }
+        value = "capital.market.goods_supply_in_market(goods:credit)"
     }
 }
 
@@ -89,18 +86,8 @@ mnt_credit_market_interest_adjustment = {
 	}
 }
 
-mnt_credit_total_market_supply = {
-    value = 0
-    if = { limit = { exists = capital.market }
-        add = "capital.market.goods_supply_in_market(goods:credit)"
-        if = { limit = {
-                exists = capital.market.location
-                capital.market.location = { has_variable = mnt_credit_market_building_supply }
-            }
-				add = "capital.market.location.var:mnt_credit_market_building_supply"
-        }
-    }
-}
+# Lending quote supply helper
+mnt_credit_total_market_supply = { value = mnt_credit_tooltip_market_supply }
 
 # Credit has base price 1. The one-unit buffer keeps empty markets finite.
 mnt_credit_lending_quote = {
@@ -188,13 +175,19 @@ mnt_credit_tooltip_building_supply = {
 mnt_credit_tooltip_goods_supply = {
     value = 0
     if = { limit = { exists = capital.market }
-        value = "capital.market.goods_supply_in_market(goods:credit)" }
+        value = "capital.market.goods_supply_in_market(goods:credit)"
+        # Subtract the building credit so only bank production remains
+        subtract = mnt_credit_tooltip_building_supply
+        # min = 0 # Never show negative banks
+    }
 }
 
-# Total supply (banks + buildings)
+# Total supply (banks + buildings) (Directly from the market ledger)
 mnt_credit_tooltip_market_supply = {
-    value = mnt_credit_tooltip_goods_supply
-    add = mnt_credit_tooltip_building_supply
+    value = 0
+    if = { limit = { exists = capital.market }
+        value = "capital.market.goods_supply_in_market(goods:credit)"
+    }
 }
 
 # Credit balance (supply - demand)
@@ -204,7 +197,4 @@ mnt_credit_tooltip_market_balance = {
 }
 
 # Credit price
-mnt_credit_tooltip_market_price = {
-    value = 1.0
-    if = { limit = { exists = capital.market } value = "goods:credit.price_in_market(capital.market)" }
-}
+mnt_credit_tooltip_market_price = { value = "goods:credit.price_in_market(root)" }

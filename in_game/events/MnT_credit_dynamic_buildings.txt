@@ -62,25 +62,19 @@ credit_dynamic_buildings.1 = {
                 error_log = "[THIS.GetMarket.GetNameWithNoTooltip] -> Supply: [SCOPE.GetLocalVariable('mkt_dynamic_supply').GetValue] (from [SCOPE.GetLocalVariable('mkt_locs_with_supply').GetValue] locs) | Demand: [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue] (from [SCOPE.GetLocalVariable('mkt_locs_with_demand').GetValue] locs)"
             } #TODO: TEMP
 
-            # Inject the Demand into the market using the alternating temporary demand pattern
+            # Inject demand into the market using the alternating temporary demand pattern
             if = { limit = { local_var:mkt_dynamic_demand > 0 }
                 if = { limit = { has_temporary_demand = demand:mnt_credit_building_demand1 }
                     remove_temporary_demand = demand:mnt_credit_building_demand1
                     add_temporary_demand = {
-                        type = demand:mnt_credit_building_demand2
-                        months = -1
-                        scale = local_var:mkt_dynamic_demand
-                    }
+                        type = demand:mnt_credit_building_demand2 months = -1 scale = local_var:mkt_dynamic_demand }
                     #TODO: TEMP
                     error_log = "[THIS.GetMarket.GetNameWithNoTooltip]: Added temporary demand [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]."
                 }
                 else = {
                     remove_temporary_demand = demand:mnt_credit_building_demand2
                     add_temporary_demand = {
-                        type = demand:mnt_credit_building_demand1
-                        months = -1
-                        scale = local_var:mkt_dynamic_demand
-                    }
+                        type = demand:mnt_credit_building_demand1 months = -1 scale = local_var:mkt_dynamic_demand }
                     #TODO: TEMP
                     error_log = "[THIS.GetMarket.GetNameWithNoTooltip]: Added temporary demand [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]."
                 }
@@ -89,6 +83,12 @@ credit_dynamic_buildings.1 = {
                 remove_temporary_demand = demand:mnt_credit_building_demand1
                 remove_temporary_demand = demand:mnt_credit_building_demand2
             }
+
+            # Inject supply into the market
+            if = { limit = { local_var:mkt_dynamic_supply > 0 }
+                add_goods_supply = { goods = goods:credit amount = local_var:mkt_dynamic_supply }
+            }
+
         }
         error_log = "--- MNT-Credit: Finished Dynamic Building Credit Pulse ---" #TODO: TEMP
     }
