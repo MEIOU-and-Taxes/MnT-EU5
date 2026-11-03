@@ -1,8 +1,11 @@
 # Thanks to the Seelowe/Justice Fighter, the author of the code this is based on
 import csv
+from datetime import datetime
 import glob
+import gzip
 import json
 import os
+import pickle
 import re
 import sys
 import traceback
@@ -28,12 +31,14 @@ from tools.plot import log_parser
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
-REFRESH_PERIOD = 5000
+REFRESH_PERIOD = 5 * 1000
+AUTOSAVE_PERIOD = 5 * 60 * 1000
 TARGET_FILE_NAME_ROOT = 'error'
 columns_not_to_multiply_by_num_of_locations = ['num_locations', 'year', 'age', 'century', 'decade']
 ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please include in the config the correct path to the logs folder'
 is_path_found = True
 icon_path = 'icon.png'
+AUTOSAVE_FILE = "autosave_session.dat"
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 graph_introduction = """
@@ -100,6 +105,7 @@ class MainWindow(QMainWindow):
 		super().__init__()
 		self.setWindowTitle("MEIOU and Taxes Plotter")
 		self.is_stats_mode = True
+		self.current_redraw_fn = None
 
 		if os.path.exists(icon_path):
 			self.setWindowIcon(QIcon(icon_path))
@@ -156,7 +162,7 @@ class MainWindow(QMainWindow):
 						line-height: 1.4;
 					}
 				""")
-		self.stats_panel.setVisible(False)
+		self.stats_panel.setVisible(True)
 		self.plot_container.addWidget(self.stats_panel, stretch=1)
 
 		self.layout.addLayout(self.plot_container, 1)
@@ -165,27 +171,41 @@ class MainWindow(QMainWindow):
 		self.toolbar = NavigationToolbar(self.canvas, self)
 		self.layout.addWidget(self.toolbar)
 
-		self.is_stats_mode = False
-
 		# --- Top Buttons Layout ---
 		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
-		self.btn_change_log_folder = QPushButton("Open log folder [Ctrl+O]")
-		self.btn_analysis = QPushButton("Data analysis toolkit [A]")
+		self.btn_change_log_folder = QPushButton("Open log folder [Ctrl+L]")
+		self.btn_save_session = QPushButton("Save session [Ctrl+S]")
+		self.btn_load_session = QPushButton("Load session [Ctrl+O]")
 		self.btn_export_all = QPushButton("Export data [Ctrl+E]")
+		self.btn_backup = QPushButton("Backup logs [Shift+S]")
+		# self.btn_refresh = QPushButton("Refresh data [Shift+S]")
+
+		# Refresh rate dropdown
+		self.combo_refresh = QComboBox()
+		self.combo_refresh.addItems(["Refresh: 10s", "Refresh: 30s", "Refresh: 60s", "Refresh: 300s", "Refresh: 600s", "Refresh: Off"])
+
+		# Auto-save dropdown with "No auto-save" option
+		self.combo_autosave = QComboBox()
+		self.combo_autosave.addItems(["Auto-save: 1m", "Auto-save: 5m", "Auto-save: 10m", "No auto-save"])
+
 		self.btn_fullscreen = QPushButton("Fullscreen [F]")
-		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
-		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
+		self.btn_analysis = QPushButton("Data analysis toolkit [A]")
 		self.btn_log_scale = QPushButton("Log scale [L]")
 		self.btn_moving_avg = QPushButton("Moving avg [W]")
+
 		self.btn_stats_mode = QPushButton("Stats mode [T]")
+		self.btn_stats_mode.setCheckable(True)
+		self.btn_stats_mode.setChecked(True)
+
 		self.combo_stats_bands = QComboBox()
 		self.combo_stats_bands.addItems(["5 Bands (Quartiles)", "7 Bands (+ 5th/95th)", "9 Bands (+ 1st/99th)"])
+		self.combo_stats_bands.setCurrentIndex(2)  # 9 bands by default
+		self.combo_stats_bands.setVisible(True)
 
 		self.btn_fullscreen.setCheckable(True)
 		self.btn_log_scale.setCheckable(True)
 		self.btn_moving_avg.setCheckable(True)
-		self.btn_stats_mode.setCheckable(True)
 
 		self.slider_period = QSlider(Qt.Orientation.Horizontal)
 		self.slider_period.setRange(2, 50)
@@ -194,21 +214,24 @@ class MainWindow(QMainWindow):
 		self.lbl_period_value = QLabel(f"Period: {self.period_value}")
 		self.slider_period.setVisible(False)
 		self.lbl_period_value.setVisible(False)
-		self.combo_stats_bands.setVisible(False)
 
 		self.top_button_layout.addWidget(self.btn_change_log_folder)
 		self.top_button_layout.addWidget(self.btn_charts)
-		self.top_button_layout.addWidget(self.btn_analysis)
-		self.top_button_layout.addWidget(self.btn_refresh)
-		self.top_button_layout.addWidget(self.btn_backup)
+		# self.top_button_layout.addWidget(self.btn_refresh)
+		self.top_button_layout.addWidget(self.combo_refresh)
+		self.top_button_layout.addWidget(self.btn_load_session)
+		self.top_button_layout.addWidget(self.btn_save_session)
+		self.top_button_layout.addWidget(self.combo_autosave)
 		self.top_button_layout.addWidget(self.btn_export_all)
+		self.top_button_layout.addWidget(self.btn_backup)
+		self.top_button_layout.addWidget(self.btn_analysis)
 		self.top_button_layout.addWidget(self.btn_fullscreen)
 		self.top_button_layout.addWidget(self.btn_log_scale)
 		self.top_button_layout.addWidget(self.btn_moving_avg)
 		self.top_button_layout.addWidget(self.slider_period)
 		self.top_button_layout.addWidget(self.lbl_period_value)
-		self.top_button_layout.addWidget(self.btn_stats_mode)
 		self.top_button_layout.addWidget(self.combo_stats_bands)
+		self.top_button_layout.addWidget(self.btn_stats_mode)
 		self.top_button_layout.addStretch(1)
 		self.layout.addLayout(self.top_button_layout)
 
@@ -219,9 +242,10 @@ class MainWindow(QMainWindow):
 		self.filter_layout = QGridLayout()
 		self.layout.addLayout(self.filter_layout)
 
-
 		# --- Connect Signals ---
-		self.btn_refresh.clicked.connect(self.reload_log)
+		# self.btn_refresh.clicked.connect(self.reload_log)
+		self.combo_refresh.currentIndexChanged.connect(self.on_refresh_rate_changed)
+		self.combo_autosave.currentIndexChanged.connect(self.on_autosave_rate_changed)
 		self.btn_backup.clicked.connect(self.backup_log)
 		self.btn_charts.clicked.connect(self.show_chart_list)
 		self.btn_export_all.clicked.connect(self.export_all_data)
@@ -233,6 +257,8 @@ class MainWindow(QMainWindow):
 		self.btn_change_log_folder.clicked.connect(self.change_log_folder)
 		self.btn_stats_mode.toggled.connect(self.toggle_stats_mode)
 		self.combo_stats_bands.currentIndexChanged.connect(self.redraw_current_plot)
+		self.btn_save_session.clicked.connect(self.manual_save)
+		self.btn_load_session.clicked.connect(self.manual_load)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
@@ -249,11 +275,47 @@ class MainWindow(QMainWindow):
 		self.timer_auto_reload.timeout.connect(self.check_log_updates)
 		self.timer_auto_reload.start()
 
+		self.timer_auto_save = QTimer(self)
+		self.timer_auto_save.setInterval(AUTOSAVE_PERIOD)
+		self.timer_auto_save.timeout.connect(self.auto_save_data)
+		self.timer_auto_save.start()
+
+	def on_refresh_rate_changed(self, index):
+		intervals = {
+			0: 10,
+			1: 30,
+			2: 60,
+			3: 300,
+			4: 600,
+			5: 0
+		}
+		ms = 1000 * intervals.get(index, 10)
+		if ms == 0:
+			self.timer_auto_reload.stop()
+		else:
+			self.timer_auto_reload.setInterval(ms)
+			if not self.timer_auto_reload.isActive():
+				self.timer_auto_reload.start()
+
+	def on_autosave_rate_changed(self, index):
+		intervals = {
+			0: 1 * 60,
+			1: 5 * 60,
+			2: 10 * 60,
+			3: 0
+		}
+		ms = 1000 * intervals.get(index, 5 * 60)
+		if ms == 0:
+			self.timer_auto_save.stop()
+		else:
+			self.timer_auto_save.setInterval(ms)
+			if not self.timer_auto_save.isActive():
+				self.timer_auto_save.start()
+
 	def load_key_configs(self):
 		try:
 			with open("key_configs.json", "r") as f:
 				self.key_configs = json.load(f)
-				print("Successfully loaded key_configs.json")
 		except FileNotFoundError:
 			self.key_configs = {}
 			QMessageBox.warning(self, "No hotkeys", "key_configs.json not found, no function key presets will be available.")
@@ -262,17 +324,32 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "Config Error", f"Error parsing key_configs.json:\n{e}")
 
 	def load_initial_data(self):
-		"""
-		Performs the initial, potentially slow, loading of log data.
-		This should be called after the main window is shown.
-		"""
+		"""Checks for a previous session on startup, otherwise loads from logs."""
+		if os.path.exists(AUTOSAVE_FILE):
+			mod_time = datetime.fromtimestamp(os.path.getmtime(AUTOSAVE_FILE)).strftime("%Y-%m-%d %H:%M")
+			msg_box = QMessageBox(self)
+			msg_box.setIcon(QMessageBox.Icon.Question)
+			msg_box.setWindowTitle("Restore Previous Session?")
+			msg_box.setText(f"A saved session from {mod_time} was found.")
+			msg_box.setInformativeText("Would you like to continue with the saved data, or read fresh logs from the game directory?")
+
+			btn_restore = msg_box.addButton("Continue with Last Data", QMessageBox.ButtonRole.AcceptRole)
+			btn_fresh = msg_box.addButton("Read Fresh Logs", QMessageBox.ButtonRole.RejectRole)
+			msg_box.setDefaultButton(btn_restore)
+
+			msg_box.exec()
+
+			if msg_box.clickedButton() == btn_restore:
+				if self.load_session_file(AUTOSAVE_FILE):
+					return
+
+		# Default: read fresh logs
 		self.reload_log(is_interactive=True)
 
 	def setup_shortcuts(self):
 		"""Setup global keyboard shortcuts."""
-		QShortcut(QKeySequence("Shift+S"), self, self.reload_log)
-		QShortcut(QKeySequence("Ctrl+S"), self, self.backup_log)
-		QShortcut(QKeySequence("Ctrl+O"), self, self.change_log_folder)
+		QShortcut(QKeySequence("Shift+S"), self, self.backup_log)
+		QShortcut(QKeySequence("Ctrl+L"), self, self.change_log_folder)
 		QShortcut(QKeySequence("A"), self, self.open_analysis_toolkit)
 		QShortcut(QKeySequence("`"), self, self.show_chart_list)
 		QShortcut(QKeySequence("F"), self, self.btn_fullscreen.toggle)
@@ -280,6 +357,8 @@ class MainWindow(QMainWindow):
 		QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
 		QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
 		QShortcut(QKeySequence("T"), self, self.btn_stats_mode.toggle)
+		QShortcut(QKeySequence("Ctrl+O"), self, self.manual_load)
+		QShortcut(QKeySequence("Ctrl+S"), self, self.manual_save)
 
 	def set_fullscreen_state(self, checked):
 		if checked:
@@ -304,23 +383,15 @@ class MainWindow(QMainWindow):
 
 	def get_stats_bands_count(self):
 		idx = self.combo_stats_bands.currentIndex()
-		if idx == 1:
+		if idx == 0:
+			return 5
+		elif idx == 1:
 			return 7
-		elif idx == 2:
-			return 9
-		return 5
+		return 9
 
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""
 		all_graphs.get_data = self.get_data
-		self.graphs = {
-			# Use docstring for title, fallback to formatted name
-			(getattr(all_graphs, name).__doc__ or getattr(all_graphs, name).__name__[6:].replace("_", " ").title()):
-				getattr(all_graphs, name)
-			for name in dir(all_graphs)
-			if callable(getattr(all_graphs, name)) and name.lower().startswith("graph")
-		}
-
 		configs = {
 			'graph_building_types': all_graphs.BT_CONFIG,
 			'graph_goods_prices': all_graphs.GP_CONFIG,
@@ -393,8 +464,7 @@ class MainWindow(QMainWindow):
 		self.fig.suptitle(None)
 		self.ax.set_title("Menu")
 		text_to_show = ERROR_FILE_NOT_FOUND if not is_path_found else msg if msg else graph_introduction.strip()
-		self.ax.text(0.5, 0.5, text_to_show,
-					 horizontalalignment="center", verticalalignment="center")
+		self.ax.text(0.5, 0.5, text_to_show, horizontalalignment="center", verticalalignment="center")
 		self.canvas.draw()
 		# Clear current graph state when returning to menu
 		self.current_graph_info = None
@@ -436,10 +506,7 @@ class MainWindow(QMainWindow):
 		self.cursor_hover_handler.setup_tooltip_handler()
 
 	def handle_line_click(self, line_label):
-		if not self.current_graph_info:
-			return
-
-		if self.current_graph_info['title'] == "Market Statistics":
+		if not self.current_graph_info or self.is_stats_mode:
 			return
 
 		if self.current_graph_info['title'] in ("Market Statistics", "Country Metrics"):
@@ -481,6 +548,22 @@ class MainWindow(QMainWindow):
 		"""Clears any existing tooltip handler."""
 		self.cursor_hover_handler = None
 
+	def set_redraw_fn(self, fn):
+		self.current_redraw_fn = fn
+
+	def redraw_current_plot(self):
+		"""Reliably redraws the plot whenever filters or display modes toggle."""
+		if callable(self.current_redraw_fn):
+			self.current_redraw_fn()
+		elif self.filter_widget_map:
+			first_widget = next(iter(self.filter_widget_map.values()))
+			if isinstance(first_widget, QComboBox):
+				first_widget.currentIndexChanged.emit(first_widget.currentIndex())
+			else:
+				self.apply_plot_settings()
+		else:
+			self.apply_plot_settings()
+
 	def display_chart(self, graph_info, title):
 		"""Clears the axes and plots a new graph."""
 		if self.current_graph_info:
@@ -518,7 +601,9 @@ class MainWindow(QMainWindow):
 				lambda: self.is_moving_average,
 				lambda: self.period_value,
 				lambda: self.is_stats_mode,
-				self.update_stats_summary_panel
+				self.update_stats_summary_panel,
+				self.get_stats_bands_count,
+				set_redraw_fn=self.set_redraw_fn
 			)
 			self.canvas.draw() # Draw the canvas first, to update the graph elements
 			self.setup_preset_buttons(title)
@@ -575,7 +660,6 @@ class MainWindow(QMainWindow):
 	def setup_preset_buttons(self, chart_title):
 		self.clear_preset_buttons()
 		chart_configs = self.key_configs.get(chart_title, {})
-
 		sorted_keys = sorted(chart_configs.keys(), key=lambda x: int(x[1:]))
 
 		for key in sorted_keys:
@@ -583,13 +667,11 @@ class MainWindow(QMainWindow):
 			is_valid_preset = True
 			for filter_key, filter_value in config.get("filters", {}).items():
 				if filter_key not in self.filter_widget_map:
-					print(f"Warning for preset {key}: Filter key '{filter_key}' does not exist for this chart.")
 					is_valid_preset = False
 					break
 
 				combo_box = self.filter_widget_map[filter_key]
 				if combo_box.findText(filter_value) == -1:
-					print(f"Info for preset {key}: Value '{filter_value}' not found for filter '{filter_key}'. Disabling button.")
 					is_valid_preset = False
 					break
 
@@ -624,14 +706,10 @@ class MainWindow(QMainWindow):
 					if index != -1:
 						combo_box.setCurrentIndex(index)
 					else:
-						error_message = f"Value '{value}' not found for filter '{key}'.\n\nThe log data may not contain this option."
-						QMessageBox.warning(self, "Preset Error", error_message)
-						print(f"Warning: {error_message}")
+						QMessageBox.warning(self, "Preset Error", f"Value '{value}' not found for filter '{key}'.")
 						return
 				else:
-					error_message = f"Filter key '{key}' not found in widget map."
-					QMessageBox.warning(self, "Preset Error", error_message)
-					print(f"Warning: {error_message}")
+					QMessageBox.warning(self, "Preset Error", f"Filter key '{key}' not found in widget map.")
 					return
 		finally:
 			for combo_box in self.filter_widget_map.values():
@@ -659,16 +737,6 @@ class MainWindow(QMainWindow):
 		if self.is_moving_average:
 			self.redraw_current_plot()
 
-	def redraw_current_plot(self):
-		if self.filter_widget_map:
-			first_widget = next(iter(self.filter_widget_map.values()))
-			if isinstance(first_widget, QComboBox):
-				first_widget.currentIndexChanged.emit(first_widget.currentIndex())
-			else:
-				self.apply_plot_settings()
-		else:
-			self.apply_plot_settings()
-
 	def apply_plot_settings(self):
 		"""Applies current settings (like log scale) to the plot."""
 		if not (self.ax.get_lines() or self.ax.patches):
@@ -689,7 +757,6 @@ class MainWindow(QMainWindow):
 			self.btn_log_scale.setChecked(False)
 			self.ax.set_yscale('linear')
 			self.canvas.draw_idle()
-			QMessageBox.warning(self, "Scaling Error", "Could not apply logarithmic scale.\nData may contain non-positive values.")
 
 	def _check_file_locks(self, export_folder_path, filenames):
 		"""
@@ -711,12 +778,8 @@ class MainWindow(QMainWindow):
 					file = open(full_path, 'a')
 					file.close()
 				except (IOError, PermissionError):
-					# This exception means the file is locked by another process.
-					print(f"Lock detected on file: {full_path}")
-					return full_path  # Return the path of the locked file
-
-		return None  # No locks found
-
+					return full_path
+		return None
 
 	def export_all_data(self):
 		"""
@@ -747,9 +810,6 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "File In Use", f"Please close the file and try again:\n\n{locked_file}")
 			return False
 
-		print(f"Exporting CSV files to: {export_folder_path}")
-
-		# --- Load the location lookup data ---
 		location_lookup = self._load_location_data()
 
 		# --- Setup Progress Dialog ---
@@ -759,22 +819,6 @@ class MainWindow(QMainWindow):
 
 		# Style
 		progress_dialog.resize(650, 150)
-		progress_style = """
-			QProgressBar {
-				border: 2px solid grey;
-				border-radius: 8px;
-				text-align: center;
-				font-size: 16px;
-				font-weight: bold;
-				min-height: 50px;
-			}
-			QProgressBar::chunk {
-				background-color: #337ab7;
-				border-radius: 8px;
-			}
-		"""
-		progress_dialog.setStyleSheet(progress_style)
-
 		progress_dialog.show()
 		QApplication.processEvents() # Ensure the dialog is shown immediately
 
@@ -794,33 +838,25 @@ class MainWindow(QMainWindow):
 					break
 
 				dataset = parser_func(self.data)
-
 				if not dataset:
-					print(f"No data found for {filename_root}, skipping.")
 					continue
 
 				# Add region, subcontinent & continent based on the location.csv file
 				if filename_root == "country_stats" and location_lookup:
-					print("Enriching country data with geographical information...")
 					enhanced_dataset = []
 					for record in dataset:
 						capital_area = record.get('capital_area')
-						# Use .get() with a default empty dict for safe lookups
 						geo_data = location_lookup.get(capital_area, {})
-
-						# Create a new record with geo data first for nice column order
 						enhanced_record = {
 							'continent': geo_data.get('continent', 'N/A'),
 							'subcontinent': geo_data.get('subcontinent', 'N/A'),
 							'region': geo_data.get('region', 'N/A'),
 						}
-						enhanced_record.update(record) # Add all original data
+						enhanced_record.update(record)
 						enhanced_dataset.append(enhanced_record)
-
 					dataset_to_write = enhanced_dataset
 				else:
 					dataset_to_write = dataset
-
 
 				file_path = os.path.join(export_folder_path, f"{filename_root}.csv")
 				try:
@@ -833,36 +869,20 @@ class MainWindow(QMainWindow):
 
 					# Generate the location-multiplied CSV
 					if filename_root == "country_stats" and dataset_to_write:
-						print("Generating cleaned and filtered country stats for analysis...")
-
 						df = pd.DataFrame(dataset_to_write)
-						if 'num_locations' not in df.columns:
-							print("  - Warning: Cannot create cleaned dataset, 'num_locations' column is missing.")
-							continue
+						if 'num_locations' in df.columns:
+							df_cleaned = df[df['num_locations'] > 0].copy()
+							estate_types = ['nobles', 'clergy', 'burghers', 'peasants', 'dhimmi', 'tribes', 'cossacks']
+							for estate in estate_types:
+								power_col = f'{estate}_relative_power'
+								if power_col in df_cleaned.columns:
+									no_power_mask = df_cleaned[power_col] == 0
+									stats_cols = [col for col in df_cleaned.columns if col.startswith(f'{estate}_')]
+									df_cleaned.loc[no_power_mask, stats_cols] = np.nan
 
-						# Filter out countries that are too small to be meaningful in averages
-						# This removes Societies of Pops
-						df_cleaned = df[df['num_locations'] > 0].copy()
-
-						# Clean estate data: set stats to NaN where an estate has no power
-						estate_types = ['nobles', 'clergy', 'burghers', 'peasants', 'dhimmi', 'tribes', 'cossacks']
-						for estate in estate_types:
-							power_col = f'{estate}_relative_power'
-							if power_col in df_cleaned.columns:
-								# Find rows where this estate has no power
-								no_power_mask = df_cleaned[power_col] == 0
-
-								# Get all columns related to this estate
-								stats_cols = [col for col in df_cleaned.columns if col.startswith(f'{estate}_')]
-
-								# Set their values to NaN for these rows
-								df_cleaned.loc[no_power_mask, stats_cols] = np.nan
-
-						# Write the new, cleaned dataset to its own file
-						new_filepath = os.path.join(export_folder_path, "country_stats_cleaned.csv")
-						df_cleaned.to_csv(new_filepath, index=False)
-						exported_files.append(new_filepath)
-						print(f"Successfully created {new_filepath}")
+							new_filepath = os.path.join(export_folder_path, "country_stats_cleaned.csv")
+							df_cleaned.to_csv(new_filepath, index=False)
+							exported_files.append(new_filepath)
 
 				except Exception as e:
 					QMessageBox.critical(self, "File Write Error", f"Failed to write {filename_root}.csv: {e}")
@@ -880,49 +900,41 @@ class MainWindow(QMainWindow):
 				msg_box = QMessageBox(self)
 				msg_box.setIcon(QMessageBox.Icon.Information)
 				msg_box.setWindowTitle("Export Successful")
-				msg_box.setText(f"All data successfully exported to the 'csv_export' subfolder in your log directory:\n{export_folder_path}")
-
+				msg_box.setText(f"All data successfully exported to the 'csv_export' subfolder:\n{export_folder_path}")
 				open_button = msg_box.addButton("Open Directory", QMessageBox.ButtonRole.ActionRole)
 				msg_box.addButton(QMessageBox.StandardButton.Ok)
-
 				msg_box.exec()
 
 				if msg_box.clickedButton() == open_button:
 					# Use QDesktopServices for cross-platform compatibility to open the folder
 					QDesktopServices.openUrl(QUrl.fromLocalFile(export_folder_path))
-				return True # Return success status
+				return True
 			else:
 				QMessageBox.warning(self, "Export Warning", "No data was available to export.")
-				return False # Return failure status
+				return False
 
 		except Exception as e:
 			progress_dialog.close() # Ensure dialog is closed on error
 			QMessageBox.critical(self, "Export Failed", f"A critical error occurred:\n{e}")
 			traceback.print_exc()
-			return False # Return failure status
+			return False
+
 	def backup_log(self):
 		"""Backs up the current game.log."""
 		if not self.logs:
 			QMessageBox.critical(self, "Back-up failed", "No log files found to determine the next backup number.")
 			return
 		number_str = re.findall(r'\d+', self.logs[-1])[0]
-
 		last_log_num = int(number_str) if number_str else 1
 		file_to_rename = rf"{self.log_folder}{TARGET_FILE_NAME_ROOT}.log"
 		try:
 			os.rename(file_to_rename, f"{self.log_folder}{TARGET_FILE_NAME_ROOT}_{last_log_num + 1}.log")
 			QMessageBox.information(self, "Back-up complete", f"Backed up {TARGET_FILE_NAME_ROOT}.log to game_{last_log_num + 1}.log")
-		except FileNotFoundError:
-			QMessageBox.critical(self, "Back-up failed", f"{file_to_rename} not found, nothing to back up.")
 		except Exception as e:
 			QMessageBox.critical(self, "Back-up failed", f"Error backing up log: {e}")
 		self.display_info_screen()
 
 	def reload_log(self, is_interactive=True):
-		"""Reads all log files and refreshes the current view."""
-		print("Reloading log data...")
-		# Clear the parser caches to force a re-read of the data.
-
 		saved_graph_info = self.current_graph_info
 		saved_filters = {}
 		saved_is_log_scale = self.is_log_scale
@@ -949,17 +961,12 @@ class MainWindow(QMainWindow):
 			msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 			msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
 
-			response = msg_box.exec()
-
-			if response == QMessageBox.StandardButton.Yes:
-				# This will trigger its own non-interactive reload upon success.
+			if msg_box.exec() == QMessageBox.StandardButton.Yes:
 				self.change_log_folder()
 				return # Stop the current reload process, as a new one will be started.
 
 		if saved_graph_info:
-			print(f"Refreshing current graph: {saved_graph_info['title']}")
 			self.display_chart(saved_graph_info['info'], saved_graph_info['title'])
-
 			self.is_log_scale = saved_is_log_scale
 			self.btn_log_scale.setChecked(saved_is_log_scale)
 			self.is_moving_average = saved_is_moving_avg
@@ -977,7 +984,6 @@ class MainWindow(QMainWindow):
 					if index != -1:
 						widget.setCurrentIndex(index)
 					else:
-						print(f"Warning: Saved filter value '{value}' for '{key}' not found after reload. Resetting to default.")
 						widget.setCurrentIndex(0)
 
 			for widget in self.filter_widget_map.values():
@@ -1046,9 +1052,6 @@ class MainWindow(QMainWindow):
 			except (IOError, PermissionError) as e:
 				print(f"Warning: Could not read {fn}: {e}")
 
-		if not files:
-			print(f'No log files found in "{self.log_folder}"')
-
 		return files, "".join(content_list)
 
 	def _load_location_data(self, filepath="locations.csv"):
@@ -1068,11 +1071,8 @@ class MainWindow(QMainWindow):
 							'subcontinent': row.get('subcontinent', 'N/A'),
 							'region': row.get('region', 'N/A')
 						}
-			print(f"Successfully loaded {len(location_map)} entries from {filepath}")
-		except FileNotFoundError:
-			QMessageBox.critical(self, "Error", f"Warning: '{filepath}' not found. Geographical data will not be added to the export.")
-		except Exception as e:
-			QMessageBox.critical(self, "Error", f"Error while reading '{filepath}'")
+		except Exception:
+			pass
 		return location_map
 
 	def open_analysis_toolkit(self):
@@ -1092,15 +1092,8 @@ class MainWindow(QMainWindow):
 			msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 			msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
 
-			response = msg_box.exec()
-
-			if response == QMessageBox.StandardButton.Yes:
-				# User agreed. Run the export process.
-				# The export function will now return True on success.
-				success = self.export_all_data()
-				if success:
-					# If the export was successful, we call this function again.
-					# This time, the file will exist and the analysis will proceed.
+			if msg_box.exec() == QMessageBox.StandardButton.Yes:
+				if self.export_all_data():
 					self.open_analysis_toolkit()
 			return # Exit the function here, as the flow is handled by the user's choice.
 
@@ -1109,7 +1102,7 @@ class MainWindow(QMainWindow):
 			# Get total number of rows for the progress bar maximum1
 			print("Counting rows for progress bar...")
 			with open(csv_path, 'r', encoding='utf-8') as f:
-				total_rows = sum(1 for row in f) - 1  # Subtract 1 for the header
+				total_rows = sum(1 for _ in f) - 1
 
 			# Setup and show the progress dialog
 			progress_dialog = QProgressDialog("Loading data...", "Cancel", 0, total_rows, self)
@@ -1140,9 +1133,7 @@ class MainWindow(QMainWindow):
 
 			# If not cancelled, combine chunks into the final DataFrame
 			if not user_cancelled:
-				print("Concatenating chunks into final DataFrame...")
 				country_df = pd.concat(chunks, ignore_index=True)
-
 				if country_df.empty:
 					QMessageBox.warning(self, "No Data", "The 'country_stats.csv' file is empty.")
 					return
@@ -1162,18 +1153,12 @@ class MainWindow(QMainWindow):
 	def change_log_folder(self):
 		"""Opens a dialog to select a new log folder and updates the config."""
 		path_new_folder = QFileDialog.getExistingDirectory(self, "Select Log Folder", self.log_folder)
-
 		if path_new_folder and path_new_folder != self.log_folder:
-			print(f"Changing log folder to: {path_new_folder}")
 			self.log_folder = path_new_folder
 
 			# --- Use the centralized function to update the config file ---
 			fetch_logs.update_config_file('Paths', 'log_directory', path_new_folder)
-
-			QMessageBox.information(self, "Log Folder Changed",
-									f"The log folder has been updated.\n"
-									f"The application will now refresh data from:\n{path_new_folder}")
-
+			QMessageBox.information(self, "Log Folder Changed", f"The application will now refresh data from:\n{path_new_folder}")
 			self.reload_log()
 
 	def check_log_updates(self):
@@ -1201,42 +1186,147 @@ class MainWindow(QMainWindow):
 			self.reload_log(is_interactive=False)
 
 	def update_stats_summary_panel(self, global_stats, year_stats=None):
-			if not global_stats or not self.is_stats_mode:
-				self.stats_panel.clear()
-				return
+		if not global_stats or not self.is_stats_mode:
+			self.stats_panel.clear()
+			return
 
-			text = []
-			# DYNAMIC YEARLY SNAPSHOT (Hover-based)
-			if year_stats:
-				text.append(f"=== STATS FOR {year_stats['year']} ===")
-				text.append(f"Count:      {year_stats['count']}")
-				text.append(f"Mean:       {year_stats['mean']:,.2f}")
-				text.append(f"Median:     {year_stats['median']:,.2f}")
-				text.append(f"Std Dev:    {year_stats['std']:,.2f}")
+		y_label = global_stats.get('value_label', '')
+		is_integer = y_label in ("Population", "Count")
+		fmt = ",.0f" if is_integer else ",.2f"
+
+		text = []
+		if year_stats:
+			text.append(f"=== STATS FOR {year_stats['year']} ===")
+			text.append(f"Count:      {year_stats['count']}")
+			text.append(f"Mean:       {year_stats['mean']:{fmt}}")
+			text.append(f"Median:     {year_stats['median']:{fmt}}")
+			text.append(f"Std Dev:    {year_stats['std']:{fmt}}")
+		else:
+			text.append("Hover plot to see yearly stats")
+
+		text.append("\n" + "="*30 + "\n")
+		text.append("=== GLOBAL OVERVIEW ===")
+		text.append(f"Avg Mean:   {global_stats['overall_mean']:{fmt}}")
+		text.append(f"Avg StdDev: {global_stats['overall_std']:{fmt}}")
+
+		text.append("\n--- BIGGEST GAINERS (Full Game) ---")
+		for reg, delta, start, end, _ in global_stats['biggest_increase']:
+			text.append(f"{reg[:12]:<12}: +{delta:{fmt}} ({start:{fmt}} → {end:{fmt}})")
+
+		text.append("\n--- BIGGEST DECLINES (Full Game) ---")
+		for reg, delta, start, end, _ in global_stats['biggest_decrease']:
+			text.append(f"{reg[:12]:<12}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}})")
+
+		text.append("\n--- HIGHEST VOLATILITY (σ) ---")
+		for reg, _, _, _, std in global_stats['most_volatile']:
+			text.append(f"{reg[:12]:<12}: σ = {std:{fmt}}")
+
+		self.stats_panel.setPlainText("\n".join(text))
+
+	# SESSION SAVE & LOAD SYSTEM ---------------------------------------------------------------------
+	def save_session_file(self, filepath=AUTOSAVE_FILE, show_popup=False):
+		"""Serializes logs, cumulative country records, and filter states into a compressed file."""
+		if not self.data:
+			if show_popup:
+				QMessageBox.warning(self, "Save Warning", "No data loaded to save.")
+			return False
+
+		try:
+			session = {
+				"version": 1,
+				"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+				"data": self.data,
+				"logs": self.logs,
+				"cumulative_store": {f"{int(k[0])}:{k[1]}": v for k, v in log_parser.tg_cumulative_store.items()},
+				"chart_filter_memory": self.chart_filter_memory,
+				"current_chart": self.current_graph_info['title'] if self.current_graph_info else None
+			}
+
+			with gzip.open(filepath, "wb") as f:
+				pickle.dump(session, f)
+
+			if show_popup:
+				QMessageBox.information(self, "Session Saved", f"Session saved successfully to:\n{filepath}")
+			return True
+		except Exception as e:
+			if show_popup:
+				QMessageBox.critical(self, "Save Error", f"Failed to save session:\n{e}")
+			return False
+
+	def load_session_file(self, filepath=AUTOSAVE_FILE):
+		"""Loads a saved session file and restores the graph view."""
+		if not os.path.exists(filepath):
+			QMessageBox.warning(self, "File Not Found", f"No session file found at:\n{filepath}")
+			return False
+
+		try:
+			with gzip.open(filepath, "rb") as f:
+				session = pickle.load(f)
+
+			self.data = session.get("data", "")
+			self.logs = session.get("logs", [])
+
+			# Restore cumulative country store
+			log_parser.tg_cumulative_store.clear()
+			for k_str, v in session.get("cumulative_store", {}).items():
+				parts = k_str.split(":", 1)
+				if len(parts) == 2:
+					log_parser.tg_cumulative_store[(int(parts[0]), parts[1])] = v
+
+			log_parser.clear_all_caches()
+			self.chart_filter_memory = session.get("chart_filter_memory", {})
+
+			# Display chart or menu
+			chart_name = session.get("current_chart")
+			if chart_name and chart_name in self.graphs:
+				self.display_chart(self.graphs[chart_name], chart_name)
 			else:
-				text.append("Hover plot to see yearly stats")
+				self.display_info_screen("Session loaded successfully.")
+			return True
 
-			text.append("\n" + "="*30 + "\n")
+		except Exception as e:
+			QMessageBox.critical(self, "Load Error", f"Could not load session:\n{e}")
+			traceback.print_exc()
+			return False
 
-			# GLOBAL OVERVIEW (Static part)
-			text.append("=== GLOBAL OVERVIEW ===")
-			text.append(f"Avg Mean:   {global_stats['overall_mean']:,.2f}")
-			text.append(f"Avg StdDev: {global_stats['overall_std']:,.2f}")
+	def manual_save(self):
+		"""Opens a dialog to save data to a chosen file."""
+		path, _ = QFileDialog.getSaveFileName(self, "Save Session", "session_backup.dat", "Session Data (*.dat)")
+		if path:
+			self.save_session_file(path, show_popup=True)
 
-			text.append("\n--- BIGGEST GAINERS (Full Game) ---")
-			for reg, delta, start, end, _ in global_stats['biggest_increase']:
-				text.append(f"{reg[:12]:<12}: +{delta:,.2f} ({start:.1f} → {end:.1f})")
+	def manual_load(self):
+		"""Opens a dialog to pick and load any saved session."""
+		path, _ = QFileDialog.getOpenFileName(self, "Load Session", "", "Session Data (*.dat);;All Files (*.*)")
+		if path:
+			self.load_session_file(path)
 
-			text.append("\n--- BIGGEST DECLINES (Full Game) ---")
-			for reg, delta, start, end, _ in global_stats['biggest_decrease']:
-				text.append(f"{reg[:12]:<12}: {delta:,.2f} ({start:.1f} → {end:.1f})")
+	def auto_save_data(self):
+		if self.combo_autosave.currentIndex() == 3:  # No auto-save
+			return
+		if self.data:
+			self.save_session_file(AUTOSAVE_FILE, show_popup=False)
 
-			text.append("\n--- HIGHEST VOLATILITY (σ) ---")
-			for reg, _, _, _, std in global_stats['most_volatile']:
-				text.append(f"{reg[:12]:<12}: σ = {std:,.2f}")
+	def closeEvent(self, event):
+		if not self.data or self.combo_autosave.currentIndex() == len(self.combo_autosave) - 1:
+			event.accept()
+			return
 
-			self.stats_panel.setPlainText("\n".join(text))
+		reply = QMessageBox.question(
+			self,
+			"Save on Exit",
+			"Do you want to save your current session data before exiting?",
+			QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
+			QMessageBox.StandardButton.Yes
+		)
 
+		if reply == QMessageBox.StandardButton.Yes:
+			self.save_session_file(AUTOSAVE_FILE, show_popup=False)
+			event.accept()
+		elif reply == QMessageBox.StandardButton.No:
+			event.accept()
+		else:
+			event.ignore()  # Abort exiting
 
 
 class LoadingDialog(QDialog):

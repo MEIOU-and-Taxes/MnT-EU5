@@ -147,9 +147,9 @@ class InteractiveLineTooltip:
 				year_vals = [x[1] for x in moments_data[current_integer_x]]
 				year_stats = {
 					"year": current_integer_x,
-					"mean": np.mean(year_vals),
-					"median": np.median(year_vals),
-					"std": np.std(year_vals),
+					"mean": float(np.mean(year_vals)),
+					"median": float(np.median(year_vals)),
+					"std": float(np.std(year_vals)),
 					"count": len(year_vals)
 				}
 				self.on_stats_hover_callback(global_stats, year_stats)
@@ -172,11 +172,14 @@ class InteractiveLineTooltip:
 				year_entries = moments_data[current_integer_x]
 				closest_10 = sorted(year_entries, key=lambda x: abs(x[1] - target_val))[:10]
 
-				info_texts = [f"Year: {current_integer_x} | Curve: {curve_label}", f"Val: {target_val:.2f}", "-"*35]
-				for reg, val in closest_10:
-					info_texts.append(f"{val:>8.2f} : {reg}")
+				y_label = self.ax.get_ylabel() or ""
+				is_integer_plot = y_label in ("Population", "Count")
+				format_spec = ",.0f" if is_integer_plot else ",.2f"
 
-				# Use original dynamic positioning logic to keep tooltip on screen
+				info_texts = [f"Year: {current_integer_x} | Curve: {curve_label}", f"Val: {target_val:{format_spec}}", "-"*35]
+				for ent, val in closest_10:
+					info_texts.append(f"{val:>10{format_spec}} : {ent}")
+
 				y_mid = self.ax.get_ylim()[0] + (self.ax.get_ylim()[1] - self.ax.get_ylim()[0]) * 0.4
 				self.annot.set_verticalalignment('top' if event.ydata > y_mid else 'bottom')
 				vertical_offset = -TOOLTIP_PADDING if event.ydata > y_mid else TOOLTIP_PADDING
@@ -261,6 +264,7 @@ class InteractiveLineTooltip:
 		self.annot.xy = closest_point_on_line
 		self.annot.set_visible(True)
 		self.fig.canvas.draw_idle()
+
 	def on_leave(self, event):
 		if self.last_hovered_line is not None:
 			label = self.last_hovered_line.get_label()
@@ -279,10 +283,10 @@ class InteractiveLineTooltip:
 		"""
 		# print("CursorHoverInfo: Pre-calculating tooltip data... ", end="")
 		cache = {}
-		if not self.lines: return {}
+		if not self.lines:
+			return {}
 		all_x_data = np.concatenate([line.get_xdata() for line in self.lines])
 		if all_x_data.size == 0:
-			print("No data points found.")
 			return {}
 		min_x, max_x = int(np.min(all_x_data)), int(np.max(all_x_data))
 		for x_val in range(min_x, max_x + 1):
