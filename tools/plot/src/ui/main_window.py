@@ -12,7 +12,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QPushButton, QComboBox, QSlider, QLabel, QTextEdit, QMessageBox,
-    QFileDialog, QProgressDialog, QApplication
+    QFileDialog
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -20,7 +20,7 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 from src.analysis_toolkit import AnalysisToolkitDialog
 from src.constants import (
     REFRESH_PERIOD_MS, AUTOSAVE_PERIOD_MS, TARGET_FILE_NAME_ROOT,
-    AUTOSAVE_FILE, ICON_PATH, GRAPH_INTRODUCTION, ERROR_FILE_NOT_FOUND
+    AUTOSAVE_FILE, ICON_PATH, GRAPH_INTRODUCTION
 )
 from src.parsing import log_parser
 from src.plotting import chart_library, configs
@@ -29,9 +29,12 @@ from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session, load_session
 from src.ui.stats_panel import format_stats_panel_text
 from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog
-
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
+
+
+def get_stats_bands_count():
+    return 9
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -153,10 +156,6 @@ class MainWindow(QMainWindow):
         self.slider_period.setVisible(False)
         self.lbl_period_value.setVisible(False)
 
-        self.combo_stats_bands = QComboBox()
-        self.combo_stats_bands.addItems(["5 Bands (Quartiles)", "7 Bands (+ 5th/95th)", "9 Bands (+ 1st/99th)"])
-        self.combo_stats_bands.setCurrentIndex(2)
-
         self.btn_stats_mode = QPushButton("Stats mode [T]")
         self.btn_stats_mode.setCheckable(True)
         self.btn_stats_mode.setChecked(True)
@@ -167,7 +166,7 @@ class MainWindow(QMainWindow):
         for w in [self.btn_change_log_folder, self.btn_charts, self.btn_preset_config, self.btn_refresh, self.combo_refresh,
                   self.btn_load_session, self.btn_save_session, self.combo_autosave, self.btn_clear_data, self.btn_export_all,
                   self.btn_backup, self.btn_analysis, self.btn_fullscreen, self.btn_log_scale, self.btn_moving_avg,
-                  self.slider_period, self.lbl_period_value, self.btn_stats_mode, self.combo_stats_bands]:
+                  self.slider_period, self.lbl_period_value, self.btn_stats_mode]:
             self.top_button_layout.addWidget(w)
 
         self.top_button_layout.addStretch(1)
@@ -194,7 +193,6 @@ class MainWindow(QMainWindow):
         self.btn_analysis.clicked.connect(self.open_analysis_toolkit)
         self.btn_change_log_folder.clicked.connect(self.change_log_folder)
         self.btn_stats_mode.toggled.connect(self.toggle_stats_mode)
-        self.combo_stats_bands.currentIndexChanged.connect(self.redraw_current_plot)
         self.btn_save_session.clicked.connect(self.manual_save)
         self.btn_load_session.clicked.connect(self.manual_load)
         self.btn_clear_data.clicked.connect(self.clear_data)
@@ -276,7 +274,7 @@ class MainWindow(QMainWindow):
                 self.on_plot_updated, self.clear_tooltip_handler, self.filter_widget_map,
                 lambda: self.is_moving_average, lambda: self.period_value,
                 lambda: self.is_stats_mode, self.update_stats_summary_panel,
-                self.get_stats_bands_count, set_redraw_fn=self.set_redraw_fn
+                get_stats_bands_count, set_redraw_fn=self.set_redraw_fn
             )
             for combo in self.filter_widget_map.values():
                 if isinstance(combo, QComboBox):
@@ -434,11 +432,7 @@ class MainWindow(QMainWindow):
     def toggle_stats_mode(self, checked):
         self.is_stats_mode = checked
         self.stats_panel.setVisible(checked)
-        self.combo_stats_bands.setVisible(checked)
         self.redraw_current_plot()
-
-    def get_stats_bands_count(self):
-        return [5, 7, 9][self.combo_stats_bands.currentIndex()]
 
     def toggle_log_scale(self, checked):
         self.is_log_scale = checked

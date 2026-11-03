@@ -5,21 +5,21 @@
 	error_log = "::Done logging country information for this year"
 }
 
-run_logging_non_country_prices = {
+run_logging_prices = {
 	if = { limit = { has_global_variable = is_logging_yearly_non_country_information }
 		print_regional_prices = yes                # characters at start: 765,974
 	}
 	error_log = "::Done logging non-country information > prices."
 }
 
-run_logging_non_country_building_types = {
+run_logging_building_types = {
 	if = { limit = { has_global_variable = is_logging_yearly_non_country_information }
 		print_regional_building_types = yes        # characters at start: 147,474
 	}
 	error_log = "::Done logging non-country information > building types."
 }
 
-run_logging_non_country_market = {
+run_logging_market = {
 	if = { limit = { has_global_variable = is_logging_yearly_non_country_information }
 		print_market_information = yes
 	}
@@ -35,14 +35,19 @@ run_logging_non_country_other = {
 }
 
 print_regional_population = {
-    every_region = {
-		error_log = "::POP::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[THIS.GetRegion.GetTotalPopulation]"
-    }
+    every_region = { error_log = "::POP::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[THIS.GetRegion.GetTotalPopulation]" }
+}
+
+print_region_locations = {
+	every_region = {
+		set_local_variable = { name = locs value = 0 }
+		every_location_in_region = { change_local_variable = { name = locs add = 1 } }
+		error_log = "::RLOC::[THIS.GetRegion.GetNameWithNoTooltip]:[SLV('locs')]"
+	}
 }
 
 print_regional_prices = {
 	every_goods = {
-		# limit = { this = goods:wheat }
 		save_scope_as = good_curr
 		every_region = {
 			set_local_variable = {
@@ -56,9 +61,8 @@ print_regional_prices = {
 				}
 
 			}
-			if = {
-				limit = { location_counter > 0 }
-				error_log = "::GP::[GetCurrentYear]:[PREV.GetGoods.GetNameWithNoTooltip]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('avg_cost').GetValue]"
+			if = { limit = { location_counter > 0 }
+				error_log = "::GP::[GetCurrentYear]:[PREV.GetGoods.GetNameWithNoTooltip]:[THIS.GetRegion.GetNameWithNoTooltip]:[SLV('avg_cost')]"
 			}
 		}
 	}
@@ -77,14 +81,11 @@ print_regional_building_types = {
                             limit = { building_type = local_var:bldg_curr }
                             add = building_level
                         }
-
                     }
                 }
             }
-
-            if = {
-                limit = { local_var:bldg_count > 0 }
-				error_log = "::BT:[GetCurrentYear]:[SCOPE.GetLocalVariable('bldg_curr').GetBuildingType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('bldg_count').GetValue]:[THIS.GetRegion.GetNameWithNoTooltip]"
+            if = { limit = { local_var:bldg_count > 0 }
+				error_log = "::BT:[GetCurrentYear]:[LocalVar('bldg_curr').GetBuildingType.GetNameWithNoTooltip]:[SLV('bldg_count')]:[THIS.GetRegion.GetNameWithNoTooltip]"
             }
         }
     }
@@ -93,14 +94,15 @@ print_regional_building_types = {
 
 print_market_information = {
 	every_market_in_world = {
-		error_log = "::MK::[GetCurrentYear]:[THIS.GetMarket.GetNameWithNoTooltip]:[THIS.GetMarket.GetFood]:[THIS.GetMarket.GetFoodStockpile]:[THIS.GetMarket.GetMaxFoodStockpile]:[THIS.GetMarket.GetFoodStockpilePercent]:[THIS.GetMarket.GetMonthlyFood]:[THIS.GetMarket.GetMonthlyFoodBalance]:[THIS.GetMarket.GetFoodPrice]:[THIS.GetMarket.GetBurgherFoodImports]:[THIS.GetMarket.GetBurgherFoodExports]:[THIS.GetMarket.GetTotalValueTraded]:[THIS.GetMarket.GetMerchantTotalCapacityInMarket]"
+		error_log = "::MK::[GetCurrentYear]:[TM.GetNameWithNoTooltip]:[TM.GetFood]:[TM.GetFoodStockpile]:[TM.GetMaxFoodStockpile]:[TM.GetFoodStockpilePercent]:[TM.GetMonthlyFood]:[TM.GetFoodPrice]:[TM.GetTotalValueTraded]:[TM.GetMerchantTotalCapacityInMarket]:[TM.GetBurgherTradeCapacity]:[TM.GetCenterLocation.GetModifierValueFixed('maximum_stockpile_capacity')]"
+		# Those always have trivial values: [TM.GetBurgherFoodImports]:[TM.GetBurgherFoodExports]
+		## [TM.GetMonthlyFoodBalance] = [TM.GetFood], always
 	}
 }
 
 print_regional_roads = {
 	every_road_type = {
-		if = {
-			limit = {
+		if = { limit = {
 				OR = {
 					this = road_type:gravel_road
 					AND = {
@@ -125,14 +127,12 @@ print_regional_roads = {
 				every_ownable_location_in_region = {
 					change_local_variable = { name = no_locations add = 1 }
 
-					if = {
-						limit = { has_local_variable = loc_has_road }
+					if = { limit = { has_local_variable = loc_has_road }
 						remove_local_variable = loc_has_road
 					}
 
 					every_neighbor_location = {
-						if = {
-							limit = {
+						if = { limit = {
 								has_road_of_type_to = {
 									target = prev
 									type = local_var:road_curr
@@ -141,14 +141,12 @@ print_regional_roads = {
 							set_local_variable = loc_has_road
 						}
 					}
-					if = {
-						limit = { has_local_variable = loc_has_road }
+					if = { limit = { has_local_variable = loc_has_road }
 						change_local_variable = { name = no_locations_with_road add = 1 }
 					}
 				}
-				if = {
-					limit = { local_var:no_locations_with_road > 0 }
-					error_log = "::RT::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('road_curr').GetRoadType.GetNameWithNoTooltip]:[SCOPE.GetLocalVariable('no_locations').GetValue]:[SCOPE.GetLocalVariable('no_locations_with_road').GetValue]"
+				if = { limit = { local_var:no_locations_with_road > 0 }
+					error_log = "::RT::[GetCurrentYear]:[THIS.GetRegion.GetNameWithNoTooltip]:[LocalVar('road_curr').GetRoadType.GetNameWithNoTooltip]:[SLV('no_locations')]:[SLV('no_locations_with_road')]"
 				}
 			}
 		}
@@ -167,16 +165,19 @@ print_country_information = {
 	every_country = {
 		set_local_variable = { name = loc_dev value = 0 }
 		set_local_variable = { name = loc_control value = 0 }
+		set_local_variable = { name = loc_proximity value = 0 }
 		set_local_variable = { name = loc_prosperity value = 0 }
 		set_local_variable = { name = loc_market_access value = 0 }
 		set_local_variable = { name = loc_towns value = 0 }
 		set_local_variable = { name = loc_cities value = 0 }
+		set_local_variable = { name = loc_megalopolises value = 0 }
 		set_local_variable = { name = loc_winter_pow value = 0 }
 		set_local_variable = { name = locs value = 0 }
 
 		every_owned_location = {
 			change_local_variable = { name = loc_dev add = development }
 			change_local_variable = { name = loc_control add = local_control }
+			change_local_variable = { name = loc_proximity add = proximity }
 			change_local_variable = { name = loc_prosperity add = prosperity }
 			change_local_variable = { name = loc_market_access add = market_access }
 			change_local_variable = { name = loc_winter_pow add = winter_power }
@@ -184,12 +185,15 @@ print_country_information = {
 				change_local_variable = { name = loc_towns add = 1 }}
 			if = { limit = { location_rank = location_rank:city}
 				change_local_variable = { name = loc_cities add = 1 }}
+			if = { limit = { location_rank = location_rank:megalopolis}
+				change_local_variable = { name = loc_megalopolises add = 1 }}
 			change_local_variable = { name = locs add = 1 }
 		}
 
 		if = { limit = { local_var:locs > 0 }
 			change_local_variable = { name = loc_dev divide = local_var:locs }
 			change_local_variable = { name = loc_control divide = local_var:locs }
+			change_local_variable = { name = loc_proximity divide = local_var:locs }
 			change_local_variable = { name = loc_prosperity divide = local_var:locs }
 			change_local_variable = { name = loc_market_access divide = local_var:locs }
 			change_local_variable = { name = loc_winter_pow divide = local_var:locs }
@@ -208,7 +212,7 @@ print_country_information = {
 		error_log = "::TG3::[TCEN.GetLastMonthsExpense]:[TCEC.GetLastMonthsExpense]:[TCEB.GetLastMonthsExpense]:[TCEP.GetLastMonthsExpense]:[TCED.GetLastMonthsExpense]:[TCET.GetLastMonthsExpense]:[TCECo.GetLastMonthsExpense]:[TCEN.GetMaxTaxValue]:[TCEC.GetMaxTaxValue]:[TCEB.GetMaxTaxValue]:[TCEP.GetMaxTaxValue]:[TCED.GetMaxTaxValue]:[TCET.GetMaxTaxValue]:[TCECo.GetMaxTaxValue]:[TCEN.GetRelativePower]:[TCEC.GetRelativePower]:[TCEB.GetRelativePower]:[TCEP.GetRelativePower]:[TCED.GetRelativePower]:[TCET.GetRelativePower]:[TCECo.GetRelativePower]:[TCEN.GetSatisfaction]:[TCEC.GetSatisfaction]:[TCEB.GetSatisfaction]:[TCEP.GetSatisfaction]:[TCED.GetSatisfaction]:[TCET.GetSatisfaction]:[TCECo.GetSatisfaction]:[TCEN.GetTaxableIncome]:[TCEC.GetTaxableIncome]:[TCEB.GetTaxableIncome]:[TCEP.GetTaxableIncome]:[TCED.GetTaxableIncome]:[TCET.GetTaxableIncome]:[TCECo.GetTaxableIncome]:[TCEN.GetTotalPopulationNoFormat]:[TCEC.GetTotalPopulationNoFormat]:[TCEB.GetTotalPopulationNoFormat]:[TCEP.GetTotalPopulationNoFormat]:[TCED.GetTotalPopulationNoFormat]:[TCET.GetTotalPopulationNoFormat]:[TCECo.GetTotalPopulationNoFormat]"
 
 		# Part 4: Military, Diplomacy, Currency & Modifiers
-		error_log = "::TG4::[TCEc.GetNumberOfLoans]:[TCEc.GetTotalDebt]:[TCEc.GetRemainingLoanCapacity]:[TCEc.GetTradeBalance]:[TCEc.IsDuringBankruptcy]:[TCG.GetRegencyType.GetNameWithNoTooltip]:[TCP.GetParliamentType.GetNameWithNoTooltip]:[TCP.GetCurrentDebate.GetEstateType.GetNameWithNoTooltip]:[TCP.GetCurrentDebate.GetNameWithNoTooltip]:[TCP.GetParliamentIssueSupport]:[TC.GetRank.GetLevelNumber]:[TC.GetScore.GetScore]:[TC.GetCharacterArtistsAmount]:[TC.GetGreatPowerRank]:[TC.GetGreatPowerScore]:[TC.GetLivingCharacters]:[TC.GetNumWorksOfArt]:[TC.GetNumberOfCharacters]:[TC.GetPowerProjection]:[TC.GetOwnedLocationCount]:[TC.HasActiveRebels]:[TC.GetArmyLevyPotentialStrength]:[TC.GetArmyLevyPowerValue]:[TC.GetArmySize]:[TC.GetAverageArmyExperience]:[TC.GetAverageNavyExperience]:[TC.GetCurrentFortsAmount]:[TC.GetExpectedArmySize]:[TC.GetExpectedNavySize]:[TC.GetFortLimit]:[TC.GetMaxManpowerValue]:[TC.GetMaxSailorValue]:[TC.GetMilitaryStrength]:[TC.GetNavalRange]:[TC.GetNavyLevyPower]:[TC.GetNavySizeValue]:[TC.GetNavyStrength]:[TC.GetRaisedAndPotentialLevyStrength]:[TC.GetRawArmyLevyPower]:[TC.GetRawNavyLevyPower]:[TC.GetRegularArmySize]:[TC.GetTotalShips]:[TC.GetCrownpower]:[TC.GetAverageLiteracy]:[TC.GetCulturalCapacity]:[TC.GetCulturalUnity]:[TC.GetPrimaryCulturePercentage]:[TC.GetPrimaryReligionPercentage]:[TC.GetTotalCoastalPopulation]:[TC.GetTotalCultureCapacityUsed]:[TC.GetEconomicalBase]:[TC.GetEstimatedMonthlyIncome]:[TC.GetEstimatedMonthlyIncomeTradeAndTax]:[TC.GetStarvingProvincesAmount]:[TC.GetInstitutionEmbracedCount]:[TCD.GetOverlord.GetTag]:[TCD.GetActiveCasusBelliTargetsAmount]:[TCD.GetBeingAnnexedProgress]:[TCD.GetDiplomaticRange]:[TCD.GetLibertyDesire]:[TCD.GetMaxCapacity]:[TCD.GetMaxNumOfDiplomats]:[TCD.GetNumOfDiplomats]:[TCD.GetNumberOfSubjectsOrBelow]:[TCD.GetSubjectLoyalty]:[TCD.GetUsedDiplomaticCapacity]:[TC.GetCurrencyValue('gold')]:[TC.GetCurrencyValue('stability')]:[TC.GetCurrencyValue('legitimacy')]:[TC.GetCurrencyValue('prestige')]:[TC.GetFixedPointCurrencyValue('war_exhaustion')]:[TC.GetCurrencyValue('manpower')]:[TC.GetCurrencyValue('sailors')]:[TC.GetFixedPointCurrencyValue('inflation')]:[TC.GetFixedPointCurrencyValue('army_tradition')]:[TC.GetFixedPointCurrencyValue('navy_tradition')]:[SLV('loc_control')]:[SLV('loc_dev')]:[SLV('loc_prosperity')]:[SLV('loc_market_access')]:[SLV('loc_towns')]:[SLV('loc_cities')]:[SLV('loc_winter_pow')]:[TCMV('bank_interest')]"
+		error_log = "::TG4::[TCEc.GetNumberOfLoans]:[TCEc.GetTotalDebt]:[TCEc.GetRemainingLoanCapacity]:[TCEc.GetTradeBalance]:[TCEc.IsDuringBankruptcy]:[TCG.GetRegencyType.GetNameWithNoTooltip]:[TCP.GetParliamentType.GetNameWithNoTooltip]:[TCP.GetCurrentDebate.GetEstateType.GetNameWithNoTooltip]:[TCP.GetCurrentDebate.GetNameWithNoTooltip]:[TCP.GetParliamentIssueSupport]:[TC.GetRank.GetLevelNumber]:[TC.GetScore.GetScore]:[TC.GetCharacterArtistsAmount]:[TC.GetGreatPowerRank]:[TC.GetGreatPowerScore]:[TC.GetLivingCharacters]:[TC.GetNumWorksOfArt]:[TC.GetNumberOfCharacters]:[TC.GetPowerProjection]:[TC.GetOwnedLocationCount]:[TC.HasActiveRebels]:[TC.GetArmyLevyPotentialStrength]:[TC.GetArmyLevyPowerValue]:[TC.GetArmySize]:[TC.GetAverageArmyExperience]:[TC.GetAverageNavyExperience]:[TC.GetCurrentFortsAmount]:[TC.GetExpectedArmySize]:[TC.GetExpectedNavySize]:[TC.GetFortLimit]:[TC.GetMaxManpowerValue]:[TC.GetMaxSailorValue]:[TC.GetMilitaryStrength]:[TC.GetNavalRange]:[TC.GetNavyLevyPower]:[TC.GetNavySizeValue]:[TC.GetNavyStrength]:[TC.GetRaisedAndPotentialLevyStrength]:[TC.GetRawArmyLevyPower]:[TC.GetRawNavyLevyPower]:[TC.GetRegularArmySize]:[TC.GetTotalShips]:[TC.GetCrownpower]:[TC.GetAverageLiteracy]:[TC.GetCulturalCapacity]:[TC.GetCulturalUnity]:[TC.GetPrimaryCulturePercentage]:[TC.GetPrimaryReligionPercentage]:[TC.GetTotalCoastalPopulation]:[TC.GetTotalCultureCapacityUsed]:[TC.GetEconomicalBase]:[TC.GetEstimatedMonthlyIncome]:[TC.GetEstimatedMonthlyIncomeTradeAndTax]:[TC.GetStarvingProvincesAmount]:[TC.GetInstitutionEmbracedCount]:[TCD.GetOverlord.GetTag]:[TCD.GetActiveCasusBelliTargetsAmount]:[TCD.GetBeingAnnexedProgress]:[TCD.GetDiplomaticRange]:[TCD.GetLibertyDesire]:[TCD.GetMaxCapacity]:[TCD.GetMaxNumOfDiplomats]:[TCD.GetNumOfDiplomats]:[TCD.GetNumberOfSubjectsOrBelow]:[TCD.GetSubjectLoyalty]:[TCD.GetUsedDiplomaticCapacity]:[TC.GetCurrencyValue('gold')]:[TC.GetCurrencyValue('stability')]:[TC.GetCurrencyValue('legitimacy')]:[TC.GetCurrencyValue('prestige')]:[TC.GetFixedPointCurrencyValue('war_exhaustion')]:[TC.GetCurrencyValue('manpower')]:[TC.GetCurrencyValue('sailors')]:[TC.GetFixedPointCurrencyValue('inflation')]:[TC.GetFixedPointCurrencyValue('army_tradition')]:[TC.GetFixedPointCurrencyValue('navy_tradition')]:[SLV('locs')]:[SLV('loc_control')]:[SLV('loc_proximity')]:[SLV('loc_dev')]:[SLV('loc_prosperity')]:[SLV('loc_market_access')]:[SLV('loc_towns')]:[SLV('loc_cities')]:[SLV('loc_megalopolises')]:[SLV('loc_winter_pow')]:[TCMV('bank_interest')]"
 
 		societal_value_type:centralization_vs_decentralization = {
 			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }

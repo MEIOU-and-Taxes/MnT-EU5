@@ -1,5 +1,5 @@
 ﻿import re
-from itertools import zip_longest
+
 from src.parsing.definitions import HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
 
@@ -221,9 +221,7 @@ def parse_data_markets(data: str):
         r"::MK::(\d+):(.+?):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+)"
     )
     statistic_names = [
-        "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile Percent",
-        "Monthly Food", "Monthly Food Balance", "Food Price", "Burgher Food Imports",
-        "Burgher Food Exports", "Total Value Traded", "Merchant Capacity"
+        "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile %", "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity", "Burgher Trade Capacity", "Stockpile capacity"
     ]
     for m in pattern.finditer(data):
         moment = int(m.group(1))

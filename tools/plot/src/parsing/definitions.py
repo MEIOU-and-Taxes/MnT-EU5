@@ -29,7 +29,7 @@ HEADERS = [
     "overlord_tag", "num_active_cb_targets", "annexation_progress", "diplomatic_range", "liberty_desire",
     "max_diplomatic_capacity", "max_diplomats", "num_diplomats", "num_subjects", "subject_loyalty", "used_diplomatic_capacity",
     "gold", "stability", "government_power", "prestige", "war_exhaustion", "manpower", "sailors", "inflation", "army_tradition",
-    "navy_tradition", "control_avg", "dev_avg", "prosperity_avg", "market_access_avg", "towns", "cities", "winter_pow_avg", "bank_interest"
+    "navy_tradition", "locations", "control_avg", "proximity_avg", "dev_avg", "prosperity_avg", "market_access_avg", "towns", "cities", "megalopolises", "winter_pow_avg", "bank_interest"
 ]
 
 SOCIETAL_VALUE_NAMES = [
