@@ -42,6 +42,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("MEIOU and Taxes Plotter")
         self.is_stats_mode = True
         self.current_redraw_fn = None
+        self._handling_mismatch = False
+
+        # Register callback for column count mismatch in country logs
+        log_parser.set_column_mismatch_callback(self.handle_column_mismatch)
 
         if os.path.exists(ICON_PATH):
             self.setWindowIcon(QIcon(ICON_PATH))
@@ -230,6 +234,7 @@ class MainWindow(QMainWindow):
             'Population by Region': {'func': chart_library.graph_population, 'config': configs.POP_CONFIG},
             'Road Coverage by Region': {'func': chart_library.graph_road_types, 'config': configs.RT_CONFIG},
             'Country Metrics': {'func': chart_library.graph_country_metrics, 'config': configs.CM_CONFIG},
+            'Credit Statistics': {'func': chart_library.graph_credit, 'config': configs.CR_CONFIG},
         }
         self.graphs = registered
         self.chart_shortcuts.clear()
@@ -305,6 +310,53 @@ class MainWindow(QMainWindow):
 
         self.canvas.draw()
 
+    def clear_log_files_on_disk(self) -> int:
+        """Empties the active error.log and rotated error.*.log files on disk."""
+        target_files = set(self.get_all_log_files())
+        target_files.add(os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.log"))
+        for i in range(1, 6):
+            target_files.add(os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.{i}.log"))
+
+        cleared_files_count = 0
+        for filepath in target_files:
+            if os.path.exists(filepath):
+                try:
+                    with open(filepath, 'w', encoding='utf-8'):
+                        pass
+                    cleared_files_count += 1
+                except (IOError, PermissionError) as e:
+                    print(f"Could not clear file {filepath}: {e}")
+        return cleared_files_count
+
+    def handle_column_mismatch(self, got_count, expected_count):
+        """Asks user whether to wipe error logs when a column count mismatch occurs."""
+        if self._handling_mismatch:
+            return
+        self._handling_mismatch = True
+        try:
+            reply = QMessageBox.question(
+                self,
+                "Column Count Mismatch",
+                f"Column count mismatch detected in country logs:\n"
+                f"Got {got_count} columns, expected {expected_count}.\n\n"
+                "This usually indicates incompatible or corrupted logs from another version.\n\n"
+                "Do you want to clear the error logs on disk?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                cleared_count = self.clear_log_files_on_disk()
+                self.data = ""
+                self.logs = []
+                self.chart_filter_memory.clear()
+                self.has_new_data = False
+                log_parser.reset_cumulative_history()
+                self.stats_panel.clear()
+                self._update_last_log_state()
+                self.display_info_screen(f"Emptied {cleared_count} log file(s) due to mismatch.\nPlay more or refresh to reload.")
+        finally:
+            self._handling_mismatch = False
+
     def clear_data(self):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Clear Data")
@@ -331,19 +383,7 @@ class MainWindow(QMainWindow):
         # If requested, clear the contents of error.log and the 5 rotated files (error.1.log to error.5.log)
         cleared_files_count = 0
         if clicked == btn_clear_both:
-            target_files = set(self.get_all_log_files())
-            target_files.add(os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.log"))
-            for i in range(1, 6):
-                target_files.add(os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.{i}.log"))
-
-            for filepath in target_files:
-                if os.path.exists(filepath):
-                    try:
-                        with open(filepath, 'w', encoding='utf-8'):
-                            pass
-                        cleared_files_count += 1
-                    except (IOError, PermissionError) as e:
-                        print(f"Could not clear file {filepath}: {e}")
+            cleared_files_count = self.clear_log_files_on_disk()
 
         self._update_last_log_state()
 
@@ -366,6 +406,8 @@ class MainWindow(QMainWindow):
                             target_key = 'country'
                         elif target_key == 'region' and 'market' in self.filter_widget_map:
                             target_key = 'market'
+                        elif target_key == 'metric' and 'credit_metric' in self.filter_widget_map:
+                            target_key = 'credit_metric'
                     if target_key in self.filter_widget_map:
                         idx = self.filter_widget_map[target_key].findText(val)
                         if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
@@ -379,6 +421,8 @@ class MainWindow(QMainWindow):
                             target_key = 'country'
                         elif target_key == 'region' and 'market' in self.filter_widget_map:
                             target_key = 'market'
+                        elif target_key == 'metric' and 'credit_metric' in self.filter_widget_map:
+                            target_key = 'credit_metric'
                     if target_key in self.filter_widget_map:
                         idx = self.filter_widget_map[target_key].findText(val)
                         if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
@@ -478,7 +522,7 @@ class MainWindow(QMainWindow):
                 for r in log_parser.mk_cumulative_store.values()
             )
 
-            is_country = bool(self.current_graph_info and self.current_graph_info['title'] == "Country Metrics")
+            is_country = bool(self.current_graph_info and self.current_graph_info['title'] in ("Country Metrics", "Credit Statistics"))
             is_market = bool(self.current_graph_info and self.current_graph_info['title'] == "Market Statistics")
 
             if is_country:
@@ -593,6 +637,8 @@ class MainWindow(QMainWindow):
                         target_key = 'country'
                     elif target_key == 'region' and 'market' in self.filter_widget_map:
                         target_key = 'market'
+                    elif target_key == 'metric' and 'credit_metric' in self.filter_widget_map:
+                        target_key = 'credit_metric'
                 if target_key in self.filter_widget_map:
                     idx = self.filter_widget_map[target_key].findText(v)
                     if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
@@ -736,11 +782,29 @@ class MainWindow(QMainWindow):
     def load_initial_data(self):
         if os.path.exists(AUTOSAVE_FILE):
             mod_time = datetime.fromtimestamp(os.path.getmtime(AUTOSAVE_FILE)).strftime("%Y-%m-%d %H:%M")
-            reply = QMessageBox.question(self, "Restore Session?",
-                                         f"Saved session from {mod_time} found.\nRestore?",
-                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.Yes and self.load_session_file(AUTOSAVE_FILE):
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Restore Session?")
+            msg_box.setText(f"Saved session from {mod_time} found.\nRestore?")
+            btn_yes = msg_box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
+            btn_no = msg_box.addButton("No", QMessageBox.ButtonRole.NoRole)
+            btn_no_clear = msg_box.addButton("No, and clear the error logs", QMessageBox.ButtonRole.DestructiveRole)
+            msg_box.setDefaultButton(btn_yes)
+            msg_box.exec()
+            clicked = msg_box.clickedButton()
+
+            if clicked == btn_yes:
+                if self.load_session_file(AUTOSAVE_FILE):
+                    return
+            elif clicked == btn_no_clear:
+                self.clear_log_files_on_disk()
+                try:
+                    if os.path.exists(AUTOSAVE_FILE):
+                        os.remove(AUTOSAVE_FILE)
+                except OSError:
+                    pass
+                self.reload_log(is_interactive=True)
                 return
+
         self.reload_log(is_interactive=True)
 
     def manual_save(self):

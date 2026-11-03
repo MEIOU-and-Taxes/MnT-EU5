@@ -278,39 +278,20 @@ run_logging_credit = {
 }
 
 print_country_credit_information = {
-	every_country = {
-		limit = { num_locations > 0 }
+	every_country = { limit = { num_locations > 0 }
+		set_local_variable = { name = cr_balance value = mnt_credit_tooltip_market_balance }
+		set_local_variable = { name = cr_supply value = mnt_credit_tooltip_market_supply }
+		set_local_variable = { name = cr_supply_goods value = mnt_credit_tooltip_goods_supply }
+		set_local_variable = { name = cr_supply_build value = mnt_credit_tooltip_building_supply }
+		set_local_variable = { name = cr_lending_quote value = mnt_credit_lending_quote }
+		set_local_variable = { name = cr_interest_adj value = mnt_credit_market_interest_adjustment }
 
-		# Aggregate location-level dynamic calculations across owned locations
-		set_local_variable = { name = cr_loc_dyn_demand value = 0 }
-		set_local_variable = { name = cr_loc_dyn_supply value = 0 }
-		every_owned_location = {
-			if = { limit = { "modifier:local_credit_demand" > 0 }
-				change_local_variable = { name = cr_loc_dyn_demand add = mnt_location_dynamic_credit_demand_calc }
-			}
-			if = { limit = { "modifier:local_credit_supply" > 0 }
-				change_local_variable = { name = cr_loc_dyn_supply add = mnt_location_dynamic_credit_supply_calc }
-			}
-		}
-
-		# Country-level market & quote values
-		set_local_variable = { name = cr_market_bal value = mnt_credit_tooltip_market_balance }
-		set_local_variable = { name = cr_market_sup value = mnt_credit_tooltip_market_supply }
-		set_local_variable = { name = cr_goods_sup value = mnt_credit_tooltip_goods_supply }
-		set_local_variable = { name = cr_bldg_sup value = mnt_credit_tooltip_building_supply }
-		set_local_variable = { name = cr_quote value = mnt_credit_lending_quote }
-		set_local_variable = { name = cr_tot_mkt_sup value = mnt_credit_total_market_supply }
-		set_local_variable = { name = cr_int_adj value = mnt_credit_market_interest_adjustment }
-
-		error_log = "::CR::[GetCurrentYear]:[TC.GetTag]:[SLV('cr_market_bal')]:[SLV('cr_market_sup')]:[SLV('cr_goods_sup')]:[SLV('cr_bldg_sup')]:[SLV('cr_loc_dyn_demand')]:[SLV('cr_loc_dyn_supply')]:[SLV('cr_quote')]:[SLV('cr_tot_mkt_sup')]:[SLV('cr_int_adj')]"
+		error_log = "::CR::[GetCurrentYear]:[TC.GetTag]:[SLV('cr_balance')]:[SLV('cr_supply')]:[SLV('cr_supply_goods')]:[SLV('cr_supply_build')]:[SLV('cr_lending_quote')]:[SLV('cr_interest_adj')]"
 	}
-	remove_local_variable = cr_loc_dyn_demand
-	remove_local_variable = cr_loc_dyn_supply
-	remove_local_variable = cr_market_bal
-	remove_local_variable = cr_market_sup
-	remove_local_variable = cr_goods_sup
-	remove_local_variable = cr_bldg_sup
-	remove_local_variable = cr_quote
-	remove_local_variable = cr_tot_mkt_sup
-	remove_local_variable = cr_int_adj
+	remove_local_variable = cr_balance
+	remove_local_variable = cr_supply
+	remove_local_variable = cr_supply_goods
+	remove_local_variable = cr_supply_build
+	remove_local_variable = cr_lending_quote
+	remove_local_variable = cr_interest_adj
 }

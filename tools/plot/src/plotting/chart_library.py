@@ -11,7 +11,7 @@ from src.constants import (
     ERROR_NO_DATA_MATCH
 )
 from src.parsing.log_parser import get_region_locations
-from src.plotting.configs import BT_CONFIG, GP_CONFIG, MK_CONFIG, POP_CONFIG, RT_CONFIG, CM_CONFIG
+from src.plotting.configs import BT_CONFIG, GP_CONFIG, MK_CONFIG, POP_CONFIG, RT_CONFIG, CM_CONFIG, CR_CONFIG
 from src.widgets.custom_combobox import RightClickableComboBox
 
 
@@ -387,4 +387,9 @@ def graph_road_types(*args, **kwargs):
 def graph_country_metrics(*args, **kwargs):
     """Country Metrics"""
     kwargs["config"] = CM_CONFIG
+    _create_generic_graph(*args, **kwargs)
+
+def graph_credit(*args, **kwargs):
+    """Credit Statistics"""
+    kwargs["config"] = CR_CONFIG
     _create_generic_graph(*args, **kwargs)

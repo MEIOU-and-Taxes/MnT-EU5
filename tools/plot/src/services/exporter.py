@@ -15,6 +15,7 @@ PARSERS = {
     "population": log_parser.parse_data_population,
     "road_types": log_parser.parse_data_road_types,
     "country_stats": log_parser.parse_data_countries,
+    "credit_stats": log_parser.parse_data_credit_raw,
 }
 
 def check_file_locks(export_folder_path, filenames):

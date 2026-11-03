@@ -5,19 +5,23 @@ from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES,
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
 
 pattern_mk = re.compile(r"::MK::(\d+):([^:\r\n]+):([^\r\n]+)")
-pattern_cr = re.compile(r"::CR::(\d+):([A-Z0-9_]+):([^\r\n]+)")
+pattern_cr = re.compile(r"::CR::(\d+):([A-Za-z0-9_]+):([^\r\n]+)")
 
 CREDIT_HEADERS = [
-    "mnt_credit_tooltip_market_balance",
-    "mnt_credit_tooltip_market_supply",
-    "mnt_credit_tooltip_goods_supply",
-    "mnt_credit_tooltip_building_supply",
-    "mnt_location_dynamic_credit_demand_calc",
-    "mnt_location_dynamic_credit_supply_calc",
-    "mnt_credit_lending_quote",
-    "mnt_credit_total_market_supply",
-    "mnt_credit_market_interest_adjustment",
+    "Balance",
+    "Supply",
+    "Supply - goods",
+    "Supply - modifiers",
+    "Lending quote",
+    "Interest adjustment",
 ]
+
+# Column count mismatch callback (hooked by UI)
+_column_mismatch_callback = None
+
+def set_column_mismatch_callback(cb):
+    global _column_mismatch_callback
+    _column_mismatch_callback = cb
 
 # Caches
 _bt_cache = None
@@ -29,6 +33,7 @@ _tg_cache = None
 _cm_cache = None
 _rloc_cache = None
 _cr_cache = None
+_crm_cache = None
 
 # Cumulative stores across log overwrites / reloads
 tg_cumulative_store = {}
@@ -41,8 +46,8 @@ region_locations_store = {}
 cr_cumulative_store = {}
 
 def clear_all_caches():
-    global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache
-    _bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = None
+    global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache, _crm_cache
+    _bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = _crm_cache = None
 
 def reset_cumulative_history():
     tg_cumulative_store.clear()
@@ -127,6 +132,8 @@ def parse_data_countries(data: str):
                 if not warning_printed:
                     warning_printed = True
                     print(f"Column count mismatch: got {len(values)}, expected {len(COUNTRY_FIRST_HEADERS)}")
+                    if _column_mismatch_callback:
+                        _column_mismatch_callback(len(values), len(COUNTRY_FIRST_HEADERS))
                 current_record = None
                 lines_after_tg = 99
                 continue
@@ -340,7 +347,8 @@ def parse_data_country_metrics(data: str):
     _cm_cache = transformed
     return _cm_cache
 
-def parse_data_credit(data: str):
+def parse_data_credit_raw(data: str):
+    """Parses raw credit logs into records suitable for CSV export and storage."""
     global _cr_cache, cr_cumulative_store
     if _cr_cache is not None:
         return _cr_cache
@@ -359,6 +367,49 @@ def parse_data_credit(data: str):
     _cr_cache = sorted(cr_cumulative_store.values(), key=lambda x: (x["moment"], x["tag"]))
     return _cr_cache
 
+# Alias for backwards compatibility
+parse_data_credit = parse_data_credit_raw
+
+def parse_data_credit_metrics(data: str):
+    """Transforms parsed credit logs into generic country metrics for plotting."""
+    global _crm_cache
+    if _crm_cache is not None:
+        return _crm_cache
+
+    parse_data_credit_raw(data)
+    parse_data_countries(data)
+
+    transformed = []
+    for (moment, tag), record in cr_cumulative_store.items():
+        country_rec = tg_cumulative_store.get((moment, tag))
+        name = country_rec.get("name", "") if country_rec else ""
+        label = f"{name} ({tag})" if name and name != tag else tag
+
+        locs = 0.0
+        if country_rec:
+            loc_val = country_rec.get("locations") or country_rec.get("num_locations") or 0
+            try:
+                locs = float(loc_val)
+            except (ValueError, TypeError):
+                locs = 0.0
+
+        for header in CREDIT_HEADERS:
+            val = record.get(header)
+            if isinstance(val, (int, float)):
+                transformed.append({
+                    "moment": moment,
+                    "region": label,
+                    "country": label,
+                    "tag": tag,
+                    "credit_metric": header,
+                    "metric": header,
+                    "value": float(val),
+                    "locations": locs
+                })
+
+    _crm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["credit_metric"]))
+    return _crm_cache
+
 def parse_all_logs(data: str):
     """Parses incoming log data into ALL cumulative stores simultaneously."""
     if not data:
@@ -366,7 +417,8 @@ def parse_all_logs(data: str):
     parse_data_region_locations(data)
     parse_data_countries(data)
     parse_data_country_metrics(data)
-    parse_data_credit(data)
+    parse_data_credit_raw(data)
+    parse_data_credit_metrics(data)
     parse_data_building_types(data)
     parse_data_goods_prices(data)
     parse_data_markets(data)
