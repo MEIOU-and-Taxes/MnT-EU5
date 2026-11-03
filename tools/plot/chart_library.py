@@ -16,13 +16,16 @@ FIRST_MOMENT = 1 + 1337 if IS_LOGGING_YEARLY else 4 # Makes FIRST_MOMENT-1 not h
 
 # Statistics color scheme
 STAT_COLORS = {
-    "Max": "#2e7d32",          # Green
-    "75th Perc": "#8bc34a",    # Green-Yellow
-    "Median": "#fbc02d",       # Yellow
+    "Max": "#1b5e20",          # Dark Green
+    "99th Perc": "#2e7d32",    # Forest Green
+    "95th Perc": "#4caf50",    # Green
+    "75th Perc": "#8bc34a",    # Yellow-Green
+    "Median": "#fbc02d",       # Gold / Yellow
     "25th Perc": "#fb8c00",    # Orange
-    "Min": "#d32f2f",          # Red
+    "5th Perc": "#f4511e",     # Coral / Light Red
+    "1st Perc": "#c62828",     # Crimson
+    "Min": "#b71c1c",          # Dark Red
 }
-
 STR_ALL_MOMENTS = "All moments"
 STR_ALL_BUILDINGS = "All buildings"
 STR_ALL_REGIONS = "All regions"
@@ -112,7 +115,8 @@ def get_data(data, str_target):
 
 def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines_plotted, on_plot_cleared,
                           config, filter_widget_map, get_is_moving_avg, get_period_value,
-                          get_is_stats_mode=lambda: False, on_stats_computed=None):
+                          get_is_stats_mode=lambda: False, on_stats_computed=None,
+                          get_stats_bands=lambda: 5):
     all_data = config["parser"](data)
     fig = ax.figure
     fig.subplots_adjust(bottom=POS_SUBPLOT_BOTTOM_EDGE, right=POS_SUBPLOT_RIGHT_EDGE)
@@ -200,16 +204,40 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
                 country_series.setdefault(reg, {})[m] = val
 
             sorted_moments = sorted(moments_dict.keys())
-            stat_curves = {"Max": [], "75th Perc": [], "Median": [], "25th Perc": [], "Min": []}
+            num_bands = get_stats_bands()
+
+            # Determine active percentiles based on user dropdown
+            if num_bands == 9:
+                active_percentiles = [
+                    ("Max", 100), ("99th Perc", 99), ("95th Perc", 95),
+                    ("75th Perc", 75), ("Median", 50), ("25th Perc", 25),
+                    ("5th Perc", 5), ("1st Perc", 1), ("Min", 0)
+                ]
+            elif num_bands == 7:
+                active_percentiles = [
+                    ("Max", 100), ("95th Perc", 95), ("75th Perc", 75),
+                    ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("Min", 0)
+                ]
+            else: # Default 5
+                active_percentiles = [
+                    ("Max", 100), ("75th Perc", 75), ("Median", 50),
+                    ("25th Perc", 25), ("Min", 0)
+                ]
+
+            stat_curves = {name: [] for name, _ in active_percentiles}
             all_values_flat = [item[value_key] for item in filtered_data]
 
             for m in sorted_moments:
                 vals = sorted([x[1] for x in moments_dict[m]])
-                stat_curves["Max"].append(vals[-1])
-                stat_curves["75th Perc"].append(float(np.percentile(vals, 75)))
-                stat_curves["Median"].append(float(np.median(vals)))
-                stat_curves["25th Perc"].append(float(np.percentile(vals, 25)))
-                stat_curves["Min"].append(vals[0])
+                for name, p in active_percentiles:
+                    if p == 100:
+                        stat_curves[name].append(vals[-1])
+                    elif p == 0:
+                        stat_curves[name].append(vals[0])
+                    elif p == 50:
+                        stat_curves[name].append(float(np.median(vals)))
+                    else:
+                        stat_curves[name].append(float(np.percentile(vals, p)))
 
             # Attach data for dynamic tooltip and sidebar updates
             ax._stats_moments_data = moments_dict
@@ -231,12 +259,13 @@ def _create_generic_graph(data, ax, filter_layout, filter_widgets_list, on_lines
             }
             ax._global_stats = global_stats
 
-            # Plot quartile curves
-            for stat_name in ["Max", "75th Perc", "Median", "25th Perc", "Min"]:
-                ax.plot(sorted_moments, stat_curves[stat_name], marker='o', linewidth=2.5, label=stat_name, color=STAT_COLORS[stat_name])
+            # Plot curves
+            for name, _ in active_percentiles:
+                ax.plot(sorted_moments, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
 
+            # Shaded regions
             ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"], color="#8bc34a", alpha=0.15, label='IQR (25%-75%)')
-            ax.fill_between(sorted_moments, stat_curves["Min"], stat_curves["Max"], color="#2e7d32", alpha=0.05)
+            ax.fill_between(sorted_moments, stat_curves["Min"], stat_curves["Max"], color="#2e7d32", alpha=0.04)
 
             ax.set_xlabel("Time")
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))

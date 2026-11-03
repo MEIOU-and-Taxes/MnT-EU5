@@ -176,9 +176,11 @@ class MainWindow(QMainWindow):
 		self.btn_fullscreen = QPushButton("Fullscreen [F]")
 		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
 		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
-		self.btn_stats_mode = QPushButton("Stats mode [T]")
 		self.btn_log_scale = QPushButton("Log scale [L]")
 		self.btn_moving_avg = QPushButton("Moving avg [W]")
+		self.btn_stats_mode = QPushButton("Stats mode [T]")
+		self.combo_stats_bands = QComboBox()
+		self.combo_stats_bands.addItems(["5 Bands (Quartiles)", "7 Bands (+ 5th/95th)", "9 Bands (+ 1st/99th)"])
 
 		self.btn_fullscreen.setCheckable(True)
 		self.btn_log_scale.setCheckable(True)
@@ -192,6 +194,7 @@ class MainWindow(QMainWindow):
 		self.lbl_period_value = QLabel(f"Period: {self.period_value}")
 		self.slider_period.setVisible(False)
 		self.lbl_period_value.setVisible(False)
+		self.combo_stats_bands.setVisible(False)
 
 		self.top_button_layout.addWidget(self.btn_change_log_folder)
 		self.top_button_layout.addWidget(self.btn_charts)
@@ -205,6 +208,7 @@ class MainWindow(QMainWindow):
 		self.top_button_layout.addWidget(self.slider_period)
 		self.top_button_layout.addWidget(self.lbl_period_value)
 		self.top_button_layout.addWidget(self.btn_stats_mode)
+		self.top_button_layout.addWidget(self.combo_stats_bands)
 		self.top_button_layout.addStretch(1)
 		self.layout.addLayout(self.top_button_layout)
 
@@ -214,6 +218,7 @@ class MainWindow(QMainWindow):
 		# --- Bottom Filter Widgets Layout ---
 		self.filter_layout = QGridLayout()
 		self.layout.addLayout(self.filter_layout)
+
 
 		# --- Connect Signals ---
 		self.btn_refresh.clicked.connect(self.reload_log)
@@ -227,6 +232,7 @@ class MainWindow(QMainWindow):
 		self.btn_analysis.clicked.connect(self.open_analysis_toolkit)
 		self.btn_change_log_folder.clicked.connect(self.change_log_folder)
 		self.btn_stats_mode.toggled.connect(self.toggle_stats_mode)
+		self.combo_stats_bands.currentIndexChanged.connect(self.redraw_current_plot)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
@@ -293,7 +299,16 @@ class MainWindow(QMainWindow):
 	def toggle_stats_mode(self, checked):
 		self.is_stats_mode = checked
 		self.stats_panel.setVisible(checked)
+		self.combo_stats_bands.setVisible(checked)
 		self.redraw_current_plot()
+
+	def get_stats_bands_count(self):
+		idx = self.combo_stats_bands.currentIndex()
+		if idx == 1:
+			return 7
+		elif idx == 2:
+			return 9
+		return 5
 
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""

@@ -455,6 +455,19 @@ def parse_data_country_metrics(data):
 		name = record.get("name", "")
 		country_label = f"{name} ({tag})" if name and name != tag else tag
 
+		# Computed Metric: total_debt / income
+		debt = record.get("total_debt", 0.0)
+		income = record.get("income", 0.0)
+		if isinstance(debt, (int, float)) and isinstance(income, (int, float)):
+			# Guard against division by zero / negative income
+			ratio = (debt / income) if income > 0.001 else 0.0
+			transformed_data.append({
+				"moment": year,
+				"region": country_label,
+				"metric": "total_debt_over_income",
+				"value": round(float(ratio), 4)
+			})
+
 		for key, val in record.items():
 			if key in excluded_keys_country:
 				continue
