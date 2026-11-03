@@ -12,7 +12,13 @@ _rt_cache = None
 _tg_cache = None
 _cm_cache = None
 
+# Cumulative stores across log overwrites / reloads
 tg_cumulative_store = {}
+bt_cumulative_store = {}
+gp_cumulative_store = {}
+pop_cumulative_store = {}
+rt_cumulative_store = {}
+mk_cumulative_store = {}
 
 def clear_all_caches():
     global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache
@@ -20,6 +26,11 @@ def clear_all_caches():
 
 def reset_cumulative_history():
     tg_cumulative_store.clear()
+    bt_cumulative_store.clear()
+    gp_cumulative_store.clear()
+    pop_cumulative_store.clear()
+    rt_cumulative_store.clear()
+    mk_cumulative_store.clear()
     clear_all_caches()
 
 def parse_data_countries(data: str):
@@ -110,67 +121,96 @@ def parse_data_countries(data: str):
     return _tg_cache
 
 def parse_data_building_types(data: str):
-    global _bt_cache
+    global _bt_cache, bt_cumulative_store
     if _bt_cache is not None:
         return _bt_cache
     pattern = re.compile(r"::BT:(\d+):(.*?):(\d+):(.*)")
-    _bt_cache = [
-        {"moment": 1 + int(m.group(1)), "building": m.group(2).strip(),
-         "count": int(m.group(3)), "region": m.group(4).strip()}
-        for m in pattern.finditer(data)
-    ]
+    for m in pattern.finditer(data):
+        moment = int(m.group(1))
+        building = m.group(2).strip()
+        count = int(m.group(3))
+        region = m.group(4).strip()
+        bt_cumulative_store[(moment, region, building)] = {
+            "moment": moment, "building": building, "count": count, "region": region
+        }
+
+    if not bt_cumulative_store:
+        _bt_cache = []
+        return _bt_cache
+
+    all_moments = sorted(set(r["moment"] for r in bt_cumulative_store.values()))
+    all_regions = sorted(set(r["region"] for r in bt_cumulative_store.values()))
+    all_buildings = sorted(set(r["building"] for r in bt_cumulative_store.values()))
+
+    filled_data = []
+    for m in all_moments:
+        for reg in all_regions:
+            for bld in all_buildings:
+                cnt = bt_cumulative_store.get((m, reg, bld), {}).get("count", 0)
+                filled_data.append({
+                    "moment": m, "building": bld, "count": cnt, "region": reg
+                })
+
+    _bt_cache = filled_data
     return _bt_cache
 
 def parse_data_goods_prices(data: str):
-    global _gp_cache
+    global _gp_cache, gp_cumulative_store
     if _gp_cache is not None:
         return _gp_cache
     pattern = re.compile(r"::GP::(\d+):(.+?):(.+?):([\d.-]+)")
-    _gp_cache = [
-        {"moment": 1 + int(m.group(1)), "good": m.group(2).strip(),
-         "region": m.group(3).strip(), "price": float(m.group(4))}
-        for m in pattern.finditer(data) if 'Ocean' not in m.group(3)
-    ]
+    for m in pattern.finditer(data):
+        if 'Ocean' in m.group(3):
+            continue
+        moment = int(m.group(1))
+        good = m.group(2).strip()
+        region = m.group(3).strip()
+        price = float(m.group(4))
+        gp_cumulative_store[(moment, region, good)] = {
+            "moment": moment, "good": good, "region": region, "price": price
+        }
+    _gp_cache = sorted(gp_cumulative_store.values(), key=lambda x: x["moment"])
     return _gp_cache
 
 def parse_data_population(data: str):
-    global _pop_cache
+    global _pop_cache, pop_cumulative_store
     if _pop_cache is not None:
         return _pop_cache
     pattern = re.compile(r"::POP::(\d+):(.+?):([\d.,MK]+)")
-    parsed = []
     for m in pattern.finditer(data):
-        parsed.append({
-            "moment": 1 + int(m.group(1)),
-            "region": m.group(2).strip(),
-            "statistic": "Total Population",
-            "population": parse_dynamic_numeric_value(m.group(3))
-        })
-    _pop_cache = parsed
+        moment = int(m.group(1))
+        region = m.group(2).strip()
+        pop = parse_dynamic_numeric_value(m.group(3))
+        pop_cumulative_store[(moment, region)] = {
+            "moment": moment, "region": region, "statistic": "Total Population", "population": pop
+        }
+    _pop_cache = sorted(pop_cumulative_store.values(), key=lambda x: x["moment"])
     return _pop_cache
 
 def parse_data_road_types(data: str):
-    global _rt_cache
+    global _rt_cache, rt_cumulative_store
     if _rt_cache is not None:
         return _rt_cache
     pattern = re.compile(r"::RT::(\d+):(.+?):(.+?):(\d+):(\d+)")
-    parsed = []
     for m in pattern.finditer(data):
+        moment = int(m.group(1))
+        region = m.group(2).strip()
+        road_type = m.group(3).strip()
         locs = int(m.group(4))
         locs_w_road = int(m.group(5))
-        parsed.append({
-            "moment": 1 + int(m.group(1)),
-            "region": m.group(2).strip(),
-            "road_type": m.group(3).strip(),
+        rt_cumulative_store[(moment, region, road_type)] = {
+            "moment": moment,
+            "region": region,
+            "road_type": road_type,
             "locations": locs,
             "locations_with_road": locs_w_road,
             "coverage_percentage": (locs_w_road / locs * 100) if locs > 0 else 0
-        })
-    _rt_cache = parsed
+        }
+    _rt_cache = sorted(rt_cumulative_store.values(), key=lambda x: x["moment"])
     return _rt_cache
 
 def parse_data_markets(data: str):
-    global _mk_cache
+    global _mk_cache, mk_cumulative_store
     if _mk_cache is not None:
         return _mk_cache
     pattern = re.compile(
@@ -181,14 +221,15 @@ def parse_data_markets(data: str):
         "Monthly Food", "Monthly Food Balance", "Food Price", "Burgher Food Imports",
         "Burgher Food Exports", "Total Value Traded", "Merchant Capacity"
     ]
-    parsed = []
     for m in pattern.finditer(data):
-        moment = int(m.group(1)) + 1
+        moment = int(m.group(1))
         market_name = m.group(2).strip()
         vals = [float(v) for v in m.groups()[2:]]
         for name, v in zip(statistic_names, vals):
-            parsed.append({"moment": moment, "region": market_name, "statistic": name, "value": v})
-    _mk_cache = parsed
+            mk_cumulative_store[(moment, market_name, name)] = {
+                "moment": moment, "region": market_name, "statistic": name, "value": v
+            }
+    _mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: x["moment"])
     return _mk_cache
 
 def parse_data_country_metrics(data: str):
@@ -209,13 +250,23 @@ def parse_data_country_metrics(data: str):
         income = r.get("income", 0.0)
         if isinstance(debt, (int, float)) and isinstance(income, (int, float)):
             transformed.append({
-                "moment": year, "region": label,
+                "moment": year,
+                "region": label,
+                "country": label,
                 "metric": "total_debt_over_income",
+                "country_metric": "total_debt_over_income",
                 "value": round(debt / income if income > 0.001 else 0.0, 4)
             })
 
         for k, v in r.items():
             if k not in EXCLUDED_KEYS_COUNTRY and isinstance(v, (int, float)):
-                transformed.append({"moment": year, "region": label, "metric": k, "value": float(v)})
+                transformed.append({
+                    "moment": year,
+                    "region": label,
+                    "country": label,
+                    "metric": k,
+                    "country_metric": k,
+                    "value": float(v)
+                })
     _cm_cache = transformed
     return _cm_cache

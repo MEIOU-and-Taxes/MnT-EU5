@@ -14,6 +14,19 @@ from src.plotting.configs import BT_CONFIG, GP_CONFIG, MK_CONFIG, POP_CONFIG, RT
 from src.widgets.custom_combobox import RightClickableComboBox
 
 
+def _draw_horizontal_axis(ax):
+    """Draws horizontal grid lines after every number on the y-axis and a zero line."""
+    ax.spines['bottom'].set_visible(True)
+    ax.set_axisbelow(True)
+    # Horizontal line across every number on the left (y) axis
+    ax.yaxis.grid(True, linestyle='--', linewidth=0.7, color='#cccccc', alpha=0.7)
+
+    y_min, y_max = ax.get_ylim()
+    if y_min <= 0 <= y_max:
+        linestyle = '--' if (y_min < 0 and y_max > 0) else '-'
+        ax.axhline(0, color='#666666', linewidth=0.8, linestyle=linestyle, alpha=0.75, zorder=1)
+
+
 def _create_generic_graph(
     data,
     ax,
@@ -41,7 +54,9 @@ def _create_generic_graph(
     all_category_str = config["all_category_str"]
     value_label_str = config["value_label"]
     add_zero_start = config.get("add_zero_start", False)
+    has_region = config.get("has_region_filter", True)
 
+    # Time dropdown
     lbl_moment = QLabel("Time:")
     combo_moment = RightClickableComboBox()
     all_moments = sorted(list(set(item['moment'] for item in all_data)))
@@ -49,6 +64,7 @@ def _create_generic_graph(
     combo_moment.addItems([str(m) for m in all_moments])
     filter_widget_map['moment'] = combo_moment
 
+    # Category / Metric dropdown
     lbl_category = QLabel(category_label_str)
     combo_category = RightClickableComboBox()
     all_categories = sorted(list(set(item[category_key] for item in all_data)))
@@ -57,32 +73,37 @@ def _create_generic_graph(
     combo_category.addItems(all_categories)
     filter_widget_map[category_key] = combo_category
 
-    region_label_str = "Country:" if category_key == "metric" else "Region:"
-    lbl_region = QLabel(region_label_str)
-    combo_region = RightClickableComboBox()
-    all_regions = sorted(list(set(item['region'] for item in all_data)))
-    combo_region.addItem(STR_ALL_REGIONS)
-    combo_region.addItems(all_regions)
-    filter_widget_map['region'] = combo_region
-
     filter_layout.addWidget(lbl_moment, 0, 0)
     filter_layout.addWidget(combo_moment, 0, 1)
     filter_layout.addWidget(lbl_category, 0, 2)
     filter_layout.addWidget(combo_category, 0, 3)
-    filter_layout.addWidget(lbl_region, 0, 4)
-    filter_layout.addWidget(combo_region, 0, 5)
-    filter_layout.setColumnStretch(6, 1)
+    filter_widgets_list.extend([lbl_moment, combo_moment, lbl_category, combo_category])
 
-    filter_widgets_list.extend([lbl_moment, combo_moment, lbl_category, combo_category, lbl_region, combo_region])
+    # Optional Region / Country dropdown (only for charts with has_region = True)
+    combo_region = None
+    if has_region:
+        lbl_region = QLabel("Region:")
+        combo_region = RightClickableComboBox()
+        all_regions = sorted(list(set(item.get('region') or item.get('country') for item in all_data)))
+        combo_region.addItem(STR_ALL_REGIONS)
+        combo_region.addItems(all_regions)
+        filter_widget_map['region'] = combo_region
+
+        filter_layout.addWidget(lbl_region, 0, 4)
+        filter_layout.addWidget(combo_region, 0, 5)
+        filter_layout.setColumnStretch(6, 1)
+        filter_widgets_list.extend([lbl_region, combo_region])
+    else:
+        filter_layout.setColumnStretch(4, 1)
 
     def update_plot():
         on_plot_cleared()
         m_filter = combo_moment.currentText()
         c_filter = combo_category.currentText()
-        r_filter = combo_region.currentText()
+        r_filter = combo_region.currentText() if combo_region else STR_ALL_REGIONS
         ax.clear()
 
-        if all_category_str and c_filter != all_category_str and r_filter != STR_ALL_REGIONS:
+        if has_region and all_category_str and c_filter != all_category_str and r_filter != STR_ALL_REGIONS:
             ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a Region, not both.",
                     ha='center', va='center')
             ax.figure.canvas.draw_idle()
@@ -91,8 +112,8 @@ def _create_generic_graph(
         pre_filtered = [
             item for item in all_data
             if (m_filter == STR_ALL_MOMENTS or item['moment'] == int(m_filter)) and
-               (c_filter == all_category_str or c_filter == item[category_key]) and
-               (r_filter == STR_ALL_REGIONS or r_filter == item['region'])
+               (c_filter == all_category_str or c_filter == item.get(category_key)) and
+               (r_filter == STR_ALL_REGIONS or r_filter == (item.get('region') or item.get('country')))
         ]
         filtered = [i for i in pre_filtered if i[value_key] != 0] if config.get("ignore_zeros") else pre_filtered
 
@@ -103,8 +124,13 @@ def _create_generic_graph(
                 on_stats_computed(None)
             return
 
+        is_r_picked = (r_filter != STR_ALL_REGIONS)
+        entity_key = category_key if is_r_picked else ('country' if 'country' in filtered[0] else 'region')
+        display_title = r_filter if is_r_picked else c_filter
+
         if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS:
-            _render_stats_mode(ax, filtered, value_key, value_label_str, c_filter, get_stats_bands(), on_stats_computed, on_lines_plotted)
+            _render_stats_mode(ax, filtered, value_key, value_label_str, display_title, entity_key,
+                               get_stats_bands(), on_stats_computed, on_lines_plotted)
             return
 
         _render_standard_mode(ax, filtered, m_filter, c_filter, r_filter, all_category_str,
@@ -116,17 +142,20 @@ def _create_generic_graph(
 
     combo_moment.currentIndexChanged.connect(update_plot)
     combo_category.currentIndexChanged.connect(update_plot)
-    combo_region.currentIndexChanged.connect(update_plot)
+    if combo_region:
+        combo_region.currentIndexChanged.connect(update_plot)
     update_plot()
 
 
-def _render_stats_mode(ax, filtered_data, value_key, value_label, category_name, num_bands, on_stats_computed, on_lines_plotted):
+def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title, entity_key, num_bands, on_stats_computed, on_lines_plotted):
     moments_dict = {}
     country_series = {}
     for item in filtered_data:
-        m, val, reg = item['moment'], item[value_key], item['region']
-        moments_dict.setdefault(m, []).append((reg, val))
-        country_series.setdefault(reg, {})[m] = val
+        m = item['moment']
+        val = item[value_key]
+        ent = item.get(entity_key, item.get('region', ''))
+        moments_dict.setdefault(m, []).append((ent, val))
+        country_series.setdefault(ent, {})[m] = val
 
     sorted_moments = sorted(moments_dict.keys())
     bands_map = {
@@ -148,11 +177,11 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, category_name,
     ax._stats_moments_data = moments_dict
 
     changes = []
-    for reg, history in country_series.items():
+    for ent, history in country_series.items():
         if len(history) >= 2:
             h_sorted = sorted(history.keys())
             delta = history[h_sorted[-1]] - history[h_sorted[0]]
-            changes.append((reg, delta, history[h_sorted[0]], history[h_sorted[-1]], np.std(list(history.values()))))
+            changes.append((ent, delta, history[h_sorted[0]], history[h_sorted[-1]], np.std(list(history.values()))))
 
     all_values = [i[value_key] for i in filtered_data]
     global_stats = {
@@ -174,8 +203,10 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, category_name,
     ax.set_xlabel("Time")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_ylabel(value_label)
-    ax.set_title(f"Statistical Distribution: {category_name}")
+    ax.set_title(f"Statistical Distribution: {display_title}")
     ax.legend(loc="upper left", ncol=2 if num_bands > 5 else 1, fontsize=9, framealpha=0.85)
+
+    _draw_horizontal_axis(ax)
 
     if on_stats_computed:
         on_stats_computed(global_stats)
@@ -201,9 +232,10 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
         plot_key = cat_key if is_r_picked else 'region'
         series = {}
         for item in filtered_data:
-            series.setdefault(item[plot_key], {'m': [], 'v': []})
-            series[item[plot_key]]['m'].append(item['moment'])
-            series[item[plot_key]]['v'].append(item[val_key])
+            ent = item.get(plot_key, '')
+            series.setdefault(ent, {'m': [], 'v': []})
+            series[ent]['m'].append(item['moment'])
+            series[ent]['v'].append(item[val_key])
 
         if add_zero and series:
             all_m = [moment for v in series.values() for moment in v['m']]
@@ -244,11 +276,11 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 
     elif not is_m_all and (is_c_picked or is_r_picked):
         color_key = cat_key if is_r_picked else 'region'
-        items = sorted(list(set(i[color_key] for i in filtered_data)))
+        items = sorted(list(set(i.get(color_key, '') for i in filtered_data)))
         cmap = {n: next(colors) for n in items}
-        labels = [str(i[cat_key if is_r_picked else 'region']) for i in filtered_data]
+        labels = [str(i.get(cat_key if is_r_picked else 'region', '')) for i in filtered_data]
         values = [i[val_key] for i in filtered_data]
-        b_colors = [cmap[i[color_key]] for i in filtered_data]
+        b_colors = [cmap[i.get(color_key, '')] for i in filtered_data]
 
         ax.bar(labels, values, color=b_colors)
         ax.set_ylabel(val_label)
@@ -260,6 +292,8 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
             ax.legend(handles=patches, bbox_to_anchor=(1.04, 1), loc="upper left")
     else:
         ax.text(0.5, 0.5, "Please select a filter to display a graph.", ha='center', va='center')
+
+    _draw_horizontal_axis(ax)
 
     ax.figure.canvas.draw_idle()
     on_lines_plotted()

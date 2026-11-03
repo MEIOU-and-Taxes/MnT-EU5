@@ -33,6 +33,7 @@ MK_CONFIG = {
     "all_category_str": None,
     "value_label": "Value",
     "add_zero_start": False,
+    "has_region_filter": False,
 }
 
 POP_CONFIG = {
@@ -59,10 +60,11 @@ RT_CONFIG = {
 
 CM_CONFIG = {
     "parser": parse_data_country_metrics,
-    "category_key": "metric",
+    "category_key": "country_metric",
     "value_key": "value",
     "category_label": "Metric:",
     "all_category_str": None,
     "value_label": "Value",
     "add_zero_start": False,
+    "has_region_filter": False,
 }

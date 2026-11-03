@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
+from src.analysis_toolkit import AnalysisToolkitDialog
 from src.constants import (
     REFRESH_PERIOD_MS, AUTOSAVE_PERIOD_MS, TARGET_FILE_NAME_ROOT,
     AUTOSAVE_FILE, ICON_PATH, GRAPH_INTRODUCTION, ERROR_FILE_NOT_FOUND
@@ -29,7 +30,6 @@ from src.services.session_manager import save_session, load_session
 from src.ui.stats_panel import format_stats_panel_text
 from src.widgets.dialogs import ChartSelectionDialog
 
-from tools.dataset_analysis.analysis_toolkit import AnalysisToolkitDialog
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
@@ -122,6 +122,7 @@ class MainWindow(QMainWindow):
         self.combo_autosave = QComboBox()
         self.combo_autosave.addItems(["Auto-save: 1m", "Auto-save: 5m", "Auto-save: 10m", "No auto-save"])
 
+        self.btn_clear_data = QPushButton("Clear data")
         self.btn_export_all = QPushButton("Export data [Ctrl+E]")
         self.btn_backup = QPushButton("Backup logs [Shift+S]")
         self.btn_analysis = QPushButton("Data analysis toolkit [A]")
@@ -149,9 +150,9 @@ class MainWindow(QMainWindow):
         self.btn_moving_avg.setCheckable(True)
 
         for w in [self.btn_change_log_folder, self.btn_charts, self.combo_refresh, self.btn_load_session,
-                  self.btn_save_session, self.combo_autosave, self.btn_export_all, self.btn_backup,
+                  self.btn_save_session, self.combo_autosave, self.btn_clear_data, self.btn_export_all, self.btn_backup,
                   self.btn_analysis, self.btn_fullscreen, self.btn_log_scale, self.btn_moving_avg,
-                  self.slider_period, self.lbl_period_value, self.combo_stats_bands, self.btn_stats_mode]:
+                  self.slider_period, self.lbl_period_value, self.btn_stats_mode, self.combo_stats_bands]:
             self.top_button_layout.addWidget(w)
 
         self.top_button_layout.addStretch(1)
@@ -179,6 +180,7 @@ class MainWindow(QMainWindow):
         self.combo_stats_bands.currentIndexChanged.connect(self.redraw_current_plot)
         self.btn_save_session.clicked.connect(self.manual_save)
         self.btn_load_session.clicked.connect(self.manual_load)
+        self.btn_clear_data.clicked.connect(self.clear_data)
 
     def setup_shortcuts(self):
         QShortcut(QKeySequence("Shift+S"), self, self.backup_log)
@@ -227,10 +229,15 @@ class MainWindow(QMainWindow):
         self.canvas.draw()
         self.current_graph_info = None
 
-    def display_chart(self, graph_info, title):
+    def _save_current_filters_to_memory(self):
         if self.current_graph_info:
-            prev = self.current_graph_info['title']
-            self.chart_filter_memory[prev] = {k: w.currentText() for k, w in self.filter_widget_map.items() if isinstance(w, QComboBox)}
+            title = self.current_graph_info['title']
+            self.chart_filter_memory[title] = {
+                k: w.currentText() for k, w in self.filter_widget_map.items() if isinstance(w, QComboBox)
+            }
+
+    def display_chart(self, graph_info, title):
+        self._save_current_filters_to_memory()
 
         self.current_graph_info = {'info': graph_info, 'title': title}
         self.is_log_scale = False
@@ -251,6 +258,10 @@ class MainWindow(QMainWindow):
                 lambda: self.is_stats_mode, self.update_stats_summary_panel,
                 self.get_stats_bands_count, set_redraw_fn=self.set_redraw_fn
             )
+            for combo in self.filter_widget_map.values():
+                if isinstance(combo, QComboBox):
+                    combo.currentIndexChanged.connect(self._save_current_filters_to_memory)
+
             self.canvas.draw()
             self.setup_preset_buttons(title)
             self._restore_filters(title)
@@ -259,6 +270,22 @@ class MainWindow(QMainWindow):
             self.ax.text(0.5, 0.5, f"Error:\n{e}", ha='center', va='center')
 
         self.canvas.draw()
+
+    def clear_data(self):
+        reply = QMessageBox.question(
+            self, "Clear Data",
+            "Are you sure you want to clear all loaded log data and reset caches?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.data = ""
+            self.logs = []
+            self.last_log_state = None
+            self.chart_filter_memory.clear()
+            log_parser.reset_cumulative_history()
+            self.stats_panel.clear()
+            self.display_info_screen("All data cleared. Click 'Open log folder' or refresh to reload.")
+
 
     def _restore_filters(self, title):
         for widget in self.filter_widget_map.values():
@@ -540,6 +567,7 @@ class MainWindow(QMainWindow):
     def manual_save(self):
         path, _ = QFileDialog.getSaveFileName(self, "Save Session", "session_backup.dat", "Session Data (*.dat)")
         if path:
+            self._save_current_filters_to_memory()
             title = self.current_graph_info['title'] if self.current_graph_info else None
             ok = save_session(path, self.data, self.logs, self.chart_filter_memory, title)
             QMessageBox.information(self, "Saved", "Session saved successfully!" if ok else "Save failed.")
@@ -565,6 +593,7 @@ class MainWindow(QMainWindow):
 
     def auto_save_data(self):
         if self.combo_autosave.currentIndex() != 3 and self.data:
+            self._save_current_filters_to_memory()
             title = self.current_graph_info['title'] if self.current_graph_info else None
             save_session(AUTOSAVE_FILE, self.data, self.logs, self.chart_filter_memory, title)
 
