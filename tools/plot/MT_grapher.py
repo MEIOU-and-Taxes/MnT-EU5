@@ -16,7 +16,8 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QDialog, QGridLayout, QHBoxLayout,
 							 QHeaderView, QMainWindow, QPushButton,
 							 QTableWidget, QTableWidgetItem, QVBoxLayout,
-							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel, QProgressDialog, QProgressBar)
+							 QWidget, QFileDialog, QMessageBox, QComboBox, QSlider, QLabel, QProgressDialog,
+							 QProgressBar, QTextEdit)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
@@ -98,6 +99,7 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 		self.setWindowTitle("MEIOU and Taxes Plotter")
+		self.is_stats_mode = True
 
 		if os.path.exists(icon_path):
 			self.setWindowIcon(QIcon(icon_path))
@@ -132,14 +134,38 @@ class MainWindow(QMainWindow):
 		self.setCentralWidget(self.central_widget)
 		self.layout = QVBoxLayout(self.central_widget)
 
-		# --- Matplotlib Canvas ---
+		# --- Canvas and Side Stats Layout ---
 		self.fig, self.ax = plt.subplots()
+		self.plot_container = QHBoxLayout()
 		self.canvas = FigureCanvas(self.fig)
-		self.layout.addWidget(self.canvas, 1)
+		self.plot_container.addWidget(self.canvas, stretch=4)
 
-		# --- Matplotlib Toolbar ---
+		# Side Summary Panel for Statistical Overview
+		self.stats_panel = QTextEdit()
+		self.stats_panel.setReadOnly(True)
+		self.stats_panel.setFixedWidth(320)
+		self.stats_panel.setStyleSheet("""
+					QTextEdit {
+						background-color: #1e1e1e;
+						color: #e0e0e0;
+						border: 1px solid #3c3c3c;
+						border-radius: 4px;
+						font-family: Consolas, 'Courier New', monospace;
+						font-size: 12px;
+						padding: 8px;
+						line-height: 1.4;
+					}
+				""")
+		self.stats_panel.setVisible(False)
+		self.plot_container.addWidget(self.stats_panel, stretch=1)
+
+		self.layout.addLayout(self.plot_container, 1)
+
+		# Matplotlib Toolbar above canvas
 		self.toolbar = NavigationToolbar(self.canvas, self)
 		self.layout.addWidget(self.toolbar)
+
+		self.is_stats_mode = False
 
 		# --- Top Buttons Layout ---
 		self.top_button_layout = QHBoxLayout()
@@ -150,12 +176,14 @@ class MainWindow(QMainWindow):
 		self.btn_fullscreen = QPushButton("Fullscreen [F]")
 		self.btn_refresh = QPushButton("Refresh data [Shift+S]")
 		self.btn_backup = QPushButton("Backup logs [Ctrl+S]")
+		self.btn_stats_mode = QPushButton("Stats mode [T]")
 		self.btn_log_scale = QPushButton("Log scale [L]")
 		self.btn_moving_avg = QPushButton("Moving avg [W]")
 
 		self.btn_fullscreen.setCheckable(True)
 		self.btn_log_scale.setCheckable(True)
 		self.btn_moving_avg.setCheckable(True)
+		self.btn_stats_mode.setCheckable(True)
 
 		self.slider_period = QSlider(Qt.Orientation.Horizontal)
 		self.slider_period.setRange(2, 50)
@@ -176,6 +204,7 @@ class MainWindow(QMainWindow):
 		self.top_button_layout.addWidget(self.btn_moving_avg)
 		self.top_button_layout.addWidget(self.slider_period)
 		self.top_button_layout.addWidget(self.lbl_period_value)
+		self.top_button_layout.addWidget(self.btn_stats_mode)
 		self.top_button_layout.addStretch(1)
 		self.layout.addLayout(self.top_button_layout)
 
@@ -197,6 +226,7 @@ class MainWindow(QMainWindow):
 		self.slider_period.valueChanged.connect(self.on_period_slider_change)
 		self.btn_analysis.clicked.connect(self.open_analysis_toolkit)
 		self.btn_change_log_folder.clicked.connect(self.change_log_folder)
+		self.btn_stats_mode.toggled.connect(self.toggle_stats_mode)
 
 		# --- Initialize ---
 		self.setup_shortcuts()
@@ -243,6 +273,7 @@ class MainWindow(QMainWindow):
 		QShortcut(QKeySequence("Ctrl+E"), self, self.export_all_data)
 		QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
 		QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
+		QShortcut(QKeySequence("T"), self, self.btn_stats_mode.toggle)
 
 	def set_fullscreen_state(self, checked):
 		if checked:
@@ -258,6 +289,11 @@ class MainWindow(QMainWindow):
 		super().changeEvent(event)
 
 		# In MT_grapher.py, inside the MainWindow class
+
+	def toggle_stats_mode(self, checked):
+		self.is_stats_mode = checked
+		self.stats_panel.setVisible(checked)
+		self.redraw_current_plot()
 
 	def load_graph_definitions(self):
 		"""Load graph functions from the all_graphs module."""
@@ -377,8 +413,11 @@ class MainWindow(QMainWindow):
 		self.apply_plot_settings()
 
 	def setup_tooltip_handler(self):
-		"""Creates a new tooltip handler for the current axes."""
-		self.cursor_hover_handler = InteractiveLineTooltip(self.ax, on_line_click_callback=self.handle_line_click)
+		self.cursor_hover_handler = InteractiveLineTooltip(
+			self.ax,
+			on_line_click_callback=self.handle_line_click,
+			on_stats_hover_callback=self.update_stats_summary_panel # Pass the panel update function
+		)
 		self.cursor_hover_handler.setup_tooltip_handler()
 
 	def handle_line_click(self, line_label):
@@ -462,7 +501,9 @@ class MainWindow(QMainWindow):
 				self.clear_tooltip_handler,
 				self.filter_widget_map,
 				lambda: self.is_moving_average,
-				lambda: self.period_value
+				lambda: self.period_value,
+				lambda: self.is_stats_mode,
+				self.update_stats_summary_panel
 			)
 			self.canvas.draw() # Draw the canvas first, to update the graph elements
 			self.setup_preset_buttons(title)
@@ -1144,6 +1185,44 @@ class MainWindow(QMainWindow):
 			self.last_log_state = current_state
 			self.reload_log(is_interactive=False)
 
+	def update_stats_summary_panel(self, global_stats, year_stats=None):
+			if not global_stats or not self.is_stats_mode:
+				self.stats_panel.clear()
+				return
+
+			text = []
+			# DYNAMIC YEARLY SNAPSHOT (Hover-based)
+			if year_stats:
+				text.append(f"=== STATS FOR {year_stats['year']} ===")
+				text.append(f"Count:      {year_stats['count']}")
+				text.append(f"Mean:       {year_stats['mean']:,.2f}")
+				text.append(f"Median:     {year_stats['median']:,.2f}")
+				text.append(f"Std Dev:    {year_stats['std']:,.2f}")
+			else:
+				text.append("Hover plot to see yearly stats")
+
+			text.append("\n" + "="*30 + "\n")
+
+			# GLOBAL OVERVIEW (Static part)
+			text.append("=== GLOBAL OVERVIEW ===")
+			text.append(f"Avg Mean:   {global_stats['overall_mean']:,.2f}")
+			text.append(f"Avg StdDev: {global_stats['overall_std']:,.2f}")
+
+			text.append("\n--- BIGGEST GAINERS (Full Game) ---")
+			for reg, delta, start, end, _ in global_stats['biggest_increase']:
+				text.append(f"{reg[:12]:<12}: +{delta:,.2f} ({start:.1f} → {end:.1f})")
+
+			text.append("\n--- BIGGEST DECLINES (Full Game) ---")
+			for reg, delta, start, end, _ in global_stats['biggest_decrease']:
+				text.append(f"{reg[:12]:<12}: {delta:,.2f} ({start:.1f} → {end:.1f})")
+
+			text.append("\n--- HIGHEST VOLATILITY (σ) ---")
+			for reg, _, _, _, std in global_stats['most_volatile']:
+				text.append(f"{reg[:12]:<12}: σ = {std:,.2f}")
+
+			self.stats_panel.setPlainText("\n".join(text))
+
+
 
 class LoadingDialog(QDialog):
 	"""A simple, frameless dialog to show while the main application is loading."""
@@ -1169,6 +1248,7 @@ class LoadingDialog(QDialog):
 		self.progress = QProgressBar()
 		self.progress.setRange(0, 0)  # Setting min and max to 0 enables indeterminate mode
 		layout.addWidget(self.progress)
+
 
 if __name__ == '__main__':
 	try:

@@ -10,10 +10,11 @@ class InteractiveLineTooltip:
 	Y-values of all lines at the current X-position of the cursor.
 	"""
 
-	def __init__(self, ax, on_line_click_callback=None):
+	def __init__(self, ax, on_line_click_callback=None, on_stats_hover_callback=None):
 		self.ax = ax
 		self.fig = ax.figure
 		self.on_line_click_callback = on_line_click_callback
+		self.on_stats_hover_callback = on_stats_hover_callback
 		# print(f"CursorHoverInfo: Initializing for axes: {ax}")
 
 		all_lines = self.ax.get_lines()
@@ -123,50 +124,103 @@ class InteractiveLineTooltip:
 					closest_point_on_line = (point_x, point_y)
 					current_hovered_line = line
 
-		# Check if the hovered line has changed since the last event
+		# Check if the hovered line has changed since the last event (thickens hovered line)
 		if current_hovered_line != self.last_hovered_line:
-			# If there was a previously hovered line, reset its width
 			if self.last_hovered_line is not None:
 				label = self.last_hovered_line.get_label()
-				original_width = self.original_line_widths.get(label)
+				original_width = self.original_line_widths.get(label, 1.5)
 				self.last_hovered_line.set_linewidth(original_width)
 
-			# If hovering over a new line
 			if current_hovered_line is not None:
 				current_hovered_line.set_linewidth(LINE_WIDTH_SELECTED)
 
-			# Update the last hovered line and redraw the canvas
 			self.last_hovered_line = current_hovered_line
 			self.fig.canvas.draw_idle()
 
+		# --- STATISTICS MODE BRANCH ---
+		moments_data = getattr(self.ax, '_stats_moments_data', None)
+		global_stats = getattr(self.ax, '_global_stats', None)
+
+		if moments_data and current_integer_x in moments_data:
+			# Update the Sidebar Panel dynamically
+			if self.on_stats_hover_callback:
+				year_vals = [x[1] for x in moments_data[current_integer_x]]
+				year_stats = {
+					"year": current_integer_x,
+					"mean": np.mean(year_vals),
+					"median": np.median(year_vals),
+					"std": np.std(year_vals),
+					"count": len(year_vals)
+				}
+				self.on_stats_hover_callback(global_stats, year_stats)
+
+			# Tooltip logic: Find closest 10 regions to the specific hovered curve
+			min_dist = float('inf')
+			target_val = None
+			curve_label = ""
+			for line in self.lines:
+				x, y = line.get_data()
+				idx = np.searchsorted(x, current_integer_x)
+				if idx < len(x) and x[idx] == current_integer_x:
+					dist = abs(self.ax.transData.transform((x[idx], y[idx]))[1] - event.y)
+					if dist < min_dist:
+						min_dist = dist
+						target_val = y[idx]
+						curve_label = line.get_label()
+
+			if target_val is not None:
+				year_entries = moments_data[current_integer_x]
+				closest_10 = sorted(year_entries, key=lambda x: abs(x[1] - target_val))[:10]
+
+				info_texts = [f"Year: {current_integer_x} | Curve: {curve_label}", f"Val: {target_val:.2f}", "-"*35]
+				for reg, val in closest_10:
+					info_texts.append(f"{val:>8.2f} : {reg}")
+
+				# Use original dynamic positioning logic to keep tooltip on screen
+				y_mid = self.ax.get_ylim()[0] + (self.ax.get_ylim()[1] - self.ax.get_ylim()[0]) * 0.4
+				self.annot.set_verticalalignment('top' if event.ydata > y_mid else 'bottom')
+				vertical_offset = -TOOLTIP_PADDING if event.ydata > y_mid else TOOLTIP_PADDING
+
+				x_mid = self.ax.get_xlim()[0] + (self.ax.get_xlim()[1] - self.ax.get_xlim()[0]) * 0.7
+				self.annot.set_horizontalalignment('right' if event.xdata > x_mid else 'left')
+				horizontal_offset = -TOOLTIP_PADDING if event.xdata > x_mid else TOOLTIP_PADDING
+
+				self.annot.xytext = (horizontal_offset, vertical_offset)
+				self.annot.set_text("\n".join(info_texts))
+				self.annot.xy = (current_integer_x, target_val)
+				self.annot.set_visible(True)
+				self.fig.canvas.draw_idle()
+			return
+
+		# --- STANDARD MULTI-LINE MODE BRANCH ---
 		if current_integer_x == self.last_integer_x and self.closest_line == closest_line_label:
 			return
 		self.last_integer_x = current_integer_x
 		self.closest_line = closest_line_label
 
 		# Get all data for current X value
-		all_data_for_x = self.tooltip_cache.get(current_integer_x)
+		all_data_for_x = self.tooltip_cache.get(current_integer_x) if self.tooltip_cache else None
 		if not all_data_for_x:
-			if self.annot.get_visible(): self.annot.set_visible(False); self.fig.canvas.draw_idle()
+			if self.annot.get_visible():
+				self.annot.set_visible(False)
+				self.fig.canvas.draw_idle()
 			return
 
-		# Filter to X closest lines
 		# Calculate each line's vertical distance from the cursor's data coordinate
 		for item in all_data_for_x:
 			item['dist_from_cursor'] = abs(item['y_val'] - event.ydata)
 
-		# Sort by that distance to find the nearest lines
 		all_data_for_x.sort(key=lambda d: d['dist_from_cursor'])
-
-		# Take the X closest and then re-sort them by Y-value for display
 		sorted_data = all_data_for_x[:TOOLTIP_DISPLAYED_LINES]
 		sorted_data.sort(key=lambda d: d['y_val'], reverse=True)
 
 		if not closest_point_on_line:
-			if self.annot.get_visible(): self.annot.set_visible(False); self.fig.canvas.draw_idle()
+			if self.annot.get_visible():
+				self.annot.set_visible(False)
+				self.fig.canvas.draw_idle()
 			return
 
-		# Build tooltip text
+		# Build standard tooltip text
 		x_label = self.ax.get_xlabel() or "X-Value"
 		y_label = self.ax.get_ylabel()
 
@@ -186,9 +240,6 @@ class InteractiveLineTooltip:
 		# Dynamic positioning with vertical alignment
 		y_min, y_max = self.ax.get_ylim()
 		y_mid = y_min + (y_max - y_min) * 0.4
-
-		# If cursor is in the top half, place tooltip below the anchor point
-		# The offset will push the text box down
 		if event.ydata > y_mid:
 			self.annot.set_verticalalignment('top')
 			vertical_offset = -TOOLTIP_PADDING
@@ -196,10 +247,8 @@ class InteractiveLineTooltip:
 			self.annot.set_verticalalignment('bottom')
 			vertical_offset = TOOLTIP_PADDING
 
-		# Horizontal positioning logic
 		x_min, x_max = self.ax.get_xlim()
 		x_mid = x_min + (x_max - x_min) * 0.7
-		# If cursor is on the right, align text to the right and use a negative offset
 		if event.xdata > x_mid:
 			self.annot.set_horizontalalignment('right')
 			horizontal_offset = -TOOLTIP_PADDING
@@ -207,15 +256,11 @@ class InteractiveLineTooltip:
 			self.annot.set_horizontalalignment('left')
 			horizontal_offset = TOOLTIP_PADDING
 
-		# Set the final combined offset
 		self.annot.xytext = (horizontal_offset, vertical_offset)
-
-		# Update annotation
 		self.annot.set_text("\n".join(info_texts))
 		self.annot.xy = closest_point_on_line
 		self.annot.set_visible(True)
 		self.fig.canvas.draw_idle()
-
 	def on_leave(self, event):
 		if self.last_hovered_line is not None:
 			label = self.last_hovered_line.get_label()
