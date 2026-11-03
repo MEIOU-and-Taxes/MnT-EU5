@@ -28,7 +28,7 @@ from src.plotting.tooltip import InteractiveLineTooltip
 from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session, load_session
 from src.ui.stats_panel import format_stats_panel_text
-from src.widgets.dialogs import ChartSelectionDialog
+from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog
 
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
@@ -122,6 +122,7 @@ class MainWindow(QMainWindow):
         self.top_button_layout = QHBoxLayout()
         self.btn_change_log_folder = QPushButton("Open log folder [Ctrl+L]")
         self.btn_charts = QPushButton("Charts [`]")
+        self.btn_preset_config = QPushButton("[P]resets")
 
         # Manual refresh button & re-render interval selector
         self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
@@ -140,8 +141,8 @@ class MainWindow(QMainWindow):
         self.btn_export_all = QPushButton("Export data [Ctrl+E]")
         self.btn_backup = QPushButton("Backup logs [Shift+S]")
         self.btn_analysis = QPushButton("Data analysis toolkit [A]")
-        self.btn_fullscreen = QPushButton("Fullscreen [F]")
-        self.btn_log_scale = QPushButton("Log scale [L]")
+        self.btn_fullscreen = QPushButton("[F]ullscreen")
+        self.btn_log_scale = QPushButton("[L]og scale")
         self.btn_moving_avg = QPushButton("Moving avg [W]")
 
         self.slider_period = QSlider(Qt.Orientation.Horizontal)
@@ -163,9 +164,9 @@ class MainWindow(QMainWindow):
         self.btn_log_scale.setCheckable(True)
         self.btn_moving_avg.setCheckable(True)
 
-        for w in [self.btn_change_log_folder, self.btn_charts, self.btn_refresh, self.combo_refresh, self.btn_load_session,
-                  self.btn_save_session, self.combo_autosave, self.btn_clear_data, self.btn_export_all, self.btn_backup,
-                  self.btn_analysis, self.btn_fullscreen, self.btn_log_scale, self.btn_moving_avg,
+        for w in [self.btn_change_log_folder, self.btn_charts, self.btn_preset_config, self.btn_refresh, self.combo_refresh,
+                  self.btn_load_session, self.btn_save_session, self.combo_autosave, self.btn_clear_data, self.btn_export_all,
+                  self.btn_backup, self.btn_analysis, self.btn_fullscreen, self.btn_log_scale, self.btn_moving_avg,
                   self.slider_period, self.lbl_period_value, self.btn_stats_mode, self.combo_stats_bands]:
             self.top_button_layout.addWidget(w)
 
@@ -180,6 +181,7 @@ class MainWindow(QMainWindow):
 
         # Wire UI Events
         self.btn_refresh.clicked.connect(self.manual_refresh)
+        self.btn_preset_config.clicked.connect(self.open_preset_config)
         self.combo_refresh.currentIndexChanged.connect(self._on_refresh_rate_changed)
         self.combo_autosave.currentIndexChanged.connect(self._on_autosave_rate_changed)
         self.btn_backup.clicked.connect(self.backup_log)
@@ -203,6 +205,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+L"), self, self.change_log_folder)
         QShortcut(QKeySequence("A"), self, self.open_analysis_toolkit)
         QShortcut(QKeySequence("`"), self, self.show_chart_list)
+        QShortcut(QKeySequence("P"), self, self.open_preset_config)
         QShortcut(QKeySequence("F"), self, self.btn_fullscreen.toggle)
         QShortcut(QKeySequence("Ctrl+E"), self, lambda: run_export_pipeline(self.data, self.log_folder, self))
         QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
@@ -478,15 +481,39 @@ class MainWindow(QMainWindow):
     def load_key_configs(self):
         if os.path.exists("key_configs.json"):
             try:
-                with open("key_configs.json", "r") as f:
+                with open("key_configs.json", "r", encoding="utf-8") as f:
                     self.key_configs = json.load(f)
             except Exception as e:
                 QMessageBox.critical(self, "Config Error", f"Error in key_configs.json: {e}")
 
+    def save_key_configs(self):
+        try:
+            with open("key_configs.json", "w", encoding="utf-8") as f:
+                json.dump(self.key_configs, f, indent=2)
+        except Exception as e:
+            QMessageBox.critical(self, "Config Error", f"Error saving key_configs.json: {e}")
+
+    def open_preset_config(self):
+        if not self.current_graph_info:
+            QMessageBox.information(self, "No Chart Active", "Please select a chart first before assigning preset hotkeys.")
+            self.show_chart_list()
+            return
+        chart_title = self.current_graph_info['title']
+        dlg = PresetConfigDialog(chart_title, self.filter_widget_map, self.key_configs, self)
+        if dlg.exec():
+            self.save_key_configs()
+            self.setup_preset_buttons(chart_title)
+
     def setup_preset_buttons(self, chart_title):
         self.clear_preset_buttons()
         cfgs = self.key_configs.get(chart_title, {})
-        for key in sorted(cfgs.keys(), key=lambda x: int(x[1:]) if x[1:].isdigit() else 0):
+
+        def _sort_key(k):
+            if k.startswith('F') and k[1:].isdigit():
+                return (0, int(k[1:]))
+            return (1, k)
+
+        for key in sorted(cfgs.keys(), key=_sort_key):
             cfg = cfgs[key]
             btn = QPushButton(f"{cfg.get('description', '')} [{key}]")
             btn.clicked.connect(partial(self._apply_preset_filter, cfg.get("filters", {})))
