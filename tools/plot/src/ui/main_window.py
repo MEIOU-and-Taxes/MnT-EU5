@@ -28,7 +28,7 @@ from src.plotting.tooltip import InteractiveLineTooltip
 from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session, load_session
 from src.ui.stats_panel import format_stats_panel_text
-from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog
+from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, sort_hotkeys
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
@@ -234,7 +234,7 @@ class MainWindow(QMainWindow):
         self.graphs = registered
         self.chart_shortcuts.clear()
         for idx, chart_name in enumerate(sorted(self.graphs.keys())):
-            hotkey = str(idx + 1)
+            hotkey = f"F{idx + 1}"
             self.chart_hotkeys[hotkey] = chart_name
             sc = QShortcut(QKeySequence(hotkey), self)
             sc.activated.connect(partial(self.plot_by_hotkey, hotkey))
@@ -275,10 +275,8 @@ class MainWindow(QMainWindow):
             self.is_density = False
             self.btn_density.setChecked(False)
 
-        # Market statistics does not support density per requirement
-        is_market = (title == "Market Statistics")
-        self.btn_density.setVisible(not is_market)
-        self.btn_density.setEnabled(not is_market)
+        self.btn_density.setVisible(True)
+        self.btn_density.setEnabled(True)
 
         self._reset_filter_layout()
         self.ax.clear()
@@ -292,7 +290,7 @@ class MainWindow(QMainWindow):
                 lambda: self.is_moving_average, lambda: self.period_value,
                 lambda: self.is_stats_mode, self.update_stats_summary_panel,
                 get_stats_bands_count, set_redraw_fn=self.set_redraw_fn,
-                get_is_density=lambda: (self.is_density and not is_market)
+                get_is_density=lambda: self.is_density
             )
             for combo in self.filter_widget_map.values():
                 if isinstance(combo, QComboBox):
@@ -371,8 +369,10 @@ class MainWindow(QMainWindow):
                     if target_key in self.filter_widget_map:
                         idx = self.filter_widget_map[target_key].findText(val)
                         if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
-            elif title in self.key_configs and "F1" in self.key_configs[title]:
-                for k, val in self.key_configs[title]["F1"].get("filters", {}).items():
+            elif title in self.key_configs and self.key_configs[title]:
+                sorted_keys = sort_hotkeys(self.key_configs[title].keys())
+                first_preset = self.key_configs[title][sorted_keys[0]]
+                for k, val in first_preset.get("filters", {}).items():
                     target_key = k
                     if target_key not in self.filter_widget_map:
                         if target_key == 'region' and 'country' in self.filter_widget_map:
@@ -473,16 +473,27 @@ class MainWindow(QMainWindow):
                 for r in log_parser.tg_cumulative_store.values()
             )
             has_region_locs = bool(rloc_map and any(v > 0 for v in rloc_map.values()))
+            has_market_locs = any(
+                (r.get("locations", 0) or 0) > 0
+                for r in log_parser.mk_cumulative_store.values()
+            )
 
             is_country = bool(self.current_graph_info and self.current_graph_info['title'] == "Country Metrics")
-            has_locs = has_country_locs if is_country else has_region_locs
+            is_market = bool(self.current_graph_info and self.current_graph_info['title'] == "Market Statistics")
+
+            if is_country:
+                has_locs = has_country_locs
+            elif is_market:
+                has_locs = has_market_locs
+            else:
+                has_locs = has_region_locs
 
             if not has_locs:
                 QMessageBox.warning(
                     self,
                     "No Location Data",
                     "There is no count of locations stored in the loaded logs.\n\n"
-                    "Density calculation requires location counts (from in-game event)."
+                    "Density calculation requires location counts."
                 )
                 self.btn_density.setChecked(False)
                 self.is_density = False
@@ -559,12 +570,7 @@ class MainWindow(QMainWindow):
         self.clear_preset_buttons()
         cfgs = self.key_configs.get(chart_title, {})
 
-        def _sort_key(k):
-            if k.startswith('F') and k[1:].isdigit():
-                return (0, int(k[1:]))
-            return (1, k)
-
-        for key in sorted(cfgs.keys(), key=_sort_key):
+        for key in sort_hotkeys(cfgs.keys()):
             cfg = cfgs[key]
             btn = QPushButton(f"{cfg.get('description', '')} [{key}]")
             btn.clicked.connect(partial(self._apply_preset_filter, cfg.get("filters", {})))

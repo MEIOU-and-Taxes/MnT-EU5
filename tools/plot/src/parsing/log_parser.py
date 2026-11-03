@@ -47,8 +47,8 @@ def parse_data_region_locations(data: str):
     global _rloc_cache, region_locations_store
     if _rloc_cache is not None:
         return _rloc_cache
-    pattern = re.compile(r"::RLOC::(.*?):([\d.,]+)")
-    for m in pattern.finditer(data):
+    pattern_loc = re.compile(r"::RLOC::(.*?):([\d.,]+)")
+    for m in pattern_loc.finditer(data):
         region = m.group(1).strip()
         count = int(float(m.group(2).replace(',', '')))
         region_locations_store[region] = count
@@ -149,8 +149,8 @@ def parse_data_building_types(data: str):
     global _bt_cache, bt_cumulative_store
     if _bt_cache is not None:
         return _bt_cache
-    pattern = re.compile(r"::BT:(\d+):(.*?):(\d+):(.*)")
-    for m in pattern.finditer(data):
+    pattern_bt = re.compile(r"::BT:(\d+):(.*?):(\d+):(.*)")
+    for m in pattern_bt.finditer(data):
         moment = int(m.group(1))
         building = m.group(2).strip()
         count = int(m.group(3))
@@ -184,8 +184,8 @@ def parse_data_goods_prices(data: str):
     global _gp_cache, gp_cumulative_store
     if _gp_cache is not None:
         return _gp_cache
-    pattern = re.compile(r"::GP::(\d+):(.+?):(.+?):([\d.-]+)")
-    for m in pattern.finditer(data):
+    pattern_gp = re.compile(r"::GP::(\d+):(.+?):(.+?):([\d.-]+)")
+    for m in pattern_gp.finditer(data):
         if 'Ocean' in m.group(3):
             continue
         moment = int(m.group(1))
@@ -202,8 +202,8 @@ def parse_data_population(data: str):
     global _pop_cache, pop_cumulative_store
     if _pop_cache is not None:
         return _pop_cache
-    pattern = re.compile(r"::POP::(\d+):(.+?):([\d.,MK]+)")
-    for m in pattern.finditer(data):
+    pattern_pop = re.compile(r"::POP::(\d+):(.+?):([\d.,MK]+)")
+    for m in pattern_pop.finditer(data):
         moment = int(m.group(1))
         region = m.group(2).strip()
         pop = parse_dynamic_numeric_value(m.group(3))
@@ -220,8 +220,8 @@ def parse_data_road_types(data: str):
     global _rt_cache, rt_cumulative_store
     if _rt_cache is not None:
         return _rt_cache
-    pattern = re.compile(r"::RT::(\d+):(.+?):(.+?):(\d+):(\d+)")
-    for m in pattern.finditer(data):
+    pattern_rt = re.compile(r"::RT::(\d+):(.+?):(.+?):(\d+):(\d+)")
+    for m in pattern_rt.finditer(data):
         moment = int(m.group(1))
         region = m.group(2).strip()
         road_type = m.group(3).strip()
@@ -254,10 +254,28 @@ def parse_data_markets(data: str):
             except (ValueError, TypeError):
                 pass
 
-        for name, v in zip(statistic_names, vals):
+        stat_map = dict(zip(statistic_names, vals))
+        loc_count = float(stat_map.get("Locations", 0.0))
+
+        for name, v in stat_map.items():
             mk_cumulative_store[(moment, market_name, name)] = {
-                "moment": moment, "region": market_name, "market": market_name, "statistic": name, "value": v
+                "moment": moment,
+                "region": market_name,
+                "market": market_name,
+                "statistic": name,
+                "value": v,
+                "locations": loc_count
             }
+
+    # Ensure all entries in cumulative store have their location counts filled
+    loc_lookup = {}
+    for (m, reg, stat), record in mk_cumulative_store.items():
+        if stat == "Locations":
+            loc_lookup[(m, reg)] = record.get("value", 0.0)
+
+    for (m, reg, _), record in mk_cumulative_store.items():
+        if not record.get("locations") and (m, reg) in loc_lookup:
+            record["locations"] = loc_lookup[(m, reg)]
 
     _mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["statistic"]))
     return _mk_cache

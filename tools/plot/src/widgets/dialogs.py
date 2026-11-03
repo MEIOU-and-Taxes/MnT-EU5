@@ -3,15 +3,41 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QTableWidget, QTableWidgetItem, QHeaderView, QLabel, QProgressBar,
-    QPushButton, QComboBox, QLineEdit, QGroupBox, QMessageBox
+    QPushButton, QComboBox, QLineEdit, QGroupBox, QMessageBox, QCheckBox
 )
+
+
+def sort_hotkeys(keys):
+    """Sorts hotkeys putting plain numbers (1..9, 0) first, followed by modifier combos."""
+    def _sort_key(k):
+        tokens = [t.strip() for t in k.split('+') if t.strip()]
+        has_ctrl = any(t.lower() == 'ctrl' for t in tokens)
+        has_alt = any(t.lower() == 'alt' for t in tokens)
+        has_shift = any(t.lower() == 'shift' for t in tokens)
+        base = [t for t in tokens if t.lower() not in ('ctrl', 'alt', 'shift')]
+        base_str = base[0] if base else ""
+
+        mod_score = (1 if has_ctrl else 0) * 1 + (2 if has_alt else 0) * 2 + (4 if has_shift else 0) * 4
+
+        if base_str.isdigit():
+            val = int(base_str)
+            num_order = 10 if val == 0 else val
+        elif base_str.startswith('F') and base_str[1:].isdigit():
+            num_order = 100 + int(base_str[1:])
+        else:
+            num_order = 999
+
+        return (mod_score, num_order, base_str)
+
+    return sorted(keys, key=_sort_key)
+
 
 class PresetConfigDialog(QDialog):
     """Dialog to view, add, edit, and assign preset values and hotkeys for chart filters."""
     def __init__(self, chart_title, filter_widget_map, key_configs, parent=None):
         super().__init__(parent)
         self.setWindowTitle(f"Assign Preset Hotkeys - {chart_title}")
-        self.resize(750, 520)
+        self.resize(780, 540)
 
         self.chart_title = chart_title
         self.filter_widget_map = filter_widget_map
@@ -59,12 +85,27 @@ class PresetConfigDialog(QDialog):
         form_group = QGroupBox("Preset Details")
         form_layout = QFormLayout(form_group)
 
-        # Hotkey selector
-        self.combo_hotkey = QComboBox()
-        self.combo_hotkey.setEditable(True)
-        default_hotkeys = [f"F{i}" for i in range(1, 13)]
-        self.combo_hotkey.addItems(default_hotkeys)
-        form_layout.addRow("Hotkey:", self.combo_hotkey)
+        # Hotkey selector with Ctrl, Shift, Alt checkboxes + base key
+        hotkey_layout = QHBoxLayout()
+        self.chk_ctrl = QCheckBox("Ctrl")
+        self.chk_shift = QCheckBox("Shift")
+        self.chk_alt = QCheckBox("Alt")
+
+        hotkey_layout.addWidget(self.chk_ctrl)
+        hotkey_layout.addWidget(self.chk_shift)
+        hotkey_layout.addWidget(self.chk_alt)
+
+        self.combo_key = QComboBox()
+        self.combo_key.setEditable(True)
+        default_keys = [str(i) for i in range(1, 10)] + ["0"]
+        self.combo_key.addItems(default_keys)
+        self.combo_key.setFixedWidth(80)
+
+        hotkey_layout.addWidget(QLabel("Key:"))
+        hotkey_layout.addWidget(self.combo_key)
+        hotkey_layout.addStretch()
+
+        form_layout.addRow("Hotkey:", hotkey_layout)
 
         # Description
         self.edit_description = QLineEdit()
@@ -112,17 +153,40 @@ class PresetConfigDialog(QDialog):
         bottom_layout.addWidget(self.btn_cancel)
         main_layout.addLayout(bottom_layout)
 
-    def _sort_hotkeys(self, keys):
-        def _sort_key(k):
-            if k.startswith('F') and k[1:].isdigit():
-                return (0, int(k[1:]))
-            return (1, k)
-        return sorted(keys, key=_sort_key)
+    def _build_hotkey_string(self):
+        parts = []
+        if self.chk_ctrl.isChecked():
+            parts.append("Ctrl")
+        if self.chk_alt.isChecked():
+            parts.append("Alt")
+        if self.chk_shift.isChecked():
+            parts.append("Shift")
+
+        key = self.combo_key.currentText().strip()
+        if not key:
+            return ""
+        parts.append(key)
+        return "+".join(parts)
+
+    def _set_hotkey_from_string(self, hotkey_str):
+        tokens = [t.strip() for t in hotkey_str.split('+') if t.strip()]
+        self.chk_ctrl.setChecked(any(t.lower() == 'ctrl' for t in tokens))
+        self.chk_alt.setChecked(any(t.lower() == 'alt' for t in tokens))
+        self.chk_shift.setChecked(any(t.lower() == 'shift' for t in tokens))
+
+        non_modifiers = [t for t in tokens if t.lower() not in ('ctrl', 'alt', 'shift')]
+        base_key = non_modifiers[0] if non_modifiers else ""
+
+        idx = self.combo_key.findText(base_key)
+        if idx != -1:
+            self.combo_key.setCurrentIndex(idx)
+        else:
+            self.combo_key.setEditText(base_key)
 
     def _populate_table(self):
         self.table.blockSignals(True)
         self.table.setRowCount(0)
-        sorted_keys = self._sort_hotkeys(self.presets.keys())
+        sorted_keys = sort_hotkeys(self.presets.keys())
         for row, hotkey in enumerate(sorted_keys):
             cfg = self.presets[hotkey]
             desc = cfg.get("description", "")
@@ -143,12 +207,7 @@ class PresetConfigDialog(QDialog):
         hotkey = self.table.item(row, 0).text()
         cfg = self.presets.get(hotkey, {})
 
-        idx = self.combo_hotkey.findText(hotkey)
-        if idx != -1:
-            self.combo_hotkey.setCurrentIndex(idx)
-        else:
-            self.combo_hotkey.setEditText(hotkey)
-
+        self._set_hotkey_from_string(hotkey)
         self.edit_description.setText(cfg.get("description", ""))
 
         filters = cfg.get("filters", {})
@@ -162,19 +221,28 @@ class PresetConfigDialog(QDialog):
 
     def _on_new_preset(self):
         self.table.clearSelection()
-        unused = "F1"
-        for i in range(1, 13):
-            candidate = f"F{i}"
-            if candidate not in self.presets:
-                unused = candidate
+        self.chk_ctrl.setChecked(False)
+        self.chk_alt.setChecked(False)
+        self.chk_shift.setChecked(False)
+
+        unused = None
+        candidates = [str(i) for i in range(1, 10)] + ["0"]
+        for c in candidates:
+            if c not in self.presets:
+                unused = c
                 break
 
-        idx = self.combo_hotkey.findText(unused)
-        if idx != -1:
-            self.combo_hotkey.setCurrentIndex(idx)
-        else:
-            self.combo_hotkey.setEditText(unused)
+        if not unused:
+            for c in candidates:
+                cand = f"Ctrl+{c}"
+                if cand not in self.presets:
+                    unused = cand
+                    break
 
+        if not unused:
+            unused = "1"
+
+        self._set_hotkey_from_string(unused)
         self.edit_description.clear()
         for combo in self.filter_combos.values():
             combo.setCurrentIndex(0)
@@ -206,9 +274,9 @@ class PresetConfigDialog(QDialog):
             self.edit_description.setText(" - ".join(desc_parts))
 
     def _save_single_preset(self):
-        hotkey = self.combo_hotkey.currentText().strip()
+        hotkey = self._build_hotkey_string()
         if not hotkey:
-            QMessageBox.warning(self, "Invalid Hotkey", "Please enter or select a hotkey (e.g. F1).")
+            QMessageBox.warning(self, "Invalid Hotkey", "Please enter or select a key (e.g. 1).")
             return
 
         desc = self.edit_description.text().strip()
@@ -269,7 +337,7 @@ class ChartSelectionDialog(QDialog):
     def _populate_table(self):
         sorted_charts = sorted(self.graphs.keys())
         for i, chart_name in enumerate(sorted_charts):
-            hotkey = str(i + 1)
+            hotkey = f"F{i + 1}"
             self.hotkey_target_dict[hotkey] = chart_name
             self.table.setItem(i, 0, QTableWidgetItem(chart_name))
             self.table.setItem(i, 1, QTableWidgetItem(hotkey))
