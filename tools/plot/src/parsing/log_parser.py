@@ -1,20 +1,11 @@
 ﻿import re
 
 from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY, \
-    market_stats
+    market_stats, CREDIT_HEADERS
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
 
 pattern_mk = re.compile(r"::MK::(\d+):([^:\r\n]+):([^\r\n]+)")
 pattern_cr = re.compile(r"::CR::(\d+):([A-Za-z0-9_]+):([^\r\n]+)")
-
-CREDIT_HEADERS = [
-    "Balance",
-    "Supply",
-    "Supply - goods",
-    "Supply - modifiers",
-    "Lending quote",
-    "Interest adjustment",
-]
 
 # Column count mismatch callback (hooked by UI)
 _column_mismatch_callback = None

@@ -57,3 +57,13 @@ market_stats = [
     "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity",
     "Burgher Trade Capacity", "Stockpile capacity", "Locations"
 ]
+
+CREDIT_HEADERS = [
+    "Balance",
+    "Supply",
+    "Supply - goods",
+    "Supply - modifiers",
+    "Demand",
+    "Lending quote",
+    "Interest adjustment",
+]

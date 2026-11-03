@@ -37,8 +37,7 @@ mnt_credit_tooltip_market_supply = {
 
 # Country scope: replace only the cached loan component with the live ledger.
 mnt_credit_lending_demand = {
-    if = {
-        limit = {
+    if = { limit = {
             exists = capital.market
             exists = capital.market.location
             capital.market.location = {
@@ -49,26 +48,19 @@ mnt_credit_lending_demand = {
         value = "capital.market.location.var:mnt_credit_quote_other_demand"
         add = "capital.market.location.var:mnt_credit_loan_final_scale"
     }
-    else_if = {
-        limit = { exists = capital.market }
+    else_if = { limit = { exists = capital.market }
         value = "capital.market.goods_demand_in_market(goods:credit)"
     }
-    else = {
-        value = 0
-    }
+    else = { value = 0 }
 }
 
 # Market contribution to annual interest. Above quote 1, a 10% baseline
 # approaches 50%; quote 2 gives 12.5%. Surplus discounts approach -9 percentage points (1% baseline).
 mnt_credit_market_interest_adjustment = {
-	if = {
-		limit = { mnt_credit_lending_quote > 1 }
+	if = { limit = { mnt_credit_lending_quote > 1 }
 		value = mnt_credit_lending_quote
 		subtract = 1
-		divide = {
-			value = mnt_credit_lending_quote
-			add = 14
-		}
+		divide = { value = mnt_credit_lending_quote add = 14 }
 		multiply = 0.40
 		max = 0.40
 	}
@@ -148,7 +140,6 @@ mnt_credit_tooltip_goods_supply = {
         value = "capital.market.goods_supply_in_market(goods:credit)"
         # Subtract the building credit so only bank production remains
         subtract = mnt_credit_tooltip_building_supply
-        # min = 0 # Never show negative banks
     }
 }
 
