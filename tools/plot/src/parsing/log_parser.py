@@ -3,6 +3,13 @@
 from src.parsing.definitions import HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
 
+pattern = re.compile(r"::MK::(\d+):([^:\r\n]+):([^\r\n]+)")
+statistic_names = [
+    "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile Perc",
+    "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity",
+    "Burgher Trade Capacity", "Stockpile capacity", "Locations"
+]
+
 # Caches
 _bt_cache = None
 _gp_cache = None
@@ -235,20 +242,23 @@ def parse_data_markets(data: str):
     global _mk_cache, mk_cumulative_store
     if _mk_cache is not None:
         return _mk_cache
-    pattern = re.compile(
-        r"::MK::(\d+):(.+?):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+):([\d.-]+)"
-    )
-    statistic_names = [
-        "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile %", "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity", "Burgher Trade Capacity", "Stockpile capacity"
-    ]
+
     for m in pattern.finditer(data):
         moment = int(m.group(1))
         market_name = m.group(2).strip()
-        vals = [float(v) for v in m.groups()[2:]]
+        raw_vals = m.group(3).strip().split(':')
+        vals = []
+        for v in raw_vals:
+            try:
+                vals.append(float(v))
+            except (ValueError, TypeError):
+                pass
+
         for name, v in zip(statistic_names, vals):
             mk_cumulative_store[(moment, market_name, name)] = {
-                "moment": moment, "region": market_name, "statistic": name, "value": v
+                "moment": moment, "region": market_name, "market": market_name, "statistic": name, "value": v
             }
+
     _mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["statistic"]))
     return _mk_cache
 
@@ -259,13 +269,19 @@ def parse_data_country_metrics(data: str):
     countries = parse_data_countries(data)
     transformed = []
     for r in countries:
-        if r.get("num_locations", 0) <= 0:
+        locs_val = r.get("locations") or r.get("num_locations") or 0
+        try:
+            country_locations = float(locs_val)
+        except (ValueError, TypeError):
+            country_locations = 0.0
+
+        if country_locations <= 0:
             continue
+
         year = int(r["year"]) if r.get("year") else 0
         tag = r.get("tag", "")
         name = r.get("name", "")
         label = f"{name} ({tag})" if name and name != tag else tag
-        country_locations = float(r.get("locations", 0) or 0)
 
         debt = r.get("total_debt", 0.0)
         income = r.get("income", 0.0)

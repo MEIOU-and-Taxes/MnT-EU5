@@ -1,4 +1,4 @@
-﻿from src.constants import STR_ALL_BUILDINGS, STR_ALL_GOODS, STR_ALL_ROAD_TYPES
+﻿from src.constants import STR_ALL_BUILDINGS, STR_ALL_GOODS, STR_ALL_ROAD_TYPES, STR_ALL_REGIONS
 from src.parsing.log_parser import (
     parse_data_building_types, parse_data_goods_prices, parse_data_markets,
     parse_data_population, parse_data_road_types, parse_data_country_metrics
@@ -12,6 +12,10 @@ BT_CONFIG = {
     "all_category_str": STR_ALL_BUILDINGS,
     "value_label": "Count",
     "add_zero_start": True,
+    "has_region_filter": True,
+    "entity_key": "region",
+    "region_label": "Region:",
+    "all_region_str": STR_ALL_REGIONS,
 }
 
 GP_CONFIG = {
@@ -23,6 +27,10 @@ GP_CONFIG = {
     "value_label": "Price",
     "add_zero_start": False,
     "ignore_zeros": True,
+    "has_region_filter": True,
+    "entity_key": "region",
+    "region_label": "Region:",
+    "all_region_str": STR_ALL_REGIONS,
 }
 
 MK_CONFIG = {
@@ -33,7 +41,10 @@ MK_CONFIG = {
     "all_category_str": None,
     "value_label": "Value",
     "add_zero_start": False,
-    "has_region_filter": False,
+    "has_region_filter": True,
+    "entity_key": "market",
+    "region_label": "Market:",
+    "all_region_str": "All markets",
 }
 
 POP_CONFIG = {
@@ -45,6 +56,10 @@ POP_CONFIG = {
     "value_label": "Population",
     "add_zero_start": False,
     "ignore_zeros": True,
+    "has_region_filter": True,
+    "entity_key": "region",
+    "region_label": "Region:",
+    "all_region_str": STR_ALL_REGIONS,
 }
 
 RT_CONFIG = {
@@ -56,6 +71,10 @@ RT_CONFIG = {
     "value_label": "Coverage Percentage",
     "add_zero_start": True,
     "y_axis_limits": (0, 100),
+    "has_region_filter": True,
+    "entity_key": "region",
+    "region_label": "Region:",
+    "all_region_str": STR_ALL_REGIONS,
 }
 
 CM_CONFIG = {
@@ -66,5 +85,8 @@ CM_CONFIG = {
     "all_category_str": None,
     "value_label": "Value",
     "add_zero_start": False,
-    "has_region_filter": False,
+    "has_region_filter": True,
+    "entity_key": "country",
+    "region_label": "Country:",
+    "all_region_str": "All countries",
 }

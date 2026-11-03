@@ -57,6 +57,9 @@ def _create_generic_graph(
     value_label_str = config["value_label"]
     add_zero_start = config.get("add_zero_start", False)
     has_region = config.get("has_region_filter", True)
+    entity_key = config.get("entity_key", "region")
+    region_label_str = config.get("region_label", "Region:")
+    all_region_str = config.get("all_region_str", STR_ALL_REGIONS)
 
     # Time dropdown
     lbl_moment = QLabel("Time:")
@@ -81,15 +84,19 @@ def _create_generic_graph(
     filter_layout.addWidget(combo_category, 0, 3)
     filter_widgets_list.extend([lbl_moment, combo_moment, lbl_category, combo_category])
 
-    # Optional Region / Country dropdown (only for charts with has_region = True)
+    # Region / Country / Market dropdown
     combo_region = None
     if has_region:
-        lbl_region = QLabel("Region:")
+        lbl_region = QLabel(region_label_str)
         combo_region = RightClickableComboBox()
-        all_regions = sorted(list(set(item.get('region') or item.get('country') for item in all_data)))
-        combo_region.addItem(STR_ALL_REGIONS)
-        combo_region.addItems(all_regions)
-        filter_widget_map['region'] = combo_region
+        all_entities = sorted(list(set(
+            item.get(entity_key) or item.get('country') or item.get('region', '')
+            for item in all_data
+            if (item.get(entity_key) or item.get('country') or item.get('region', ''))
+        )))
+        combo_region.addItem(all_region_str)
+        combo_region.addItems(all_entities)
+        filter_widget_map[entity_key] = combo_region
 
         filter_layout.addWidget(lbl_region, 0, 4)
         filter_layout.addWidget(combo_region, 0, 5)
@@ -102,11 +109,11 @@ def _create_generic_graph(
         on_plot_cleared()
         m_filter = combo_moment.currentText()
         c_filter = combo_category.currentText()
-        r_filter = combo_region.currentText() if combo_region else STR_ALL_REGIONS
+        r_filter = combo_region.currentText() if combo_region else all_region_str
         ax.clear()
 
-        if has_region and all_category_str and c_filter != all_category_str and r_filter != STR_ALL_REGIONS:
-            ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a Region, not both.",
+        if has_region and all_category_str and c_filter != all_category_str and r_filter != all_region_str:
+            ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a {region_label_str.replace(':', '')}, not both.",
                     ha='center', va='center')
             ax.figure.canvas.draw_idle()
             return
@@ -115,7 +122,7 @@ def _create_generic_graph(
             item for item in all_data
             if (m_filter == STR_ALL_MOMENTS or item['moment'] == int(m_filter)) and
                (c_filter == all_category_str or c_filter == item.get(category_key)) and
-               (r_filter == STR_ALL_REGIONS or r_filter == (item.get('region') or item.get('country')))
+               (r_filter == all_region_str or r_filter == (item.get(entity_key) or item.get('country') or item.get('region')))
         ]
         filtered = [i for i in pre_filtered if i[value_key] != 0] if config.get("ignore_zeros") else pre_filtered
 
@@ -126,37 +133,49 @@ def _create_generic_graph(
                 on_stats_computed(None)
             return
 
-        # Apply Density Transformation if enabled
+        # Density Transformation with crash-prevention check
         is_density = get_is_density()
         effective_val_label = f"{value_label_str} / Location" if is_density else value_label_str
 
         if is_density:
             rloc_map = get_region_locations()
+            has_valid_locations = False
             transformed = []
             for itm in filtered:
                 copy_item = dict(itm)
-                # Country metrics store country location count directly
-                if "locations" in copy_item:
+                if "locations" in copy_item and (copy_item.get("locations") or 0) > 0:
                     locs = copy_item["locations"]
+                    has_valid_locations = True
                 else:
                     reg = copy_item.get("region", "")
                     locs = rloc_map.get(reg, 0)
+                    if locs > 0:
+                        has_valid_locations = True
                 copy_item[value_key] = (copy_item[value_key] / locs) if locs > 0 else 0.0
                 transformed.append(copy_item)
+
+            if not has_valid_locations:
+                ax.text(0.5, 0.5, "No count of locations stored for this data.\nCannot calculate density.",
+                        ha='center', va='center', fontsize=12, color='red')
+                ax.figure.canvas.draw_idle()
+                if on_stats_computed:
+                    on_stats_computed(None)
+                return
+
             filtered = transformed
 
-        is_r_picked = (r_filter != STR_ALL_REGIONS)
-        entity_key = category_key if is_r_picked else ('country' if 'country' in filtered[0] else 'region')
-        display_title = r_filter if is_r_picked else c_filter
+        is_r_picked = (r_filter != all_region_str)
+        display_title = f"{c_filter} in {r_filter}" if (is_r_picked and not all_category_str) else (r_filter if is_r_picked else c_filter)
 
-        if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS:
+        if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS and not is_r_picked:
             _render_stats_mode(ax, filtered, value_key, effective_val_label, display_title, entity_key,
                                get_stats_bands(), on_stats_computed, on_lines_plotted)
             return
 
         _render_standard_mode(ax, filtered, m_filter, c_filter, r_filter, all_category_str,
                               category_key, value_key, effective_val_label, add_zero_start,
-                              get_is_moving_avg, get_period_value, config, on_stats_computed, on_lines_plotted)
+                              get_is_moving_avg, get_period_value, config, on_stats_computed, on_lines_plotted,
+                              entity_key=entity_key, all_region_str=all_region_str)
 
     if set_redraw_fn:
         set_redraw_fn(update_plot)
@@ -174,7 +193,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     for item in filtered_data:
         m = item['moment']
         val = item[value_key]
-        ent = item.get(entity_key, item.get('region', ''))
+        ent = item.get(entity_key, item.get('country', item.get('region', '')))
         moments_dict.setdefault(m, []).append((ent, val))
         country_series.setdefault(ent, {})[m] = val
 
@@ -210,8 +229,8 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
         "biggest_increase": sorted(changes, key=lambda x: x[1], reverse=True)[:3],
         "biggest_decrease": sorted(changes, key=lambda x: x[1])[:3],
         "most_volatile": sorted(changes, key=lambda x: x[4], reverse=True)[:3],
-        "overall_mean": np.mean(all_values),
-        "overall_std": np.std(all_values)
+        "overall_mean": np.mean(all_values) if all_values else 0.0,
+        "overall_std": np.std(all_values) if all_values else 0.0
     }
     ax._global_stats = global_stats
 
@@ -239,7 +258,8 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
 def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_cat,
                           cat_key, val_key, val_label, add_zero, get_is_moving_avg, get_period,
-                          config, on_stats_computed, on_lines_plotted):
+                          config, on_stats_computed, on_lines_plotted,
+                          entity_key="region", all_region_str=STR_ALL_REGIONS):
     ax._stats_moments_data = None
     ax._global_stats = None
     if on_stats_computed:
@@ -247,11 +267,17 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 
     is_m_all = m_filter == STR_ALL_MOMENTS
     is_c_picked = c_filter != all_cat
-    is_r_picked = r_filter != STR_ALL_REGIONS
+    is_r_picked = r_filter != all_region_str
     colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
 
     if is_m_all and (is_c_picked or is_r_picked):
-        plot_key = cat_key if is_r_picked else 'region'
+        if is_r_picked and all_cat is None:
+            plot_key = entity_key
+        elif is_r_picked:
+            plot_key = cat_key
+        else:
+            plot_key = entity_key
+
         series = {}
         for item in filtered_data:
             ent = item.get(plot_key, '')
@@ -273,7 +299,12 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
         ax.set_xlabel("Time")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.set_ylabel(val_label)
-        ax.set_title(f"{val_label}s for: {c_filter}" if is_c_picked else f"{val_label}s in: {r_filter}")
+        if is_r_picked and all_cat is None:
+            ax.set_title(f"{c_filter} for {r_filter}")
+        elif is_c_picked:
+            ax.set_title(f"{val_label}s for: {c_filter}")
+        else:
+            ax.set_title(f"{val_label}s in: {r_filter}")
 
         marker = 'o' if len(set(i['moment'] for i in filtered_data)) <= 50 else None
         is_ma = get_is_moving_avg()
@@ -297,16 +328,22 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
             ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
 
     elif not is_m_all and (is_c_picked or is_r_picked):
-        color_key = cat_key if is_r_picked else 'region'
+        if is_r_picked and all_cat is None:
+            color_key = entity_key
+        elif is_r_picked:
+            color_key = cat_key
+        else:
+            color_key = entity_key
+
         items = sorted(list(set(i.get(color_key, '') for i in filtered_data)))
         cmap = {n: next(colors) for n in items}
-        labels = [str(i.get(cat_key if is_r_picked else 'region', '')) for i in filtered_data]
+        labels = [str(i.get(color_key, '')) for i in filtered_data]
         values = [i[val_key] for i in filtered_data]
         b_colors = [cmap[i.get(color_key, '')] for i in filtered_data]
 
         ax.bar(labels, values, color=b_colors)
         ax.set_ylabel(val_label)
-        ax.set_title(f"{val_label}s for Month: {m_filter}")
+        ax.set_title(f"{val_label}s for Month/Year: {m_filter}")
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
         if items:

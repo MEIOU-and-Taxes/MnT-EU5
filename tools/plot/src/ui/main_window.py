@@ -133,12 +133,14 @@ class MainWindow(QMainWindow):
         self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately [Ctrl+R]")
 
         self.combo_refresh = QComboBox()
+        self.combo_refresh.setMaxVisibleItems(50)
         self.combo_refresh.addItems(["Refresh: 10s", "Refresh: 30s", "Refresh: 60s", "Refresh: 300s", "Refresh: 600s", "Refresh: Off"])
         self.combo_refresh.setToolTip("Sets the interval at which graphs are re-rendered when new data is parsed.\nFiles are always checked every 5 seconds.")
 
         self.btn_load_session = QPushButton("Load session [Ctrl+O]")
         self.btn_save_session = QPushButton("Save session [Ctrl+S]")
         self.combo_autosave = QComboBox()
+        self.combo_autosave.setMaxVisibleItems(50)
         self.combo_autosave.addItems(["Auto-save: 1m", "Auto-save: 5m", "Auto-save: 10m", "No auto-save"])
 
         self.btn_clear_data = QPushButton("Clear data")
@@ -360,14 +362,26 @@ class MainWindow(QMainWindow):
         try:
             if title in self.chart_filter_memory:
                 for k, val in self.chart_filter_memory[title].items():
-                    if k in self.filter_widget_map:
-                        idx = self.filter_widget_map[k].findText(val)
-                        if idx != -1: self.filter_widget_map[k].setCurrentIndex(idx)
+                    target_key = k
+                    if target_key not in self.filter_widget_map:
+                        if target_key == 'region' and 'country' in self.filter_widget_map:
+                            target_key = 'country'
+                        elif target_key == 'region' and 'market' in self.filter_widget_map:
+                            target_key = 'market'
+                    if target_key in self.filter_widget_map:
+                        idx = self.filter_widget_map[target_key].findText(val)
+                        if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
             elif title in self.key_configs and "F1" in self.key_configs[title]:
                 for k, val in self.key_configs[title]["F1"].get("filters", {}).items():
-                    if k in self.filter_widget_map:
-                        idx = self.filter_widget_map[k].findText(val)
-                        if idx != -1: self.filter_widget_map[k].setCurrentIndex(idx)
+                    target_key = k
+                    if target_key not in self.filter_widget_map:
+                        if target_key == 'region' and 'country' in self.filter_widget_map:
+                            target_key = 'country'
+                        elif target_key == 'region' and 'market' in self.filter_widget_map:
+                            target_key = 'market'
+                    if target_key in self.filter_widget_map:
+                        idx = self.filter_widget_map[target_key].findText(val)
+                        if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
         finally:
             for widget in self.filter_widget_map.values():
                 widget.blockSignals(False)
@@ -412,24 +426,25 @@ class MainWindow(QMainWindow):
     def handle_line_click(self, line_label):
         if not self.current_graph_info or self.is_stats_mode:
             return
-        if self.current_graph_info['title'] in ("Market Statistics", "Country Metrics"):
-            return
 
         cat_k = self.current_graph_info['info']['config']['category_key']
+        entity_k = self.current_graph_info['info']['config'].get('entity_key', 'region')
         c_combo = self.filter_widget_map.get(cat_k)
-        r_combo = self.filter_widget_map.get('region')
+        r_combo = self.filter_widget_map.get(entity_k)
         if not c_combo or not r_combo:
             return
 
         for combo in (c_combo, r_combo):
             combo.blockSignals(True)
         try:
-            if c_combo.currentIndex() != 0 and r_combo.currentIndex() == 0:
+            all_cat = self.current_graph_info['info']['config'].get('all_category_str')
+            if (c_combo.currentIndex() != 0 or all_cat is None) and r_combo.currentIndex() == 0:
                 idx = r_combo.findText(line_label)
                 if idx != -1:
                     r_combo.setCurrentIndex(idx)
-                    c_combo.setCurrentIndex(0)
-            elif r_combo.currentIndex() != 0 and c_combo.currentIndex() == 0:
+                    if all_cat:
+                        c_combo.setCurrentIndex(0)
+            elif r_combo.currentIndex() != 0 and (c_combo.currentIndex() == 0 and all_cat):
                 idx = c_combo.findText(line_label)
                 if idx != -1:
                     c_combo.setCurrentIndex(idx)
@@ -451,6 +466,28 @@ class MainWindow(QMainWindow):
         self.redraw_current_plot()
 
     def toggle_density(self, checked):
+        if checked:
+            rloc_map = log_parser.get_region_locations()
+            has_country_locs = any(
+                (r.get("locations", 0) or r.get("num_locations", 0) or 0) > 0
+                for r in log_parser.tg_cumulative_store.values()
+            )
+            has_region_locs = bool(rloc_map and any(v > 0 for v in rloc_map.values()))
+
+            is_country = bool(self.current_graph_info and self.current_graph_info['title'] == "Country Metrics")
+            has_locs = has_country_locs if is_country else has_region_locs
+
+            if not has_locs:
+                QMessageBox.warning(
+                    self,
+                    "No Location Data",
+                    "There is no count of locations stored in the loaded logs.\n\n"
+                    "Density calculation requires location counts (from in-game event)."
+                )
+                self.btn_density.setChecked(False)
+                self.is_density = False
+                return
+
         self.is_density = checked
         self.redraw_current_plot()
 
@@ -544,9 +581,15 @@ class MainWindow(QMainWindow):
             combo.blockSignals(True)
         try:
             for k, v in filters.items():
-                if k in self.filter_widget_map:
-                    idx = self.filter_widget_map[k].findText(v)
-                    if idx != -1: self.filter_widget_map[k].setCurrentIndex(idx)
+                target_key = k
+                if target_key not in self.filter_widget_map:
+                    if target_key == 'region' and 'country' in self.filter_widget_map:
+                        target_key = 'country'
+                    elif target_key == 'region' and 'market' in self.filter_widget_map:
+                        target_key = 'market'
+                if target_key in self.filter_widget_map:
+                    idx = self.filter_widget_map[target_key].findText(v)
+                    if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
         finally:
             for combo in self.filter_widget_map.values():
                 combo.blockSignals(False)
