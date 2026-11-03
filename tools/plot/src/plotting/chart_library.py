@@ -202,6 +202,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
     ax.set_xlabel("Time")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.ticklabel_format(useOffset=False, style='plain', axis='x')
     ax.set_ylabel(value_label)
     ax.set_title(f"Statistical Distribution: {display_title}")
     ax.legend(loc="upper left", ncol=2 if num_bands > 5 else 1, fontsize=9, framealpha=0.85)

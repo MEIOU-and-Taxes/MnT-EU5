@@ -130,25 +130,26 @@ def parse_data_building_types(data: str):
         building = m.group(2).strip()
         count = int(m.group(3))
         region = m.group(4).strip()
-        bt_cumulative_store[(moment, region, building)] = {
-            "moment": moment, "building": building, "count": count, "region": region
-        }
+        bt_cumulative_store[(moment, region, building)] = count
 
     if not bt_cumulative_store:
         _bt_cache = []
         return _bt_cache
 
-    all_moments = sorted(set(r["moment"] for r in bt_cumulative_store.values()))
-    all_regions = sorted(set(r["region"] for r in bt_cumulative_store.values()))
-    all_buildings = sorted(set(r["building"] for r in bt_cumulative_store.values()))
+    all_moments = sorted(set(k[0] for k in bt_cumulative_store.keys()))
+    all_regions = sorted(set(k[1] for k in bt_cumulative_store.keys()))
+    all_buildings = sorted(set(k[2] for k in bt_cumulative_store.keys()))
 
     filled_data = []
     for m in all_moments:
         for reg in all_regions:
             for bld in all_buildings:
-                cnt = bt_cumulative_store.get((m, reg, bld), {}).get("count", 0)
+                cnt = bt_cumulative_store.get((m, reg, bld), 0)
                 filled_data.append({
-                    "moment": m, "building": bld, "count": cnt, "region": reg
+                    "moment": m,
+                    "building": bld,
+                    "count": cnt,
+                    "region": reg
                 })
 
     _bt_cache = filled_data
@@ -169,7 +170,7 @@ def parse_data_goods_prices(data: str):
         gp_cumulative_store[(moment, region, good)] = {
             "moment": moment, "good": good, "region": region, "price": price
         }
-    _gp_cache = sorted(gp_cumulative_store.values(), key=lambda x: x["moment"])
+    _gp_cache = sorted(gp_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["good"]))
     return _gp_cache
 
 def parse_data_population(data: str):
@@ -182,9 +183,12 @@ def parse_data_population(data: str):
         region = m.group(2).strip()
         pop = parse_dynamic_numeric_value(m.group(3))
         pop_cumulative_store[(moment, region)] = {
-            "moment": moment, "region": region, "statistic": "Total Population", "population": pop
+            "moment": moment,
+            "region": region,
+            "statistic": "Total Population",
+            "population": pop
         }
-    _pop_cache = sorted(pop_cumulative_store.values(), key=lambda x: x["moment"])
+    _pop_cache = sorted(pop_cumulative_store.values(), key=lambda x: (x["moment"], x["region"]))
     return _pop_cache
 
 def parse_data_road_types(data: str):
@@ -206,7 +210,7 @@ def parse_data_road_types(data: str):
             "locations_with_road": locs_w_road,
             "coverage_percentage": (locs_w_road / locs * 100) if locs > 0 else 0
         }
-    _rt_cache = sorted(rt_cumulative_store.values(), key=lambda x: x["moment"])
+    _rt_cache = sorted(rt_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["road_type"]))
     return _rt_cache
 
 def parse_data_markets(data: str):
@@ -229,7 +233,7 @@ def parse_data_markets(data: str):
             mk_cumulative_store[(moment, market_name, name)] = {
                 "moment": moment, "region": market_name, "statistic": name, "value": v
             }
-    _mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: x["moment"])
+    _mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["statistic"]))
     return _mk_cache
 
 def parse_data_country_metrics(data: str):
@@ -270,3 +274,15 @@ def parse_data_country_metrics(data: str):
                 })
     _cm_cache = transformed
     return _cm_cache
+
+def parse_all_logs(data: str):
+    """Parses incoming log data into ALL cumulative stores simultaneously."""
+    if not data:
+        return
+    parse_data_countries(data)
+    parse_data_country_metrics(data)
+    parse_data_building_types(data)
+    parse_data_goods_prices(data)
+    parse_data_markets(data)
+    parse_data_population(data)
+    parse_data_road_types(data)

@@ -4,6 +4,12 @@ import pickle
 from datetime import datetime
 from src.parsing import log_parser
 
+def _safe_int(val):
+    try:
+        return int(float(val))
+    except (ValueError, TypeError):
+        return 0
+
 def save_session(filepath, raw_data, logs, chart_filter_memory, current_chart_title) -> bool:
     if not raw_data:
         return False
@@ -13,12 +19,12 @@ def save_session(filepath, raw_data, logs, chart_filter_memory, current_chart_ti
         "data": raw_data,
         "logs": logs,
         "cumulative_stores": {
-            "tg": {f"{k[0]}:{k[1]}": v for k, v in log_parser.tg_cumulative_store.items()},
-            "bt": {f"{k[0]}:{k[1]}:{k[2]}": v for k, v in log_parser.bt_cumulative_store.items()},
-            "gp": {f"{k[0]}:{k[1]}:{k[2]}": v for k, v in log_parser.gp_cumulative_store.items()},
-            "pop": {f"{k[0]}:{k[1]}": v for k, v in log_parser.pop_cumulative_store.items()},
-            "rt": {f"{k[0]}:{k[1]}:{k[2]}": v for k, v in log_parser.rt_cumulative_store.items()},
-            "mk": {f"{k[0]}:{k[1]}:{k[2]}": v for k, v in log_parser.mk_cumulative_store.items()},
+            "tg": {f"{_safe_int(k[0])}:{k[1]}": v for k, v in log_parser.tg_cumulative_store.items()},
+            "bt": {f"{_safe_int(k[0])}:{k[1]}:{k[2]}": v for k, v in log_parser.bt_cumulative_store.items()},
+            "gp": {f"{_safe_int(k[0])}:{k[1]}:{k[2]}": v for k, v in log_parser.gp_cumulative_store.items()},
+            "pop": {f"{_safe_int(k[0])}:{k[1]}": v for k, v in log_parser.pop_cumulative_store.items()},
+            "rt": {f"{_safe_int(k[0])}:{k[1]}:{k[2]}": v for k, v in log_parser.rt_cumulative_store.items()},
+            "mk": {f"{_safe_int(k[0])}:{k[1]}:{k[2]}": v for k, v in log_parser.mk_cumulative_store.items()},
         },
         "chart_filter_memory": chart_filter_memory,
         "current_chart": current_chart_title
@@ -35,37 +41,36 @@ def load_session(filepath) -> dict:
 
     log_parser.reset_cumulative_history()
 
-    # Backwards compatibility with version 1
-    if "cumulative_store" in session:
-        for k_str, val in session["cumulative_store"].items():
-            parts = k_str.split(":", 1)
-            if len(parts) == 2:
-                log_parser.tg_cumulative_store[(int(parts[0]), parts[1])] = val
-
     stores = session.get("cumulative_stores", {})
     for k_str, val in stores.get("tg", {}).items():
         p = k_str.split(":", 1)
-        if len(p) == 2: log_parser.tg_cumulative_store[(int(p[0]), p[1])] = val
+        if len(p) == 2:
+            log_parser.tg_cumulative_store[(_safe_int(p[0]), p[1])] = val
 
     for k_str, val in stores.get("bt", {}).items():
         p = k_str.split(":", 2)
-        if len(p) == 3: log_parser.bt_cumulative_store[(int(p[0]), p[1], p[2])] = val
+        if len(p) == 3:
+            log_parser.bt_cumulative_store[(_safe_int(p[0]), p[1], p[2])] = val
 
     for k_str, val in stores.get("gp", {}).items():
         p = k_str.split(":", 2)
-        if len(p) == 3: log_parser.gp_cumulative_store[(int(p[0]), p[1], p[2])] = val
+        if len(p) == 3:
+            log_parser.gp_cumulative_store[(_safe_int(p[0]), p[1], p[2])] = val
 
     for k_str, val in stores.get("pop", {}).items():
         p = k_str.split(":", 1)
-        if len(p) == 2: log_parser.pop_cumulative_store[(int(p[0]), p[1])] = val
+        if len(p) == 2:
+            log_parser.pop_cumulative_store[(_safe_int(p[0]), p[1])] = val
 
     for k_str, val in stores.get("rt", {}).items():
         p = k_str.split(":", 2)
-        if len(p) == 3: log_parser.rt_cumulative_store[(int(p[0]), p[1], p[2])] = val
+        if len(p) == 3:
+            log_parser.rt_cumulative_store[(_safe_int(p[0]), p[1], p[2])] = val
 
     for k_str, val in stores.get("mk", {}).items():
         p = k_str.split(":", 2)
-        if len(p) == 3: log_parser.mk_cumulative_store[(int(p[0]), p[1], p[2])] = val
+        if len(p) == 3:
+            log_parser.mk_cumulative_store[(_safe_int(p[0]), p[1], p[2])] = val
 
     log_parser.clear_all_caches()
     return session

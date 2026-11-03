@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
         self.period_value = 5
         self.chart_filter_memory = {}
         self.last_log_state = None
+        self.has_new_data = False
 
         self._build_ui()
         self.setup_shortcuts()
@@ -72,12 +73,19 @@ class MainWindow(QMainWindow):
         self.load_graph_definitions()
         self.display_info_screen()
 
-        # Watchers
-        self.timer_auto_reload = QTimer(self)
-        self.timer_auto_reload.setInterval(REFRESH_PERIOD_MS)
-        self.timer_auto_reload.timeout.connect(self.check_log_updates)
-        self.timer_auto_reload.start()
+        # Constant 5-second watcher: checks and reads log files from disk
+        self.timer_file_watcher = QTimer(self)
+        self.timer_file_watcher.setInterval(REFRESH_PERIOD_MS)
+        self.timer_file_watcher.timeout.connect(self.check_log_updates)
+        self.timer_file_watcher.start()
 
+        # Graph re-render timer: controlled by combo_refresh
+        self.timer_graph_refresh = QTimer(self)
+        self.timer_graph_refresh.setInterval(10 * 1000)
+        self.timer_graph_refresh.timeout.connect(self.auto_refresh_graph)
+        self.timer_graph_refresh.start()
+
+        # Auto-save timer
         self.timer_auto_save = QTimer(self)
         self.timer_auto_save.setInterval(AUTOSAVE_PERIOD_MS)
         self.timer_auto_save.timeout.connect(self.auto_save_data)
@@ -114,8 +122,14 @@ class MainWindow(QMainWindow):
         self.top_button_layout = QHBoxLayout()
         self.btn_change_log_folder = QPushButton("Open log folder [Ctrl+L]")
         self.btn_charts = QPushButton("Charts [`]")
+
+        # Manual refresh button & re-render interval selector
+        self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
+        self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately [Ctrl+R]")
+
         self.combo_refresh = QComboBox()
         self.combo_refresh.addItems(["Refresh: 10s", "Refresh: 30s", "Refresh: 60s", "Refresh: 300s", "Refresh: 600s", "Refresh: Off"])
+        self.combo_refresh.setToolTip("Sets the interval at which graphs are re-rendered when new data is parsed.\nFiles are always checked every 5 seconds.")
 
         self.btn_load_session = QPushButton("Load session [Ctrl+O]")
         self.btn_save_session = QPushButton("Save session [Ctrl+S]")
@@ -149,7 +163,7 @@ class MainWindow(QMainWindow):
         self.btn_log_scale.setCheckable(True)
         self.btn_moving_avg.setCheckable(True)
 
-        for w in [self.btn_change_log_folder, self.btn_charts, self.combo_refresh, self.btn_load_session,
+        for w in [self.btn_change_log_folder, self.btn_charts, self.btn_refresh, self.combo_refresh, self.btn_load_session,
                   self.btn_save_session, self.combo_autosave, self.btn_clear_data, self.btn_export_all, self.btn_backup,
                   self.btn_analysis, self.btn_fullscreen, self.btn_log_scale, self.btn_moving_avg,
                   self.slider_period, self.lbl_period_value, self.btn_stats_mode, self.combo_stats_bands]:
@@ -165,6 +179,7 @@ class MainWindow(QMainWindow):
         self.layout.addLayout(self.filter_layout)
 
         # Wire UI Events
+        self.btn_refresh.clicked.connect(self.manual_refresh)
         self.combo_refresh.currentIndexChanged.connect(self._on_refresh_rate_changed)
         self.combo_autosave.currentIndexChanged.connect(self._on_autosave_rate_changed)
         self.btn_backup.clicked.connect(self.backup_log)
@@ -183,6 +198,7 @@ class MainWindow(QMainWindow):
         self.btn_clear_data.clicked.connect(self.clear_data)
 
     def setup_shortcuts(self):
+        QShortcut(QKeySequence("Ctrl+R"), self, self.manual_refresh)
         QShortcut(QKeySequence("Shift+S"), self, self.backup_log)
         QShortcut(QKeySequence("Ctrl+L"), self, self.change_log_folder)
         QShortcut(QKeySequence("A"), self, self.open_analysis_toolkit)
@@ -236,14 +252,15 @@ class MainWindow(QMainWindow):
                 k: w.currentText() for k, w in self.filter_widget_map.items() if isinstance(w, QComboBox)
             }
 
-    def display_chart(self, graph_info, title):
+    def display_chart(self, graph_info, title, preserve_toggles=False):
         self._save_current_filters_to_memory()
 
         self.current_graph_info = {'info': graph_info, 'title': title}
-        self.is_log_scale = False
-        self.btn_log_scale.setChecked(False)
-        self.is_moving_average = False
-        self.btn_moving_avg.setChecked(False)
+        if not preserve_toggles:
+            self.is_log_scale = False
+            self.btn_log_scale.setChecked(False)
+            self.is_moving_average = False
+            self.btn_moving_avg.setChecked(False)
 
         self._reset_filter_layout()
         self.ax.clear()
@@ -272,20 +289,53 @@ class MainWindow(QMainWindow):
         self.canvas.draw()
 
     def clear_data(self):
-        reply = QMessageBox.question(
-            self, "Clear Data",
-            "Are you sure you want to clear all loaded log data and reset caches?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            self.data = ""
-            self.logs = []
-            self.last_log_state = None
-            self.chart_filter_memory.clear()
-            log_parser.reset_cumulative_history()
-            self.stats_panel.clear()
-            self.display_info_screen("All data cleared. Click 'Open log folder' or refresh to reload.")
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Clear Data")
+        msg_box.setText("Choose how you want to clear the data:")
 
+        btn_clear_both = msg_box.addButton("Clear app data and log files", QMessageBox.ButtonRole.DestructiveRole)
+        btn_clear_app = msg_box.addButton("Clear app data only", QMessageBox.ButtonRole.AcceptRole)
+        btn_cancel = msg_box.addButton(QMessageBox.StandardButton.Cancel)
+
+        msg_box.exec()
+        clicked = msg_box.clickedButton()
+
+        if clicked == btn_cancel or clicked is None:
+            return
+
+        # Reset application in-memory stores and caches
+        self.data = ""
+        self.logs = []
+        self.chart_filter_memory.clear()
+        self.has_new_data = False
+        log_parser.reset_cumulative_history()
+        self.stats_panel.clear()
+
+        # If requested, clear the contents of error.log and the 5 rotated files (error.1.log to error.5.log)
+        cleared_files_count = 0
+        if clicked == btn_clear_both:
+            target_files = set(self.get_all_log_files())
+            target_files.add(os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.log"))
+            for i in range(1, 6):
+                target_files.add(os.path.join(self.log_folder, f"{TARGET_FILE_NAME_ROOT}.{i}.log"))
+
+            for filepath in target_files:
+                if os.path.exists(filepath):
+                    try:
+                        with open(filepath, 'w', encoding='utf-8'):
+                            pass
+                        cleared_files_count += 1
+                    except (IOError, PermissionError) as e:
+                        print(f"Could not clear file {filepath}: {e}")
+
+        self._update_last_log_state()
+
+        status_msg = (
+            f"App data cleared and contents of {cleared_files_count} log file(s) emptied."
+            if clicked == btn_clear_both
+            else "App data cleared."
+        )
+        self.display_info_screen(f"{status_msg}\nPlay more or refresh to reload.")
 
     def _restore_filters(self, title):
         for widget in self.filter_widget_map.values():
@@ -502,10 +552,28 @@ class MainWindow(QMainWindow):
                 print(f"Log read warning: {e}")
         return files, "".join(chunks)
 
-    def reload_log(self, is_interactive=True):
-        saved_info = self.current_graph_info
+    def read_and_parse_logs(self):
+        """Reads log files and populates cumulative parsed stores."""
         log_parser.clear_all_caches()
         self.logs, self.data = self.read_all_logs()
+        if self.data:
+            log_parser.parse_all_logs(self.data)
+
+    def _update_last_log_state(self):
+        cur = []
+        for f in self.get_all_log_files():
+            try:
+                s = os.stat(f)
+                cur.append((f, s.st_size, s.st_mtime))
+            except OSError:
+                pass
+        self.last_log_state = cur
+
+    def reload_log(self, is_interactive=True):
+        saved_info = self.current_graph_info
+        self.read_and_parse_logs()
+        self._update_last_log_state()
+        self.has_new_data = False
 
         if is_interactive and not self.logs:
             if QMessageBox.warning(self, "No Logs", f"No logs in {self.log_folder}.\nChange?",
@@ -514,13 +582,19 @@ class MainWindow(QMainWindow):
                 return
 
         if saved_info:
-            self.display_chart(saved_info['info'], saved_info['title'])
+            self.display_chart(saved_info['info'], saved_info['title'], preserve_toggles=True)
         else:
             self.display_info_screen()
 
+    def manual_refresh(self):
+        """Forces an immediate read of all log files and re-renders the current chart."""
+        self.reload_log(is_interactive=True)
+
     def check_log_updates(self):
+        """Runs every 5 seconds to inspect files on disk and ingest changes."""
         files = self.get_all_log_files()
-        if not files: return
+        if not files:
+            return
         cur = []
         for f in files:
             try:
@@ -528,12 +602,27 @@ class MainWindow(QMainWindow):
                 cur.append((f, s.st_size, s.st_mtime))
             except OSError:
                 return
+
         if self.last_log_state is None:
             self.last_log_state = cur
             return
+
         if cur != self.last_log_state:
             self.last_log_state = cur
-            self.reload_log(is_interactive=False)
+            self.read_and_parse_logs()
+            self.has_new_data = True
+
+    def auto_refresh_graph(self):
+        """Re-renders current chart when new data has arrived."""
+        if not self.has_new_data:
+            return
+        self.has_new_data = False
+        if self.current_graph_info:
+            self.display_chart(
+                self.current_graph_info['info'],
+                self.current_graph_info['title'],
+                preserve_toggles=True
+            )
 
     def backup_log(self):
         if not self.logs: return
@@ -584,6 +673,8 @@ class MainWindow(QMainWindow):
         self.data = session.get("data", "")
         self.logs = session.get("logs", [])
         self.chart_filter_memory = session.get("chart_filter_memory", {})
+        self.has_new_data = False
+        self._update_last_log_state()
         cur = session.get("current_chart")
         if cur and cur in self.graphs:
             self.display_chart(self.graphs[cur], cur)
@@ -600,10 +691,11 @@ class MainWindow(QMainWindow):
     def _on_refresh_rate_changed(self, idx):
         intervals = [10, 30, 60, 300, 600, 0]
         ms = intervals[idx] * 1000
-        if ms == 0: self.timer_auto_reload.stop()
+        if ms == 0:
+            self.timer_graph_refresh.stop()
         else:
-            self.timer_auto_reload.setInterval(ms)
-            self.timer_auto_reload.start()
+            self.timer_graph_refresh.setInterval(ms)
+            self.timer_graph_refresh.start()
 
     def _on_autosave_rate_changed(self, idx):
         intervals = [60, 300, 600, 0]
