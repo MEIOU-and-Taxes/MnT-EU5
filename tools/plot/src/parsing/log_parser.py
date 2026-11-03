@@ -1,14 +1,10 @@
 ﻿import re
 
-from src.parsing.definitions import HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY
+from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY, \
+    market_stats
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
 
 pattern = re.compile(r"::MK::(\d+):([^:\r\n]+):([^\r\n]+)")
-statistic_names = [
-    "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile Perc",
-    "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity",
-    "Burgher Trade Capacity", "Stockpile capacity", "Locations"
-]
 
 # Caches
 _bt_cache = None
@@ -111,16 +107,16 @@ def parse_data_countries(data: str):
             if m: values = m.group(1).strip().split(':')
 
         if values is not None:
-            if len(values) != len(HEADERS):
+            if len(values) != len(COUNTRY_FIRST_HEADERS):
                 if not warning_printed:
                     warning_printed = True
-                    print(f"Column count mismatch: got {len(values)}, expected {len(HEADERS)}")
+                    print(f"Column count mismatch: got {len(values)}, expected {len(COUNTRY_FIRST_HEADERS)}")
                 current_record = None
                 lines_after_tg = 99
                 continue
 
             lines_after_tg = -1
-            current_record = dict(zip(HEADERS, values))
+            current_record = dict(zip(COUNTRY_FIRST_HEADERS, values))
         elif lines_after_tg <= 15:
             if current_record is None:
                 lines_after_tg += 1
@@ -254,7 +250,7 @@ def parse_data_markets(data: str):
             except (ValueError, TypeError):
                 pass
 
-        stat_map = dict(zip(statistic_names, vals))
+        stat_map = dict(zip(market_stats, vals))
         loc_count = float(stat_map.get("Locations", 0.0))
 
         for name, v in stat_map.items():

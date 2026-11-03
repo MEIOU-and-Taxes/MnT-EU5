@@ -1,6 +1,6 @@
 ﻿"""Column and metadata definitions for log parsing."""
 
-HEADERS = [
+COUNTRY_FIRST_HEADERS = [
     "year", "tag", "name", "capital_area", "country_type", "government_type", "income", "current_research",
     "has_feudalism", "has_legalism", "has_meritocracy", "has_renaissance", "has_banking", "has_professional_armies",
     "has_new_world", "has_printing_press", "has_pike_and_shot", "has_confessionalism", "has_global_trade",
@@ -29,7 +29,7 @@ HEADERS = [
     "overlord_tag", "num_active_cb_targets", "annexation_progress", "diplomatic_range", "liberty_desire",
     "max_diplomatic_capacity", "max_diplomats", "num_diplomats", "num_subjects", "subject_loyalty", "used_diplomatic_capacity",
     "gold", "stability", "government_power", "prestige", "war_exhaustion", "manpower", "sailors", "inflation", "army_tradition",
-    "navy_tradition", "locations", "control_avg", "proximity_avg", "dev_avg", "prosperity_avg", "market_access_avg", "towns", "cities", "megalopolises", "winter_pow_avg", "bank_interest"
+    "navy_tradition", "locations", "control_avg", "proximity_avg", "dev_avg", "prosperity_avg", "market_access_avg", "towns", "cities", "megalopolises", "winter_pow_avg", "bank_interest", "trade_income", "monthly balance", "monthly expenses", "trade_income_perc", "debt_expense_ratio"
 ]
 
 SOCIETAL_VALUE_NAMES = [
@@ -51,3 +51,9 @@ EXCLUDED_KEYS_COUNTRY = {
     "current_research", "regency_type", "parliament_name", "parliament_type",
     "parliament_debate_estate", "parliament_debate_name", "overlord_tag"
 }
+
+market_stats = [
+    "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile Perc",
+    "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity",
+    "Burgher Trade Capacity", "Stockpile capacity", "Locations"
+]
