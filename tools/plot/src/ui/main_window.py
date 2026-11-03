@@ -65,6 +65,7 @@ class MainWindow(QMainWindow):
         self.preset_shortcuts = []
         self.is_log_scale = False
         self.is_moving_average = False
+        self.is_density = False
         self.period_value = 5
         self.chart_filter_memory = {}
         self.last_log_state = None
@@ -159,6 +160,11 @@ class MainWindow(QMainWindow):
         self.btn_stats_mode = QPushButton("Stats mode [T]")
         self.btn_stats_mode.setCheckable(True)
         self.btn_stats_mode.setChecked(True)
+
+        self.btn_density = QPushButton("Density [D]")
+        self.btn_density.setCheckable(True)
+        self.btn_density.setToolTip("Divides values by the number of locations.")
+
         self.btn_fullscreen.setCheckable(True)
         self.btn_log_scale.setCheckable(True)
         self.btn_moving_avg.setCheckable(True)
@@ -166,7 +172,7 @@ class MainWindow(QMainWindow):
         for w in [self.btn_change_log_folder, self.btn_charts, self.btn_preset_config, self.btn_refresh, self.combo_refresh,
                   self.btn_load_session, self.btn_save_session, self.combo_autosave, self.btn_clear_data, self.btn_export_all,
                   self.btn_backup, self.btn_analysis, self.btn_fullscreen, self.btn_log_scale, self.btn_moving_avg,
-                  self.slider_period, self.lbl_period_value, self.btn_stats_mode]:
+                  self.slider_period, self.lbl_period_value, self.btn_stats_mode, self.btn_density]:
             self.top_button_layout.addWidget(w)
 
         self.top_button_layout.addStretch(1)
@@ -193,6 +199,7 @@ class MainWindow(QMainWindow):
         self.btn_analysis.clicked.connect(self.open_analysis_toolkit)
         self.btn_change_log_folder.clicked.connect(self.change_log_folder)
         self.btn_stats_mode.toggled.connect(self.toggle_stats_mode)
+        self.btn_density.toggled.connect(self.toggle_density)
         self.btn_save_session.clicked.connect(self.manual_save)
         self.btn_load_session.clicked.connect(self.manual_load)
         self.btn_clear_data.clicked.connect(self.clear_data)
@@ -209,6 +216,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("L"), self, self.btn_log_scale.toggle)
         QShortcut(QKeySequence("W"), self, self.btn_moving_avg.toggle)
         QShortcut(QKeySequence("T"), self, self.btn_stats_mode.toggle)
+        QShortcut(QKeySequence("D"), self, self.btn_density.toggle)
         QShortcut(QKeySequence("Ctrl+O"), self, self.manual_load)
         QShortcut(QKeySequence("Ctrl+S"), self, self.manual_save)
 
@@ -262,6 +270,13 @@ class MainWindow(QMainWindow):
             self.btn_log_scale.setChecked(False)
             self.is_moving_average = False
             self.btn_moving_avg.setChecked(False)
+            self.is_density = False
+            self.btn_density.setChecked(False)
+
+        # Market statistics does not support density per requirement
+        is_market = (title == "Market Statistics")
+        self.btn_density.setVisible(not is_market)
+        self.btn_density.setEnabled(not is_market)
 
         self._reset_filter_layout()
         self.ax.clear()
@@ -274,7 +289,8 @@ class MainWindow(QMainWindow):
                 self.on_plot_updated, self.clear_tooltip_handler, self.filter_widget_map,
                 lambda: self.is_moving_average, lambda: self.period_value,
                 lambda: self.is_stats_mode, self.update_stats_summary_panel,
-                get_stats_bands_count, set_redraw_fn=self.set_redraw_fn
+                get_stats_bands_count, set_redraw_fn=self.set_redraw_fn,
+                get_is_density=lambda: (self.is_density and not is_market)
             )
             for combo in self.filter_widget_map.values():
                 if isinstance(combo, QComboBox):
@@ -432,6 +448,10 @@ class MainWindow(QMainWindow):
     def toggle_stats_mode(self, checked):
         self.is_stats_mode = checked
         self.stats_panel.setVisible(checked)
+        self.redraw_current_plot()
+
+    def toggle_density(self, checked):
+        self.is_density = checked
         self.redraw_current_plot()
 
     def toggle_log_scale(self, checked):

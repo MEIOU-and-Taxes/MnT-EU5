@@ -11,6 +11,7 @@ _mk_cache = None
 _rt_cache = None
 _tg_cache = None
 _cm_cache = None
+_rloc_cache = None
 
 # Cumulative stores across log overwrites / reloads
 tg_cumulative_store = {}
@@ -19,10 +20,11 @@ gp_cumulative_store = {}
 pop_cumulative_store = {}
 rt_cumulative_store = {}
 mk_cumulative_store = {}
+region_locations_store = {}
 
 def clear_all_caches():
-    global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache
-    _bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = None
+    global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache
+    _bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = None
 
 def reset_cumulative_history():
     tg_cumulative_store.clear()
@@ -31,7 +33,23 @@ def reset_cumulative_history():
     pop_cumulative_store.clear()
     rt_cumulative_store.clear()
     mk_cumulative_store.clear()
+    region_locations_store.clear()
     clear_all_caches()
+
+def parse_data_region_locations(data: str):
+    global _rloc_cache, region_locations_store
+    if _rloc_cache is not None:
+        return _rloc_cache
+    pattern = re.compile(r"::RLOC::(.*?):([\d.,]+)")
+    for m in pattern.finditer(data):
+        region = m.group(1).strip()
+        count = int(float(m.group(2).replace(',', '')))
+        region_locations_store[region] = count
+    _rloc_cache = region_locations_store
+    return _rloc_cache
+
+def get_region_locations():
+    return region_locations_store
 
 def parse_data_countries(data: str):
     global _tg_cache, tg_cumulative_store
@@ -247,6 +265,7 @@ def parse_data_country_metrics(data: str):
         tag = r.get("tag", "")
         name = r.get("name", "")
         label = f"{name} ({tag})" if name and name != tag else tag
+        country_locations = float(r.get("locations", 0) or 0)
 
         debt = r.get("total_debt", 0.0)
         income = r.get("income", 0.0)
@@ -257,7 +276,8 @@ def parse_data_country_metrics(data: str):
                 "country": label,
                 "metric": "total_debt_over_income",
                 "country_metric": "total_debt_over_income",
-                "value": round(debt / income if income > 0.001 else 0.0, 4)
+                "value": round(debt / income if income > 0.001 else 0.0, 4),
+                "locations": country_locations
             })
 
         for k, v in r.items():
@@ -268,7 +288,8 @@ def parse_data_country_metrics(data: str):
                     "country": label,
                     "metric": k,
                     "country_metric": k,
-                    "value": float(v)
+                    "value": float(v),
+                    "locations": country_locations
                 })
     _cm_cache = transformed
     return _cm_cache
@@ -277,6 +298,7 @@ def parse_all_logs(data: str):
     """Parses incoming log data into ALL cumulative stores simultaneously."""
     if not data:
         return
+    parse_data_region_locations(data)
     parse_data_countries(data)
     parse_data_country_metrics(data)
     parse_data_building_types(data)

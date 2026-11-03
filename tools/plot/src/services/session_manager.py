@@ -14,7 +14,7 @@ def save_session(filepath, raw_data, logs, chart_filter_memory, current_chart_ti
     if not raw_data:
         return False
     session = {
-        "version": 2,
+        "version": 3,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "data": raw_data,
         "logs": logs,
@@ -25,6 +25,7 @@ def save_session(filepath, raw_data, logs, chart_filter_memory, current_chart_ti
             "pop": {f"{_safe_int(k[0])}:{k[1]}": v for k, v in log_parser.pop_cumulative_store.items()},
             "rt": {f"{_safe_int(k[0])}:{k[1]}:{k[2]}": v for k, v in log_parser.rt_cumulative_store.items()},
             "mk": {f"{_safe_int(k[0])}:{k[1]}:{k[2]}": v for k, v in log_parser.mk_cumulative_store.items()},
+            "rloc": log_parser.region_locations_store,
         },
         "chart_filter_memory": chart_filter_memory,
         "current_chart": current_chart_title
@@ -71,6 +72,8 @@ def load_session(filepath) -> dict:
         p = k_str.split(":", 2)
         if len(p) == 3:
             log_parser.mk_cumulative_store[(_safe_int(p[0]), p[1], p[2])] = val
+
+    log_parser.region_locations_store.update(stores.get("rloc", {}))
 
     log_parser.clear_all_caches()
     return session

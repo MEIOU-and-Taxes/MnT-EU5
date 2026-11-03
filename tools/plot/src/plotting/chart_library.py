@@ -10,6 +10,7 @@ from src.constants import (
     POS_SUBPLOT_BOTTOM_EDGE, POS_SUBPLOT_RIGHT_EDGE, SHOW_LEGEND,
     ERROR_NO_DATA_MATCH
 )
+from src.parsing.log_parser import get_region_locations
 from src.plotting.configs import BT_CONFIG, GP_CONFIG, MK_CONFIG, POP_CONFIG, RT_CONFIG, CM_CONFIG
 from src.widgets.custom_combobox import RightClickableComboBox
 
@@ -41,6 +42,7 @@ def _create_generic_graph(
     on_stats_computed=None,
     get_stats_bands=lambda: 5,
     set_redraw_fn=None,
+    get_is_density=lambda: False,
     *,
     config  # <-- Keyword-only argument prevents positional collision
 ):
@@ -124,17 +126,36 @@ def _create_generic_graph(
                 on_stats_computed(None)
             return
 
+        # Apply Density Transformation if enabled
+        is_density = get_is_density()
+        effective_val_label = f"{value_label_str} / Location" if is_density else value_label_str
+
+        if is_density:
+            rloc_map = get_region_locations()
+            transformed = []
+            for itm in filtered:
+                copy_item = dict(itm)
+                # Country metrics store country location count directly
+                if "locations" in copy_item:
+                    locs = copy_item["locations"]
+                else:
+                    reg = copy_item.get("region", "")
+                    locs = rloc_map.get(reg, 0)
+                copy_item[value_key] = (copy_item[value_key] / locs) if locs > 0 else 0.0
+                transformed.append(copy_item)
+            filtered = transformed
+
         is_r_picked = (r_filter != STR_ALL_REGIONS)
         entity_key = category_key if is_r_picked else ('country' if 'country' in filtered[0] else 'region')
         display_title = r_filter if is_r_picked else c_filter
 
         if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS:
-            _render_stats_mode(ax, filtered, value_key, value_label_str, display_title, entity_key,
+            _render_stats_mode(ax, filtered, value_key, effective_val_label, display_title, entity_key,
                                get_stats_bands(), on_stats_computed, on_lines_plotted)
             return
 
         _render_standard_mode(ax, filtered, m_filter, c_filter, r_filter, all_category_str,
-                              category_key, value_key, value_label_str, add_zero_start,
+                              category_key, value_key, effective_val_label, add_zero_start,
                               get_is_moving_avg, get_period_value, config, on_stats_computed, on_lines_plotted)
 
     if set_redraw_fn:
