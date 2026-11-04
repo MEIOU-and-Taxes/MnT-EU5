@@ -160,7 +160,7 @@ class InteractiveLineTooltip:
                 max_ent = max((len(str(ent)) for ent, _ in top_formatted), default=10)
                 max_v = max((len(v_str) for _, v_str in top_formatted), default=6)
 
-                year_hdr = f"Relative year: {cur_x}" if is_year_offset else f"Year: {cur_x}"
+                year_hdr = f"Year: {cur_x}" if is_year_offset else f"Year: {cur_x}"
                 header_label = f"{year_hdr} | Curve: {curve_label}"
                 val_str = f"Val: {format_metric_3digits(target_val)}"
                 sep_len = max(len(header_label), max_ent + max_v + 5, 30)

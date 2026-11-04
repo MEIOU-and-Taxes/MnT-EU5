@@ -3,7 +3,13 @@
 NAME_WIDTH = 20
 TOP_N = 5          # every "Top ..." section is padded to exactly this many rows
 YEAR_OFFSET = 1337
+YEAR_WIDTH = 4
 
+def _fmt_year(y):
+    """Right-align a year in a fixed 4-char field (blank if missing)."""
+    if y is None or y == "":
+        return " " * YEAR_WIDTH
+    return f"{int(y):>{YEAR_WIDTH}}"
 
 def _fmt(v):
     return format_metric_3digits(v)
@@ -36,12 +42,12 @@ def _delta_row(item, signed, offset, years="none"):
     if years == "to" and len(item) > 5:
         y_to = _year(item[5], offset)
         if y_to != "":
-            yr_str = f": {y_to}"
+            yr_str = f": {_fmt_year(y_to)}"
     elif years == "span" and len(item) > 5:
         y_from = _year(item[4], offset)
         y_to = _year(item[5], offset)
         if y_from != "" and y_to != "":
-            yr_str = f": {y_from}→{y_to}"
+            yr_str = f": {_fmt_year(y_from)}→{_fmt_year(y_to)}"
 
     return (
         f"{reg[:NAME_WIDTH]:<{NAME_WIDTH}}: {delta_str:6} "
@@ -89,7 +95,7 @@ def format_stats_panel_text(global_stats: dict, year_stats: dict = None, is_year
     # ---- Per-year block -------------------------------------------------
     if year_stats:
         cur_y_disp = year_stats["year"] - offset
-        lines.append(f"====== Stats for {cur_y_disp} ======")
+        lines.append(f"====== Stats for {_fmt_year(cur_y_disp)} ======")
         lines.append(f"Count:      {year_stats['count']}")
         lines.append(f"Mean:       {_fmt(year_stats['mean'])}")
         lines.append(f"Median:     {_fmt(year_stats['median'])}")
@@ -98,7 +104,7 @@ def format_stats_panel_text(global_stats: dict, year_stats: dict = None, is_year
         prev_y = year_stats.get("prev_year")
         if prev_y is not None:
             prev_y_disp = prev_y - offset
-            span = f"({prev_y_disp} → {cur_y_disp})"
+            span = f"({_fmt_year(prev_y_disp)} → {_fmt_year(cur_y_disp)})"
             _add_section(lines,f"Top increases {span}",_change_rows(year_stats.get("biggest_increase"), +1, offset))
             _add_section(lines,f"Top decreases {span}",_change_rows(year_stats.get("biggest_decrease"), -1, offset))
     else:

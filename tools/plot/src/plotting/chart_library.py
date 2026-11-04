@@ -107,8 +107,11 @@ def _create_generic_graph(
     lbl_moment = QLabel(time_label_text)
     combo_moment = RightClickableComboBox()
     all_moments = sorted(list(set(item['moment'] for item in all_data)))
-    combo_moment.addItem(STR_ALL_MOMENTS)
-    combo_moment.addItems([str(m) for m in all_moments])
+    combo_moment._last_offset_state = is_year_offset
+    combo_moment.addItem(STR_ALL_MOMENTS, userData=None)
+    for m in all_moments:
+        lbl = str(m - 1337) if is_year_offset else str(m)
+        combo_moment.addItem(lbl, userData=m)
     filter_widget_map['moment'] = combo_moment
 
     # Category / Metric dropdown
@@ -149,14 +152,33 @@ def _create_generic_graph(
 
     def update_plot():
         on_plot_cleared()
-        m_filter = combo_moment.currentText()
-        selected_moment = combo_moment.currentData()
-        c_filter = combo_category.currentText()
-        r_filter = combo_region.currentText() if combo_region else all_region_str
         ax.clear()
 
         is_yr_offset = get_is_year_offset()
         ax._is_year_offset = is_yr_offset
+
+        # Dynamically refresh combobox items and label when offset toggle changes
+        if getattr(combo_moment, '_last_offset_state', None) != is_yr_offset:
+            combo_moment._last_offset_state = is_yr_offset
+            lbl_moment.setText("Relative Year:" if is_yr_offset else "Time:")
+            cur_data = combo_moment.currentData()
+            combo_moment.blockSignals(True)
+            combo_moment.clear()
+            combo_moment.addItem(STR_ALL_MOMENTS, userData=None)
+            for m in all_moments:
+                lbl = str(m - 1337) if is_yr_offset else str(m)
+                combo_moment.addItem(lbl, userData=m)
+            if cur_data is not None:
+                idx = combo_moment.findData(cur_data)
+                combo_moment.setCurrentIndex(idx if idx != -1 else 0)
+            else:
+                combo_moment.setCurrentIndex(0)
+            combo_moment.blockSignals(False)
+
+        m_filter = combo_moment.currentText()
+        selected_moment = combo_moment.currentData()
+        c_filter = combo_category.currentText()
+        r_filter = combo_region.currentText() if combo_region else all_region_str
 
         if has_region and all_category_str and c_filter != all_category_str and r_filter != all_region_str:
             ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a {region_label_str.replace(':', '')}, not both.",
@@ -357,7 +379,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
         for low, high, color in STATS_UPPER_BANDS + STATS_LOWER_BANDS:
             if low in stat_curves and high in stat_curves:
-                ax.fill_between(sorted_moments, stat_curves[low], stat_curves[high],
+                ax.fill_between(x_coords, stat_curves[low], stat_curves[high],
                                 color=color, alpha=STATS_BAND_ALPHA)
     else:
         if has_iqr:

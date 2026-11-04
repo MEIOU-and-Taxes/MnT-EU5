@@ -14,7 +14,7 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QAction, QDesktopService
 from PyQt6.QtWidgets import (
 	QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 	QPushButton, QComboBox, QTextEdit, QMessageBox,
-	QFileDialog
+	QFileDialog, QLabel
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -26,7 +26,7 @@ from src.constants import (
 	SETTINGS_PATH, ICON_PATH, GRAPH_INTRODUCTION, AUTOSAVES_KEPT,
 	POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE,
 	POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE,
-	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE
+	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE, PRESETS_PER_PAGE
 )
 from src.parsing import log_parser
 from src.plotting import chart_library, configs
@@ -71,6 +71,8 @@ class MainWindow(QMainWindow):
 		self.filter_widget_map = {}
 		self.preset_buttons = []
 		self.preset_shortcuts = []
+		self.preset_page = 0
+		self.current_preset_chart = None
 		self.is_log_scale = False
 		self.is_moving_average = False
 		self.is_density = False
@@ -221,7 +223,7 @@ class MainWindow(QMainWindow):
 		self.act_fullscreen.toggled.connect(self.toggle_fullscreen)
 		menu_view.addAction(self.act_fullscreen)
 
-		self.act_stats_mode = QAction("Stats Mode", self, checkable=True)
+		self.act_stats_mode = QAction("Stats mode", self, checkable=True)
 		self.act_stats_mode.setChecked(self.is_stats_mode)
 		self.act_stats_mode.setShortcut(QKeySequence("T"))
 		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
@@ -233,19 +235,19 @@ class MainWindow(QMainWindow):
 		self.act_year_offset.toggled.connect(self.toggle_year_offset)
 		menu_view.addAction(self.act_year_offset)
 
-		self.act_density = QAction("Density Mode", self, checkable=True)
+		self.act_density = QAction("Density mode", self, checkable=True)
 		self.act_density.setChecked(self.is_density)
 		self.act_density.setShortcut(QKeySequence("D"))
 		self.act_density.toggled.connect(self.toggle_density)
 		menu_view.addAction(self.act_density)
 
-		self.act_log_scale = QAction("Symlog Scale", self, checkable=True)
+		self.act_log_scale = QAction("Symlog scale", self, checkable=True)
 		self.act_log_scale.setChecked(self.is_log_scale)
 		self.act_log_scale.setShortcut(QKeySequence("L"))
 		self.act_log_scale.toggled.connect(self.toggle_log_scale)
 		menu_view.addAction(self.act_log_scale)
 
-		self.act_moving_avg = QAction("Moving Average", self, checkable=True)
+		self.act_moving_avg = QAction("Moving average", self, checkable=True)
 		self.act_moving_avg.setChecked(self.is_moving_average)
 		self.act_moving_avg.setShortcut(QKeySequence("W"))
 		self.act_moving_avg.toggled.connect(self.toggle_moving_average)
@@ -264,7 +266,7 @@ class MainWindow(QMainWindow):
 		menu_view.addAction(act_hide_dec)
 		self.addAction(act_hide_dec)
 
-		self.act_stats_shading_all = QAction("Shade All Percentile Bands", self, checkable=True)
+		self.act_stats_shading_all = QAction("Shade all percentile bands", self, checkable=True)
 		self.act_stats_shading_all.setChecked(self.stats_shading_all)
 		self.act_stats_shading_all.toggled.connect(self.toggle_stats_shading_all)
 		menu_view.addAction(self.act_stats_shading_all)
@@ -412,6 +414,13 @@ class MainWindow(QMainWindow):
 		self.sc_next_metric = QShortcut(QKeySequence("."), self)
 		self.sc_next_metric.activated.connect(self.select_next_metric)
 
+		# Hotkeys to navigate preset pages
+		self.sc_prev_preset_page = QShortcut(QKeySequence("Alt+Left"), self)
+		self.sc_prev_preset_page.activated.connect(self._prev_preset_page)
+
+		self.sc_next_preset_page = QShortcut(QKeySequence("Alt+Right"), self)
+		self.sc_next_preset_page.activated.connect(self._next_preset_page)
+
 	def _on_stats_hide_changed(self, idx):
 		self.stats_hide_idx = idx
 		self.save_app_settings()
@@ -493,6 +502,7 @@ class MainWindow(QMainWindow):
 		self.cursor_hover_handler = None
 		self._reset_filter_layout()
 		self.clear_preset_buttons()
+		self.current_preset_chart = None
 		self.ax.clear()
 		self.fig.suptitle(None)
 		self.ax.set_title("Menu")
@@ -754,7 +764,9 @@ class MainWindow(QMainWindow):
 		if not global_stats or not self.is_stats_mode:
 			self.stats_panel.clear()
 			return
-		self.stats_panel.setPlainText(format_stats_panel_text(global_stats, year_stats))
+		self.stats_panel.setPlainText(
+			format_stats_panel_text(global_stats, year_stats, is_year_offset=self.is_year_offset)
+		)
 
 	def toggle_stats_mode(self, checked):
 		self.is_stats_mode = checked
@@ -772,8 +784,7 @@ class MainWindow(QMainWindow):
 		self.btn_year_offset.setChecked(checked)
 		self.act_year_offset.setChecked(checked)
 		self.save_app_settings()
-		if self.current_graph_info:
-			self.display_chart(self.current_graph_info['info'], self.current_graph_info['title'], preserve_toggles=True)
+		self.redraw_current_plot()
 
 	def toggle_stats_shading_all(self, checked):
 		self.stats_shading_all = checked
@@ -915,20 +926,93 @@ class MainWindow(QMainWindow):
 
 	def setup_preset_buttons(self, chart_title):
 		self.clear_preset_buttons()
+		self.current_preset_chart = chart_title
+		self.preset_page = 0
 		cfgs = self.key_configs.get(chart_title, {})
 
+		# Keep all hotkeys active globally regardless of which page is visible
 		for key in sort_hotkeys(cfgs.keys()):
+			cfg = cfgs[key]
+			sc = QShortcut(QKeySequence(key), self)
+			sc.activated.connect(partial(self._apply_preset_filter, cfg.get("filters", {})))
+			self.preset_shortcuts.append(sc)
+
+		self._render_preset_buttons()
+
+	def _render_preset_buttons(self):
+		# Clear existing layout widgets without clearing global QShortcuts
+		while self.preset_button_layout.count():
+			item = self.preset_button_layout.takeAt(0)
+			if item.widget():
+				item.widget().deleteLater()
+		self.preset_buttons.clear()
+
+		if not getattr(self, 'current_preset_chart', None):
+			return
+
+		cfgs = self.key_configs.get(self.current_preset_chart, {})
+		sorted_keys = sort_hotkeys(cfgs.keys())
+		total_presets = len(sorted_keys)
+
+		if total_presets == 0:
+			return
+
+		total_pages = max(1, (total_presets + PRESETS_PER_PAGE - 1) // PRESETS_PER_PAGE)
+		if self.preset_page >= total_pages:
+			self.preset_page = total_pages - 1
+		elif self.preset_page < 0:
+			self.preset_page = 0
+
+		start_idx = self.preset_page * PRESETS_PER_PAGE
+		end_idx = min(start_idx + PRESETS_PER_PAGE, total_presets)
+		page_keys = sorted_keys[start_idx:end_idx]
+
+		for key in page_keys:
 			cfg = cfgs[key]
 			btn = QPushButton(f"{cfg.get('description', '')} [{key}]")
 			btn.clicked.connect(partial(self._apply_preset_filter, cfg.get("filters", {})))
 			self.preset_button_layout.addWidget(btn)
 			self.preset_buttons.append(btn)
 
-			sc = QShortcut(QKeySequence(key), self)
-			sc.activated.connect(partial(self._apply_preset_filter, cfg.get("filters", {})))
-			self.preset_shortcuts.append(sc)
 		self.preset_button_layout.addStretch(1)
 
+		if total_pages > 1:
+			btn_prev = QPushButton("◀")
+			btn_prev.setToolTip("Previous preset page [Alt+Left]")
+			btn_prev.setFixedWidth(32)
+			btn_prev.clicked.connect(self._prev_preset_page)
+
+			lbl_page = QLabel(f"Page {self.preset_page + 1}/{total_pages}")
+			lbl_page.setStyleSheet("font-weight: bold; padding: 0 4px;")
+
+			btn_next = QPushButton("▶")
+			btn_next.setToolTip("Next preset page [Alt+Right]")
+			btn_next.setFixedWidth(32)
+			btn_next.clicked.connect(self._next_preset_page)
+
+			self.preset_button_layout.addWidget(btn_prev)
+			self.preset_button_layout.addWidget(lbl_page)
+			self.preset_button_layout.addWidget(btn_next)
+
+	def _prev_preset_page(self):
+		if not getattr(self, 'current_preset_chart', None):
+			return
+		cfgs = self.key_configs.get(self.current_preset_chart, {})
+		total_pages = max(1, (len(cfgs) + PRESETS_PER_PAGE - 1) // PRESETS_PER_PAGE)
+		if total_pages <= 1:
+			return
+		self.preset_page = (self.preset_page - 1) % total_pages
+		self._render_preset_buttons()
+
+	def _next_preset_page(self):
+		if not getattr(self, 'current_preset_chart', None):
+			return
+		cfgs = self.key_configs.get(self.current_preset_chart, {})
+		total_pages = max(1, (len(cfgs) + PRESETS_PER_PAGE - 1) // PRESETS_PER_PAGE)
+		if total_pages <= 1:
+			return
+		self.preset_page = (self.preset_page + 1) % total_pages
+		self._render_preset_buttons()
 	def _apply_preset_filter(self, filters):
 		for combo in self.filter_widget_map.values():
 			combo.blockSignals(True)
