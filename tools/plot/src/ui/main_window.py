@@ -513,8 +513,10 @@ class MainWindow(QMainWindow):
 				QMessageBox.warning(self, "No Location Data", "No location counts are stored in the current logs.")
 				mode = "none"
 		elif mode == "population":
-			has_pop = bool(log_parser.pop_cumulative_store) or any(
-				float(r.get("Population", 0) or 0) > 0 for r in log_parser.tg_cumulative_store.values()
+			has_pop = (
+				bool(log_parser.pop_cumulative_store)
+				or any(float(r.get("Population", 0) or 0) > 0 for r in log_parser.tg_cumulative_store.values())
+				or any(r.get("statistic") == "Population" and float(r.get("value", 0) or 0) > 0 for r in log_parser.mk_cumulative_store.values())
 			)
 			if not has_pop:
 				QMessageBox.warning(self, "No Population Data", "No population data is stored in the current logs.")

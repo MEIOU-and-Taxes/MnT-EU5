@@ -55,7 +55,7 @@ EXCLUDED_KEYS_COUNTRY = {
 market_stats = [
     "Food", "Food Stockpile", "Max Food Stockpile", "Food Stockpile Perc",
     "Monthly Food", "Food Price", "Total Value Traded", "Merchant Capacity",
-    "Burgher Trade Capacity", "Stockpile capacity", "Locations"
+    "Burgher Trade Capacity", "Stockpile capacity", "Locations", "Population"
 ]
 
 CREDIT_HEADERS = [
