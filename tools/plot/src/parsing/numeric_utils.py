@@ -53,7 +53,7 @@ def format_metric_3digits(val, show_plus=False) -> str:
     elif show_plus and abs_num > 1e-9:
         sign = "+"
     else:
-        sign = ""
+        sign = " "
 
     if abs_num < 1e-9:
         return f"{sign}0.00"

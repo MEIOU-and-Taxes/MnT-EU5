@@ -10,21 +10,27 @@ from src.constants import (
     POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE,
     POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE,
     POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE, SHOW_LEGEND,
-    ERROR_NO_DATA_MATCH
+    ERROR_NO_DATA_MATCH, PERCENTILE_BY_ID
 )
 from src.parsing.log_parser import get_region_locations
 from src.plotting.configs import MK_CONFIG, CM_CONFIG, REGIONAL_CONFIG
 from src.widgets.custom_combobox import RightClickableComboBox
 
+# Reference bands by ID
 STATS_UPPER_BANDS = [
-    ("Above normal (75th)", "Very high (95th)", "#00ff00"),
-    ("Very high (95th)", "Extremely high (99th)", "#008000"),
-    ("Extremely high (99th)", "Maximum",       "#000d00"),
+    ("p75", "p95", "#00ff00"),
+    ("p95", "p99", "#008000"),
+    ("p99", "max", "#000d00"),
 ]
 STATS_LOWER_BANDS = [
-    ("Very low (5th)", "Below normal (25th)", "#ff0000"),
-    ("Extremely low (1st)", "Very low (5th)",  "#800000"),
-    ("Minimum",      "Extremely low (1st)",  "#0d0000"),
+    ("p05", "p25", "#ff0000"),
+    ("p01", "p05", "#800000"),
+    ("min", "p01", "#0d0000"),
+]
+STATS_OUTER_PAIRS = [
+    ("min", "max"),
+    ("p01", "p99"),
+    ("p05", "p95"),
 ]
 STATS_BAND_ALPHA = 0.15
 
@@ -275,61 +281,34 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     offset = 1337 if is_year_offset else 0
     x_coords = [m - offset for m in sorted_moments]
 
-    # Dropdown hide levels:
+    # Map hide level to active IDs
     hide_map = {
-        0: [
-            ("Maximum", 100),
-            ("Extremely high (99th)", 99),
-            ("Very high (95th)", 95),
-            ("Above normal (75th)", 75),
-            ("Normal (50th)", 50),
-            ("Below normal (25th)", 25),
-            ("Very low (5th)", 5),
-            ("Extremely low (1st)", 1),
-            ("Minimum", 0)
-        ],
-        1: [
-            ("Extremely high (99th)", 99),
-            ("Very high (95th)", 95),
-            ("Above normal (75th)", 75),
-            ("Normal (50th)", 50),
-            ("Below normal (25th)", 25),
-            ("Very low (5th)", 5),
-            ("Extremely low (1st)", 1)
-        ],
-        2: [
-            ("Very high (95th)", 95),
-            ("Above normal (75th)", 75),
-            ("Normal (50th)", 50),
-            ("Below normal (25th)", 25),
-            ("Very low (5th)", 5)
-        ],
-        3: [
-            ("Above normal (75th)", 75),
-            ("Normal (50th)", 50),
-            ("Below normal (25th)", 25)
-        ]
+        0: ["max", "p99", "p95", "p75", "p50", "p25", "p05", "p01", "min"],
+        1: ["p99", "p95", "p75", "p50", "p25", "p05", "p01"],
+        2: ["p95", "p75", "p50", "p25", "p05"],
+        3: ["p75", "p50", "p25"]
     }
-    active_percentiles = hide_map.get(hide_level, hide_map[0])
-    stat_curves = {name: [] for name, _ in active_percentiles}
+    active_ids = hide_map.get(hide_level, hide_map[0])
+    stat_curves = {s_id: [] for s_id in active_ids}
 
     for m in sorted_moments:
         vals = sorted([x[1] for x in moments_dict[m]])
-        for name, p in active_percentiles:
-            if p == 100: stat_curves[name].append(vals[-1])
-            elif p == 0: stat_curves[name].append(vals[0])
-            elif p == 50: stat_curves[name].append(float(np.median(vals)))
-            else: stat_curves[name].append(float(np.percentile(vals, p)))
+        for s_id in active_ids:
+            p = PERCENTILE_BY_ID[s_id][2]
+            if p == 100: stat_curves[s_id].append(vals[-1])
+            elif p == 0: stat_curves[s_id].append(vals[0])
+            elif p == 50: stat_curves[s_id].append(float(np.median(vals)))
+            else: stat_curves[s_id].append(float(np.percentile(vals, p)))
 
     # Apply moving average if active
     is_ma = get_is_moving_avg()
-    p = get_period_value()
-    if is_ma and p > 1:
-        for name in stat_curves:
-            curve = stat_curves[name]
+    period = get_period_value()
+    if is_ma and period > 1:
+        for s_id in stat_curves:
+            curve = stat_curves[s_id]
             if len(curve) > 1:
-                stat_curves[name] = [
-                    sum(curve[max(0, i - p + 1):i + 1]) / len(curve[max(0, i - p + 1):i + 1])
+                stat_curves[s_id] = [
+                    sum(curve[max(0, i - period + 1):i + 1]) / len(curve[max(0, i - period + 1):i + 1])
                     for i in range(len(curve))
                 ]
 
@@ -353,8 +332,10 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
             for i in range(len(h_sorted) - 1):
                 y_from, y_to = h_sorted[i], h_sorted[i + 1]
                 v_from, v_to = history[y_from], history[y_to]
-                delta = v_to - v_from
-                consecutive_changes.append((ent, delta, v_from, v_to, y_from, y_to))
+                # Exclude transitions to or from exactly 0
+                if v_from != 0 and v_to != 0:
+                    delta = v_to - v_from
+                    consecutive_changes.append((ent, delta, v_from, v_to, y_from, y_to))
 
             # Non-consecutive: find maximum rise and fall across all chronological pairs
             max_pos_delta = 0
@@ -366,6 +347,9 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
                 for j in range(i + 1, len(h_sorted)):
                     y_i, y_j = h_sorted[i], h_sorted[j]
                     v_i, v_j = history[y_i], history[y_j]
+                    # Exclude transitions to or from exactly 0
+                    if v_i == 0 or v_j == 0:
+                        continue
                     d = v_j - v_i
                     if d > max_pos_delta:
                         max_pos_delta = d
@@ -392,31 +376,33 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     }
     ax._global_stats = global_stats
 
-    # Plot lines
-    for name, _ in active_percentiles:
-        ax.plot(x_coords, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
+    # Plot percentile lines
+    for s_id in active_ids:
+        name = PERCENTILE_BY_ID[s_id][1]
+        color = STAT_COLORS[s_id]
+        ax.plot(x_coords, stat_curves[s_id], marker='o', linewidth=2, label=name, color=color)
 
-    has_iqr = "Below normal (25th)" in stat_curves and "Above normal (75th)" in stat_curves
+    has_iqr = "p25" in stat_curves and "p75" in stat_curves
 
     if get_stats_shading_all():
         if has_iqr:
-            ax.fill_between(x_coords, stat_curves["Below normal (25th)"], stat_curves["Above normal (75th)"],
+            ax.fill_between(x_coords, stat_curves["p25"], stat_curves["p75"],
                             color=STATS_IQR_COLOR_FULL, alpha=STATS_IQR_ALPHA_FULL,
                             label='IQR (25%-75%)')
 
-        for low, high, color in STATS_UPPER_BANDS + STATS_LOWER_BANDS:
-            if low in stat_curves and high in stat_curves:
-                ax.fill_between(x_coords, stat_curves[low], stat_curves[high],
+        for low_id, high_id, color in STATS_UPPER_BANDS + STATS_LOWER_BANDS:
+            if low_id in stat_curves and high_id in stat_curves:
+                ax.fill_between(x_coords, stat_curves[low_id], stat_curves[high_id],
                                 color=color, alpha=STATS_BAND_ALPHA)
     else:
         if has_iqr:
-            ax.fill_between(x_coords, stat_curves["Below normal (25th)"], stat_curves["Above normal (75th)"],
+            ax.fill_between(x_coords, stat_curves["p25"], stat_curves["p75"],
                             color=STATS_IQR_COLOR_CLASSIC, alpha=STATS_IQR_ALPHA_CLASSIC,
                             label='IQR (25%-75%)')
 
-        for low, high in STATS_OUTER_PAIRS:
-            if low in stat_curves and high in stat_curves:
-                ax.fill_between(x_coords, stat_curves[low], stat_curves[high],
+        for low_id, high_id in STATS_OUTER_PAIRS:
+            if low_id in stat_curves and high_id in stat_curves:
+                ax.fill_between(x_coords, stat_curves[low_id], stat_curves[high_id],
                                 color=STATS_OUTER_COLOR, alpha=STATS_OUTER_ALPHA)
                 break
 
@@ -425,7 +411,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     ax.ticklabel_format(useOffset=False, style='plain', axis='x')
     ax.set_ylabel(value_label)
     ax.set_title(f"Statistical Distribution: {display_title}")
-    ax.legend(loc="upper left", ncol=2 if len(active_percentiles) > 5 else 1, fontsize=9, framealpha=0.85)
+    ax.legend(loc="upper left", ncol=2 if len(active_ids) > 5 else 1, fontsize=9, framealpha=0.85)
 
     ax.margins(x=MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS)
 

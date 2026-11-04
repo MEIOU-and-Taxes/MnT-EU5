@@ -8,7 +8,7 @@ SETTINGS_PATH = os.path.join(APPDATA_DIR, "settings.json")
 AUTOSAVE_DIR = os.path.join(APPDATA_DIR, "autosaves")
 os.makedirs(AUTOSAVE_DIR, exist_ok=True)
 
-FILE_CHECK_PERIOD_MS = 5 * 1000
+FILE_CHECK_PERIOD_MS = 1 * 1000
 REFRESH_PERIOD_MS = FILE_CHECK_PERIOD_MS
 AUTOSAVE_PERIOD_MS = 5 * 60 * 1000
 TARGET_FILE_NAME_ROOT = 'error'
@@ -40,18 +40,20 @@ ERROR_FILE_NOT_FOUND = f'{TARGET_FILE_NAME_ROOT}.log not found. Please set the l
 ERROR_NO_DATA_MATCH = "No data matches the current filters"
 ERROR_NO_STATISTICS = "The logs exist, but there are no statistics stored\nPlay more or get other logs"
 
-# Statistical Mode Color Scheme
-STAT_COLORS = {
-    "Maximum": "#1b5e20",               # Dark Green
-    "Extremely high (99th)": "#2e7d32",  # Forest Green
-    "Very high (95th)": "#4caf50",       # Green
-    "Above normal (75th)": "#8bc34a",    # Yellow-Green
-    "Normal (50th)": "#fbc02d",          # Gold / Yellow
-    "Below normal (25th)": "#fb8c00",    # Orange
-    "Very low (5th)": "#f4511e",         # Coral / Light Red
-    "Extremely low (1st)": "#c62828",    # Crimson
-    "Minimum": "#b71c1c",                # Dark Red
-}
+# Percentile definition: (id, name, percentile_value, color)
+PERCENTILE_SERIES = [
+    ("max", "Maximum",               100, "#1b5e20"),  # Dark Green
+    ("p99", "Extremely high (99th)",  99, "#2e7d32"),  # Forest Green
+    ("p95", "Very high (95th)",       95, "#4caf50"),  # Green
+    ("p75", "Above normal (75th)",    75, "#8bc34a"),  # Yellow-Green
+    ("p50", "Normal (50th)",          50, "#fbc02d"),  # Gold / Yellow
+    ("p25", "Below normal (25th)",    25, "#fb8c00"),  # Orange
+    ("p05", "Very low (5th)",          5, "#f4511e"),  # Coral / Light Red
+    ("p01", "Extremely low (1st)",     1, "#c62828"),  # Crimson
+    ("min", "Minimum",                 0, "#b71c1c"),  # Dark Red
+]
+PERCENTILE_BY_ID = {entry[0]: entry for entry in PERCENTILE_SERIES}
+STAT_COLORS = {entry[0]: entry[3] for entry in PERCENTILE_SERIES}
 
 GRAPH_INTRODUCTION = """
 Welcome to the M&T graphing tool!

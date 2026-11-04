@@ -1,4 +1,5 @@
-﻿import glob
+﻿import copy
+import glob
 import json
 import os
 import re
@@ -39,7 +40,7 @@ from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, Settin
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
-STATS_PANEL_WIDTH = 420
+STATS_PANEL_WIDTH = 440
 
 class MainWindow(QMainWindow):
 	def __init__(self):

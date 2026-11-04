@@ -124,8 +124,11 @@ class InteractiveLineTooltip:
                     step_deltas = []
                     for ent, val_cur in cur_dict.items():
                         if ent in prev_dict:
-                            delta = val_cur - prev_dict[ent]
-                            step_deltas.append((ent, delta, prev_dict[ent], val_cur))
+                            val_prev = prev_dict[ent]
+                            # Exclude transitions to or from exactly 0
+                            if val_prev != 0 and val_cur != 0:
+                                delta = val_cur - val_prev
+                                step_deltas.append((ent, delta, val_prev, val_cur))
                     yearly_increase = sorted(step_deltas, key=lambda x: x[1], reverse=True)[:3]
                     yearly_decrease = sorted(step_deltas, key=lambda x: x[1])[:3]
 

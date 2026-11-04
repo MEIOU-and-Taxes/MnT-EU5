@@ -1,9 +1,10 @@
 ﻿from src.parsing.numeric_utils import format_metric_3digits
 
 NAME_WIDTH = 19
-TOP_N = 5          # every "Top ..." section is padded to exactly this many rows
-YEAR_OFFSET = 1337
+NUMBER_WIDTH = 6
 YEAR_WIDTH = 4
+TOP_N = 5
+YEAR_OFFSET = 1337
 
 def _fmt_year(y):
     """Right-align a year in a fixed 4-char field (blank if missing)."""
@@ -50,8 +51,8 @@ def _delta_row(item, signed, offset, years="none"):
             yr_str = f": {_fmt_year(y_from)}→{_fmt_year(y_to)}"
 
     return (
-        f"{reg[:NAME_WIDTH]:<{NAME_WIDTH}}: {delta_str:6} "
-        f"({_fmt(start):5} → {_fmt(end):5}{yr_str})"
+        f"{reg[:NAME_WIDTH]:<{NAME_WIDTH}}: {delta_str:{NUMBER_WIDTH}} "
+        f"({_fmt(start):{NUMBER_WIDTH}} → {_fmt(end):{NUMBER_WIDTH}}{yr_str})"
     )
 
 
