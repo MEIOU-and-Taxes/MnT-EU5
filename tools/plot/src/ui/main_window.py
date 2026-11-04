@@ -34,7 +34,8 @@ from src.plotting.tooltip import InteractiveLineTooltip
 from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session, load_session
 from src.ui.stats_panel import format_stats_panel_text
-from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, SettingsDialog, sort_hotkeys
+from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, SettingsDialog, sort_hotkeys, \
+	FilterSearchDialog
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
@@ -218,6 +219,12 @@ class MainWindow(QMainWindow):
 		# View Menu
 		menu_view = menubar.addMenu("&View")
 
+		act_find = QAction("Find Filter / Metric...", self)
+		act_find.setShortcut(QKeySequence("Ctrl+F"))
+		act_find.triggered.connect(self.open_filter_search)
+		menu_view.addAction(act_find)
+		self.addAction(act_find)
+
 		self.act_fullscreen = QAction("Fullscreen", self, checkable=True)
 		self.act_fullscreen.setShortcut(QKeySequence("F"))
 		self.act_fullscreen.toggled.connect(self.toggle_fullscreen)
@@ -344,6 +351,11 @@ class MainWindow(QMainWindow):
 		self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
 		self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately [Ctrl+R]")
 
+		self.btn_find = QPushButton("Find [Ctrl+F]")
+		self.btn_find.setToolTip("Quick search all dropdown values in the current chart [Ctrl+F]")
+		self.btn_find.clicked.connect(self.open_filter_search)
+		self.top_button_layout.addWidget(self.btn_find)
+
 		self.btn_stats_mode = QPushButton("Stats mode [T]")
 		self.btn_stats_mode.setCheckable(True)
 		self.btn_stats_mode.setChecked(self.is_stats_mode)
@@ -415,10 +427,10 @@ class MainWindow(QMainWindow):
 		self.sc_next_metric.activated.connect(self.select_next_metric)
 
 		# Hotkeys to navigate preset pages
-		self.sc_prev_preset_page = QShortcut(QKeySequence("Alt+Left"), self)
+		self.sc_prev_preset_page = QShortcut(QKeySequence("Left"), self)
 		self.sc_prev_preset_page.activated.connect(self._prev_preset_page)
 
-		self.sc_next_preset_page = QShortcut(QKeySequence("Alt+Right"), self)
+		self.sc_next_preset_page = QShortcut(QKeySequence("Right"), self)
 		self.sc_next_preset_page.activated.connect(self._next_preset_page)
 
 	def _on_stats_hide_changed(self, idx):
@@ -1360,3 +1372,17 @@ class MainWindow(QMainWindow):
 		if combo and combo.count() > 0:
 			new_idx = (combo.currentIndex() + 1) % combo.count()
 			combo.setCurrentIndex(new_idx)
+
+	def open_filter_search(self):
+		"""Opens Ctrl+F search dialog to quickly find and select dropdown options."""
+		if not self.current_graph_info or not self.filter_widget_map:
+			QMessageBox.information(self, "No Chart", "Please open a chart first to search its filters.")
+			return
+
+		dlg = FilterSearchDialog(self.filter_widget_map, self)
+		if dlg.exec() and dlg.selected_target:
+			combo, target_val = dlg.selected_target
+			idx = combo.findText(target_val)
+			if idx != -1:
+				combo.setCurrentIndex(idx)
+				self.redraw_current_plot()
