@@ -487,13 +487,9 @@ class MainWindow(QMainWindow):
 
 	def load_graph_definitions(self):
 		registered = {
-			'Building Types by Region': {'func': chart_library.graph_building_types, 'config': configs.BT_CONFIG},
-			'Goods Prices by Region': {'func': chart_library.graph_goods_prices, 'config': configs.GP_CONFIG},
-			'Market Statistics': {'func': chart_library.graph_markets, 'config': configs.MK_CONFIG},
-			'Population by Region': {'func': chart_library.graph_population, 'config': configs.POP_CONFIG},
-			'Road Coverage by Region': {'func': chart_library.graph_road_types, 'config': configs.RT_CONFIG},
 			'Country Metrics': {'func': chart_library.graph_country_metrics, 'config': configs.CM_CONFIG},
-			'Credit Statistics': {'func': chart_library.graph_credit, 'config': configs.CR_CONFIG},
+			'Market Statistics': {'func': chart_library.graph_markets, 'config': configs.MK_CONFIG},
+			'Regional Statistics': {'func': chart_library.graph_regional_statistics, 'config': configs.REGIONAL_CONFIG},
 		}
 		self.graphs = registered
 		self.chart_shortcuts.clear()
@@ -504,6 +500,127 @@ class MainWindow(QMainWindow):
 			sc.activated.connect(partial(self.plot_by_hotkey, hotkey))
 			self.chart_shortcuts.append(sc)
 
+	def load_key_configs(self):
+		if os.path.exists("key_configs.json") and not os.path.exists(KEY_CONFIGS_PATH):
+			try:
+				shutil.copy("key_configs.json", KEY_CONFIGS_PATH)
+			except Exception:
+				pass
+
+		loaded_cfg = {}
+		target_path = KEY_CONFIGS_PATH if os.path.exists(KEY_CONFIGS_PATH) else ("key_configs.json" if os.path.exists("key_configs.json") else None)
+		if target_path:
+			try:
+				with open(target_path, "r", encoding="utf-8") as f:
+					loaded_cfg = json.load(f)
+			except Exception as e:
+				QMessageBox.critical(self, "Config Error", f"Error in {target_path}: {e}")
+
+		# Automatically migrate legacy separate preset sections into the 3 combined charts
+		if "Regional Statistics" not in loaded_cfg:
+			regional_presets = {}
+			for old_name in ["Road Coverage by Region", "Building Types by Region", "Goods Prices by Region", "Population by Region"]:
+				for hk, cfg in loaded_cfg.get(old_name, {}).items():
+					if hk not in regional_presets:
+						copied_cfg = copy.deepcopy(cfg)
+						filters = copied_cfg.get("filters", {})
+						remapped_filters = {}
+						for fk, fv in filters.items():
+							if fk in ("building", "good", "road_type", "statistic"):
+								remapped_filters["regional_metric"] = fv
+							else:
+								remapped_filters[fk] = fv
+						copied_cfg["filters"] = remapped_filters
+						regional_presets[hk] = copied_cfg
+			if regional_presets:
+				loaded_cfg["Regional Statistics"] = regional_presets
+
+		if "Credit Statistics" in loaded_cfg and "Country Metrics" in loaded_cfg:
+			for hk, cfg in loaded_cfg["Credit Statistics"].items():
+				if hk not in loaded_cfg["Country Metrics"]:
+					copied_cfg = copy.deepcopy(cfg)
+					filters = copied_cfg.get("filters", {})
+					remapped_filters = {("country_metric" if fk == "credit_metric" else fk): fv for fk, fv in filters.items()}
+					copied_cfg["filters"] = remapped_filters
+					loaded_cfg["Country Metrics"][hk] = copied_cfg
+
+		self.key_configs = loaded_cfg
+
+	def _restore_filters(self, title):
+		for widget in self.filter_widget_map.values():
+			widget.blockSignals(True)
+		try:
+			if title in self.chart_filter_memory:
+				for k, val in self.chart_filter_memory[title].items():
+					target_key = k
+					if target_key not in self.filter_widget_map:
+						if target_key in ('good', 'building', 'road_type', 'statistic') and 'regional_metric' in self.filter_widget_map:
+							target_key = 'regional_metric'
+						elif target_key == 'credit_metric' and 'country_metric' in self.filter_widget_map:
+							target_key = 'country_metric'
+						elif target_key == 'region' and 'country' in self.filter_widget_map:
+							target_key = 'country'
+						elif target_key == 'region' and 'market' in self.filter_widget_map:
+							target_key = 'market'
+					if target_key in self.filter_widget_map:
+						idx = self.filter_widget_map[target_key].findText(val)
+						if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
+			elif title in self.key_configs and self.key_configs[title]:
+				sorted_keys = sort_hotkeys(self.key_configs[title].keys())
+				first_preset = self.key_configs[title][sorted_keys[0]]
+				for k, val in first_preset.get("filters", {}).items():
+					target_key = k
+					if target_key not in self.filter_widget_map:
+						if target_key in ('good', 'building', 'road_type', 'statistic') and 'regional_metric' in self.filter_widget_map:
+							target_key = 'regional_metric'
+						elif target_key == 'credit_metric' and 'country_metric' in self.filter_widget_map:
+							target_key = 'country_metric'
+						elif target_key == 'region' and 'country' in self.filter_widget_map:
+							target_key = 'country'
+						elif target_key == 'region' and 'market' in self.filter_widget_map:
+							target_key = 'market'
+					if target_key in self.filter_widget_map:
+						idx = self.filter_widget_map[target_key].findText(val)
+						if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
+		finally:
+			for widget in self.filter_widget_map.values():
+				widget.blockSignals(False)
+
+	def _apply_preset_filter(self, filters):
+		for combo in self.filter_widget_map.values():
+			combo.blockSignals(True)
+		try:
+			for k, v in filters.items():
+				target_key = k
+				if target_key not in self.filter_widget_map:
+					if target_key in ('good', 'building', 'road_type', 'statistic') and 'regional_metric' in self.filter_widget_map:
+						target_key = 'regional_metric'
+					elif target_key == 'credit_metric' and 'country_metric' in self.filter_widget_map:
+						target_key = 'country_metric'
+					elif target_key == 'region' and 'country' in self.filter_widget_map:
+						target_key = 'country'
+					elif target_key == 'region' and 'market' in self.filter_widget_map:
+						target_key = 'market'
+				if target_key in self.filter_widget_map:
+					idx = self.filter_widget_map[target_key].findText(v)
+					if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
+		finally:
+			for combo in self.filter_widget_map.values():
+				combo.blockSignals(False)
+		self.redraw_current_plot()
+
+	def _get_metric_combobox(self):
+		if not self.current_graph_info:
+			return None
+		cat_key = self.current_graph_info['info']['config'].get('category_key')
+		combo = self.filter_widget_map.get(cat_key)
+		if isinstance(combo, QComboBox):
+			return combo
+		for key in ['country_metric', 'regional_metric', 'statistic']:
+			w = self.filter_widget_map.get(key)
+			if isinstance(w, QComboBox):
+				return w
+		return None
 	def plot_by_hotkey(self, key):
 		name = self.chart_hotkeys.get(key)
 		if name and name in self.graphs:

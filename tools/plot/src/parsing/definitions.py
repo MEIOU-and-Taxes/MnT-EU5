@@ -59,11 +59,11 @@ market_stats = [
 ]
 
 CREDIT_HEADERS = [
-    "Balance",
-    "Supply",
-    "Supply - goods",
-    "Supply - modifiers",
-    "Demand",
+    "Credit balance",
+    "Credit supply",
+    "Credit supply - goods",
+    "Credit supply - modifiers",
+    "Credit demand",
     "Lending quote",
     "Interest adjustment",
 ]

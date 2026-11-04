@@ -1,6 +1,6 @@
 ﻿from src.parsing.numeric_utils import format_metric_3digits
 
-NAME_WIDTH = 20
+NAME_WIDTH = 19
 TOP_N = 5          # every "Top ..." section is padded to exactly this many rows
 YEAR_OFFSET = 1337
 YEAR_WIDTH = 4

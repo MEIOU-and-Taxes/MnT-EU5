@@ -24,6 +24,7 @@ _cm_cache = None
 _rloc_cache = None
 _cr_cache = None
 _crm_cache = None
+_reg_cache = None
 
 # Cache signatures of files: filepath -> (mtime, size)
 parsed_file_signatures = {}
@@ -39,8 +40,8 @@ region_locations_store = {}
 cr_cumulative_store = {}
 
 def clear_all_caches():
-    global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache, _crm_cache
-    _bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = _crm_cache = None
+    global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache, _crm_cache, _reg_cache
+    _bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = _crm_cache = _reg_cache = None
 
 def reset_cumulative_history():
     parsed_file_signatures.clear()
@@ -337,14 +338,32 @@ def parse_data_markets(data: str = None):
     _mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["statistic"]))
     return _mk_cache
 
+def parse_data_credit_raw(data: str = None):
+    global _cr_cache
+    if _cr_cache is not None:
+        return _cr_cache
+    if not cr_cumulative_store and data:
+        parse_lines(data.splitlines())
+    _cr_cache = sorted(cr_cumulative_store.values(), key=lambda x: (x["moment"], x["tag"]))
+    return _cr_cache
+
 def parse_data_country_metrics(data: str = None):
+    """Combines Country Metrics and Credit Statistics into one unified dataset with computed metrics."""
     global _cm_cache
     if _cm_cache is not None:
         return _cm_cache
+
     countries = parse_data_countries(data)
-    computed_defs = [d for d in load_computed_series_definitions() if d["dataset_type"] in ("country", "country_metric", "country_stats")]
+    parse_data_credit_raw(data)
+
+    computed_defs = [
+        d for d in load_computed_series_definitions()
+        if d["dataset_type"] in ("country", "country_metric", "country_stats", "credit", "credit_metric", "credit_stats")
+    ]
 
     transformed = []
+    processed_combos = set()
+
     for r in countries:
         locs_val = r.get("locations") or r.get("num_locations") or 0
         try: country_locations = float(locs_val)
@@ -357,56 +376,62 @@ def parse_data_country_metrics(data: str = None):
         tag = r.get("tag", "")
         name = r.get("name", "")
         label = f"{name} ({tag})" if name and name != tag else tag
+        processed_combos.add((year, tag))
 
-        # Standard numeric metrics
+        # Standard Country metrics
         for k, v in r.items():
             if k not in EXCLUDED_KEYS_COUNTRY and isinstance(v, (int, float)):
                 transformed.append({
                     "moment": year,
                     "region": label,
                     "country": label,
+                    "tag": tag,
                     "metric": k,
                     "country_metric": k,
                     "value": float(v),
                     "locations": country_locations
                 })
 
-        # Calculate user computed metrics from CSV
+        # Credit metrics for this country and year
+        credit_rec = cr_cumulative_store.get((year, tag), {})
+        for header in CREDIT_HEADERS:
+            val = credit_rec.get(header)
+            if isinstance(val, (int, float)):
+                transformed.append({
+                    "moment": year,
+                    "region": label,
+                    "country": label,
+                    "tag": tag,
+                    "credit_metric": header,
+                    "metric": header,
+                    "country_metric": header,
+                    "value": float(val),
+                    "locations": country_locations
+                })
+
+        # Combined variables for formulas
+        combined_vars = {}
+        combined_vars.update(r)
+        combined_vars.update(credit_rec)
+
         for cdef in computed_defs:
-            calc_val = evaluate_expression(cdef["expression"], r)
+            calc_val = evaluate_expression(cdef["expression"], combined_vars)
             transformed.append({
                 "moment": year,
                 "region": label,
                 "country": label,
+                "tag": tag,
                 "metric": cdef["metric_name"],
                 "country_metric": cdef["metric_name"],
+                "credit_metric": cdef["metric_name"],
                 "value": round(calc_val, 4),
                 "locations": country_locations
             })
 
-    _cm_cache = transformed
-    return _cm_cache
-
-def parse_data_credit_raw(data: str = None):
-    global _cr_cache
-    if _cr_cache is not None:
-        return _cr_cache
-    if not cr_cumulative_store and data:
-        parse_lines(data.splitlines())
-    _cr_cache = sorted(cr_cumulative_store.values(), key=lambda x: (x["moment"], x["tag"]))
-    return _cr_cache
-
-
-def parse_data_credit_metrics(data: str = None):
-    global _crm_cache
-    if _crm_cache is not None:
-        return _crm_cache
-    parse_data_credit_raw(data)
-    parse_data_countries(data)
-    computed_defs = [d for d in load_computed_series_definitions() if d["dataset_type"] in ("credit", "credit_metric", "credit_stats")]
-
-    transformed = []
+    # Credit records that had no corresponding country record
     for (moment, tag), record in cr_cumulative_store.items():
+        if (moment, tag) in processed_combos:
+            continue
         country_rec = tg_cumulative_store.get((moment, tag))
         name = country_rec.get("name", "") if country_rec else ""
         label = f"{name} ({tag})" if name and name != tag else tag
@@ -427,30 +452,127 @@ def parse_data_credit_metrics(data: str = None):
                     "tag": tag,
                     "credit_metric": header,
                     "metric": header,
+                    "country_metric": header,
                     "value": float(val),
                     "locations": locs
                 })
 
-        # Computed credit formulas
-        for cdef in computed_defs:
-            calc_val = evaluate_expression(cdef["expression"], record)
-            transformed.append({
-                "moment": moment,
-                "region": label,
-                "country": label,
-                "tag": tag,
-                "credit_metric": cdef["metric_name"],
-                "metric": cdef["metric_name"],
-                "value": round(calc_val, 4),
-                "locations": locs
-            })
+    _cm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["country_metric"]))
+    return _cm_cache
 
-    _crm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["credit_metric"]))
-    return _crm_cache
+def parse_data_regional_metrics(data: str = None):
+    """Combines Building Types, Goods Prices, Population, Road Coverages, and Regional Computed Series."""
+    global _reg_cache
+    if _reg_cache is not None:
+        return _reg_cache
 
-def parse_all_logs(data: str):
-    """Fallback when raw string is supplied."""
-    if not data:
-        return
-    parse_lines(data.splitlines())
-    clear_all_caches()
+    parse_data_region_locations(data)
+    parse_data_population(data)
+    parse_data_road_types(data)
+    buildings = parse_data_building_types(data)
+    prices = parse_data_goods_prices(data)
+
+    rloc_map = region_locations_store
+    computed_defs = [
+        d for d in load_computed_series_definitions()
+        if d["dataset_type"] in ("region", "regional", "regional_metric", "regional_stats")
+    ]
+
+    transformed = []
+    context_vars_by_moment_region = {}
+
+    def get_locs(reg):
+        return float(rloc_map.get(reg, 0.0))
+
+    # 1. Total Population
+    for (m, reg), rec in pop_cumulative_store.items():
+        locs = get_locs(reg)
+        p_val = rec.get("population", 0.0)
+        transformed.append({
+            "moment": m,
+            "region": reg,
+            "regional_metric": "Total Population",
+            "metric": "Total Population",
+            "statistic": "Total Population",
+            "value": float(p_val),
+            "locations": locs
+        })
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v["population"] = float(p_val)
+        v["total_population"] = float(p_val)
+
+    # 2. Road Coverage
+    for (m, reg, road_type), rec in rt_cumulative_store.items():
+        locs = float(rec.get("locations", get_locs(reg)))
+        cov = float(rec.get("coverage_percentage", 0.0))
+        transformed.append({
+            "moment": m,
+            "region": reg,
+            "regional_metric": road_type,
+            "metric": road_type,
+            "road_type": road_type,
+            "value": cov,
+            "locations": locs
+        })
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v[road_type] = cov
+        v[road_type.lower().replace(' ', '_')] = cov
+
+    # 3. Building Types
+    for item in buildings:
+        m = item["moment"]
+        reg = item["region"]
+        bld = item["building"]
+        cnt = float(item["count"])
+        locs = get_locs(reg)
+        transformed.append({
+            "moment": m,
+            "region": reg,
+            "regional_metric": bld,
+            "metric": bld,
+            "building": bld,
+            "value": cnt,
+            "locations": locs
+        })
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v[bld] = cnt
+        v[bld.lower().replace(' ', '_')] = cnt
+
+    # 4. Goods Prices
+    for item in prices:
+        m = item["moment"]
+        reg = item["region"]
+        good = item["good"]
+        price = float(item["price"])
+        locs = get_locs(reg)
+        transformed.append({
+            "moment": m,
+            "region": reg,
+            "regional_metric": good,
+            "metric": good,
+            "good": good,
+            "value": price,
+            "locations": locs
+        })
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v[good] = price
+        v[good.lower().replace(' ', '_')] = price
+        v[f"price_{good.lower().replace(' ', '_')}"] = price
+
+    # 5. Regional Computed Series
+    if computed_defs:
+        for (m, reg), vars_dict in context_vars_by_moment_region.items():
+            locs = vars_dict.get("locations", get_locs(reg))
+            for cdef in computed_defs:
+                calc_val = evaluate_expression(cdef["expression"], vars_dict)
+                transformed.append({
+                    "moment": m,
+                    "region": reg,
+                    "regional_metric": cdef["metric_name"],
+                    "metric": cdef["metric_name"],
+                    "value": round(calc_val, 4),
+                    "locations": locs
+                })
+
+    _reg_cache = sorted(transformed, key=lambda x: (x["moment"], x["region"], x["regional_metric"]))
+    return _reg_cache

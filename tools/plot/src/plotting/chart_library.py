@@ -13,18 +13,18 @@ from src.constants import (
     ERROR_NO_DATA_MATCH
 )
 from src.parsing.log_parser import get_region_locations
-from src.plotting.configs import BT_CONFIG, GP_CONFIG, MK_CONFIG, POP_CONFIG, RT_CONFIG, CM_CONFIG, CR_CONFIG
+from src.plotting.configs import MK_CONFIG, CM_CONFIG, REGIONAL_CONFIG
 from src.widgets.custom_combobox import RightClickableComboBox
 
 STATS_UPPER_BANDS = [
-    ("75th Perc", "95th Perc", "#00ff00"),
-    ("95th Perc", "99th Perc", "#008000"),
-    ("99th Perc", "Max",       "#000d00"),
+    ("Above normal (75th)", "Very high (95th)", "#00ff00"),
+    ("Very high (95th)", "Extremely high (99th)", "#008000"),
+    ("Extremely high (99th)", "Maximum",       "#000d00"),
 ]
 STATS_LOWER_BANDS = [
-    ("5th Perc", "25th Perc", "#ff0000"),
-    ("1st Perc", "5th Perc",  "#800000"),
-    ("Min",      "1st Perc",  "#0d0000"),
+    ("Very low (5th)", "Below normal (25th)", "#ff0000"),
+    ("Extremely low (1st)", "Very low (5th)",  "#800000"),
+    ("Minimum",      "Extremely low (1st)",  "#0d0000"),
 ]
 STATS_BAND_ALPHA = 0.15
 
@@ -37,9 +37,9 @@ STATS_IQR_ALPHA_CLASSIC = 0.15
 STATS_OUTER_COLOR = "#2e7d32"
 STATS_OUTER_ALPHA = 0.04
 STATS_OUTER_PAIRS = [
-    ("Min", "Max"),
-    ("1st Perc", "99th Perc"),
-    ("5th Perc", "95th Perc"),
+    ("Minimum", "Maximum"),
+    ("Extremely low (1st)", "Extremely high (99th)"),
+    ("Very low (5th)", "Very high (95th)"),
 ]
 MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS = 0
 
@@ -277,10 +277,38 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
     # Dropdown hide levels:
     hide_map = {
-        0: [("Max", 100), ("99th Perc", 99), ("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("1st Perc", 1), ("Min", 0)],
-        1: [("99th Perc", 99), ("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("1st Perc", 1)],
-        2: [("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5)],
-        3: [("75th Perc", 75), ("Median", 50), ("25th Perc", 25)]
+        0: [
+            ("Maximum", 100),
+            ("Extremely high (99th)", 99),
+            ("Very high (95th)", 95),
+            ("Above normal (75th)", 75),
+            ("Normal (50th)", 50),
+            ("Below normal (25th)", 25),
+            ("Very low (5th)", 5),
+            ("Extremely low (1st)", 1),
+            ("Minimum", 0)
+        ],
+        1: [
+            ("Extremely high (99th)", 99),
+            ("Very high (95th)", 95),
+            ("Above normal (75th)", 75),
+            ("Normal (50th)", 50),
+            ("Below normal (25th)", 25),
+            ("Very low (5th)", 5),
+            ("Extremely low (1st)", 1)
+        ],
+        2: [
+            ("Very high (95th)", 95),
+            ("Above normal (75th)", 75),
+            ("Normal (50th)", 50),
+            ("Below normal (25th)", 25),
+            ("Very low (5th)", 5)
+        ],
+        3: [
+            ("Above normal (75th)", 75),
+            ("Normal (50th)", 50),
+            ("Below normal (25th)", 25)
+        ]
     }
     active_percentiles = hide_map.get(hide_level, hide_map[0])
     stat_curves = {name: [] for name, _ in active_percentiles}
@@ -368,12 +396,11 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     for name, _ in active_percentiles:
         ax.plot(x_coords, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
 
-    # Shading logic
-    has_iqr = "25th Perc" in stat_curves and "75th Perc" in stat_curves
+    has_iqr = "Below normal (25th)" in stat_curves and "Above normal (75th)" in stat_curves
 
     if get_stats_shading_all():
         if has_iqr:
-            ax.fill_between(x_coords, stat_curves["25th Perc"], stat_curves["75th Perc"],
+            ax.fill_between(x_coords, stat_curves["Below normal (25th)"], stat_curves["Above normal (75th)"],
                             color=STATS_IQR_COLOR_FULL, alpha=STATS_IQR_ALPHA_FULL,
                             label='IQR (25%-75%)')
 
@@ -383,7 +410,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
                                 color=color, alpha=STATS_BAND_ALPHA)
     else:
         if has_iqr:
-            ax.fill_between(x_coords, stat_curves["25th Perc"], stat_curves["75th Perc"],
+            ax.fill_between(x_coords, stat_curves["Below normal (25th)"], stat_curves["Above normal (75th)"],
                             color=STATS_IQR_COLOR_CLASSIC, alpha=STATS_IQR_ALPHA_CLASSIC,
                             label='IQR (25%-75%)')
 
@@ -520,14 +547,9 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 
 
 # --- Chart entry wrappers ---
-def graph_building_types(*args, **kwargs):
-    """Building Types by Region"""
-    kwargs["config"] = BT_CONFIG
-    _create_generic_graph(*args, **kwargs)
-
-def graph_goods_prices(*args, **kwargs):
-    """Goods Prices by Region"""
-    kwargs["config"] = GP_CONFIG
+def graph_country_metrics(*args, **kwargs):
+    """Country Metrics (combined Country & Credit statistics)"""
+    kwargs["config"] = CM_CONFIG
     _create_generic_graph(*args, **kwargs)
 
 def graph_markets(*args, **kwargs):
@@ -535,22 +557,7 @@ def graph_markets(*args, **kwargs):
     kwargs["config"] = MK_CONFIG
     _create_generic_graph(*args, **kwargs)
 
-def graph_population(*args, **kwargs):
-    """Population by Region"""
-    kwargs["config"] = POP_CONFIG
-    _create_generic_graph(*args, **kwargs)
-
-def graph_road_types(*args, **kwargs):
-    """Road Coverage by Region"""
-    kwargs["config"] = RT_CONFIG
-    _create_generic_graph(*args, **kwargs)
-
-def graph_country_metrics(*args, **kwargs):
-    """Country Metrics"""
-    kwargs["config"] = CM_CONFIG
-    _create_generic_graph(*args, **kwargs)
-
-def graph_credit(*args, **kwargs):
-    """Credit Statistics"""
-    kwargs["config"] = CR_CONFIG
+def graph_regional_statistics(*args, **kwargs):
+    """Regional Statistics (combined Buildings, Goods Prices, Population, Road Coverages)"""
+    kwargs["config"] = REGIONAL_CONFIG
     _create_generic_graph(*args, **kwargs)

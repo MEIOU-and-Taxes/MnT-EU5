@@ -13,7 +13,8 @@ COMPUTED_SERIES_APPDATA_PATH = os.path.join(APPDATA_DIR, COMPUTED_SERIES_FILENAM
 DEFAULT_COMPUTED_SERIES_CSV = """dataset_type,new_metric_name,expression,description
 country,Debt/Income,total_debt / income,Total debt divided by annual/monthly income
 country,Navy/Army Ratio,navy_size / army_size,Ratio of navy size to army size
-credit,Supply/Demand,Supply / Demand,Credit supply to demand ratio
+country,Credit Supply/Demand,Supply / Demand,Credit supply to demand ratio
+region,Population Density,total_population / locations,Average population per location
 """
 
 # Safe AST operators map
@@ -34,7 +35,7 @@ def _eval_node(node, variables):
     if isinstance(node, ast.Constant):  # Python >= 3.8 numeric literals
         return float(node.value)
     elif isinstance(node, ast.Name):
-        val = variables.get(node.id, 0.0)
+        val = variables.get(node.id, variables.get(node.id.lower(), 0.0))
         try:
             return float(val) if val is not None else 0.0
         except (ValueError, TypeError):

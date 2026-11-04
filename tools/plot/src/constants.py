@@ -42,15 +42,15 @@ ERROR_NO_STATISTICS = "The logs exist, but there are no statistics stored\nPlay 
 
 # Statistical Mode Color Scheme
 STAT_COLORS = {
-    "Max": "#1b5e20",        # Dark Green
-    "99th Perc": "#2e7d32",   # Forest Green
-    "95th Perc": "#4caf50",   # Green
-    "75th Perc": "#8bc34a",   # Yellow-Green
-    "Median": "#fbc02d",      # Gold / Yellow
-    "25th Perc": "#fb8c00",   # Orange
-    "5th Perc": "#f4511e",    # Coral / Light Red
-    "1st Perc": "#c62828",    # Crimson
-    "Min": "#b71c1c",         # Dark Red
+    "Maximum": "#1b5e20",               # Dark Green
+    "Extremely high (99th)": "#2e7d32",  # Forest Green
+    "Very high (95th)": "#4caf50",       # Green
+    "Above normal (75th)": "#8bc34a",    # Yellow-Green
+    "Normal (50th)": "#fbc02d",          # Gold / Yellow
+    "Below normal (25th)": "#fb8c00",    # Orange
+    "Very low (5th)": "#f4511e",         # Coral / Light Red
+    "Extremely low (1st)": "#c62828",    # Crimson
+    "Minimum": "#b71c1c",                # Dark Red
 }
 
 GRAPH_INTRODUCTION = """
