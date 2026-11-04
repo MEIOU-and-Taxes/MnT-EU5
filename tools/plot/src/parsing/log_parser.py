@@ -451,6 +451,13 @@ def parse_data_country_metrics(data: str = None):
 				combined_vars,
 				precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
 			)
+
+			metric_name = cdef["metric_name"]
+			combined_vars[metric_name] = calc_val
+			combined_vars[metric_name.lower()] = calc_val
+			combined_vars[metric_name.replace(' ', '_')] = calc_val
+			combined_vars[metric_name.lower().replace(' ', '_')] = calc_val
+
 			transformed.append({
 				"moment": year,
 				"region": label,
@@ -633,6 +640,14 @@ def parse_data_regional_metrics(data: str = None):
 					vars_dict,
 					precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
 				)
+
+				# Feed back into context:
+				metric_name = cdef["metric_name"]
+				vars_dict[metric_name] = calc_val
+				vars_dict[metric_name.lower()] = calc_val
+				vars_dict[metric_name.replace(' ', '_')] = calc_val
+				vars_dict[metric_name.lower().replace(' ', '_')] = calc_val
+
 				transformed.append({
 					"moment": m,
 					"region": reg,
