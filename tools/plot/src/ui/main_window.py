@@ -7,6 +7,7 @@ from datetime import datetime
 from functools import partial
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from PyQt6.QtCore import Qt, QTimer, QUrl
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QAction, QDesktopServices
@@ -237,6 +238,18 @@ class MainWindow(QMainWindow):
 		self.act_moving_avg.toggled.connect(self.toggle_moving_average)
 		self.act_moving_avg.setVisible(self.is_stats_mode)
 		menu_view.addAction(self.act_moving_avg)
+
+		act_hide_inc = QAction("Hide more percentiles", self)
+		act_hide_inc.setShortcut(QKeySequence("["))
+		act_hide_inc.triggered.connect(self.increase_stats_hide)
+		menu_view.addAction(act_hide_inc)
+		self.addAction(act_hide_inc)
+
+		act_hide_dec = QAction("Show more percentiles", self)
+		act_hide_dec.setShortcut(QKeySequence("]"))
+		act_hide_dec.triggered.connect(self.decrease_stats_hide)
+		menu_view.addAction(act_hide_dec)
+		self.addAction(act_hide_dec)
 
 		# Tools Menu
 		menu_tools = menubar.addMenu("&Tools")
@@ -777,7 +790,22 @@ class MainWindow(QMainWindow):
 			return
 		try:
 			if self.is_log_scale:
-				self.ax.set_yscale('symlog')
+				has_negative = False
+				for line in self.ax.get_lines():
+					y = line.get_ydata()
+					if len(y) > 0 and np.any(np.asarray(y) < 0):
+						has_negative = True
+						break
+				if not has_negative:
+					for p in self.ax.patches:
+						if p.get_y() < 0 or (p.get_height() is not None and p.get_height() < 0):
+							has_negative = True
+							break
+
+				if has_negative:
+					self.ax.set_yscale('symlog')
+				else:
+					self.ax.set_yscale('log', nonpositive='clip')
 			else:
 				self.ax.set_yscale('linear')
 			self.canvas.draw_idle()
@@ -910,12 +938,49 @@ class MainWindow(QMainWindow):
 				print(f"Log read warning: {e}")
 		return files, "".join(chunks)
 
-	def read_and_parse_logs(self):
-		"""Reads log files and populates cumulative parsed stores."""
-		log_parser.clear_all_caches()
-		self.logs, self.data = self.read_all_logs()
-		if self.data:
-			log_parser.parse_all_logs(self.data)
+	def read_and_parse_logs(self, force_all=False):
+		"""Incrementally reads and streams log files, to avoid freezing."""
+		files = self.get_all_log_files()
+		if force_all:
+			log_parser.reset_cumulative_history()
+
+		modified_any = False
+		for fn in files:
+			if force_all or log_parser.should_parse_file(fn):
+				log_parser.parse_log_file(fn)
+				modified_any = True
+
+		if modified_any:
+			log_parser.clear_all_caches()
+			self.data = "loaded"
+
+		self.logs = files
+
+	def check_log_updates(self):
+		"""Inspects disk files and ingests only modified ones."""
+		files = self.get_all_log_files()
+		if not files:
+			return
+
+		needs_parsing = any(log_parser.should_parse_file(fn) for fn in files)
+		if needs_parsing:
+			self.read_and_parse_logs(force_all=False)
+			self._update_last_log_state()
+			self.has_new_data = True
+
+	def manual_refresh(self):
+		"""Forces re-reading of log files and re-renders the current chart."""
+		self.read_and_parse_logs(force_all=True)
+		self._update_last_log_state()
+		self.has_new_data = False
+		if self.current_graph_info:
+			self.display_chart(
+				self.current_graph_info['info'],
+				self.current_graph_info['title'],
+				preserve_toggles=True
+			)
+		else:
+			self.display_info_screen()
 
 	def _update_last_log_state(self):
 		cur = []
@@ -1119,3 +1184,15 @@ class MainWindow(QMainWindow):
 			event.accept()
 		else:
 			event.ignore()
+
+	def decrease_stats_hide(self):
+		if hasattr(self, 'combo_stats_hide'):
+			cur = self.combo_stats_hide.currentIndex()
+			if cur > 0:
+				self.combo_stats_hide.setCurrentIndex(cur - 1)
+
+	def increase_stats_hide(self):
+		if hasattr(self, 'combo_stats_hide'):
+			cur = self.combo_stats_hide.currentIndex()
+			if cur < self.combo_stats_hide.count() - 1:
+				self.combo_stats_hide.setCurrentIndex(cur + 1)

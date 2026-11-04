@@ -247,17 +247,26 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     for ent, history in country_series.items():
         if len(history) >= 2:
             h_sorted = sorted(history.keys())
-            delta = history[h_sorted[-1]] - history[h_sorted[0]]
-            changes.append((ent, delta, history[h_sorted[0]], history[h_sorted[-1]], np.std(list(history.values()))))
+            start_yr, end_yr = h_sorted[0], h_sorted[-1]
+            delta = history[end_yr] - history[start_yr]
+            changes.append((
+                ent,
+                delta,
+                history[start_yr],
+                history[end_yr],
+                float(np.std(list(history.values()))),
+                start_yr,
+                end_yr
+            ))
 
     all_values = [i[value_key] for i in filtered_data]
     global_stats = {
         "value_label": value_label,
-        "biggest_increase": sorted(changes, key=lambda x: x[1], reverse=True)[:3],
-        "biggest_decrease": sorted(changes, key=lambda x: x[1])[:3],
-        "most_volatile": sorted(changes, key=lambda x: x[4], reverse=True)[:3],
-        "overall_mean": np.mean(all_values) if all_values else 0.0,
-        "overall_std": np.std(all_values) if all_values else 0.0
+        "biggest_increase": sorted(changes, key=lambda x: x[1], reverse=True)[:5],
+        "biggest_decrease": sorted(changes, key=lambda x: x[1])[:5],
+        "most_volatile": sorted(changes, key=lambda x: x[4], reverse=True)[:5],
+        "overall_mean": float(np.mean(all_values)) if all_values else 0.0,
+        "overall_std": float(np.std(all_values)) if all_values else 0.0
     }
     ax._global_stats = global_stats
 
