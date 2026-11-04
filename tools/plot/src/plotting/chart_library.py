@@ -28,10 +28,9 @@ STATS_LOWER_BANDS = [
 ]
 STATS_BAND_ALPHA = 0.15
 
-# Interquartile range (25th to 75th)
-STATS_IQR_COLOR_FULL = "#ffee00"     # yellow, used when shading all bands
+STATS_IQR_COLOR_FULL = "#ffee00"
 STATS_IQR_ALPHA_FULL = 0.20
-STATS_IQR_COLOR_CLASSIC = "#8bc34a"  # used in classic mode
+STATS_IQR_COLOR_CLASSIC = "#8bc34a"
 STATS_IQR_ALPHA_CLASSIC = 0.15
 
 # Classic-mode outer envelope, first available pair wins
@@ -74,6 +73,7 @@ def _create_generic_graph(
     get_is_density=lambda: False,
     get_stats_hide_level=lambda: 0,
     get_stats_shading_all=lambda: False,
+    get_is_year_offset=lambda: False,
     *,
     config
 ):
@@ -99,8 +99,12 @@ def _create_generic_graph(
     region_label_str = config.get("region_label", "Region:")
     all_region_str = config.get("all_region_str", STR_ALL_REGIONS)
 
+    is_year_offset = get_is_year_offset()
+    ax._is_year_offset = is_year_offset
+
     # Time dropdown
-    lbl_moment = QLabel("Time:")
+    time_label_text = "Relative Year:" if is_year_offset else "Time:"
+    lbl_moment = QLabel(time_label_text)
     combo_moment = RightClickableComboBox()
     all_moments = sorted(list(set(item['moment'] for item in all_data)))
     combo_moment.addItem(STR_ALL_MOMENTS)
@@ -146,9 +150,13 @@ def _create_generic_graph(
     def update_plot():
         on_plot_cleared()
         m_filter = combo_moment.currentText()
+        selected_moment = combo_moment.currentData()
         c_filter = combo_category.currentText()
         r_filter = combo_region.currentText() if combo_region else all_region_str
         ax.clear()
+
+        is_yr_offset = get_is_year_offset()
+        ax._is_year_offset = is_yr_offset
 
         if has_region and all_category_str and c_filter != all_category_str and r_filter != all_region_str:
             ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a {region_label_str.replace(':', '')}, not both.",
@@ -158,7 +166,7 @@ def _create_generic_graph(
 
         pre_filtered = [
             item for item in all_data
-            if (m_filter == STR_ALL_MOMENTS or item['moment'] == int(m_filter)) and
+            if (selected_moment is None or item['moment'] == selected_moment) and
                (c_filter == all_category_str or c_filter == item.get(category_key)) and
                (r_filter == all_region_str or r_filter == (item.get(entity_key) or item.get('country') or item.get('region')))
         ]
@@ -205,17 +213,19 @@ def _create_generic_graph(
         is_r_picked = (r_filter != all_region_str)
         display_title = f"{c_filter} in {r_filter}" if (is_r_picked and not all_category_str) else (r_filter if is_r_picked else c_filter)
 
-        if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS and not is_r_picked:
+        if get_is_stats_mode() and selected_moment is None and not is_r_picked:
             _render_stats_mode(ax, filtered, value_key, effective_val_label, display_title, entity_key,
                                get_stats_hide_level(), on_stats_computed, on_lines_plotted,
                                get_is_moving_avg, get_period_value,
-                               get_stats_shading_all=get_stats_shading_all)
+                               get_stats_shading_all=get_stats_shading_all,
+                               is_year_offset=is_yr_offset)
             return
 
         _render_standard_mode(ax, filtered, m_filter, c_filter, r_filter, all_category_str,
                               category_key, value_key, effective_val_label, add_zero_start,
                               get_is_moving_avg, get_period_value, config, on_stats_computed, on_lines_plotted,
-                              entity_key=entity_key, all_region_str=all_region_str)
+                              entity_key=entity_key, all_region_str=all_region_str,
+                              is_year_offset=is_yr_offset)
 
     if set_redraw_fn:
         set_redraw_fn(update_plot)
@@ -229,7 +239,7 @@ def _create_generic_graph(
 
 def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title, entity_key,
                        hide_level, on_stats_computed, on_lines_plotted, get_is_moving_avg, get_period_value,
-                       get_stats_shading_all=lambda: False):
+                       get_stats_shading_all=lambda: False, is_year_offset=False):
     moments_dict = {}
     country_series = {}
     for item in filtered_data:
@@ -240,6 +250,8 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
         country_series.setdefault(ent, {})[m] = val
 
     sorted_moments = sorted(moments_dict.keys())
+    offset = 1337 if is_year_offset else 0
+    x_coords = [m - offset for m in sorted_moments]
 
     # Dropdown hide levels:
     hide_map = {
@@ -332,14 +344,14 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
     # Plot lines
     for name, _ in active_percentiles:
-        ax.plot(sorted_moments, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
+        ax.plot(x_coords, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
 
     # Shading logic
     has_iqr = "25th Perc" in stat_curves and "75th Perc" in stat_curves
 
     if get_stats_shading_all():
         if has_iqr:
-            ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"],
+            ax.fill_between(x_coords, stat_curves["25th Perc"], stat_curves["75th Perc"],
                             color=STATS_IQR_COLOR_FULL, alpha=STATS_IQR_ALPHA_FULL,
                             label='IQR (25%-75%)')
 
@@ -349,17 +361,17 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
                                 color=color, alpha=STATS_BAND_ALPHA)
     else:
         if has_iqr:
-            ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"],
+            ax.fill_between(x_coords, stat_curves["25th Perc"], stat_curves["75th Perc"],
                             color=STATS_IQR_COLOR_CLASSIC, alpha=STATS_IQR_ALPHA_CLASSIC,
                             label='IQR (25%-75%)')
 
         for low, high in STATS_OUTER_PAIRS:
             if low in stat_curves and high in stat_curves:
-                ax.fill_between(sorted_moments, stat_curves[low], stat_curves[high],
+                ax.fill_between(x_coords, stat_curves[low], stat_curves[high],
                                 color=STATS_OUTER_COLOR, alpha=STATS_OUTER_ALPHA)
                 break
 
-    ax.set_xlabel("Time")
+    ax.set_xlabel("Relative year" if is_year_offset else "Year")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.ticklabel_format(useOffset=False, style='plain', axis='x')
     ax.set_ylabel(value_label)
@@ -380,16 +392,18 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_cat,
                           cat_key, val_key, val_label, add_zero, get_is_moving_avg, get_period,
                           config, on_stats_computed, on_lines_plotted,
-                          entity_key="region", all_region_str=STR_ALL_REGIONS):
+                          entity_key="region", all_region_str=STR_ALL_REGIONS,
+                          is_year_offset=False):
     ax._stats_moments_data = None
     ax._global_stats = None
     if on_stats_computed:
         on_stats_computed(None)
 
-    is_m_all = m_filter == STR_ALL_MOMENTS
-    is_c_picked = c_filter != all_cat
-    is_r_picked = r_filter != all_region_str
+    is_m_all = (m_filter == STR_ALL_MOMENTS)
+    is_c_picked = (c_filter != all_cat)
+    is_r_picked = (r_filter != all_region_str)
     colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
+    offset = 1337 if is_year_offset else 0
 
     if is_m_all and (is_c_picked or is_r_picked):
         if is_r_picked and all_cat is None:
@@ -403,7 +417,7 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
         for item in filtered_data:
             ent = item.get(plot_key, '')
             series.setdefault(ent, {'m': [], 'v': []})
-            series[ent]['m'].append(item['moment'])
+            series[ent]['m'].append(item['moment'] - offset)
             series[ent]['v'].append(item[val_key])
 
         if add_zero and series:
@@ -417,7 +431,7 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
                             values['m'].append(line_min_m - 1)
                             values['v'].append(0)
 
-        ax.set_xlabel("Time")
+        ax.set_xlabel("Relative year" if is_year_offset else "Year")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.set_ylabel(val_label)
         if is_r_picked and all_cat is None:
@@ -467,7 +481,8 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 
         ax.bar(labels, values, color=b_colors)
         ax.set_ylabel(val_label)
-        ax.set_title(f"{val_label}s for Month/Year: {m_filter}")
+        time_display = f"{m_filter} (Relative year)" if is_year_offset else f"Year: {m_filter}"
+        ax.set_title(f"{val_label}s for {time_display}")
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
         if items:

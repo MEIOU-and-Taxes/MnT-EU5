@@ -9,11 +9,11 @@ from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from PyQt6.QtCore import Qt, QTimer, QUrl
+from PyQt6.QtCore import QTimer, QUrl
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QAction, QDesktopServices
 from PyQt6.QtWidgets import (
 	QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-	QPushButton, QComboBox, QLabel, QTextEdit, QMessageBox,
+	QPushButton, QComboBox, QTextEdit, QMessageBox,
 	QFileDialog
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -38,7 +38,7 @@ from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, Settin
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
-STATS_PANEL_WIDTH = 400
+STATS_PANEL_WIDTH = 420
 
 class MainWindow(QMainWindow):
 	def __init__(self):
@@ -74,6 +74,7 @@ class MainWindow(QMainWindow):
 		self.is_log_scale = False
 		self.is_moving_average = False
 		self.is_density = False
+		self.is_year_offset = False
 		self.stats_hide_idx = 0
 		self.period_value = 5
 		self.refresh_interval_idx = 0
@@ -124,6 +125,7 @@ class MainWindow(QMainWindow):
 			self.is_stats_mode = data.get("is_stats_mode", True)
 			self.stats_hide_idx = data.get("stats_hide_idx", 0)
 			self.is_density = data.get("is_density", False)
+			self.is_year_offset = data.get("is_year_offset", False)
 			self.is_log_scale = data.get("is_log_scale", False)
 			self.is_moving_average = data.get("is_moving_average", False)
 			self.stats_shading_all = data.get("stats_shading_all", True)
@@ -139,6 +141,7 @@ class MainWindow(QMainWindow):
 				"is_stats_mode": self.is_stats_mode,
 				"stats_hide_idx": self.combo_stats_hide.currentIndex() if hasattr(self, 'combo_stats_hide') else self.stats_hide_idx,
 				"is_density": self.is_density,
+				"is_year_offset": self.is_year_offset,
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,
@@ -224,6 +227,12 @@ class MainWindow(QMainWindow):
 		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
 		menu_view.addAction(self.act_stats_mode)
 
+		self.act_year_offset = QAction("Relative year", self, checkable=True)
+		self.act_year_offset.setChecked(self.is_year_offset)
+		self.act_year_offset.setShortcut(QKeySequence("Y"))
+		self.act_year_offset.toggled.connect(self.toggle_year_offset)
+		menu_view.addAction(self.act_year_offset)
+
 		self.act_density = QAction("Density Mode", self, checkable=True)
 		self.act_density.setChecked(self.is_density)
 		self.act_density.setShortcut(QKeySequence("D"))
@@ -284,9 +293,9 @@ class MainWindow(QMainWindow):
 		# Ensure hotkeys trigger even when the menubar is hidden in fullscreen
 		for act in [act_open_folder, act_backup, act_load_sess, act_save_sess,
 					act_clear_data, act_export, act_charts, act_presets,
-					self.act_fullscreen, self.act_stats_mode, self.act_density,
-					self.act_log_scale, self.act_moving_avg, act_refresh,
-					act_analysis, act_settings]:
+					self.act_fullscreen, self.act_stats_mode, self.act_year_offset,
+					self.act_density, self.act_log_scale, self.act_moving_avg,
+					act_refresh, act_analysis, act_settings]:
 			self.addAction(act)
 
 	def _build_ui(self):
@@ -337,7 +346,11 @@ class MainWindow(QMainWindow):
 		self.btn_stats_mode.setCheckable(True)
 		self.btn_stats_mode.setChecked(self.is_stats_mode)
 
-		# Dropdown to hide percentiles in Stats mode
+		self.btn_year_offset = QPushButton("Relative year [Y]")
+		self.btn_year_offset.setCheckable(True)
+		self.btn_year_offset.setChecked(self.is_year_offset)
+		self.btn_year_offset.setToolTip("Toggle time axis between absolute & relative [Y]")
+
 		self.combo_stats_hide = QComboBox()
 		self.combo_stats_hide.addItems([
 			"Hide: None",
@@ -366,7 +379,7 @@ class MainWindow(QMainWindow):
 		self.btn_moving_avg.setVisible(not(self.is_stats_mode))
 
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_refresh,
-				  self.btn_stats_mode, self.btn_density,
+				  self.btn_stats_mode, self.btn_year_offset, self.btn_density,
 				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
@@ -386,11 +399,18 @@ class MainWindow(QMainWindow):
 		self.btn_log_scale.toggled.connect(self.act_log_scale.setChecked)
 		self.btn_moving_avg.toggled.connect(self.act_moving_avg.setChecked)
 		self.btn_stats_mode.toggled.connect(self.act_stats_mode.setChecked)
+		self.btn_year_offset.toggled.connect(self.act_year_offset.setChecked)
 		self.btn_density.toggled.connect(self.act_density.setChecked)
 
 	def setup_shortcuts(self):
 		# Keyboard shortcuts are already handled by QAction shortcuts in the menu bar.
-		pass
+
+		# Hotkeys to step metric/category backward and forward
+		self.sc_prev_metric = QShortcut(QKeySequence(","), self)
+		self.sc_prev_metric.activated.connect(self.select_previous_metric)
+
+		self.sc_next_metric = QShortcut(QKeySequence("."), self)
+		self.sc_next_metric.activated.connect(self.select_next_metric)
 
 	def _on_stats_hide_changed(self, idx):
 		self.stats_hide_idx = idx
@@ -526,7 +546,8 @@ class MainWindow(QMainWindow):
 				lambda: 9, set_redraw_fn=self.set_redraw_fn,
 				get_is_density=lambda: self.is_density,
 				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex(),
-				get_stats_shading_all=lambda: self.stats_shading_all
+				get_stats_shading_all=lambda: self.stats_shading_all,
+				get_is_year_offset=lambda: self.is_year_offset
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
@@ -745,6 +766,14 @@ class MainWindow(QMainWindow):
 		self.act_moving_avg.setVisible(checked)
 		self.save_app_settings()
 		self.redraw_current_plot()
+
+	def toggle_year_offset(self, checked):
+		self.is_year_offset = checked
+		self.btn_year_offset.setChecked(checked)
+		self.act_year_offset.setChecked(checked)
+		self.save_app_settings()
+		if self.current_graph_info:
+			self.display_chart(self.current_graph_info['info'], self.current_graph_info['title'], preserve_toggles=True)
 
 	def toggle_stats_shading_all(self, checked):
 		self.stats_shading_all = checked
@@ -1220,3 +1249,30 @@ class MainWindow(QMainWindow):
 			cur = self.combo_stats_hide.currentIndex()
 			if cur < self.combo_stats_hide.count() - 1:
 				self.combo_stats_hide.setCurrentIndex(cur + 1)
+
+	def _get_metric_combobox(self):
+		"""Returns the primary metric/category combobox for the current chart."""
+		if not self.current_graph_info:
+			return None
+		cat_key = self.current_graph_info['info']['config'].get('category_key')
+		combo = self.filter_widget_map.get(cat_key)
+		if isinstance(combo, QComboBox):
+			return combo
+		# Fallback to any metric-like key
+		for key in ['country_metric', 'credit_metric', 'statistic', 'good', 'building', 'road_type']:
+			w = self.filter_widget_map.get(key)
+			if isinstance(w, QComboBox):
+				return w
+		return None
+
+	def select_previous_metric(self):
+		combo = self._get_metric_combobox()
+		if combo and combo.count() > 0:
+			new_idx = (combo.currentIndex() - 1) % combo.count()
+			combo.setCurrentIndex(new_idx)
+
+	def select_next_metric(self):
+		combo = self._get_metric_combobox()
+		if combo and combo.count() > 0:
+			new_idx = (combo.currentIndex() + 1) % combo.count()
+			combo.setCurrentIndex(new_idx)

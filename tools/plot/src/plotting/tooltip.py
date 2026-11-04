@@ -1,5 +1,6 @@
 ﻿import numpy as np
-from matplotlib.text import Text
+
+from src.parsing.numeric_utils import format_metric_3digits
 
 TOOLTIP_DISPLAYED_LINES = 25
 LINE_WIDTH_SELECTED = 5
@@ -104,19 +105,22 @@ class InteractiveLineTooltip:
         # Stats Mode handling
         moments_data = getattr(self.ax, '_stats_moments_data', None)
         global_stats = getattr(self.ax, '_global_stats', None)
+        is_year_offset = getattr(self.ax, '_is_year_offset', False)
+        year_offset = 1337 if is_year_offset else 0
+        orig_x = cur_x + year_offset
 
-        if moments_data and cur_x in moments_data:
+        if moments_data and orig_x in moments_data:
             if self.on_stats_hover_callback:
-                vals = [x[1] for x in moments_data[cur_x]]
+                vals = [x[1] for x in moments_data[orig_x]]
                 sorted_moments = sorted(moments_data.keys())
-                cur_idx = sorted_moments.index(cur_x)
+                cur_idx = sorted_moments.index(orig_x)
                 prev_m = sorted_moments[cur_idx - 1] if cur_idx > 0 else None
 
                 yearly_increase = []
                 yearly_decrease = []
                 if prev_m is not None:
                     prev_dict = dict(moments_data[prev_m])
-                    cur_dict = dict(moments_data[cur_x])
+                    cur_dict = dict(moments_data[orig_x])
                     step_deltas = []
                     for ent, val_cur in cur_dict.items():
                         if ent in prev_dict:
@@ -126,7 +130,7 @@ class InteractiveLineTooltip:
                     yearly_decrease = sorted(step_deltas, key=lambda x: x[1])[:3]
 
                 self.on_stats_hover_callback(global_stats, {
-                    "year": cur_x,
+                    "year": orig_x,
                     "prev_year": prev_m,
                     "mean": float(np.mean(vals)),
                     "median": float(np.median(vals)),
@@ -149,20 +153,20 @@ class InteractiveLineTooltip:
                         curve_label = line.get_label()
 
             if target_val is not None:
-                # Pick the closest entries to the target value, then sort them descending by value
-                closest_entries = sorted(moments_data[cur_x], key=lambda x: abs(x[1] - target_val))[:TOOLTIP_DISPLAYED_LINES]
+                closest_entries = sorted(moments_data[orig_x], key=lambda x: abs(x[1] - target_val))[:TOOLTIP_DISPLAYED_LINES]
                 top_sorted = sorted(closest_entries, key=lambda x: x[1], reverse=True)
+                top_formatted = [(ent, format_metric_3digits(v)) for ent, v in top_sorted]
 
-                fmt = ",.0f" if (self.ax.get_ylabel() or "") in ("Population", "Count") else ",.2f"
-                max_ent = max((len(str(ent)) for ent, _ in top_sorted), default=10)
-                max_v = max((len(f"{v:{fmt}}") for _, v in top_sorted), default=6)
+                max_ent = max((len(str(ent)) for ent, _ in top_formatted), default=10)
+                max_v = max((len(v_str) for _, v_str in top_formatted), default=6)
 
-                header_label = f"Year: {cur_x} | Curve: {curve_label}"
-                val_str = f"Val: {target_val:{fmt}}"
+                year_hdr = f"Relative year: {cur_x}" if is_year_offset else f"Year: {cur_x}"
+                header_label = f"{year_hdr} | Curve: {curve_label}"
+                val_str = f"Val: {format_metric_3digits(target_val)}"
                 sep_len = max(len(header_label), max_ent + max_v + 5, 30)
 
                 lines = [header_label, val_str, "-" * sep_len]
-                lines.extend([f"{v:>{max_v}{fmt}} : {ent}" for ent, v in top_sorted])
+                lines.extend([f"{v_str:>{max_v}} : {ent}" for ent, v_str in top_formatted])
 
                 self._place_annotation(event, cur_x, target_val, "\n".join(lines))
             return
@@ -183,15 +187,15 @@ class InteractiveLineTooltip:
         for itm in cached:
             itm['dist'] = abs(itm['y_val'] - event.ydata)
         sorted_data = sorted(sorted(cached, key=lambda d: d['dist'])[:TOOLTIP_DISPLAYED_LINES], key=lambda d: d['y_val'], reverse=True)
+        formatted_items = [(itm, format_metric_3digits(itm['y_val'])) for itm in sorted_data]
 
-        fmt = ",.0f" if (self.ax.get_ylabel() or "") in ("Population", "Count") else ",.2f"
-        max_lbl = max(len(d['label']) for d in sorted_data)
-        max_val = max(len(f"{d['y_val']:{fmt}}") for d in sorted_data)
+        max_lbl = max(len(itm['label']) for itm, _ in formatted_items)
+        max_val = max(len(v_str) for _, v_str in formatted_items)
 
         text_lines = [f"{self.ax.get_xlabel() or 'X':>{max_lbl + 3}} : {cur_x}", ""]
-        for itm in sorted_data:
+        for itm, v_str in formatted_items:
             mark = '*' if itm['label'] == self.closest_line else ' '
-            text_lines.append(f"{itm['y_val']:>{max_val}{fmt}} : {mark}{itm['label']:<{max_lbl}}")
+            text_lines.append(f"{v_str:>{max_val}} : {mark}{itm['label']:<{max_lbl}}")
 
         self._place_annotation(event, closest_point[0], closest_point[1], "\n".join(text_lines))
 
@@ -200,7 +204,7 @@ class InteractiveLineTooltip:
         text_lines = text.split("\n")
         est_w = max(len(l) for l in text_lines) * TOOLTIP_FONT_SIZE * TOOLTIP_CHAR_WIDTH_RATIO
         est_h = len(text_lines) * TOOLTIP_FONT_SIZE * TOOLTIP_LINE_HEIGHT_RATIO
-        est_w += TOOLTIP_PADDING * 2 + TOOLTIP_MARGIN  # bbox pad + offset + margin
+        est_w += TOOLTIP_PADDING * 2 + TOOLTIP_MARGIN
         est_h += TOOLTIP_PADDING * 2 + TOOLTIP_MARGIN
 
         # Convert to pixels and compare against the axes bounds
@@ -224,7 +228,7 @@ class InteractiveLineTooltip:
 
         self.annot.set_verticalalignment(v_align)
         self.annot.set_horizontalalignment(h_align)
-        self.annot.xyann = (h_offset, v_offset)  # was: self.annot.xytext = ...
+        self.annot.xyann = (h_offset, v_offset)
         self.annot.set_text(text)
         self.annot.xy = (x, y)
         self.annot.set_visible(True)
