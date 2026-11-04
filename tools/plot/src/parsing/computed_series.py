@@ -3,6 +3,7 @@ import ast
 import csv
 import operator as op
 import os
+import re
 import shutil
 
 from src.constants import APPDATA_DIR
@@ -30,25 +31,97 @@ ALLOWED_OPERATORS = {
     ast.UAdd: op.pos,
 }
 
-def _eval_node(node, variables):
-    """Safely evaluates an AST expression node against variable values."""
-    if isinstance(node, ast.Constant):  # Python >= 3.8 numeric literals
+_reported_parsing_errors = set()
+
+
+def prepare_expression(expr_str: str):
+    """
+    Converts carets to power operators and maps bracketed variables (e.g., [Credit Demand])
+    to safe identifier tokens so variable names containing spaces/symbols parse cleanly.
+    """
+    clean = expr_str.strip().replace('^', '**')
+    var_map = {}
+
+    def repl(m):
+        raw_name = m.group(1).strip()
+        safe_id = f"__bvar_{len(var_map)}__"
+        var_map[safe_id] = raw_name
+        return safe_id
+
+    clean = re.sub(r'\[([^\]]+)\]', repl, clean)
+    return clean, var_map
+
+
+def validate_expression(expr_str: str):
+    """Parses and checks that the expression contains only allowed arithmetic nodes."""
+    clean, var_map = prepare_expression(expr_str)
+    parsed = ast.parse(clean, mode='eval')
+
+    def check_node(n):
+        if isinstance(n, ast.Expression):
+            check_node(n.body)
+        elif isinstance(n, ast.Constant):
+            if not isinstance(n.value, (int, float)):
+                raise ValueError(f"Literal '{n.value}' is not a numeric constant")
+        elif hasattr(ast, 'Num') and isinstance(n, ast.Num):
+            pass
+        elif isinstance(n, ast.Name):
+            pass
+        elif isinstance(n, ast.UnaryOp):
+            if type(n.op) not in ALLOWED_OPERATORS:
+                raise ValueError(f"Unary operator '{type(n.op).__name__}' is not allowed")
+            check_node(n.operand)
+        elif isinstance(n, ast.BinOp):
+            if type(n.op) not in ALLOWED_OPERATORS:
+                raise ValueError(f"Binary operator '{type(n.op).__name__}' is not allowed")
+            check_node(n.left)
+            check_node(n.right)
+        else:
+            raise ValueError(f"Syntax element '{type(n).__name__}' is not supported")
+
+    check_node(parsed)
+    return clean, var_map
+
+
+def _eval_node(node, variables, var_map=None):
+    """Recursively evaluates an AST node across binary/unary trees, constants, and variables."""
+    if isinstance(node, ast.Constant):
         return float(node.value)
+    elif hasattr(ast, 'Num') and isinstance(node, ast.Num):
+        return float(node.n)
     elif isinstance(node, ast.Name):
-        val = variables.get(node.id, variables.get(node.id.lower(), 0.0))
+        var_name = node.id
+        if var_map and var_name in var_map:
+            var_name = var_map[var_name]
+
+        # Resolution across multiple naming styles (exact, lower, spaced, underscored)
+        candidates = [
+            var_name,
+            var_name.lower(),
+            var_name.replace('_', ' '),
+            var_name.replace(' ', '_'),
+            var_name.lower().replace('_', ' '),
+            var_name.lower().replace(' ', '_')
+        ]
+        val = None
+        for cand in candidates:
+            if cand in variables:
+                val = variables[cand]
+                break
+
         try:
             return float(val) if val is not None else 0.0
         except (ValueError, TypeError):
             return 0.0
     elif isinstance(node, ast.UnaryOp):
-        operand = _eval_node(node.operand, variables)
+        operand = _eval_node(node.operand, variables, var_map)
         op_type = type(node.op)
         if op_type in ALLOWED_OPERATORS:
             return ALLOWED_OPERATORS[op_type](operand)
         raise ValueError(f"Unsupported unary operator: {op_type}")
     elif isinstance(node, ast.BinOp):
-        left = _eval_node(node.left, variables)
-        right = _eval_node(node.right, variables)
+        left = _eval_node(node.left, variables, var_map)
+        right = _eval_node(node.right, variables, var_map)
         op_type = type(node.op)
         if op_type in ALLOWED_OPERATORS:
             if op_type in (ast.Div, ast.FloorDiv):
@@ -59,18 +132,22 @@ def _eval_node(node, variables):
     else:
         raise ValueError(f"Unsupported AST node expression: {type(node)}")
 
-def evaluate_expression(expr_str: str, variables: dict) -> float:
+
+def evaluate_expression(expr_str: str, variables: dict, precompiled=None) -> float:
     """Evaluates a math formula string safely using an AST."""
     if not expr_str or not expr_str.strip():
         return 0.0
-    # Replace caret with power operator if used
-    clean_expr = expr_str.strip().replace('^', '**')
     try:
+        if precompiled:
+            clean_expr, var_map = precompiled
+        else:
+            clean_expr, var_map = prepare_expression(expr_str)
         parsed = ast.parse(clean_expr, mode='eval')
-        res = _eval_node(parsed.body, variables)
+        res = _eval_node(parsed.body, variables, var_map)
         return float(res) if res is not None else 0.0
     except Exception:
         return 0.0
+
 
 def ensure_computed_series_file():
     """Initializes computed_series.csv in APPDATA if not already present."""
@@ -81,8 +158,28 @@ def ensure_computed_series_file():
             with open(COMPUTED_SERIES_APPDATA_PATH, "w", encoding="utf-8") as f:
                 f.write(DEFAULT_COMPUTED_SERIES_CSV)
 
+
+def _show_parsing_error_dialog(err_msg: str, line_num: int):
+    """Displays a warning dialog to the user if GUI is initialized."""
+    err_key = (line_num, err_msg)
+    if err_key in _reported_parsing_errors:
+        return
+    _reported_parsing_errors.add(err_key)
+
+    try:
+        from PyQt6.QtWidgets import QApplication, QMessageBox
+        if QApplication.instance():
+            QMessageBox.critical(
+                None,
+                "Computed Series Parsing Error",
+                f"Failed to parse formula in '{COMPUTED_SERIES_FILENAME}' on line {line_num}:\n\n{err_msg}"
+            )
+    except Exception:
+        pass
+
+
 def load_computed_series_definitions():
-    """Reads configured formulas from computed_series.csv."""
+    """Reads configured formulas from computed_series.csv and validates them."""
     ensure_computed_series_file()
     definitions = []
     filepath = COMPUTED_SERIES_APPDATA_PATH if os.path.exists(COMPUTED_SERIES_APPDATA_PATH) else COMPUTED_SERIES_FILENAME
@@ -91,18 +188,36 @@ def load_computed_series_definitions():
 
     try:
         with open(filepath, mode="r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                d_type = row.get("dataset_type", "").strip().lower()
-                name = row.get("new_metric_name", "").strip()
-                expr = row.get("expression", "").strip()
-                if d_type and name and expr:
-                    definitions.append({
-                        "dataset_type": d_type,
-                        "metric_name": name,
-                        "expression": expr,
-                        "description": row.get("description", "").strip()
-                    })
+            lines = f.readlines()
     except Exception as e:
         print(f"Failed to read computed series config: {e}")
+        return definitions
+
+    if not lines:
+        return definitions
+
+    reader = csv.DictReader(lines)
+    for row_idx, row in enumerate(reader, start=2):
+        d_type = row.get("dataset_type", "").strip().lower()
+        name = row.get("new_metric_name", "").strip()
+        expr = row.get("expression", "").strip()
+        if not (d_type and name and expr):
+            continue
+
+        try:
+            clean_expr, var_map = validate_expression(expr)
+            definitions.append({
+                "dataset_type": d_type,
+                "metric_name": name,
+                "expression": expr,
+                "clean_expr": clean_expr,
+                "var_map": var_map,
+                "description": row.get("description", "").strip(),
+                "line": row_idx
+            })
+        except Exception as err:
+            details = f"Metric: {name}\nExpression: {expr}\nError: {err}"
+            print(f"[COMPUTED SERIES ERROR] Line {row_idx}: {details}")
+            _show_parsing_error_dialog(details, row_idx)
+
     return definitions

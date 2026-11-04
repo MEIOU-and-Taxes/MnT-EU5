@@ -77,9 +77,9 @@ class MainWindow(QMainWindow):
 		self.current_preset_chart = None
 		self.is_log_scale = False
 		self.is_moving_average = False
-		self.is_density = False
+		self.density_mode = "none"  # "none", "location", "population"
+		self.derivative_order = 0    # 0: Base, 1: Rate, 2: Acceleration
 		self.is_year_offset = False
-		self.is_rate = False
 		self.stats_hide_idx = 0
 		self.period_value = 5
 		self.refresh_interval_idx = 0
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
 		self.load_graph_definitions()
 		self.display_info_screen()
 
-		# Constant 5-second watcher: checks and reads log files from disk
+		# Constant 1-second watcher: checks and reads log files from disk
 		self.timer_file_watcher = QTimer(self)
 		self.timer_file_watcher.setInterval(REFRESH_PERIOD_MS)
 		self.timer_file_watcher.timeout.connect(self.check_log_updates)
@@ -129,12 +129,12 @@ class MainWindow(QMainWindow):
 			self.period_value = data.get("period_value", 5)
 			self.is_stats_mode = data.get("is_stats_mode", True)
 			self.stats_hide_idx = data.get("stats_hide_idx", 0)
-			self.is_density = data.get("is_density", False)
+			self.density_mode = data.get("density_mode", "location" if data.get("is_density", False) else "none")
+			self.derivative_order = data.get("derivative_order", 1 if data.get("is_rate", False) else 0)
 			self.is_year_offset = data.get("is_year_offset", False)
 			self.is_log_scale = data.get("is_log_scale", False)
 			self.is_moving_average = data.get("is_moving_average", False)
 			self.stats_shading_all = data.get("stats_shading_all", True)
-			self.is_rate = data.get("is_rate", False)
 		except Exception as e:
 			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
 
@@ -146,12 +146,12 @@ class MainWindow(QMainWindow):
 				"period_value": self.period_value,
 				"is_stats_mode": self.is_stats_mode,
 				"stats_hide_idx": self.combo_stats_hide.currentIndex() if hasattr(self, 'combo_stats_hide') else self.stats_hide_idx,
-				"is_density": self.is_density,
+				"density_mode": self.density_mode,
+				"derivative_order": self.combo_derivative.currentIndex() if hasattr(self, 'combo_derivative') else self.derivative_order,
 				"is_year_offset": self.is_year_offset,
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,
-				"is_rate": self.is_rate,
 			}
 			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
 				json.dump(data, f, indent=2)
@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
 		menu_charts.addAction(act_charts)
 
 		act_presets = QAction("Configure Presets...", self)
-		act_presets.setShortcut(QKeySequence("P"))
+		act_presets.setShortcut(QKeySequence("Ctrl+P"))
 		act_presets.triggered.connect(self.open_preset_config)
 		menu_charts.addAction(act_presets)
 
@@ -246,18 +246,29 @@ class MainWindow(QMainWindow):
 		self.act_year_offset.toggled.connect(self.toggle_year_offset)
 		menu_view.addAction(self.act_year_offset)
 
-		self.act_density = QAction("Density mode", self, checkable=True)
-		self.act_density.setChecked(self.is_density)
-		self.act_density.setShortcut(QKeySequence("D"))
-		self.act_density.toggled.connect(self.toggle_density)
-		menu_view.addAction(self.act_density)
+		self.act_density_loc = QAction("Location density mode", self, checkable=True)
+		self.act_density_loc.setChecked(self.density_mode == "location")
+		self.act_density_loc.setShortcut(QKeySequence("D"))
+		self.act_density_loc.triggered.connect(self.toggle_location_density)
+		menu_view.addAction(self.act_density_loc)
 
-		self.act_rate = QAction("Rate mode (Δ)", self, checkable=True)
-		self.act_rate.setChecked(self.is_rate)
-		self.act_rate.setShortcut(QKeySequence("R"))
-		self.act_rate.toggled.connect(self.toggle_rate)
-		menu_view.addAction(self.act_rate)
-		self.addAction(self.act_rate)
+		self.act_density_pop = QAction("Population density mode", self, checkable=True)
+		self.act_density_pop.setChecked(self.density_mode == "population")
+		self.act_density_pop.setShortcut(QKeySequence("P"))
+		self.act_density_pop.triggered.connect(self.toggle_population_density)
+		menu_view.addAction(self.act_density_pop)
+
+		self.act_rate_toggle = QAction("Derivative: Rate (R)", self)
+		self.act_rate_toggle.setShortcut(QKeySequence("R"))
+		self.act_rate_toggle.triggered.connect(self.handle_r_shortcut)
+		menu_view.addAction(self.act_rate_toggle)
+		self.addAction(self.act_rate_toggle)
+
+		self.act_accel_toggle = QAction("Derivative: Acceleration (Shift+R)", self)
+		self.act_accel_toggle.setShortcut(QKeySequence("Shift+R"))
+		self.act_accel_toggle.triggered.connect(self.handle_shift_r_shortcut)
+		menu_view.addAction(self.act_accel_toggle)
+		self.addAction(self.act_accel_toggle)
 
 		self.act_log_scale = QAction("Symlog scale", self, checkable=True)
 		self.act_log_scale.setChecked(self.is_log_scale)
@@ -310,12 +321,12 @@ class MainWindow(QMainWindow):
 		act_settings.triggered.connect(self.open_settings_dialog)
 		menu_tools.addAction(act_settings)
 
-		# Ensure hotkeys trigger even when the menubar is hidden in fullscreen
+		# Keep hotkeys triggered across fullscreen
 		for act in [act_open_folder, act_backup, act_load_sess, act_save_sess,
 					act_clear_data, act_export, act_charts, act_presets,
 					self.act_fullscreen, self.act_stats_mode, self.act_year_offset,
-					self.act_density, self.act_log_scale, self.act_moving_avg,
-					act_refresh, act_analysis, act_settings]:
+					self.act_density_loc, self.act_density_pop, self.act_log_scale,
+					self.act_moving_avg, act_refresh, act_analysis, act_settings]:
 			self.addAction(act)
 
 	def _build_ui(self):
@@ -358,7 +369,7 @@ class MainWindow(QMainWindow):
 		# Controls
 		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
-		self.btn_preset_config = QPushButton("[P]resets")
+		self.btn_preset_config = QPushButton("Presets [Ctrl+P]")
 		self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
 		self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately [Ctrl+R]")
 
@@ -388,16 +399,25 @@ class MainWindow(QMainWindow):
 		self.combo_stats_hide.setToolTip("Select outliers/percentile bands to hide from the chart.")
 		self.combo_stats_hide.currentIndexChanged.connect(self._on_stats_hide_changed)
 
-		self.btn_density = QPushButton("Density [D]")
-		self.btn_density.setCheckable(True)
-		self.btn_density.setChecked(self.is_density)
-		self.btn_density.setToolTip("Divides values by the number of locations.")
+		# Density Buttons
+		self.btn_density_loc = QPushButton("Loc density [D]")
+		self.btn_density_loc.setCheckable(True)
+		self.btn_density_loc.setChecked(self.density_mode == "location")
+		self.btn_density_loc.setToolTip("Divides values by the number of locations [D].")
+		self.btn_density_loc.clicked.connect(self.toggle_location_density)
 
-		self.btn_rate = QPushButton("Rate [R]")
-		self.btn_rate.setCheckable(True)
-		self.btn_rate.setChecked(self.is_rate)
-		self.btn_rate.setToolTip("Computes first difference: dp[n] - dp[n - 1] [R]")
-		self.btn_rate.toggled.connect(self.act_rate.setChecked)
+		self.btn_density_pop = QPushButton("Pop density [P]")
+		self.btn_density_pop.setCheckable(True)
+		self.btn_density_pop.setChecked(self.density_mode == "population")
+		self.btn_density_pop.setToolTip("Divides values by population [P].")
+		self.btn_density_pop.clicked.connect(self.toggle_population_density)
+
+		# Derivative Dropdown
+		self.combo_derivative = QComboBox()
+		self.combo_derivative.addItems(["Base", "Rate", "Acceleration"])
+		self.combo_derivative.setCurrentIndex(self.derivative_order)
+		self.combo_derivative.setToolTip("Select derivative order: Base, Rate (Δ) [R], Acceleration (Δ²) [Shift+R]")
+		self.combo_derivative.currentIndexChanged.connect(self._on_derivative_changed)
 
 		self.btn_log_scale = QPushButton("[L]og scale")
 		self.btn_log_scale.setCheckable(True)
@@ -406,11 +426,11 @@ class MainWindow(QMainWindow):
 		self.btn_moving_avg = QPushButton("Moving avg [W]")
 		self.btn_moving_avg.setCheckable(True)
 		self.btn_moving_avg.setChecked(self.is_moving_average)
-		self.btn_moving_avg.setVisible(not(self.is_stats_mode))
+		self.btn_moving_avg.setVisible(not self.is_stats_mode)
 
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
-				  self.btn_year_offset, self.btn_stats_mode, self.btn_density, self.btn_rate,
-				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
+				  self.btn_year_offset, self.btn_stats_mode, self.btn_density_loc, self.btn_density_pop,
+				  self.combo_derivative, self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
 		self.top_button_layout.addStretch(1)
@@ -430,7 +450,6 @@ class MainWindow(QMainWindow):
 		self.btn_moving_avg.toggled.connect(self.act_moving_avg.setChecked)
 		self.btn_stats_mode.toggled.connect(self.act_stats_mode.setChecked)
 		self.btn_year_offset.toggled.connect(self.act_year_offset.setChecked)
-		self.btn_density.toggled.connect(self.act_density.setChecked)
 
 	def setup_shortcuts(self):
 		# Keyboard shortcuts are already handled by QAction shortcuts in the menu bar.
@@ -451,6 +470,63 @@ class MainWindow(QMainWindow):
 
 	def _on_stats_hide_changed(self, idx):
 		self.stats_hide_idx = idx
+		self.save_app_settings()
+		self.redraw_current_plot()
+
+	def _on_derivative_changed(self, idx):
+		self.derivative_order = idx
+		self.save_app_settings()
+		self.redraw_current_plot()
+
+	def handle_r_shortcut(self):
+		cur = self.combo_derivative.currentIndex()
+		if cur == 2:  # Acceleration -> Rate
+			self.combo_derivative.setCurrentIndex(1)
+		elif cur == 0:  # Base -> Rate
+			self.combo_derivative.setCurrentIndex(1)
+		else:  # Rate -> Base
+			self.combo_derivative.setCurrentIndex(0)
+
+	def handle_shift_r_shortcut(self):
+		cur = self.combo_derivative.currentIndex()
+		if cur == 2:  # Acceleration -> Base
+			self.combo_derivative.setCurrentIndex(0)
+		else:  # Base or Rate -> Acceleration
+			self.combo_derivative.setCurrentIndex(2)
+
+	def toggle_location_density(self):
+		new_mode = "none" if self.density_mode == "location" else "location"
+		self.set_density_mode(new_mode)
+
+	def toggle_population_density(self):
+		new_mode = "none" if self.density_mode == "population" else "population"
+		self.set_density_mode(new_mode)
+
+	def set_density_mode(self, mode):
+		if mode == "location":
+			rloc_map = log_parser.get_region_locations()
+			has_locs = any(v > 0 for v in rloc_map.values()) or any(
+				(r.get("locations", 0) or r.get("num_locations", 0) or 0) > 0
+				for r in log_parser.tg_cumulative_store.values()
+			)
+			if not has_locs:
+				QMessageBox.warning(self, "No Location Data", "No location counts are stored in the current logs.")
+				mode = "none"
+		elif mode == "population":
+			has_pop = bool(log_parser.pop_cumulative_store) or any(
+				float(r.get("Population", 0) or 0) > 0 for r in log_parser.tg_cumulative_store.values()
+			)
+			if not has_pop:
+				QMessageBox.warning(self, "No Population Data", "No population data is stored in the current logs.")
+				mode = "none"
+
+		self.density_mode = mode
+		self.btn_density_loc.setChecked(mode == "location")
+		self.btn_density_pop.setChecked(mode == "population")
+		if hasattr(self, 'act_density_loc'):
+			self.act_density_loc.setChecked(mode == "location")
+		if hasattr(self, 'act_density_pop'):
+			self.act_density_pop.setChecked(mode == "population")
 		self.save_app_settings()
 		self.redraw_current_plot()
 
@@ -563,6 +639,21 @@ class MainWindow(QMainWindow):
 
 		self.key_configs = loaded_cfg
 
+	def _find_matching_combo_index(self, widget: QComboBox, val: str) -> int:
+		"""Finds item index, gracefully resolving with or without ' price' suffix."""
+		idx = widget.findText(val)
+		if idx != -1:
+			return idx
+		if not val.lower().endswith(" price"):
+			idx = widget.findText(f"{val} price")
+			if idx != -1:
+				return idx
+		if val.lower().endswith(" price"):
+			idx = widget.findText(val[:-6].strip())
+			if idx != -1:
+				return idx
+		return -1
+
 	def _restore_filters(self, title):
 		for widget in self.filter_widget_map.values():
 			widget.blockSignals(True)
@@ -580,7 +671,7 @@ class MainWindow(QMainWindow):
 						elif target_key == 'region' and 'market' in self.filter_widget_map:
 							target_key = 'market'
 					if target_key in self.filter_widget_map:
-						idx = self.filter_widget_map[target_key].findText(val)
+						idx = self._find_matching_combo_index(self.filter_widget_map[target_key], val)
 						if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
 			elif title in self.key_configs and self.key_configs[title]:
 				sorted_keys = sort_hotkeys(self.key_configs[title].keys())
@@ -597,7 +688,7 @@ class MainWindow(QMainWindow):
 						elif target_key == 'region' and 'market' in self.filter_widget_map:
 							target_key = 'market'
 					if target_key in self.filter_widget_map:
-						idx = self.filter_widget_map[target_key].findText(val)
+						idx = self._find_matching_combo_index(self.filter_widget_map[target_key], val)
 						if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
 		finally:
 			for widget in self.filter_widget_map.values():
@@ -619,7 +710,7 @@ class MainWindow(QMainWindow):
 					elif target_key == 'region' and 'market' in self.filter_widget_map:
 						target_key = 'market'
 				if target_key in self.filter_widget_map:
-					idx = self.filter_widget_map[target_key].findText(v)
+					idx = self._find_matching_combo_index(self.filter_widget_map[target_key], v)
 					if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
 		finally:
 			for combo in self.filter_widget_map.values():
@@ -638,6 +729,7 @@ class MainWindow(QMainWindow):
 			if isinstance(w, QComboBox):
 				return w
 		return None
+
 	def plot_by_hotkey(self, key):
 		name = self.chart_hotkeys.get(key)
 		if name and name in self.graphs:
@@ -673,15 +765,11 @@ class MainWindow(QMainWindow):
 			self.is_moving_average = False
 			self.btn_moving_avg.setChecked(False)
 			self.act_moving_avg.setChecked(False)
-			self.is_density = False
-			self.btn_density.setChecked(False)
-			self.act_density.setChecked(False)
-			self.is_rate = False
-			self.btn_rate.setChecked(False)
-			self.act_rate.setChecked(False)
-
-		self.btn_density.setVisible(True)
-		self.btn_density.setEnabled(True)
+			self.density_mode = "none"
+			self.btn_density_loc.setChecked(False)
+			self.btn_density_pop.setChecked(False)
+			self.derivative_order = 0
+			self.combo_derivative.setCurrentIndex(0)
 
 		self._reset_filter_layout()
 		self.ax.clear()
@@ -702,11 +790,11 @@ class MainWindow(QMainWindow):
 				lambda: self.is_moving_average, lambda: self.period_value,
 				lambda: self.is_stats_mode, self.update_stats_summary_panel,
 				lambda: 9, set_redraw_fn=self.set_redraw_fn,
-				get_is_density=lambda: self.is_density,
+				get_density_mode=lambda: self.density_mode,
 				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex(),
 				get_stats_shading_all=lambda: self.stats_shading_all,
 				get_is_year_offset=lambda: self.is_year_offset,
-				get_is_rate=lambda: self.is_rate
+				get_derivative_order=lambda: self.combo_derivative.currentIndex()
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
@@ -894,13 +982,13 @@ class MainWindow(QMainWindow):
 		try:
 			all_cat = self.current_graph_info['info']['config'].get('all_category_str')
 			if (c_combo.currentIndex() != 0 or all_cat is None) and r_combo.currentIndex() == 0:
-				idx = r_combo.findText(line_label)
+				idx = self._find_matching_combo_index(r_combo, line_label)
 				if idx != -1:
 					r_combo.setCurrentIndex(idx)
 					if all_cat:
 						c_combo.setCurrentIndex(0)
 			elif r_combo.currentIndex() != 0 and (c_combo.currentIndex() == 0 and all_cat):
-				idx = c_combo.findText(line_label)
+				idx = self._find_matching_combo_index(c_combo, line_label)
 				if idx != -1:
 					c_combo.setCurrentIndex(idx)
 					r_combo.setCurrentIndex(0)
@@ -1522,7 +1610,7 @@ class MainWindow(QMainWindow):
 		dlg = FilterSearchDialog(self.filter_widget_map, self)
 		if dlg.exec() and dlg.selected_target:
 			combo, target_val = dlg.selected_target
-			idx = combo.findText(target_val)
+			idx = self._find_matching_combo_index(combo, target_val)
 			if idx != -1:
 				combo.setCurrentIndex(idx)
 				self.redraw_current_plot()

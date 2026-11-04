@@ -76,11 +76,11 @@ def _create_generic_graph(
     on_stats_computed=None,
     get_stats_bands=lambda: 9,
     set_redraw_fn=None,
-    get_is_density=lambda: False,
+    get_density_mode=lambda: "none",
     get_stats_hide_level=lambda: 0,
     get_stats_shading_all=lambda: False,
     get_is_year_offset=lambda: False,
-    get_is_rate=lambda: False,
+    get_derivative_order=lambda: 0,
     *,
     config
 ):
@@ -208,34 +208,66 @@ def _create_generic_graph(
                 on_stats_computed(None)
             return
 
-        # Density Transformation with crash-prevention check
-        is_density = get_is_density()
-        is_rate = get_is_rate()
+        density_mode = get_density_mode()
+        deriv_order = get_derivative_order()
         effective_val_label = value_label_str
-        if is_density:
-            effective_val_label = f"{effective_val_label} / Location"
-        if is_rate:
-            effective_val_label = f"Δ {effective_val_label} / Year"
 
-        if is_density:
+        if density_mode == "location":
+            effective_val_label = f"{effective_val_label} / Location"
+        elif density_mode == "population":
+            effective_val_label = f"{effective_val_label} / Population"
+
+        if deriv_order == 1:
+            effective_val_label = f"Δ {effective_val_label} / Year"
+        elif deriv_order == 2:
+            effective_val_label = f"Δ² {effective_val_label} / Year²"
+
+        # Density Transformation
+        if density_mode == "location":
             rloc_map = get_region_locations()
             has_valid_locations = False
             transformed = []
             for itm in filtered:
                 copy_item = dict(itm)
+                locs = 0.0
                 if "locations" in copy_item and (copy_item.get("locations") or 0) > 0:
-                    locs = copy_item["locations"]
+                    locs = float(copy_item["locations"])
                     has_valid_locations = True
                 else:
                     reg = copy_item.get("region", "")
-                    locs = rloc_map.get(reg, 0)
+                    locs = float(rloc_map.get(reg, 0))
                     if locs > 0:
                         has_valid_locations = True
                 copy_item[value_key] = (copy_item[value_key] / locs) if locs > 0 else 0.0
                 transformed.append(copy_item)
 
             if not has_valid_locations:
-                ax.text(0.5, 0.5, "No count of locations stored for this data.\nCannot calculate density.",
+                ax.text(0.5, 0.5, "No count of locations stored for this data.\nCannot calculate density by location.",
+                        ha='center', va='center', fontsize=12, color='red')
+                ax.figure.canvas.draw_idle()
+                if on_stats_computed:
+                    on_stats_computed(None)
+                return
+            filtered = transformed
+
+        elif density_mode == "population":
+            has_valid_population = False
+            transformed = []
+            for itm in filtered:
+                copy_item = dict(itm)
+                pop = copy_item.get("population") or copy_item.get("total_population") or copy_item.get("Population") or 0.0
+                try: pop = float(pop)
+                except (ValueError, TypeError): pop = 0.0
+
+                if pop > 0:
+                    has_valid_population = True
+                    copy_item[value_key] = copy_item[value_key] / pop
+                else:
+                    copy_item[value_key] = 0.0
+                transformed.append(copy_item)
+
+            if not has_valid_population:
+                ax.text(0.5, 0.5, "No population stored for this data.\nCannot calculate density by population.",
                         ha='center', va='center', fontsize=12, color='red')
                 ax.figure.canvas.draw_idle()
                 if on_stats_computed:
@@ -244,9 +276,9 @@ def _create_generic_graph(
 
             filtered = transformed
 
-        # Rate transformation (first difference: dp[n] - dp[n - 1])
-        if is_rate:
-            rate_transformed = []
+        # Derivative Transformation (Rate or Acceleration)
+        if deriv_order > 0:
+            deriv_transformed = []
             entity_series_map = {}
             for item in filtered:
                 ent = item.get(entity_key, item.get('country', item.get('region', '')))
@@ -257,20 +289,30 @@ def _create_generic_graph(
 
             for key, series_items in entity_series_map.items():
                 series_items.sort(key=lambda x: x['moment'])
-                for i in range(1, len(series_items)):
-                    diff_item = dict(series_items[i])
-                    diff_item[value_key] = series_items[i][value_key] - series_items[i - 1][value_key]
-                    rate_transformed.append(diff_item)
+                if deriv_order == 1:
+                    for i in range(1, len(series_items)):
+                        diff_item = dict(series_items[i])
+                        diff_item[value_key] = series_items[i][value_key] - series_items[i - 1][value_key]
+                        deriv_transformed.append(diff_item)
+                elif deriv_order == 2:
+                    for i in range(2, len(series_items)):
+                        accel_item = dict(series_items[i])
+                        d_curr = series_items[i][value_key] - series_items[i - 1][value_key]
+                        d_prev = series_items[i - 1][value_key] - series_items[i - 2][value_key]
+                        accel_item[value_key] = d_curr - d_prev
+                        deriv_transformed.append(accel_item)
 
-            if not rate_transformed:
-                ax.text(0.5, 0.5, "Need at least 2 consecutive time steps to calculate rate (Δ).",
+            if not deriv_transformed:
+                needed = 2 if deriv_order == 1 else 3
+                d_term = "rate (Δ)" if deriv_order == 1 else "acceleration (Δ²)"
+                ax.text(0.5, 0.5, f"Need at least {needed} consecutive time steps to calculate {d_term}.",
                         ha='center', va='center', fontsize=12)
                 ax.figure.canvas.draw_idle()
                 if on_stats_computed:
                     on_stats_computed(None)
                 return
 
-            filtered = rate_transformed
+            filtered = deriv_transformed
 
         is_r_picked = (r_filter != all_region_str)
         display_title = f"{c_filter} in {r_filter}" if (is_r_picked and not all_category_str) else (r_filter if is_r_picked else c_filter)
@@ -403,7 +445,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
         "biggest_increase": sorted(consecutive_changes, key=lambda x: x[1], reverse=True)[:5],
         "biggest_decrease": sorted(consecutive_changes, key=lambda x: x[1])[:5],
         "overall_increase": sorted([c for c in overall_changes if c[1] > 0], key=lambda x: x[1], reverse=True)[:5],
-        "overall_decrease": sorted([c for c in overall_changes if c[1] < 0], key=lambda x: x[1])[:5],
+        "overall_decrease": sorted([c for c in overall_changes if c[1] < 0], key=lambda x: x[1], reverse=True)[:5],
         "most_volatile": sorted(entity_volatilities, key=lambda x: x[1], reverse=True)[:5],
         "overall_mean": float(np.mean(all_values)) if all_values else 0.0,
         "overall_std": float(np.std(all_values)) if all_values else 0.0

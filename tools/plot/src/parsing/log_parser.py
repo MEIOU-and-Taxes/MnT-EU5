@@ -165,8 +165,10 @@ def parse_lines(line_iterable):
             if len(p) >= 4 and 'Ocean' not in p[2]:
                 try:
                     moment = int(p[0])
-                    gp_cumulative_store[(moment, p[2].strip(), p[1].strip())] = {
-                        "moment": moment, "good": p[1].strip(), "region": p[2].strip(), "price": float(p[3].strip())
+                    raw_good = p[1].strip()
+                    good_name = raw_good if raw_good.lower().endswith(" price") else f"{raw_good} price"
+                    gp_cumulative_store[(moment, p[2].strip(), good_name)] = {
+                        "moment": moment, "good": good_name, "region": p[2].strip(), "price": float(p[3].strip())
                     }
                 except (ValueError, TypeError):
                     pass
@@ -372,6 +374,10 @@ def parse_data_country_metrics(data: str = None):
         if country_locations <= 0:
             continue
 
+        pop_val = r.get("Population", 0)
+        try: country_pop = float(pop_val)
+        except (ValueError, TypeError): country_pop = 0.0
+
         year = int(r["year"]) if r.get("year") else 0
         tag = r.get("tag", "")
         name = r.get("name", "")
@@ -389,7 +395,9 @@ def parse_data_country_metrics(data: str = None):
                     "metric": k,
                     "country_metric": k,
                     "value": float(v),
-                    "locations": country_locations
+                    "locations": country_locations,
+                    "population": country_pop,
+                    "total_population": country_pop
                 })
 
         # Credit metrics for this country and year
@@ -406,7 +414,9 @@ def parse_data_country_metrics(data: str = None):
                     "metric": header,
                     "country_metric": header,
                     "value": float(val),
-                    "locations": country_locations
+                    "locations": country_locations,
+                    "population": country_pop,
+                    "total_population": country_pop
                 })
 
         # Combined variables for formulas
@@ -415,7 +425,11 @@ def parse_data_country_metrics(data: str = None):
         combined_vars.update(credit_rec)
 
         for cdef in computed_defs:
-            calc_val = evaluate_expression(cdef["expression"], combined_vars)
+            calc_val = evaluate_expression(
+                cdef["expression"],
+                combined_vars,
+                precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
+            )
             transformed.append({
                 "moment": year,
                 "region": label,
@@ -425,7 +439,9 @@ def parse_data_country_metrics(data: str = None):
                 "country_metric": cdef["metric_name"],
                 "credit_metric": cdef["metric_name"],
                 "value": round(calc_val, 4),
-                "locations": country_locations
+                "locations": country_locations,
+                "population": country_pop,
+                "total_population": country_pop
             })
 
     # Credit records that had no corresponding country record
@@ -437,10 +453,14 @@ def parse_data_country_metrics(data: str = None):
         label = f"{name} ({tag})" if name and name != tag else tag
 
         locs = 0.0
+        pop = 0.0
         if country_rec:
             loc_val = country_rec.get("locations") or country_rec.get("num_locations") or 0
             try: locs = float(loc_val)
             except (ValueError, TypeError): locs = 0.0
+            p_val = country_rec.get("Population", 0)
+            try: pop = float(p_val)
+            except (ValueError, TypeError): pop = 0.0
 
         for header in CREDIT_HEADERS:
             val = record.get(header)
@@ -454,7 +474,9 @@ def parse_data_country_metrics(data: str = None):
                     "metric": header,
                     "country_metric": header,
                     "value": float(val),
-                    "locations": locs
+                    "locations": locs,
+                    "population": pop,
+                    "total_population": pop
                 })
 
     _cm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["country_metric"]))
@@ -484,27 +506,35 @@ def parse_data_regional_metrics(data: str = None):
     def get_locs(reg):
         return float(rloc_map.get(reg, 0.0))
 
+    pop_lookup = {
+        (m, reg): float(rec.get("population", 0.0))
+        for (m, reg), rec in pop_cumulative_store.items()
+    }
+
     # 1. Total Population
     for (m, reg), rec in pop_cumulative_store.items():
         locs = get_locs(reg)
-        p_val = rec.get("population", 0.0)
+        p_val = float(rec.get("population", 0.0))
         transformed.append({
             "moment": m,
             "region": reg,
             "regional_metric": "Total Population",
             "metric": "Total Population",
             "statistic": "Total Population",
-            "value": float(p_val),
-            "locations": locs
+            "value": p_val,
+            "locations": locs,
+            "population": p_val,
+            "total_population": p_val
         })
-        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
-        v["population"] = float(p_val)
-        v["total_population"] = float(p_val)
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
+        v["population"] = p_val
+        v["total_population"] = p_val
 
     # 2. Road Coverage
     for (m, reg, road_type), rec in rt_cumulative_store.items():
         locs = float(rec.get("locations", get_locs(reg)))
         cov = float(rec.get("coverage_percentage", 0.0))
+        p_val = pop_lookup.get((m, reg), 0.0)
         transformed.append({
             "moment": m,
             "region": reg,
@@ -512,9 +542,11 @@ def parse_data_regional_metrics(data: str = None):
             "metric": road_type,
             "road_type": road_type,
             "value": cov,
-            "locations": locs
+            "locations": locs,
+            "population": p_val,
+            "total_population": p_val
         })
-        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
         v[road_type] = cov
         v[road_type.lower().replace(' ', '_')] = cov
 
@@ -525,6 +557,7 @@ def parse_data_regional_metrics(data: str = None):
         bld = item["building"]
         cnt = float(item["count"])
         locs = get_locs(reg)
+        p_val = pop_lookup.get((m, reg), 0.0)
         transformed.append({
             "moment": m,
             "region": reg,
@@ -532,9 +565,11 @@ def parse_data_regional_metrics(data: str = None):
             "metric": bld,
             "building": bld,
             "value": cnt,
-            "locations": locs
+            "locations": locs,
+            "population": p_val,
+            "total_population": p_val
         })
-        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
         v[bld] = cnt
         v[bld.lower().replace(' ', '_')] = cnt
 
@@ -542,9 +577,11 @@ def parse_data_regional_metrics(data: str = None):
     for item in prices:
         m = item["moment"]
         reg = item["region"]
-        good = item["good"]
+        raw_good = item["good"]
+        good = raw_good if raw_good.lower().endswith(" price") else f"{raw_good} price"
         price = float(item["price"])
         locs = get_locs(reg)
+        p_val = pop_lookup.get((m, reg), 0.0)
         transformed.append({
             "moment": m,
             "region": reg,
@@ -552,26 +589,38 @@ def parse_data_regional_metrics(data: str = None):
             "metric": good,
             "good": good,
             "value": price,
-            "locations": locs
+            "locations": locs,
+            "population": p_val,
+            "total_population": p_val
         })
-        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs})
+        v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
         v[good] = price
         v[good.lower().replace(' ', '_')] = price
-        v[f"price_{good.lower().replace(' ', '_')}"] = price
+        base_name = good[:-6] if good.lower().endswith(" price") else good
+        v[base_name] = price
+        v[base_name.lower().replace(' ', '_')] = price
+        v[f"price_{base_name.lower().replace(' ', '_')}"] = price
 
     # 5. Regional Computed Series
     if computed_defs:
         for (m, reg), vars_dict in context_vars_by_moment_region.items():
             locs = vars_dict.get("locations", get_locs(reg))
+            p_val = vars_dict.get("total_population", pop_lookup.get((m, reg), 0.0))
             for cdef in computed_defs:
-                calc_val = evaluate_expression(cdef["expression"], vars_dict)
+                calc_val = evaluate_expression(
+                    cdef["expression"],
+                    vars_dict,
+                    precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
+                )
                 transformed.append({
                     "moment": m,
                     "region": reg,
                     "regional_metric": cdef["metric_name"],
                     "metric": cdef["metric_name"],
                     "value": round(calc_val, 4),
-                    "locations": locs
+                    "locations": locs,
+                    "population": p_val,
+                    "total_population": p_val
                 })
 
     _reg_cache = sorted(transformed, key=lambda x: (x["moment"], x["region"], x["regional_metric"]))
