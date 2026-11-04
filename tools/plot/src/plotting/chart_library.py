@@ -16,6 +16,33 @@ from src.parsing.log_parser import get_region_locations
 from src.plotting.configs import BT_CONFIG, GP_CONFIG, MK_CONFIG, POP_CONFIG, RT_CONFIG, CM_CONFIG, CR_CONFIG
 from src.widgets.custom_combobox import RightClickableComboBox
 
+STATS_UPPER_BANDS = [
+    ("75th Perc", "95th Perc", "#00ff00"),
+    ("95th Perc", "99th Perc", "#008000"),
+    ("99th Perc", "Max",       "#000d00"),
+]
+STATS_LOWER_BANDS = [
+    ("5th Perc", "25th Perc", "#ff0000"),
+    ("1st Perc", "5th Perc",  "#800000"),
+    ("Min",      "1st Perc",  "#0d0000"),
+]
+STATS_BAND_ALPHA = 0.15
+
+# Interquartile range (25th to 75th)
+STATS_IQR_COLOR_FULL = "#ffee00"     # yellow, used when shading all bands
+STATS_IQR_ALPHA_FULL = 0.20
+STATS_IQR_COLOR_CLASSIC = "#8bc34a"  # used in classic mode
+STATS_IQR_ALPHA_CLASSIC = 0.15
+
+# Classic-mode outer envelope, first available pair wins
+STATS_OUTER_COLOR = "#2e7d32"
+STATS_OUTER_ALPHA = 0.04
+STATS_OUTER_PAIRS = [
+    ("Min", "Max"),
+    ("1st Perc", "99th Perc"),
+    ("5th Perc", "95th Perc"),
+]
+
 
 def _draw_horizontal_axis(ax):
     """Draws horizontal grid lines after every number on the y-axis and a zero line."""
@@ -46,6 +73,7 @@ def _create_generic_graph(
     set_redraw_fn=None,
     get_is_density=lambda: False,
     get_stats_hide_level=lambda: 0,
+    get_stats_shading_all=lambda: False,
     *,
     config
 ):
@@ -180,7 +208,8 @@ def _create_generic_graph(
         if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS and not is_r_picked:
             _render_stats_mode(ax, filtered, value_key, effective_val_label, display_title, entity_key,
                                get_stats_hide_level(), on_stats_computed, on_lines_plotted,
-                               get_is_moving_avg, get_period_value)
+                               get_is_moving_avg, get_period_value,
+                               get_stats_shading_all=get_stats_shading_all)
             return
 
         _render_standard_mode(ax, filtered, m_filter, c_filter, r_filter, all_category_str,
@@ -199,7 +228,8 @@ def _create_generic_graph(
 
 
 def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title, entity_key,
-                       hide_level, on_stats_computed, on_lines_plotted, get_is_moving_avg, get_period_value):
+                       hide_level, on_stats_computed, on_lines_plotted, get_is_moving_avg, get_period_value,
+                       get_stats_shading_all=lambda: False):
     moments_dict = {}
     country_series = {}
     for item in filtered_data:
@@ -243,46 +273,64 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
     ax._stats_moments_data = moments_dict
 
-    changes = []
+    # Consecutive changes (data-plot to consecutive data-plot) & entity volatilities
+    consecutive_changes = []
+    entity_volatilities = []
     for ent, history in country_series.items():
-        if len(history) >= 2:
+        vals = list(history.values())
+        if len(vals) >= 2:
             h_sorted = sorted(history.keys())
-            start_yr, end_yr = h_sorted[0], h_sorted[-1]
-            delta = history[end_yr] - history[start_yr]
-            changes.append((
+            entity_volatilities.append((
                 ent,
-                delta,
-                history[start_yr],
-                history[end_yr],
-                float(np.std(list(history.values()))),
-                start_yr,
-                end_yr
+                float(np.std(vals)),
+                h_sorted[0],
+                h_sorted[-1]
             ))
+            for i in range(len(h_sorted) - 1):
+                y_from, y_to = h_sorted[i], h_sorted[i + 1]
+                v_from, v_to = history[y_from], history[y_to]
+                delta = v_to - v_from
+                consecutive_changes.append((ent, delta, v_from, v_to, y_from, y_to))
 
     all_values = [i[value_key] for i in filtered_data]
     global_stats = {
         "value_label": value_label,
-        "biggest_increase": sorted(changes, key=lambda x: x[1], reverse=True)[:5],
-        "biggest_decrease": sorted(changes, key=lambda x: x[1])[:5],
-        "most_volatile": sorted(changes, key=lambda x: x[4], reverse=True)[:5],
+        "biggest_increase": sorted(consecutive_changes, key=lambda x: x[1], reverse=True)[:5],
+        "biggest_decrease": sorted(consecutive_changes, key=lambda x: x[1])[:5],
+        "most_volatile": sorted(entity_volatilities, key=lambda x: x[1], reverse=True)[:5],
         "overall_mean": float(np.mean(all_values)) if all_values else 0.0,
         "overall_std": float(np.std(all_values)) if all_values else 0.0
     }
     ax._global_stats = global_stats
 
+    # Plot lines
     for name, _ in active_percentiles:
         ax.plot(sorted_moments, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
 
-    if "25th Perc" in stat_curves and "75th Perc" in stat_curves:
-        ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"],
-                        color="#8bc34a", alpha=0.15, label='IQR (25%-75%)')
+    # Shading logic
+    has_iqr = "25th Perc" in stat_curves and "75th Perc" in stat_curves
 
-    if "Min" in stat_curves and "Max" in stat_curves:
-        ax.fill_between(sorted_moments, stat_curves["Min"], stat_curves["Max"], color="#2e7d32", alpha=0.04)
-    elif "1st Perc" in stat_curves and "99th Perc" in stat_curves:
-        ax.fill_between(sorted_moments, stat_curves["1st Perc"], stat_curves["99th Perc"], color="#2e7d32", alpha=0.04)
-    elif "5th Perc" in stat_curves and "95th Perc" in stat_curves:
-        ax.fill_between(sorted_moments, stat_curves["5th Perc"], stat_curves["95th Perc"], color="#2e7d32", alpha=0.04)
+    if get_stats_shading_all():
+        if has_iqr:
+            ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"],
+                            color=STATS_IQR_COLOR_FULL, alpha=STATS_IQR_ALPHA_FULL,
+                            label='IQR (25%-75%)')
+
+        for low, high, color in STATS_UPPER_BANDS + STATS_LOWER_BANDS:
+            if low in stat_curves and high in stat_curves:
+                ax.fill_between(sorted_moments, stat_curves[low], stat_curves[high],
+                                color=color, alpha=STATS_BAND_ALPHA)
+    else:
+        if has_iqr:
+            ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"],
+                            color=STATS_IQR_COLOR_CLASSIC, alpha=STATS_IQR_ALPHA_CLASSIC,
+                            label='IQR (25%-75%)')
+
+        for low, high in STATS_OUTER_PAIRS:
+            if low in stat_curves and high in stat_curves:
+                ax.fill_between(sorted_moments, stat_curves[low], stat_curves[high],
+                                color=STATS_OUTER_COLOR, alpha=STATS_OUTER_ALPHA)
+                break
 
     ax.set_xlabel("Time")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))

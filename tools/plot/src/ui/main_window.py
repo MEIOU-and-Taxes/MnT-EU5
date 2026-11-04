@@ -80,6 +80,7 @@ class MainWindow(QMainWindow):
 		self.chart_filter_memory = {}
 		self.last_log_state = None
 		self.has_new_data = False
+		self.stats_shading_all = True
 
 		self.load_app_settings()
 
@@ -124,6 +125,7 @@ class MainWindow(QMainWindow):
 			self.is_density = data.get("is_density", False)
 			self.is_log_scale = data.get("is_log_scale", False)
 			self.is_moving_average = data.get("is_moving_average", False)
+			self.stats_shading_all = data.get("stats_shading_all", True)
 		except Exception as e:
 			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
 
@@ -138,6 +140,7 @@ class MainWindow(QMainWindow):
 				"is_density": self.is_density,
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
+				"stats_shading_all": self.stats_shading_all,
 			}
 			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
 				json.dump(data, f, indent=2)
@@ -250,6 +253,12 @@ class MainWindow(QMainWindow):
 		act_hide_dec.triggered.connect(self.decrease_stats_hide)
 		menu_view.addAction(act_hide_dec)
 		self.addAction(act_hide_dec)
+
+		self.act_stats_shading_all = QAction("Shade All Percentile Bands", self, checkable=True)
+		self.act_stats_shading_all.setChecked(self.stats_shading_all)
+		self.act_stats_shading_all.toggled.connect(self.toggle_stats_shading_all)
+		menu_view.addAction(self.act_stats_shading_all)
+		self.addAction(self.act_stats_shading_all)
 
 		# Tools Menu
 		menu_tools = menubar.addMenu("&Tools")
@@ -398,18 +407,23 @@ class MainWindow(QMainWindow):
 		QDesktopServices.openUrl(QUrl.fromLocalFile(APPDATA_DIR))
 
 	def open_settings_dialog(self):
-		dlg = SettingsDialog(self.refresh_interval_idx, self.autosave_interval_idx, self.period_value, self)
+		dlg = SettingsDialog(self.refresh_interval_idx, self.autosave_interval_idx, self.period_value,
+							 self.stats_shading_all, self)
 		if dlg.exec():
 			vals = dlg.get_settings()
 			self.refresh_interval_idx = vals["refresh_idx"]
 			self.autosave_interval_idx = vals["autosave_idx"]
 			self.period_value = vals["period"]
+			shading_changed = (self.stats_shading_all != vals["stats_shading_all"])
+			self.stats_shading_all = vals["stats_shading_all"]
+			if hasattr(self, 'act_stats_shading_all'):
+				self.act_stats_shading_all.setChecked(self.stats_shading_all)
 
 			self._apply_refresh_interval()
 			self._apply_autosave_interval()
 			self.save_app_settings()
 
-			if self.is_moving_average:
+			if self.is_moving_average or shading_changed:
 				self.redraw_current_plot()
 
 	def _apply_refresh_interval(self):
@@ -510,7 +524,8 @@ class MainWindow(QMainWindow):
 				lambda: self.is_stats_mode, self.update_stats_summary_panel,
 				lambda: 9, set_redraw_fn=self.set_redraw_fn,
 				get_is_density=lambda: self.is_density,
-				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex()
+				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex(),
+				get_stats_shading_all=lambda: self.stats_shading_all
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
@@ -729,6 +744,14 @@ class MainWindow(QMainWindow):
 		self.act_moving_avg.setVisible(checked)
 		self.save_app_settings()
 		self.redraw_current_plot()
+
+	def toggle_stats_shading_all(self, checked):
+		self.stats_shading_all = checked
+		if hasattr(self, 'act_stats_shading_all'):
+			self.act_stats_shading_all.setChecked(checked)
+		self.save_app_settings()
+		if self.is_stats_mode:
+			self.redraw_current_plot()
 
 	def toggle_density(self, checked):
 		if checked:

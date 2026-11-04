@@ -8,7 +8,7 @@
 
     lines = []
     if year_stats:
-        lines.append(f"=== Stats for {year_stats['year']} ===")
+        lines.append(f"====== Stats for {year_stats['year']} ======")
         lines.append(f"Count:      {year_stats['count']}")
         lines.append(f"Mean:       {year_stats['mean']:{fmt}}")
         lines.append(f"Median:     {year_stats['median']:{fmt}}")
@@ -30,29 +30,31 @@
     else:
         lines.append("Hover plot to see yearly stats")
 
-    lines.append("\n=== Global overview ===")
+    lines.append("\n====== Global overview ======")
     lines.append(f"Avg Mean:   {global_stats['overall_mean']:{fmt}}")
     lines.append(f"Avg StdDev: {global_stats['overall_std']:{fmt}}")
 
-    lines.append("\n--- Top increases ---")
+    lines.append("\n--- Top consecutive increases ---")
     for item in global_stats.get('biggest_increase', []):
         reg, delta, start, end = item[0], item[1], item[2], item[3]
-        end_yr = item[6] if len(item) > 6 else ""
-        yr_str = f", {end_yr}" if end_yr else ""
-        lines.append(f"{reg[:12]:<12}: +{delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta > 0 else "")
+        y_from = item[4] if len(item) > 4 else ""
+        y_to = item[5] if len(item) > 5 else ""
+        yr_str = f", {y_from}→{y_to}" if (y_from and y_to) else ""
+        lines.append(f"{reg[:10]:<10}: +{delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta > 0 else "")
 
-    lines.append("\n--- Top decreases ---")
+    lines.append("\n--- Top consecutive decreases ---")
     for item in global_stats.get('biggest_decrease', []):
         reg, delta, start, end = item[0], item[1], item[2], item[3]
-        end_yr = item[6] if len(item) > 6 else ""
-        yr_str = f", {end_yr}" if end_yr else ""
-        lines.append(f"{reg[:12]:<12}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta < 0 else "")
+        y_from = item[4] if len(item) > 4 else ""
+        y_to = item[5] if len(item) > 5 else ""
+        yr_str = f", {y_from}→{y_to}" if (y_from and y_to) else ""
+        lines.append(f"{reg[:10]:<10}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta < 0 else "")
 
     lines.append("\n--- Top standard deviation ---")
     for item in global_stats.get('most_volatile', []):
-        reg, std = item[0], item[4]
-        start_yr = item[5] if len(item) > 5 else None
-        end_yr = item[6] if len(item) > 6 else None
+        reg, std = item[0], item[1]
+        start_yr = item[2] if len(item) > 2 else None
+        end_yr = item[3] if len(item) > 3 else None
         if start_yr and end_yr and start_yr != end_yr:
             yr_str = f" ({start_yr}-{end_yr})"
         elif end_yr:

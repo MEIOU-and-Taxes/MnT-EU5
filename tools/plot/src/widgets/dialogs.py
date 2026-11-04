@@ -336,10 +336,10 @@ class PresetConfigDialog(QDialog):
 
 class SettingsDialog(QDialog):
     """Settings modal dialog for configuring intervals, smoothing, and opening %appdata%."""
-    def __init__(self, current_refresh_idx, current_autosave_idx, current_period, parent=None):
+    def __init__(self, current_refresh_idx, current_autosave_idx, current_period, stats_shading_all=True, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
-        self.resize(420, 260)
+        self.resize(460, 300)
 
         layout = QVBoxLayout(self)
         form_layout = QFormLayout()
@@ -364,6 +364,12 @@ class SettingsDialog(QDialog):
         slider_layout.addWidget(self.lbl_period)
         form_layout.addRow("Moving Average Period:", slider_layout)
 
+        # Percentile Shading Mode toggle
+        self.chk_stats_shading_all = QCheckBox("Shade all percentile bands (Yellow IQR, redder high, greener low)")
+        self.chk_stats_shading_all.setToolTip("When checked, colors all percentile spaces. When unchecked, only shades the IQR band.")
+        self.chk_stats_shading_all.setChecked(stats_shading_all)
+        form_layout.addRow("Percentile Shading:", self.chk_stats_shading_all)
+
         layout.addLayout(form_layout)
 
         btn_appdata = QPushButton("Open AppData Folder")
@@ -387,7 +393,8 @@ class SettingsDialog(QDialog):
         return {
             "refresh_idx": self.combo_refresh.currentIndex(),
             "autosave_idx": self.combo_autosave.currentIndex(),
-            "period": self.slider_period.value()
+            "period": self.slider_period.value(),
+            "stats_shading_all": self.chk_stats_shading_all.isChecked()
         }
 
 
