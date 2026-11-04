@@ -1,6 +1,7 @@
 ﻿import os
 import re
 
+from src.parsing.computed_series import load_computed_series_definitions, evaluate_expression
 from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY, \
     market_stats, CREDIT_HEADERS
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
@@ -341,6 +342,8 @@ def parse_data_country_metrics(data: str = None):
     if _cm_cache is not None:
         return _cm_cache
     countries = parse_data_countries(data)
+    computed_defs = [d for d in load_computed_series_definitions() if d["dataset_type"] in ("country", "country_metric", "country_stats")]
+
     transformed = []
     for r in countries:
         locs_val = r.get("locations") or r.get("num_locations") or 0
@@ -355,19 +358,7 @@ def parse_data_country_metrics(data: str = None):
         name = r.get("name", "")
         label = f"{name} ({tag})" if name and name != tag else tag
 
-        debt = r.get("total_debt", 0.0)
-        income = r.get("income", 0.0)
-        if isinstance(debt, (int, float)) and isinstance(income, (int, float)):
-            transformed.append({
-                "moment": year,
-                "region": label,
-                "country": label,
-                "metric": "total_debt_over_income",
-                "country_metric": "total_debt_over_income",
-                "value": round(debt / income if income > 0.001 else 0.0, 4),
-                "locations": country_locations
-            })
-
+        # Standard numeric metrics
         for k, v in r.items():
             if k not in EXCLUDED_KEYS_COUNTRY and isinstance(v, (int, float)):
                 transformed.append({
@@ -379,6 +370,20 @@ def parse_data_country_metrics(data: str = None):
                     "value": float(v),
                     "locations": country_locations
                 })
+
+        # Calculate user computed metrics from CSV
+        for cdef in computed_defs:
+            calc_val = evaluate_expression(cdef["expression"], r)
+            transformed.append({
+                "moment": year,
+                "region": label,
+                "country": label,
+                "metric": cdef["metric_name"],
+                "country_metric": cdef["metric_name"],
+                "value": round(calc_val, 4),
+                "locations": country_locations
+            })
+
     _cm_cache = transformed
     return _cm_cache
 
@@ -398,6 +403,7 @@ def parse_data_credit_metrics(data: str = None):
         return _crm_cache
     parse_data_credit_raw(data)
     parse_data_countries(data)
+    computed_defs = [d for d in load_computed_series_definitions() if d["dataset_type"] in ("credit", "credit_metric", "credit_stats")]
 
     transformed = []
     for (moment, tag), record in cr_cumulative_store.items():
@@ -424,6 +430,20 @@ def parse_data_credit_metrics(data: str = None):
                     "value": float(val),
                     "locations": locs
                 })
+
+        # Computed credit formulas
+        for cdef in computed_defs:
+            calc_val = evaluate_expression(cdef["expression"], record)
+            transformed.append({
+                "moment": moment,
+                "region": label,
+                "country": label,
+                "tag": tag,
+                "credit_metric": cdef["metric_name"],
+                "metric": cdef["metric_name"],
+                "value": round(calc_val, 4),
+                "locations": locs
+            })
 
     _crm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["credit_metric"]))
     return _crm_cache

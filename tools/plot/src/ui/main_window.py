@@ -354,7 +354,6 @@ class MainWindow(QMainWindow):
 		self.btn_find = QPushButton("Find [Ctrl+F]")
 		self.btn_find.setToolTip("Quick search all dropdown values in the current chart [Ctrl+F]")
 		self.btn_find.clicked.connect(self.open_filter_search)
-		self.top_button_layout.addWidget(self.btn_find)
 
 		self.btn_stats_mode = QPushButton("Stats mode [T]")
 		self.btn_stats_mode.setCheckable(True)
@@ -392,7 +391,7 @@ class MainWindow(QMainWindow):
 		self.btn_moving_avg.setChecked(self.is_moving_average)
 		self.btn_moving_avg.setVisible(not(self.is_stats_mode))
 
-		for w in [self.btn_charts, self.btn_preset_config, self.btn_refresh,
+		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
 				  self.btn_stats_mode, self.btn_year_offset, self.btn_density,
 				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)

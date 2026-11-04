@@ -470,7 +470,7 @@ class FilterSearchDialog(QDialog):
     def __init__(self, filter_widget_map, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Find Filter / Metric")
-        self.resize(520, 440)
+        self.resize(600, 800)
         self.filter_widget_map = filter_widget_map
         self.selected_target = None  # Tuple of (target_combo, item_text)
 
