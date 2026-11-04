@@ -13,6 +13,20 @@
         lines.append(f"Mean:       {year_stats['mean']:{fmt}}")
         lines.append(f"Median:     {year_stats['median']:{fmt}}")
         lines.append(f"Std Dev:    {year_stats['std']:{fmt}}")
+
+        prev_y = year_stats.get('prev_year')
+        year_increases = year_stats.get('biggest_increase', [])
+        year_decreases = year_stats.get('biggest_decrease', [])
+
+        if prev_y is not None and year_increases:
+            lines.append(f"\n--- BIGGEST GAINERS ({prev_y} → {year_stats['year']}) ---")
+            for reg, delta, start, end in year_increases:
+                lines.append(f"{reg[:12]:<12}: +{delta:{fmt}} ({start:{fmt}} → {end:{fmt}})")
+
+        if prev_y is not None and year_decreases:
+            lines.append(f"\n--- BIGGEST DECLINES ({prev_y} → {year_stats['year']}) ---")
+            for reg, delta, start, end in year_decreases:
+                lines.append(f"{reg[:12]:<12}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}})")
     else:
         lines.append("Hover plot to see yearly stats")
 

@@ -99,10 +99,32 @@ class InteractiveLineTooltip:
         if moments_data and cur_x in moments_data:
             if self.on_stats_hover_callback:
                 vals = [x[1] for x in moments_data[cur_x]]
+                sorted_moments = sorted(moments_data.keys())
+                cur_idx = sorted_moments.index(cur_x)
+                prev_m = sorted_moments[cur_idx - 1] if cur_idx > 0 else None
+
+                yearly_increase = []
+                yearly_decrease = []
+                if prev_m is not None:
+                    prev_dict = dict(moments_data[prev_m])
+                    cur_dict = dict(moments_data[cur_x])
+                    step_deltas = []
+                    for ent, val_cur in cur_dict.items():
+                        if ent in prev_dict:
+                            delta = val_cur - prev_dict[ent]
+                            step_deltas.append((ent, delta, prev_dict[ent], val_cur))
+                    yearly_increase = sorted(step_deltas, key=lambda x: x[1], reverse=True)[:3]
+                    yearly_decrease = sorted(step_deltas, key=lambda x: x[1])[:3]
+
                 self.on_stats_hover_callback(global_stats, {
-                    "year": cur_x, "mean": float(np.mean(vals)),
-                    "median": float(np.median(vals)), "std": float(np.std(vals)),
-                    "count": len(vals)
+                    "year": cur_x,
+                    "prev_year": prev_m,
+                    "mean": float(np.mean(vals)),
+                    "median": float(np.median(vals)),
+                    "std": float(np.std(vals)),
+                    "count": len(vals),
+                    "biggest_increase": yearly_increase,
+                    "biggest_decrease": yearly_decrease
                 })
 
             target_val, curve_label = None, ""

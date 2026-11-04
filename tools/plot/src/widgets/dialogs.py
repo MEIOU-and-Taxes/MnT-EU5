@@ -1,10 +1,13 @@
 ﻿import copy
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QTableWidget, QTableWidgetItem, QHeaderView, QLabel, QProgressBar,
-    QPushButton, QComboBox, QLineEdit, QGroupBox, QMessageBox, QCheckBox
+    QPushButton, QComboBox, QLineEdit, QGroupBox, QMessageBox, QCheckBox,
+    QSlider
 )
+from src.constants import APPDATA_DIR
 
 
 def sort_hotkeys(keys):
@@ -122,6 +125,8 @@ class PresetConfigDialog(QDialog):
                 label_text = key.replace('_', ' ').title() + ":"
                 form_layout.addRow(label_text, combo)
                 self.filter_combos[key] = combo
+                # Auto-update description when a selection is made
+                combo.currentTextChanged.connect(self._on_filter_combo_changed)
 
         # Actions for the single preset
         preset_action_layout = QHBoxLayout()
@@ -152,6 +157,17 @@ class PresetConfigDialog(QDialog):
         bottom_layout.addWidget(self.btn_apply)
         bottom_layout.addWidget(self.btn_cancel)
         main_layout.addLayout(bottom_layout)
+
+    def _on_filter_combo_changed(self, text):
+        if not text or text == "(Leave unchanged)" or text.startswith("All "):
+            return
+        selected_parts = []
+        for combo in self.filter_combos.values():
+            val = combo.currentText()
+            if val and val != "(Leave unchanged)" and not val.startswith("All "):
+                selected_parts.append(val)
+        if selected_parts:
+            self.edit_description.setText(" - ".join(selected_parts))
 
     def _build_hotkey_string(self):
         parts = []
@@ -207,6 +223,9 @@ class PresetConfigDialog(QDialog):
         hotkey = self.table.item(row, 0).text()
         cfg = self.presets.get(hotkey, {})
 
+        for combo in self.filter_combos.values():
+            combo.blockSignals(True)
+
         self._set_hotkey_from_string(hotkey)
         self.edit_description.setText(cfg.get("description", ""))
 
@@ -218,6 +237,9 @@ class PresetConfigDialog(QDialog):
                 combo.setCurrentIndex(c_idx if c_idx != -1 else 0)
             else:
                 combo.setCurrentIndex(0)
+
+        for combo in self.filter_combos.values():
+            combo.blockSignals(False)
 
     def _on_new_preset(self):
         self.table.clearSelection()
@@ -245,7 +267,9 @@ class PresetConfigDialog(QDialog):
         self._set_hotkey_from_string(unused)
         self.edit_description.clear()
         for combo in self.filter_combos.values():
+            combo.blockSignals(True)
             combo.setCurrentIndex(0)
+            combo.blockSignals(False)
 
     def _on_delete_preset(self):
         selected_rows = self.table.selectionModel().selectedRows()
@@ -266,11 +290,13 @@ class PresetConfigDialog(QDialog):
                 cur_text = self.filter_widget_map[key].currentText()
                 c_idx = combo.findText(cur_text)
                 if c_idx != -1:
+                    combo.blockSignals(True)
                     combo.setCurrentIndex(c_idx)
+                    combo.blockSignals(False)
                     if not cur_text.startswith("All "):
                         desc_parts.append(cur_text)
 
-        if not self.edit_description.text() and desc_parts:
+        if desc_parts:
             self.edit_description.setText(" - ".join(desc_parts))
 
     def _save_single_preset(self):
@@ -306,6 +332,63 @@ class PresetConfigDialog(QDialog):
     def _on_apply_and_close(self):
         self.key_configs[self.chart_title] = self.presets
         self.accept()
+
+
+class SettingsDialog(QDialog):
+    """Settings modal dialog for configuring intervals, smoothing, and opening %appdata%."""
+    def __init__(self, current_refresh_idx, current_autosave_idx, current_period, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Settings")
+        self.resize(420, 260)
+
+        layout = QVBoxLayout(self)
+        form_layout = QFormLayout()
+
+        self.combo_refresh = QComboBox()
+        self.combo_refresh.addItems(["Refresh: 10s", "Refresh: 30s", "Refresh: 60s", "Refresh: 300s", "Refresh: 600s", "Refresh: Off"])
+        self.combo_refresh.setCurrentIndex(current_refresh_idx)
+        form_layout.addRow("Graph Refresh Interval:", self.combo_refresh)
+
+        self.combo_autosave = QComboBox()
+        self.combo_autosave.addItems(["Auto-save: 1m", "Auto-save: 5m", "Auto-save: 10m", "No auto-save"])
+        self.combo_autosave.setCurrentIndex(current_autosave_idx)
+        form_layout.addRow("Session Auto-Save Interval:", self.combo_autosave)
+
+        slider_layout = QHBoxLayout()
+        self.slider_period = QSlider(Qt.Orientation.Horizontal)
+        self.slider_period.setRange(2, 50)
+        self.slider_period.setValue(current_period)
+        self.lbl_period = QLabel(str(current_period))
+        self.slider_period.valueChanged.connect(lambda v: self.lbl_period.setText(str(v)))
+        slider_layout.addWidget(self.slider_period)
+        slider_layout.addWidget(self.lbl_period)
+        form_layout.addRow("Moving Average Period:", slider_layout)
+
+        layout.addLayout(form_layout)
+
+        btn_appdata = QPushButton("Open AppData Folder")
+        btn_appdata.clicked.connect(self._open_appdata)
+        layout.addWidget(btn_appdata)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        btn_save = QPushButton("Save")
+        btn_save.clicked.connect(self.accept)
+        btn_cancel = QPushButton("Cancel")
+        btn_cancel.clicked.connect(self.reject)
+        btn_layout.addWidget(btn_save)
+        btn_layout.addWidget(btn_cancel)
+        layout.addLayout(btn_layout)
+
+    def _open_appdata(self):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(APPDATA_DIR))
+
+    def get_settings(self):
+        return {
+            "refresh_idx": self.combo_refresh.currentIndex(),
+            "autosave_idx": self.combo_autosave.currentIndex(),
+            "period": self.slider_period.value()
+        }
 
 
 class ChartSelectionDialog(QDialog):

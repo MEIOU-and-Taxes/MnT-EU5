@@ -3,7 +3,6 @@ setlocal enabledelayedexpansion
 title Building MEIOU and Taxes Plotter
 
 echo   MEIOU and Taxes Plotter - PyInstaller Build Script
-echo.
 
 :: Check for PyInstaller installation
 python -c "import PyInstaller" 2>nul
@@ -51,6 +50,5 @@ exit /b 0
 :fail
 echo.
 echo [FAILED] The build could not be completed.
-echo.
 pause
 exit /b 1

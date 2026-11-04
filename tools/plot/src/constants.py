@@ -1,9 +1,19 @@
-﻿FILE_CHECK_PERIOD_MS = 5 * 1000
+﻿import os
+
+APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'MnT_Plotter')
+os.makedirs(APPDATA_DIR, exist_ok=True)
+
+KEY_CONFIGS_PATH = os.path.join(APPDATA_DIR, "key_configs.json")
+AUTOSAVE_DIR = os.path.join(APPDATA_DIR, "autosaves")
+os.makedirs(AUTOSAVE_DIR, exist_ok=True)
+
+FILE_CHECK_PERIOD_MS = 5 * 1000
 REFRESH_PERIOD_MS = FILE_CHECK_PERIOD_MS
 AUTOSAVE_PERIOD_MS = 5 * 60 * 1000
 TARGET_FILE_NAME_ROOT = 'error'
-AUTOSAVE_FILE = "autosave_session.dat"
+AUTOSAVE_FILE = os.path.join(AUTOSAVE_DIR, "autosave_session.dat")
 ICON_PATH = 'icon.png'
+AUTOSAVES_KEPT = 1
 
 IS_LOGGING_YEARLY = True
 FIRST_MOMENT = 1 + 1337 if IS_LOGGING_YEARLY else 4
@@ -39,8 +49,7 @@ GRAPH_INTRODUCTION = """
 Welcome to the M&T graphing tool!
 
 Press '`' to see the list of available graphs.
-Refresh to read game.log again.
+Refresh (Ctrl+R) to read manually game.log again.
 
-If this is the first run, update the generated config file
-in the same folder & restart.
+Open Settings [Ctrl+,] to adjust refresh and autosave frequencies.
 """
