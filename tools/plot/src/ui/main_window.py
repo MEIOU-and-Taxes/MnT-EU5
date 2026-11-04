@@ -22,7 +22,10 @@ from src.analysis_toolkit import AnalysisToolkitDialog
 from src.constants import (
 	REFRESH_PERIOD_MS, AUTOSAVE_PERIOD_MS, TARGET_FILE_NAME_ROOT,
 	AUTOSAVE_FILE, AUTOSAVE_DIR, APPDATA_DIR, KEY_CONFIGS_PATH,
-	ICON_PATH, GRAPH_INTRODUCTION, AUTOSAVES_KEPT
+	SETTINGS_PATH, ICON_PATH, GRAPH_INTRODUCTION, AUTOSAVES_KEPT,
+	POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE,
+	POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE,
+	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE
 )
 from src.parsing import log_parser
 from src.plotting import chart_library, configs
@@ -33,10 +36,6 @@ from src.ui.stats_panel import format_stats_panel_text
 from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, SettingsDialog, sort_hotkeys
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
-
-
-def get_stats_bands_count():
-	return 9
 
 
 class MainWindow(QMainWindow):
@@ -73,12 +72,15 @@ class MainWindow(QMainWindow):
 		self.is_log_scale = False
 		self.is_moving_average = False
 		self.is_density = False
+		self.stats_hide_idx = 0
 		self.period_value = 5
 		self.refresh_interval_idx = 0
 		self.autosave_interval_idx = 1
 		self.chart_filter_memory = {}
 		self.last_log_state = None
 		self.has_new_data = False
+
+		self.load_app_settings()
 
 		self._build_menu()
 		self._build_ui()
@@ -98,12 +100,48 @@ class MainWindow(QMainWindow):
 		self.timer_graph_refresh.setInterval(10 * 1000)
 		self.timer_graph_refresh.timeout.connect(self.auto_refresh_graph)
 		self.timer_graph_refresh.start()
+		self._apply_refresh_interval()
 
 		# Auto-save timer
 		self.timer_auto_save = QTimer(self)
 		self.timer_auto_save.setInterval(AUTOSAVE_PERIOD_MS)
 		self.timer_auto_save.timeout.connect(self.auto_save_data)
 		self.timer_auto_save.start()
+		self._apply_autosave_interval()
+
+	def load_app_settings(self):
+		if not os.path.exists(SETTINGS_PATH):
+			return
+		try:
+			with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+				data = json.load(f)
+			self.refresh_interval_idx = data.get("refresh_interval_idx", 0)
+			self.autosave_interval_idx = data.get("autosave_interval_idx", 1)
+			self.period_value = data.get("period_value", 5)
+			self.is_stats_mode = data.get("is_stats_mode", True)
+			self.stats_hide_idx = data.get("stats_hide_idx", 0)
+			self.is_density = data.get("is_density", False)
+			self.is_log_scale = data.get("is_log_scale", False)
+			self.is_moving_average = data.get("is_moving_average", False)
+		except Exception as e:
+			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
+
+	def save_app_settings(self):
+		try:
+			data = {
+				"refresh_interval_idx": self.refresh_interval_idx,
+				"autosave_interval_idx": self.autosave_interval_idx,
+				"period_value": self.period_value,
+				"is_stats_mode": self.is_stats_mode,
+				"stats_hide_idx": self.combo_stats_hide.currentIndex() if hasattr(self, 'combo_stats_hide') else self.stats_hide_idx,
+				"is_density": self.is_density,
+				"is_log_scale": self.is_log_scale,
+				"is_moving_average": self.is_moving_average,
+			}
+			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+				json.dump(data, f, indent=2)
+		except Exception as e:
+			print(f"Failed to save settings to {SETTINGS_PATH}: {e}")
 
 	def _build_menu(self):
 		menubar = self.menuBar()
@@ -172,28 +210,32 @@ class MainWindow(QMainWindow):
 
 		self.act_fullscreen = QAction("Fullscreen", self, checkable=True)
 		self.act_fullscreen.setShortcut(QKeySequence("F"))
-		self.act_fullscreen.toggled.connect(lambda c: self.showFullScreen() if c else self.showNormal())
+		self.act_fullscreen.toggled.connect(self.toggle_fullscreen)
 		menu_view.addAction(self.act_fullscreen)
 
 		self.act_stats_mode = QAction("Stats Mode", self, checkable=True)
-		self.act_stats_mode.setChecked(True)
+		self.act_stats_mode.setChecked(self.is_stats_mode)
 		self.act_stats_mode.setShortcut(QKeySequence("T"))
 		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
 		menu_view.addAction(self.act_stats_mode)
 
 		self.act_density = QAction("Density Mode", self, checkable=True)
+		self.act_density.setChecked(self.is_density)
 		self.act_density.setShortcut(QKeySequence("D"))
 		self.act_density.toggled.connect(self.toggle_density)
 		menu_view.addAction(self.act_density)
 
 		self.act_log_scale = QAction("Symlog Scale", self, checkable=True)
+		self.act_log_scale.setChecked(self.is_log_scale)
 		self.act_log_scale.setShortcut(QKeySequence("L"))
 		self.act_log_scale.toggled.connect(self.toggle_log_scale)
 		menu_view.addAction(self.act_log_scale)
 
 		self.act_moving_avg = QAction("Moving Average", self, checkable=True)
+		self.act_moving_avg.setChecked(self.is_moving_average)
 		self.act_moving_avg.setShortcut(QKeySequence("W"))
 		self.act_moving_avg.toggled.connect(self.toggle_moving_average)
+		self.act_moving_avg.setVisible(self.is_stats_mode)
 		menu_view.addAction(self.act_moving_avg)
 
 		# Tools Menu
@@ -216,12 +258,29 @@ class MainWindow(QMainWindow):
 		act_settings.triggered.connect(self.open_settings_dialog)
 		menu_tools.addAction(act_settings)
 
+		# Ensure hotkeys trigger even when the menubar is hidden in fullscreen
+		for act in [act_open_folder, act_backup, act_load_sess, act_save_sess,
+					act_clear_data, act_export, act_charts, act_presets,
+					self.act_fullscreen, self.act_stats_mode, self.act_density,
+					self.act_log_scale, self.act_moving_avg, act_refresh,
+					act_analysis, act_settings]:
+			self.addAction(act)
+
 	def _build_ui(self):
 		self.central_widget = QWidget()
 		self.setCentralWidget(self.central_widget)
 		self.layout = QVBoxLayout(self.central_widget)
 
 		self.fig, self.ax = plt.subplots()
+		self.fig.subplots_adjust(
+			top=POS_SUBPLOT_TOP_EDGE,
+			bottom=POS_SUBPLOT_BOTTOM_EDGE,
+			left=POS_SUBPLOT_LEFT_EDGE,
+			right=POS_SUBPLOT_RIGHT_EDGE,
+			hspace=POS_SUBPLOT_HSPACE,
+			wspace=POS_SUBPLOT_WSPACE
+		)
+
 		self.plot_container = QHBoxLayout()
 		self.canvas = FigureCanvas(self.fig)
 		self.plot_container.addWidget(self.canvas, stretch=4)
@@ -237,6 +296,7 @@ class MainWindow(QMainWindow):
 				padding: 8px; line-height: 1.4;
 			}
 		""")
+		self.stats_panel.setVisible(self.is_stats_mode)
 		self.plot_container.addWidget(self.stats_panel, stretch=1)
 		self.layout.addLayout(self.plot_container, 1)
 
@@ -252,21 +312,39 @@ class MainWindow(QMainWindow):
 
 		self.btn_stats_mode = QPushButton("Stats mode [T]")
 		self.btn_stats_mode.setCheckable(True)
-		self.btn_stats_mode.setChecked(True)
+		self.btn_stats_mode.setChecked(self.is_stats_mode)
+
+		# Dropdown to hide percentiles in Stats mode
+		self.combo_stats_hide = QComboBox()
+		self.combo_stats_hide.addItems([
+			"Hide: None",
+			"Hide: Min / Max",
+			"Hide: Min/Max & 99th/1st",
+			"Hide: Min/Max, 99th/1st, 95th/5th"
+		])
+		if 0 <= self.stats_hide_idx < self.combo_stats_hide.count():
+			self.combo_stats_hide.setCurrentIndex(self.stats_hide_idx)
+		self.combo_stats_hide.setVisible(self.is_stats_mode)
+		self.combo_stats_hide.setToolTip("Select outliers/percentile bands to hide from the chart.")
+		self.combo_stats_hide.currentIndexChanged.connect(self._on_stats_hide_changed)
 
 		self.btn_density = QPushButton("Density [D]")
 		self.btn_density.setCheckable(True)
+		self.btn_density.setChecked(self.is_density)
 		self.btn_density.setToolTip("Divides values by the number of locations.")
 
 		self.btn_log_scale = QPushButton("[L]og scale")
 		self.btn_log_scale.setCheckable(True)
+		self.btn_log_scale.setChecked(self.is_log_scale)
 
 		self.btn_moving_avg = QPushButton("Moving avg [W]")
 		self.btn_moving_avg.setCheckable(True)
+		self.btn_moving_avg.setChecked(self.is_moving_average)
+		self.btn_moving_avg.setVisible(not(self.is_stats_mode))
 
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_refresh,
-				  self.btn_stats_mode, self.btn_density, self.btn_log_scale,
-				  self.btn_moving_avg]:
+				  self.btn_stats_mode, self.btn_density,
+				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
 		self.top_button_layout.addStretch(1)
@@ -291,6 +369,18 @@ class MainWindow(QMainWindow):
 		# Keyboard shortcuts are already handled by QAction shortcuts in the menu bar.
 		pass
 
+	def _on_stats_hide_changed(self, idx):
+		self.stats_hide_idx = idx
+		self.save_app_settings()
+		self.redraw_current_plot()
+
+	def toggle_fullscreen(self, checked):
+		self.menuBar().setVisible(not checked)
+		if checked:
+			self.showFullScreen()
+		else:
+			self.showNormal()
+
 	def open_appdata_folder(self):
 		QDesktopServices.openUrl(QUrl.fromLocalFile(APPDATA_DIR))
 
@@ -304,6 +394,7 @@ class MainWindow(QMainWindow):
 
 			self._apply_refresh_interval()
 			self._apply_autosave_interval()
+			self.save_app_settings()
 
 			if self.is_moving_average:
 				self.redraw_current_plot()
@@ -389,7 +480,14 @@ class MainWindow(QMainWindow):
 		self._reset_filter_layout()
 		self.ax.clear()
 		self.fig.suptitle(title)
-		self.fig.subplots_adjust(bottom=0.1, left=0.05, right=0.95, top=0.90)
+		self.fig.subplots_adjust(
+			top=POS_SUBPLOT_TOP_EDGE,
+			bottom=POS_SUBPLOT_BOTTOM_EDGE,
+			left=POS_SUBPLOT_LEFT_EDGE,
+			right=POS_SUBPLOT_RIGHT_EDGE,
+			hspace=POS_SUBPLOT_HSPACE,
+			wspace=POS_SUBPLOT_WSPACE
+		)
 
 		try:
 			graph_info['func'](
@@ -397,8 +495,9 @@ class MainWindow(QMainWindow):
 				self.on_plot_updated, self.clear_tooltip_handler, self.filter_widget_map,
 				lambda: self.is_moving_average, lambda: self.period_value,
 				lambda: self.is_stats_mode, self.update_stats_summary_panel,
-				get_stats_bands_count, set_redraw_fn=self.set_redraw_fn,
-				get_is_density=lambda: self.is_density
+				lambda: 9, set_redraw_fn=self.set_redraw_fn,
+				get_is_density=lambda: self.is_density,
+				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex()
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
@@ -612,6 +711,10 @@ class MainWindow(QMainWindow):
 		self.btn_stats_mode.setChecked(checked)
 		self.act_stats_mode.setChecked(checked)
 		self.stats_panel.setVisible(checked)
+		self.combo_stats_hide.setVisible(checked)
+		self.btn_moving_avg.setVisible(checked)
+		self.act_moving_avg.setVisible(checked)
+		self.save_app_settings()
 		self.redraw_current_plot()
 
 	def toggle_density(self, checked):
@@ -652,18 +755,21 @@ class MainWindow(QMainWindow):
 		self.is_density = checked
 		self.btn_density.setChecked(checked)
 		self.act_density.setChecked(checked)
+		self.save_app_settings()
 		self.redraw_current_plot()
 
 	def toggle_log_scale(self, checked):
 		self.is_log_scale = checked
 		self.btn_log_scale.setChecked(checked)
 		self.act_log_scale.setChecked(checked)
+		self.save_app_settings()
 		self.apply_plot_settings()
 
 	def toggle_moving_average(self, checked):
 		self.is_moving_average = checked
 		self.btn_moving_avg.setChecked(checked)
 		self.act_moving_avg.setChecked(checked)
+		self.save_app_settings()
 		self.redraw_current_plot()
 
 	def apply_plot_settings(self):
@@ -999,6 +1105,7 @@ class MainWindow(QMainWindow):
 			QMessageBox.critical(self, "Analysis Toolkit Error", str(e))
 
 	def closeEvent(self, event):
+		self.save_app_settings()
 		if not self.data or self.autosave_interval_idx == 3:
 			event.accept()
 			return

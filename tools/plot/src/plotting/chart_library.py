@@ -7,7 +7,9 @@ from matplotlib.ticker import MaxNLocator
 
 from src.constants import (
     STR_ALL_MOMENTS, STR_ALL_REGIONS, STAT_COLORS,
-    POS_SUBPLOT_BOTTOM_EDGE, POS_SUBPLOT_RIGHT_EDGE, SHOW_LEGEND,
+    POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE,
+    POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE,
+    POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE, SHOW_LEGEND,
     ERROR_NO_DATA_MATCH
 )
 from src.parsing.log_parser import get_region_locations
@@ -40,15 +42,23 @@ def _create_generic_graph(
     get_period_value,
     get_is_stats_mode=lambda: False,
     on_stats_computed=None,
-    get_stats_bands=lambda: 5,
+    get_stats_bands=lambda: 9,
     set_redraw_fn=None,
     get_is_density=lambda: False,
+    get_stats_hide_level=lambda: 0,
     *,
-    config  # <-- Keyword-only argument prevents positional collision
+    config
 ):
     all_data = config["parser"](data)
     fig = ax.figure
-    fig.subplots_adjust(bottom=POS_SUBPLOT_BOTTOM_EDGE, right=POS_SUBPLOT_RIGHT_EDGE)
+    fig.subplots_adjust(
+        top=POS_SUBPLOT_TOP_EDGE,
+        bottom=POS_SUBPLOT_BOTTOM_EDGE,
+        left=POS_SUBPLOT_LEFT_EDGE,
+        right=POS_SUBPLOT_RIGHT_EDGE,
+        hspace=POS_SUBPLOT_HSPACE,
+        wspace=POS_SUBPLOT_WSPACE
+    )
 
     category_key = config["category_key"]
     value_key = config["value_key"]
@@ -169,7 +179,8 @@ def _create_generic_graph(
 
         if get_is_stats_mode() and m_filter == STR_ALL_MOMENTS and not is_r_picked:
             _render_stats_mode(ax, filtered, value_key, effective_val_label, display_title, entity_key,
-                               get_stats_bands(), on_stats_computed, on_lines_plotted)
+                               get_stats_hide_level(), on_stats_computed, on_lines_plotted,
+                               get_is_moving_avg, get_period_value)
             return
 
         _render_standard_mode(ax, filtered, m_filter, c_filter, r_filter, all_category_str,
@@ -187,7 +198,8 @@ def _create_generic_graph(
     update_plot()
 
 
-def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title, entity_key, num_bands, on_stats_computed, on_lines_plotted):
+def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title, entity_key,
+                       hide_level, on_stats_computed, on_lines_plotted, get_is_moving_avg, get_period_value):
     moments_dict = {}
     country_series = {}
     for item in filtered_data:
@@ -198,12 +210,15 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
         country_series.setdefault(ent, {})[m] = val
 
     sorted_moments = sorted(moments_dict.keys())
-    bands_map = {
-        9: [("Max", 100), ("99th Perc", 99), ("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("1st Perc", 1), ("Min", 0)],
-        7: [("Max", 100), ("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("Min", 0)],
-        5: [("Max", 100), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("Min", 0)]
+
+    # Dropdown hide levels:
+    hide_map = {
+        0: [("Max", 100), ("99th Perc", 99), ("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("1st Perc", 1), ("Min", 0)],
+        1: [("99th Perc", 99), ("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5), ("1st Perc", 1)],
+        2: [("95th Perc", 95), ("75th Perc", 75), ("Median", 50), ("25th Perc", 25), ("5th Perc", 5)],
+        3: [("75th Perc", 75), ("Median", 50), ("25th Perc", 25)]
     }
-    active_percentiles = bands_map.get(num_bands, bands_map[5])
+    active_percentiles = hide_map.get(hide_level, hide_map[0])
     stat_curves = {name: [] for name, _ in active_percentiles}
 
     for m in sorted_moments:
@@ -213,6 +228,18 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
             elif p == 0: stat_curves[name].append(vals[0])
             elif p == 50: stat_curves[name].append(float(np.median(vals)))
             else: stat_curves[name].append(float(np.percentile(vals, p)))
+
+    # Apply moving average if active
+    is_ma = get_is_moving_avg()
+    p = get_period_value()
+    if is_ma and p > 1:
+        for name in stat_curves:
+            curve = stat_curves[name]
+            if len(curve) > 1:
+                stat_curves[name] = [
+                    sum(curve[max(0, i - p + 1):i + 1]) / len(curve[max(0, i - p + 1):i + 1])
+                    for i in range(len(curve))
+                ]
 
     ax._stats_moments_data = moments_dict
 
@@ -237,15 +264,23 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     for name, _ in active_percentiles:
         ax.plot(sorted_moments, stat_curves[name], marker='o', linewidth=2, label=name, color=STAT_COLORS[name])
 
-    ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"], color="#8bc34a", alpha=0.15, label='IQR (25%-75%)')
-    ax.fill_between(sorted_moments, stat_curves["Min"], stat_curves["Max"], color="#2e7d32", alpha=0.04)
+    if "25th Perc" in stat_curves and "75th Perc" in stat_curves:
+        ax.fill_between(sorted_moments, stat_curves["25th Perc"], stat_curves["75th Perc"],
+                        color="#8bc34a", alpha=0.15, label='IQR (25%-75%)')
+
+    if "Min" in stat_curves and "Max" in stat_curves:
+        ax.fill_between(sorted_moments, stat_curves["Min"], stat_curves["Max"], color="#2e7d32", alpha=0.04)
+    elif "1st Perc" in stat_curves and "99th Perc" in stat_curves:
+        ax.fill_between(sorted_moments, stat_curves["1st Perc"], stat_curves["99th Perc"], color="#2e7d32", alpha=0.04)
+    elif "5th Perc" in stat_curves and "95th Perc" in stat_curves:
+        ax.fill_between(sorted_moments, stat_curves["5th Perc"], stat_curves["95th Perc"], color="#2e7d32", alpha=0.04)
 
     ax.set_xlabel("Time")
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.ticklabel_format(useOffset=False, style='plain', axis='x')
     ax.set_ylabel(value_label)
     ax.set_title(f"Statistical Distribution: {display_title}")
-    ax.legend(loc="upper left", ncol=2 if num_bands > 5 else 1, fontsize=9, framealpha=0.85)
+    ax.legend(loc="upper left", ncol=2 if len(active_percentiles) > 5 else 1, fontsize=9, framealpha=0.85)
 
     _draw_horizontal_axis(ax)
 

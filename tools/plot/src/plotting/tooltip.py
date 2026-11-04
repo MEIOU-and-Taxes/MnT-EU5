@@ -140,10 +140,20 @@ class InteractiveLineTooltip:
                         curve_label = line.get_label()
 
             if target_val is not None:
-                top_10 = sorted(moments_data[cur_x], key=lambda x: abs(x[1] - target_val))[:10]
+                # Pick the closest entries to the target value, then sort them descending by value
+                closest_entries = sorted(moments_data[cur_x], key=lambda x: abs(x[1] - target_val))[:TOOLTIP_DISPLAYED_LINES]
+                top_sorted = sorted(closest_entries, key=lambda x: x[1], reverse=True)
+
                 fmt = ",.0f" if (self.ax.get_ylabel() or "") in ("Population", "Count") else ",.2f"
-                lines = [f"Year: {cur_x} | Curve: {curve_label}", f"Val: {target_val:{fmt}}", "-"*35]
-                lines.extend([f"{v:>10{fmt}} : {ent}" for ent, v in top_10])
+                max_ent = max((len(str(ent)) for ent, _ in top_sorted), default=10)
+                max_v = max((len(f"{v:{fmt}}") for _, v in top_sorted), default=6)
+
+                header_label = f"Year: {cur_x} | Curve: {curve_label}"
+                val_str = f"Val: {target_val:{fmt}}"
+                sep_len = max(len(header_label), max_ent + max_v + 5, 30)
+
+                lines = [header_label, val_str, "-" * sep_len]
+                lines.extend([f"{v:>{max_v}{fmt}} : {ent}" for ent, v in top_sorted])
 
                 self._place_annotation(event, cur_x, target_val, "\n".join(lines))
             return

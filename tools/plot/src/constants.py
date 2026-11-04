@@ -4,6 +4,7 @@ APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), '
 os.makedirs(APPDATA_DIR, exist_ok=True)
 
 KEY_CONFIGS_PATH = os.path.join(APPDATA_DIR, "key_configs.json")
+SETTINGS_PATH = os.path.join(APPDATA_DIR, "settings.json")
 AUTOSAVE_DIR = os.path.join(APPDATA_DIR, "autosaves")
 os.makedirs(AUTOSAVE_DIR, exist_ok=True)
 
@@ -18,8 +19,14 @@ AUTOSAVES_KEPT = 1
 IS_LOGGING_YEARLY = True
 FIRST_MOMENT = 1 + 1337 if IS_LOGGING_YEARLY else 4
 
-POS_SUBPLOT_BOTTOM_EDGE = 0.10
-POS_SUBPLOT_RIGHT_EDGE = 0.95
+# Chart border and spacing settings
+POS_SUBPLOT_TOP_EDGE = 0.935
+POS_SUBPLOT_BOTTOM_EDGE = 0.047
+POS_SUBPLOT_LEFT_EDGE = 0.036
+POS_SUBPLOT_RIGHT_EDGE = 0.995
+POS_SUBPLOT_HSPACE = 0.200
+POS_SUBPLOT_WSPACE = 0.200
+
 SHOW_LEGEND = False
 
 STR_ALL_MOMENTS = "All moments"
