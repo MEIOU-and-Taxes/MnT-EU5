@@ -38,6 +38,7 @@ from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, Settin
 from tools.shared import fetch_logs
 from tools.shared.fetch_logs import get_from_config
 
+STATS_PANEL_WIDTH = 400
 
 class MainWindow(QMainWindow):
 	def __init__(self):
@@ -309,7 +310,7 @@ class MainWindow(QMainWindow):
 
 		self.stats_panel = QTextEdit()
 		self.stats_panel.setReadOnly(True)
-		self.stats_panel.setFixedWidth(320)
+		self.stats_panel.setFixedWidth(STATS_PANEL_WIDTH)
 		self.stats_panel.setStyleSheet("""
 			QTextEdit {
 				background-color: #1e1e1e; color: #e0e0e0;

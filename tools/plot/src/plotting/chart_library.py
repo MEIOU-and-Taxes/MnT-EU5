@@ -42,7 +42,7 @@ STATS_OUTER_PAIRS = [
     ("1st Perc", "99th Perc"),
     ("5th Perc", "95th Perc"),
 ]
-
+MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS = 0
 
 def _draw_horizontal_axis(ax):
     """Draws horizontal grid lines after every number on the y-axis and a zero line."""
@@ -275,6 +275,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 
     # Consecutive changes (data-plot to consecutive data-plot) & entity volatilities
     consecutive_changes = []
+    overall_changes = []
     entity_volatilities = []
     for ent, history in country_series.items():
         vals = list(history.values())
@@ -286,17 +287,43 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
                 h_sorted[0],
                 h_sorted[-1]
             ))
+            # Consecutive step deltas
             for i in range(len(h_sorted) - 1):
                 y_from, y_to = h_sorted[i], h_sorted[i + 1]
                 v_from, v_to = history[y_from], history[y_to]
                 delta = v_to - v_from
                 consecutive_changes.append((ent, delta, v_from, v_to, y_from, y_to))
 
+            # Non-consecutive: find maximum rise and fall across all chronological pairs
+            max_pos_delta = 0
+            best_pos_pair = None
+            max_neg_delta = 0
+            best_neg_pair = None
+
+            for i in range(len(h_sorted)):
+                for j in range(i + 1, len(h_sorted)):
+                    y_i, y_j = h_sorted[i], h_sorted[j]
+                    v_i, v_j = history[y_i], history[y_j]
+                    d = v_j - v_i
+                    if d > max_pos_delta:
+                        max_pos_delta = d
+                        best_pos_pair = (ent, d, v_i, v_j, y_i, y_j)
+                    elif d < max_neg_delta:
+                        max_neg_delta = d
+                        best_neg_pair = (ent, d, v_i, v_j, y_i, y_j)
+
+            if best_pos_pair:
+                overall_changes.append(best_pos_pair)
+            if best_neg_pair:
+                overall_changes.append(best_neg_pair)
+
     all_values = [i[value_key] for i in filtered_data]
     global_stats = {
         "value_label": value_label,
         "biggest_increase": sorted(consecutive_changes, key=lambda x: x[1], reverse=True)[:5],
         "biggest_decrease": sorted(consecutive_changes, key=lambda x: x[1])[:5],
+        "overall_increase": sorted([c for c in overall_changes if c[1] > 0], key=lambda x: x[1], reverse=True)[:5],
+        "overall_decrease": sorted([c for c in overall_changes if c[1] < 0], key=lambda x: x[1])[:5],
         "most_volatile": sorted(entity_volatilities, key=lambda x: x[1], reverse=True)[:5],
         "overall_mean": float(np.mean(all_values)) if all_values else 0.0,
         "overall_std": float(np.std(all_values)) if all_values else 0.0
@@ -338,6 +365,8 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     ax.set_ylabel(value_label)
     ax.set_title(f"Statistical Distribution: {display_title}")
     ax.legend(loc="upper left", ncol=2 if len(active_percentiles) > 5 else 1, fontsize=9, framealpha=0.85)
+
+    ax.margins(x=MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS)
 
     _draw_horizontal_axis(ax)
 
@@ -413,7 +442,10 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
         if series:
             min_x = min(min(v['m']) for v in series.values() if v['m'])
             max_x = max(max(v['m']) for v in series.values() if v['m'])
-            ax.set_xlim(min_x, max_x)
+            span = max(1.0, max_x - min_x)
+            pad = span * MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS
+            ax.set_xlim(min_x - pad, max_x + pad)
+
         if "y_axis_limits" in config:
             ax.set_ylim(config["y_axis_limits"])
         if SHOW_LEGEND:

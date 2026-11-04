@@ -1,8 +1,17 @@
 ﻿import numpy as np
+from matplotlib.text import Text
 
-TOOLTIP_PADDING = 20
 TOOLTIP_DISPLAYED_LINES = 25
 LINE_WIDTH_SELECTED = 5
+TOOLTIP_OPACITY = 0.75
+TOOLTIP_PADDING = 20
+TOOLTIP_PADDING_X = 40  # horizontal gap from the point (points)
+TOOLTIP_PADDING_Y = 0  # vertical gap from the point (points)
+TOOLTIP_FONT_SIZE = 10          # match annotate font size (default is 10)
+TOOLTIP_CHAR_WIDTH_RATIO = 0.62 # monospace char width ≈ 0.6 * font size
+TOOLTIP_LINE_HEIGHT_RATIO = 1.3
+TOOLTIP_MARGIN = 20             # extra safety gap from the axes border (points)
+TOOLTIP_UP_FRACTION = 0.6
 
 class InteractiveLineTooltip:
     """Hover annotation and line inspection handler."""
@@ -34,7 +43,7 @@ class InteractiveLineTooltip:
         self.tooltip_cache = self.precalculate_tooltips()
         self.annot = self.ax.annotate(
             "", xy=(0, 0), xytext=(15, 15), textcoords="offset points",
-            bbox=dict(boxstyle="round,pad=0.5", fc="white", alpha=0.75),
+            bbox=dict(boxstyle="round,pad=0.5", fc="white", alpha=TOOLTIP_OPACITY),
             arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"),
             fontfamily='monospace'
         )
@@ -187,16 +196,35 @@ class InteractiveLineTooltip:
         self._place_annotation(event, closest_point[0], closest_point[1], "\n".join(text_lines))
 
     def _place_annotation(self, event, x, y, text):
-        y_min, y_max = self.ax.get_ylim()
-        x_min, x_max = self.ax.get_xlim()
-        v_align = 'top' if event.ydata > (y_min + (y_max - y_min) * 0.4) else 'bottom'
-        h_align = 'right' if event.xdata > (x_min + (x_max - x_min) * 0.7) else 'left'
-        v_offset = -TOOLTIP_PADDING if v_align == 'top' else TOOLTIP_PADDING
-        h_offset = -TOOLTIP_PADDING if h_align == 'right' else TOOLTIP_PADDING
+        # Estimate tooltip size in points
+        text_lines = text.split("\n")
+        est_w = max(len(l) for l in text_lines) * TOOLTIP_FONT_SIZE * TOOLTIP_CHAR_WIDTH_RATIO
+        est_h = len(text_lines) * TOOLTIP_FONT_SIZE * TOOLTIP_LINE_HEIGHT_RATIO
+        est_w += TOOLTIP_PADDING * 2 + TOOLTIP_MARGIN  # bbox pad + offset + margin
+        est_h += TOOLTIP_PADDING * 2 + TOOLTIP_MARGIN
+
+        # Convert to pixels and compare against the axes bounds
+        px_per_pt = self.fig.dpi / 72.0
+        bbox = self.ax.bbox
+        room_right = bbox.x1 - event.x
+        room_above = bbox.y1 - event.y
+        room_below = event.y - bbox.y0
+        est_h_px = est_h * px_per_pt
+
+        h_align = 'left' if room_right >= est_w * px_per_pt else 'right'
+
+        # Prefer upward; only go downward if upward is cramped AND below has more room
+        if room_above >= est_h_px * TOOLTIP_UP_FRACTION or room_above >= room_below:
+            v_align = 'bottom'
+        else:
+            v_align = 'top'
+
+        h_offset = TOOLTIP_PADDING if h_align == 'left' else -TOOLTIP_PADDING
+        v_offset = TOOLTIP_PADDING if v_align == 'bottom' else -TOOLTIP_PADDING
 
         self.annot.set_verticalalignment(v_align)
         self.annot.set_horizontalalignment(h_align)
-        self.annot.xytext = (h_offset, v_offset)
+        self.annot.xyann = (h_offset, v_offset)  # was: self.annot.xytext = ...
         self.annot.set_text(text)
         self.annot.xy = (x, y)
         self.annot.set_visible(True)

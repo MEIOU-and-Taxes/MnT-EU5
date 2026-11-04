@@ -37,31 +37,39 @@
     lines.append("\n--- Top consecutive increases ---")
     for item in global_stats.get('biggest_increase', []):
         reg, delta, start, end = item[0], item[1], item[2], item[3]
-        y_from = item[4] if len(item) > 4 else ""
         y_to = item[5] if len(item) > 5 else ""
-        yr_str = f", {y_from}→{y_to}" if (y_from and y_to) else ""
+        yr_str = f", {y_to}" if (y_to) else ""
         lines.append(f"{reg[:10]:<10}: +{delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta > 0 else "")
 
     lines.append("\n--- Top consecutive decreases ---")
     for item in global_stats.get('biggest_decrease', []):
         reg, delta, start, end = item[0], item[1], item[2], item[3]
+        y_to = item[5] if len(item) > 5 else ""
+        yr_str = f", {y_to}" if (y_to) else ""
+        lines.append(f"{reg[:10]:<10}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta < 0 else "")
+
+    lines.append("\n--- Top overall increases ---")
+    for item in global_stats.get('overall_increase', []):
+        reg, delta, start, end = item[0], item[1], item[2], item[3]
         y_from = item[4] if len(item) > 4 else ""
         y_to = item[5] if len(item) > 5 else ""
         yr_str = f", {y_from}→{y_to}" if (y_from and y_to) else ""
-        lines.append(f"{reg[:10]:<10}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})" if delta < 0 else "")
+        if delta > 0:
+            lines.append(f"{reg[:10]:<10}: +{delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})")
+
+    lines.append("\n--- Top overall decreases ---")
+    for item in global_stats.get('overall_decrease', []):
+        reg, delta, start, end = item[0], item[1], item[2], item[3]
+        y_from = item[4] if len(item) > 4 else ""
+        y_to = item[5] if len(item) > 5 else ""
+        yr_str = f", {y_from}→{y_to}" if (y_from and y_to) else ""
+        if delta < 0:
+            lines.append(f"{reg[:10]:<10}: {delta:{fmt}} ({start:{fmt}} → {end:{fmt}}{yr_str})")
 
     lines.append("\n--- Top standard deviation ---")
     for item in global_stats.get('most_volatile', []):
         reg, std = item[0], item[1]
-        start_yr = item[2] if len(item) > 2 else None
-        end_yr = item[3] if len(item) > 3 else None
-        if start_yr and end_yr and start_yr != end_yr:
-            yr_str = f" ({start_yr}-{end_yr})"
-        elif end_yr:
-            yr_str = f" ({end_yr})"
-        else:
-            yr_str = ""
         if std > 0:
-            lines.append(f"{reg[:10]:<10}: {std:{fmt}}{yr_str}")
+            lines.append(f"{reg[:10]:<10}: {std:{fmt}}")
 
     return "\n".join(lines)
