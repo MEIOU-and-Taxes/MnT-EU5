@@ -77,6 +77,20 @@ class InteractiveLineTooltip:
         if not hasattr(self, 'annot') or event.inaxes != self.ax or event.xdata is None or event.ydata is None:
             return
 
+        # Dynamic Legend Relocation
+        legend = getattr(self.ax, '_current_legend', None) or self.ax.get_legend()
+        if legend is not None:
+            xlim = self.ax.get_xlim()
+            mid_x = (xlim[0] + xlim[1]) / 2.0
+            # If mouse is on left half, anchor legend to upper right; if on right half, anchor to upper left
+            desired_loc = "upper right" if event.xdata < mid_x else "upper left"
+            if getattr(self.ax, '_last_legend_loc', 'upper left') != desired_loc:
+                self.ax._last_legend_loc = desired_loc
+                legend._set_loc(1 if desired_loc == "upper right" else 2)
+                self.fig.canvas.draw_idle()
+
+        # ---
+
         cur_x = int(round(event.xdata))
         min_dist = float('inf')
         closest_point = None
@@ -164,7 +178,7 @@ class InteractiveLineTooltip:
                 max_v = max((len(v_str) for _, v_str in top_formatted), default=6)
 
                 year_hdr = f"Year: {cur_x}" if is_year_offset else f"Year: {cur_x}"
-                header_label = f"{year_hdr} | Curve: {curve_label}"
+                header_label = f"{year_hdr} | {curve_label}"
                 val_str = f"Val: {format_metric_3digits(target_val)}"
                 sep_len = max(len(header_label), max_ent + max_v + 5, 30)
 

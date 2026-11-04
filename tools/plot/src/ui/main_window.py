@@ -27,7 +27,7 @@ from src.constants import (
 	SETTINGS_PATH, ICON_PATH, GRAPH_INTRODUCTION, AUTOSAVES_KEPT,
 	POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE,
 	POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE,
-	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE, PRESETS_PER_PAGE
+	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE, PRESETS_PER_PAGE, MINIMUM_NUMBER_FOR_LOG_PLOTS
 )
 from src.parsing import log_parser
 from src.plotting import chart_library, configs
@@ -79,6 +79,7 @@ class MainWindow(QMainWindow):
 		self.is_moving_average = False
 		self.is_density = False
 		self.is_year_offset = False
+		self.is_rate = False
 		self.stats_hide_idx = 0
 		self.period_value = 5
 		self.refresh_interval_idx = 0
@@ -133,6 +134,7 @@ class MainWindow(QMainWindow):
 			self.is_log_scale = data.get("is_log_scale", False)
 			self.is_moving_average = data.get("is_moving_average", False)
 			self.stats_shading_all = data.get("stats_shading_all", True)
+			self.is_rate = data.get("is_rate", False)
 		except Exception as e:
 			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
 
@@ -149,6 +151,7 @@ class MainWindow(QMainWindow):
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,
+				"is_rate": self.is_rate,
 			}
 			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
 				json.dump(data, f, indent=2)
@@ -248,6 +251,13 @@ class MainWindow(QMainWindow):
 		self.act_density.setShortcut(QKeySequence("D"))
 		self.act_density.toggled.connect(self.toggle_density)
 		menu_view.addAction(self.act_density)
+
+		self.act_rate = QAction("Rate mode (Δ)", self, checkable=True)
+		self.act_rate.setChecked(self.is_rate)
+		self.act_rate.setShortcut(QKeySequence("R"))
+		self.act_rate.toggled.connect(self.toggle_rate)
+		menu_view.addAction(self.act_rate)
+		self.addAction(self.act_rate)
 
 		self.act_log_scale = QAction("Symlog scale", self, checkable=True)
 		self.act_log_scale.setChecked(self.is_log_scale)
@@ -383,6 +393,12 @@ class MainWindow(QMainWindow):
 		self.btn_density.setChecked(self.is_density)
 		self.btn_density.setToolTip("Divides values by the number of locations.")
 
+		self.btn_rate = QPushButton("Rate [R]")
+		self.btn_rate.setCheckable(True)
+		self.btn_rate.setChecked(self.is_rate)
+		self.btn_rate.setToolTip("Computes first difference: dp[n] - dp[n - 1] [R]")
+		self.btn_rate.toggled.connect(self.act_rate.setChecked)
+
 		self.btn_log_scale = QPushButton("[L]og scale")
 		self.btn_log_scale.setCheckable(True)
 		self.btn_log_scale.setChecked(self.is_log_scale)
@@ -393,7 +409,7 @@ class MainWindow(QMainWindow):
 		self.btn_moving_avg.setVisible(not(self.is_stats_mode))
 
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
-				  self.btn_stats_mode, self.btn_year_offset, self.btn_density,
+				  self.btn_year_offset, self.btn_stats_mode, self.btn_density, self.btn_rate,
 				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
@@ -660,6 +676,9 @@ class MainWindow(QMainWindow):
 			self.is_density = False
 			self.btn_density.setChecked(False)
 			self.act_density.setChecked(False)
+			self.is_rate = False
+			self.btn_rate.setChecked(False)
+			self.act_rate.setChecked(False)
 
 		self.btn_density.setVisible(True)
 		self.btn_density.setEnabled(True)
@@ -686,7 +705,8 @@ class MainWindow(QMainWindow):
 				get_is_density=lambda: self.is_density,
 				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex(),
 				get_stats_shading_all=lambda: self.stats_shading_all,
-				get_is_year_offset=lambda: self.is_year_offset
+				get_is_year_offset=lambda: self.is_year_offset,
+				get_is_rate=lambda: self.is_rate
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
@@ -996,9 +1016,12 @@ class MainWindow(QMainWindow):
 							break
 
 				if has_negative:
-					self.ax.set_yscale('symlog')
+					self.ax.set_yscale('symlog', linthresh=MINIMUM_NUMBER_FOR_LOG_PLOTS, linscale=1.0)
 				else:
 					self.ax.set_yscale('log', nonpositive='clip')
+					ymin, ymax = self.ax.get_ylim()
+					if ymin < MINIMUM_NUMBER_FOR_LOG_PLOTS and ymax > MINIMUM_NUMBER_FOR_LOG_PLOTS:
+						self.ax.set_ylim(bottom=MINIMUM_NUMBER_FOR_LOG_PLOTS)
 			else:
 				self.ax.set_yscale('linear')
 			self.canvas.draw_idle()
@@ -1503,3 +1526,10 @@ class MainWindow(QMainWindow):
 			if idx != -1:
 				combo.setCurrentIndex(idx)
 				self.redraw_current_plot()
+
+	def toggle_rate(self, checked):
+		self.is_rate = checked
+		self.btn_rate.setChecked(checked)
+		self.act_rate.setChecked(checked)
+		self.save_app_settings()
+		self.redraw_current_plot()

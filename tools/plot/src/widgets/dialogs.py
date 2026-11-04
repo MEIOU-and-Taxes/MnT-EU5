@@ -506,12 +506,18 @@ class FilterSearchDialog(QDialog):
 
         # Build list of all items across dropdowns
         self.all_entries = []
+        time_entries = []
         for key, widget in self.filter_widget_map.items():
             if isinstance(widget, QComboBox):
                 combo_name = key.replace('_', ' ').title()
+                is_moment = (key == 'moment')
                 for i in range(widget.count()):
                     val_str = widget.itemText(i)
-                    self.all_entries.append((widget, combo_name, val_str))
+                    target_list = time_entries if is_moment else self.all_entries
+                    target_list.append((widget, combo_name, val_str))
+
+        # Append all time/year items to the end
+        self.all_entries.extend(time_entries)
 
         self.search_edit.textChanged.connect(self._populate_results)
         self.table.itemDoubleClicked.connect(lambda: self._accept_current())

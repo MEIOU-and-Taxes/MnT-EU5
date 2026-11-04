@@ -80,6 +80,7 @@ def _create_generic_graph(
     get_stats_hide_level=lambda: 0,
     get_stats_shading_all=lambda: False,
     get_is_year_offset=lambda: False,
+    get_is_rate=lambda: False,
     *,
     config
 ):
@@ -209,7 +210,12 @@ def _create_generic_graph(
 
         # Density Transformation with crash-prevention check
         is_density = get_is_density()
-        effective_val_label = f"{value_label_str} / Location" if is_density else value_label_str
+        is_rate = get_is_rate()
+        effective_val_label = value_label_str
+        if is_density:
+            effective_val_label = f"{effective_val_label} / Location"
+        if is_rate:
+            effective_val_label = f"Δ {effective_val_label} / Year"
 
         if is_density:
             rloc_map = get_region_locations()
@@ -237,6 +243,34 @@ def _create_generic_graph(
                 return
 
             filtered = transformed
+
+        # Rate transformation (first difference: dp[n] - dp[n - 1])
+        if is_rate:
+            rate_transformed = []
+            entity_series_map = {}
+            for item in filtered:
+                ent = item.get(entity_key, item.get('country', item.get('region', '')))
+                # Distinguish metrics when plotting multiple metrics in a region
+                c_val = item.get(category_key, '')
+                key = (ent, c_val)
+                entity_series_map.setdefault(key, []).append(dict(item))
+
+            for key, series_items in entity_series_map.items():
+                series_items.sort(key=lambda x: x['moment'])
+                for i in range(1, len(series_items)):
+                    diff_item = dict(series_items[i])
+                    diff_item[value_key] = series_items[i][value_key] - series_items[i - 1][value_key]
+                    rate_transformed.append(diff_item)
+
+            if not rate_transformed:
+                ax.text(0.5, 0.5, "Need at least 2 consecutive time steps to calculate rate (Δ).",
+                        ha='center', va='center', fontsize=12)
+                ax.figure.canvas.draw_idle()
+                if on_stats_computed:
+                    on_stats_computed(None)
+                return
+
+            filtered = rate_transformed
 
         is_r_picked = (r_filter != all_region_str)
         display_title = f"{c_filter} in {r_filter}" if (is_r_picked and not all_category_str) else (r_filter if is_r_picked else c_filter)
@@ -412,6 +446,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
     ax.set_ylabel(value_label)
     ax.set_title(f"Statistical Distribution: {display_title}")
     ax.legend(loc="upper left", ncol=2 if len(active_ids) > 5 else 1, fontsize=9, framealpha=0.85)
+    ax._current_legend = ax.legend(loc="upper left", ncol=2 if len(active_ids) > 5 else 1, fontsize=9, framealpha=0.85)
 
     ax.margins(x=MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS)
 
