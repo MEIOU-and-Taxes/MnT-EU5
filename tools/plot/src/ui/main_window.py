@@ -35,6 +35,7 @@ from src.plotting.tooltip import InteractiveLineTooltip
 from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session, load_session
 from src.ui.stats_panel import format_stats_panel_text
+from src.widgets.custom_combobox import RightClickableComboBox
 from src.widgets.dialogs import ChartSelectionDialog, PresetConfigDialog, SettingsDialog, sort_hotkeys, \
 	FilterSearchDialog
 from tools.shared import fetch_logs
@@ -78,6 +79,7 @@ class MainWindow(QMainWindow):
 		self.is_log_scale = False
 		self.is_moving_average = False
 		self.is_ratio_mode = False	  
+		self.is_bar_chart = False
 		self.density_mode = "none"  # "none", "location", "population"
 		self.derivative_order = 0	# 0: Base, 1: Rate, 2: Acceleration
 		self.is_year_offset = False
@@ -132,6 +134,7 @@ class MainWindow(QMainWindow):
 			self.stats_hide_idx = data.get("stats_hide_idx", 0)
 			self.density_mode = data.get("density_mode", "location" if data.get("is_density", False) else "none")
 			self.derivative_order = data.get("derivative_order", 1 if data.get("is_rate", False) else 0)
+			self.is_bar_chart = data.get("is_bar_chart", False)
 			self.is_year_offset = data.get("is_year_offset", False)
 			self.is_ratio_mode = data.get("is_ratio_mode", False)
 			self.is_log_scale = data.get("is_log_scale", False)
@@ -150,6 +153,7 @@ class MainWindow(QMainWindow):
 				"stats_hide_idx": self.combo_stats_hide.currentIndex() if hasattr(self, 'combo_stats_hide') else self.stats_hide_idx,
 				"density_mode": self.density_mode,
 				"derivative_order": self.combo_derivative.currentIndex() if hasattr(self, 'combo_derivative') else self.derivative_order,
+				"is_bar_chart": self.is_bar_chart,
 				"is_year_offset": self.is_year_offset,
 				"is_ratio_mode": self.is_ratio_mode,
 				"is_log_scale": self.is_log_scale,
@@ -237,6 +241,13 @@ class MainWindow(QMainWindow):
 		self.act_fullscreen.toggled.connect(self.toggle_fullscreen)
 		menu_view.addAction(self.act_fullscreen)
 
+		self.act_bar_chart = QAction("Bar chart", self, checkable=True)
+		self.act_bar_chart.setChecked(self.is_bar_chart)
+		self.act_bar_chart.setShortcut(QKeySequence("B"))
+		self.act_bar_chart.toggled.connect(self.toggle_bar_chart)
+		menu_view.addAction(self.act_bar_chart)
+		self.addAction(self.act_bar_chart)
+
 		self.act_year_offset = QAction("Relative year", self, checkable=True)
 		self.act_year_offset.setChecked(self.is_year_offset)
 		self.act_year_offset.setShortcut(QKeySequence("Y"))
@@ -249,7 +260,7 @@ class MainWindow(QMainWindow):
 		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
 		menu_view.addAction(self.act_stats_mode)
 
-		self.act_ratio_mode = QAction("Index 100% (Ratio mode)", self, checkable=True)
+		self.act_ratio_mode = QAction("Index (Ratio mode)", self, checkable=True)
 		self.act_ratio_mode.setChecked(self.is_ratio_mode)
 		self.act_ratio_mode.setShortcut(QKeySequence("I"))
 		self.act_ratio_mode.toggled.connect(self.toggle_ratio_mode)
@@ -331,6 +342,17 @@ class MainWindow(QMainWindow):
 		act_settings.triggered.connect(self.open_settings_dialog)
 		menu_tools.addAction(act_settings)
 
+		# Help Menu
+		menu_help = menubar.addMenu("&Help")
+
+		act_docs = QAction("Documentation", self)
+		act_docs.triggered.connect(
+			lambda: QDesktopServices.openUrl(QUrl("https://github.com/MEIOU-and-Taxes/MnT-EU5/wiki#plotter")))
+		menu_help.addAction(act_docs)
+		self.addAction(act_docs)
+
+		# Keep hotkeys triggered across fullscreen
+
 		# Keep hotkeys triggered across fullscreen
 		for act in [act_open_folder, act_backup, act_load_sess, act_save_sess,
 					act_clear_data, act_export, act_charts, act_presets,
@@ -383,6 +405,12 @@ class MainWindow(QMainWindow):
 		self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
 		self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately [Ctrl+R]")
 
+		self.btn_bar_chart = QPushButton("Bar chart [B]")
+		self.btn_bar_chart.setCheckable(True)
+		self.btn_bar_chart.setChecked(self.is_bar_chart)
+		self.btn_bar_chart.setToolTip("Toggle Bar chart mode (single year view) [B]")
+		self.btn_bar_chart.toggled.connect(self.act_bar_chart.setChecked)
+
 		self.btn_find = QPushButton("Find [Ctrl+F]")
 		self.btn_find.setToolTip("Quick search all dropdown values in the current chart [Ctrl+F]")
 		self.btn_find.clicked.connect(self.open_filter_search)
@@ -409,24 +437,21 @@ class MainWindow(QMainWindow):
 		self.combo_stats_hide.setToolTip("Select outliers/percentile bands to hide from the chart.")
 		self.combo_stats_hide.currentIndexChanged.connect(self._on_stats_hide_changed)
 
-		# Density Buttons
-		self.btn_density_loc = QPushButton("Density: Loc [D]")
-		self.btn_density_loc.setCheckable(True)
-		self.btn_density_loc.setChecked(self.density_mode == "location")
-		self.btn_density_loc.setToolTip("Divides values by the number of locations [D].")
-		self.btn_density_loc.clicked.connect(self.toggle_location_density)
+		# Density Dropdown with label & right-click support
+		self.lbl_density = QLabel("Density:")
+		self.combo_density = RightClickableComboBox()
+		self.combo_density.addItems(["Base", "Population", "Location"])
+		density_idx_map = {"none": 0, "population": 1, "location": 2}
+		self.combo_density.setCurrentIndex(density_idx_map.get(self.density_mode, 0))
+		self.combo_density.setToolTip("Select density normalization (Right-click to reset): Base, Population [P], Location [D]")
+		self.combo_density.currentIndexChanged.connect(self._on_density_changed)
 
-		self.btn_density_pop = QPushButton("Density: Pop [P]")
-		self.btn_density_pop.setCheckable(True)
-		self.btn_density_pop.setChecked(self.density_mode == "population")
-		self.btn_density_pop.setToolTip("Divides values by population [P].")
-		self.btn_density_pop.clicked.connect(self.toggle_population_density)
-
-		# Derivative Dropdown
-		self.combo_derivative = QComboBox()
+		# Derivative Dropdown with label & right-click support
+		self.lbl_derivative = QLabel("Rate of change:")
+		self.combo_derivative = RightClickableComboBox()
 		self.combo_derivative.addItems(["Base", "Rate", "Acceleration"])
 		self.combo_derivative.setCurrentIndex(self.derivative_order)
-		self.combo_derivative.setToolTip("Select derivative order: Base, Rate (Δ) [R], Acceleration (Δ²) [Shift+R]")
+		self.combo_derivative.setToolTip("Select derivative order (Right-click to reset): Base, Rate (Δ) [R], Acceleration (Δ²) [Shift+R]")
 		self.combo_derivative.currentIndexChanged.connect(self._on_derivative_changed)
 
 		self.btn_log_scale = QPushButton("[L]og scale")
@@ -438,15 +463,18 @@ class MainWindow(QMainWindow):
 		self.btn_moving_avg.setChecked(self.is_moving_average)
 		self.btn_moving_avg.setVisible(not self.is_stats_mode)
 
-		self.btn_ratio_mode = QPushButton("Index 100% [I]")
+		self.btn_ratio_mode = QPushButton("Index [I]")
 		self.btn_ratio_mode.setCheckable(True)
 		self.btn_ratio_mode.setChecked(self.is_ratio_mode)
-		self.btn_ratio_mode.setToolTip("Scale values as percentages (100% at starting year) [I]")
+		self.btn_ratio_mode.setToolTip("Scale values as relative change from baseline ((val / base) - 1) [I]")
 		self.btn_ratio_mode.toggled.connect(self.act_ratio_mode.setChecked)
 
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
-				  self.btn_year_offset, self.btn_stats_mode, self.btn_density_loc, self.btn_density_pop,
-				  self.btn_ratio_mode, self.combo_derivative, self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
+				  self.btn_bar_chart, self.btn_year_offset, self.btn_stats_mode,
+				  self.lbl_density, self.combo_density,
+				  self.btn_ratio_mode,
+				  self.lbl_derivative, self.combo_derivative,
+				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
 		self.top_button_layout.addStretch(1)
@@ -510,6 +538,11 @@ class MainWindow(QMainWindow):
 		else:  # Base or Rate -> Acceleration
 			self.combo_derivative.setCurrentIndex(2)
 
+	def _on_density_changed(self, idx):
+		modes = ["none", "population", "location"]
+		mode = modes[idx] if 0 <= idx < len(modes) else "none"
+		self.set_density_mode(mode)
+
 	def toggle_location_density(self):
 		new_mode = "none" if self.density_mode == "location" else "location"
 		self.set_density_mode(new_mode)
@@ -539,8 +572,13 @@ class MainWindow(QMainWindow):
 				mode = "none"
 
 		self.density_mode = mode
-		self.btn_density_loc.setChecked(mode == "location")
-		self.btn_density_pop.setChecked(mode == "population")
+		density_idx_map = {"none": 0, "population": 1, "location": 2}
+		target_idx = density_idx_map.get(mode, 0)
+		if hasattr(self, 'combo_density') and self.combo_density.currentIndex() != target_idx:
+			self.combo_density.blockSignals(True)
+			self.combo_density.setCurrentIndex(target_idx)
+			self.combo_density.blockSignals(False)
+
 		if hasattr(self, 'act_density_loc'):
 			self.act_density_loc.setChecked(mode == "location")
 		if hasattr(self, 'act_density_pop'):
@@ -787,8 +825,10 @@ class MainWindow(QMainWindow):
 			self.btn_ratio_mode.setChecked(False)
 			self.act_ratio_mode.setChecked(False)
 			self.density_mode = "none"
-			self.btn_density_loc.setChecked(False)
-			self.btn_density_pop.setChecked(False)
+			if hasattr(self, 'combo_density'):
+				self.combo_density.blockSignals(True)
+				self.combo_density.setCurrentIndex(0)
+				self.combo_density.blockSignals(False)
 			self.derivative_order = 0
 			self.combo_derivative.setCurrentIndex(0)
 
@@ -816,15 +856,21 @@ class MainWindow(QMainWindow):
 				get_stats_shading_all=lambda: self.stats_shading_all,
 				get_is_year_offset=lambda: self.is_year_offset,
 				get_derivative_order=lambda: self.combo_derivative.currentIndex(),
-				get_is_ratio_mode=lambda: self.is_ratio_mode
+				get_is_ratio_mode=lambda: self.is_ratio_mode,
+				get_is_bar_chart=lambda: self.is_bar_chart
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
 					combo.currentIndexChanged.connect(self._save_current_filters_to_memory)
 
+			combo_moment = self.filter_widget_map.get('moment')
+			if isinstance(combo_moment, QComboBox):
+				combo_moment.currentIndexChanged.connect(self._update_view_year_dependencies)
+
 			self.canvas.draw()
 			self.setup_preset_buttons(title)
 			self._restore_filters(title)
+			self._update_bar_chart_visibility()
 			self.redraw_current_plot()
 		except Exception as e:
 			self.ax.text(0.5, 0.5, f"Error:\n{e}", ha='center', va='center')
@@ -983,6 +1029,7 @@ class MainWindow(QMainWindow):
 			on_stats_hover_callback=self.update_stats_summary_panel
 		)
 		self.cursor_hover_handler.setup_tooltip_handler()
+		self._update_view_year_dependencies()
 		self.apply_plot_settings()
 
 	def clear_tooltip_handler(self):
@@ -1649,3 +1696,88 @@ class MainWindow(QMainWindow):
 		self.act_ratio_mode.setChecked(checked)
 		self.save_app_settings()
 		self.redraw_current_plot()
+
+	def toggle_bar_chart(self, checked):
+		self.is_bar_chart = checked
+		if self.btn_bar_chart.isChecked() != checked:
+			self.btn_bar_chart.blockSignals(True)
+			self.btn_bar_chart.setChecked(checked)
+			self.btn_bar_chart.blockSignals(False)
+		if self.act_bar_chart.isChecked() != checked:
+			self.act_bar_chart.blockSignals(True)
+			self.act_bar_chart.setChecked(checked)
+			self.act_bar_chart.blockSignals(False)
+		self._update_bar_chart_visibility()
+		self.save_app_settings()
+		self.redraw_current_plot()
+
+	def _update_bar_chart_visibility(self):
+		combo_moment = self.filter_widget_map.get('moment')
+		combo_from = self.filter_widget_map.get('from_year')
+		combo_to = self.filter_widget_map.get('to_year')
+		lbl_moment = self.filter_widget_map.get('lbl_moment')
+		lbl_from = self.filter_widget_map.get('lbl_from_year')
+		lbl_to = self.filter_widget_map.get('lbl_to_year')
+
+		if self.is_bar_chart:
+			if lbl_moment: lbl_moment.setVisible(True)
+			if combo_moment:
+				combo_moment.setVisible(True)
+				if combo_moment.currentIndex() == 0 and combo_moment.count() > 1:
+					combo_moment.blockSignals(True)
+					combo_moment.setCurrentIndex(combo_moment.count() - 1)
+					combo_moment.blockSignals(False)
+			if lbl_from: lbl_from.setVisible(False)
+			if combo_from:
+				combo_from.blockSignals(True)
+				combo_from.setCurrentIndex(0)
+				combo_from.blockSignals(False)
+				combo_from.setVisible(False)
+			if lbl_to: lbl_to.setVisible(False)
+			if combo_to:
+				combo_to.blockSignals(True)
+				combo_to.setCurrentIndex(0)
+				combo_to.blockSignals(False)
+				combo_to.setVisible(False)
+		else:
+			if lbl_moment: lbl_moment.setVisible(False)
+			if combo_moment:
+				combo_moment.blockSignals(True)
+				combo_moment.setCurrentIndex(0)
+				combo_moment.blockSignals(False)
+				combo_moment.setVisible(False)
+			if lbl_from: lbl_from.setVisible(True)
+			if combo_from: combo_from.setVisible(True)
+			if lbl_to: lbl_to.setVisible(True)
+			if combo_to: combo_to.setVisible(True)
+
+		self._update_view_year_dependencies()
+
+	def _update_view_year_dependencies(self):
+		combo_moment = self.filter_widget_map.get('moment')
+		view_year_chosen = False
+		if combo_moment is not None and combo_moment.currentIndex() > 0:
+			view_year_chosen = True
+		elif self.is_bar_chart:
+			view_year_chosen = True
+
+		show_index_stats = not view_year_chosen
+
+		self.btn_ratio_mode.setVisible(show_index_stats)
+		self.btn_ratio_mode.setEnabled(show_index_stats)
+		if hasattr(self, 'act_ratio_mode'):
+			self.act_ratio_mode.setVisible(show_index_stats)
+			self.act_ratio_mode.setEnabled(show_index_stats)
+
+		self.btn_stats_mode.setVisible(show_index_stats)
+		self.btn_stats_mode.setEnabled(show_index_stats)
+		if hasattr(self, 'act_stats_mode'):
+			self.act_stats_mode.setVisible(show_index_stats)
+			self.act_stats_mode.setEnabled(show_index_stats)
+
+		self.combo_stats_hide.setVisible(show_index_stats and self.is_stats_mode)
+		self.combo_stats_hide.setEnabled(show_index_stats)
+		self.lbl_derivative.setVisible(show_index_stats)
+		self.combo_derivative.setVisible(show_index_stats)
+		self.stats_panel.setVisible(show_index_stats and self.is_stats_mode)
+		self.btn_moving_avg.setVisible(show_index_stats and not self.is_stats_mode)
