@@ -59,8 +59,11 @@ STAT_COLORS = {entry[0]: entry[3] for entry in PERCENTILE_SERIES}
 GRAPH_INTRODUCTION = """
 Welcome to the M&T graphing tool!
 
-Press '`' to see the list of available graphs.
-Refresh (Ctrl+R) to read manually game.log again.
+Press F1 to go to country charts.
+Press F2 to go to market charts.
+Press F3 to go to region charts.
+After selecting, the plotter normally reads logs and collects data autonomously.
 
-Open Settings [Ctrl+,] to adjust refresh and autosave frequencies.
+Open Settings [Ctrl+,] to adjust refresh, autosave frequencies and other settings.
+Refresh (Ctrl+R) to read manually game.log again, especially when plot refresh is disabled (manual).
 """

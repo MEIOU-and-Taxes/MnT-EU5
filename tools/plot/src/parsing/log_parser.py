@@ -3,7 +3,7 @@ import re
 
 from src.parsing.computed_series import load_computed_series_definitions, evaluate_expression
 from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY, \
-	market_stats, CREDIT_HEADERS
+	market_stats, CREDIT_HEADERS, POPULATION_HEADERS
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
 
 # Column count mismatch callback (hooked by UI)
@@ -142,7 +142,7 @@ def parse_lines(line_iterable):
 						if _column_mismatch_callback and not warning_printed:
 							warning_printed = True
 							_column_mismatch_callback(len(values), len(COUNTRY_FIRST_HEADERS))
-					
+
 					current_tg_record = None
 					lines_after_tg = 99
 					continue
@@ -191,13 +191,21 @@ def parse_lines(line_iterable):
 			if len(p) >= 3:
 				try:
 					moment = int(p[0])
-					pop_cumulative_store[(moment, p[1].strip())] = {
-						"moment": moment, "region": p[1].strip(),
+					region = p[1].strip()
+					record = {
+						"moment": moment,
+						"region": region,
 						"statistic": "Total Population",
-						"population": parse_dynamic_numeric_value(p[2].strip())
+						"population": parse_dynamic_numeric_value(p[2].strip()),
 					}
+					# Map all population and SLV metrics from index 2 onwards
+					for header, val_str in zip(POPULATION_HEADERS, p[2:]):
+						record[header] = parse_dynamic_numeric_value(val_str.strip())
+
+					pop_cumulative_store[(moment, region)] = record
 				except (ValueError, TypeError):
 					pass
+
 		elif '::RT::' in line:
 			part = line.split('::RT::', 1)[1]
 			p = part.split(':')
@@ -231,9 +239,9 @@ def parse_lines(line_iterable):
 					for name, v in stat_map.items():
 						mk_cumulative_store[(moment, market_name, name)] = {
 							"moment": moment, "region": market_name, "market": market_name,
-							"statistic": name, "value": v, 
+							"statistic": name, "value": v,
 							"locations": loc_count,
-							"population": pop_count 
+							"population": pop_count
 						}
 				except (ValueError, TypeError):
 					pass
@@ -539,24 +547,35 @@ def parse_data_regional_metrics(data: str = None):
 		for (m, reg), rec in pop_cumulative_store.items()
 	}
 
-	# 1. Total Population
+	# 1. Population & Regional SLV Metrics
 	for (m, reg), rec in pop_cumulative_store.items():
 		locs = get_locs(reg)
 		p_val = float(rec.get("population", 0.0))
-		transformed.append({
-			"moment": m,
-			"region": reg,
-			"regional_metric": "Total Population",
-			"metric": "Total Population",
-			"statistic": "Total Population",
-			"value": p_val,
-			"locations": locs,
-			"population": p_val,
-			"total_population": p_val
-		})
-		v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
+		v = context_vars_by_moment_region.setdefault(
+			(m, reg),
+			{"locations": locs, "population": p_val, "total_population": p_val}
+		)
 		v["population"] = p_val
 		v["total_population"] = p_val
+
+		for header in POPULATION_HEADERS:
+			if header in rec:
+				val = float(rec[header])
+				transformed.append({
+					"moment": m,
+					"region": reg,
+					"regional_metric": header,
+					"metric": header,
+					"statistic": header,
+					"value": val,
+					"locations": locs,
+					"population": p_val,
+					"total_population": p_val
+				})
+				# Make variables available to regional computed series formulas
+				v[header] = val
+				v[header.lower()] = val
+				v[header.lower().replace(' ', '_')] = val
 
 	# 2. Road Coverage
 	for (m, reg, road_type), rec in rt_cumulative_store.items():
