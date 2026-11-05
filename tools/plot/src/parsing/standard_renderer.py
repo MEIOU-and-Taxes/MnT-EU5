@@ -21,7 +21,7 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 	colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
 	offset = 1337 if is_year_offset else 0
 
-	# Calculate statistical summaries for standard mode as well
+	# Store per-moment raw values for summary statistics and stats panel
 	moments_dict = {}
 	country_series = {}
 	for item in filtered_data:
@@ -69,7 +69,7 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 		ax.set_ylabel(val_label)
 
-		title_prefix = f"Relative change from time {base_year_disp}" if (is_ratio_mode and base_year_disp) else f"{val_label}s"
+		title_prefix = f"Relative change from time {base_year_disp}" if (is_ratio_mode and base_year_disp) else f"{val_label}"
 
 		if is_r_picked and all_cat is None:
 			if is_ratio_mode and base_year_disp:
@@ -87,9 +87,9 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 
 		for name, vals in sorted(series.items()):
 			sm, sv = zip(*sorted(zip(vals['m'], vals['v'])))
-			if is_ma and len(sv) > 1:
-				ma_vals = [sum(sv[max(0, i-p+1):i+1]) / len(sv[max(0, i-p+1):i+1]) for i in range(len(sv))]
-				ax.plot(sm, ma_vals, linestyle='-', label=name, color=next(colors))
+			if is_ma and len(sv) > 1 and p > 1:
+				ma_vals = [sum(sv[max(0, i - p + 1):i + 1]) / len(sv[max(0, i - p + 1):i + 1]) for i in range(len(sv))]
+				ax.plot(sm, ma_vals, marker=marker, linestyle='-', label=name, color=next(colors))
 			else:
 				ax.plot(sm, sv, marker=marker, linestyle='-', label=name, color=next(colors))
 
@@ -122,7 +122,7 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 		ax.bar(labels, values, color=b_colors)
 		ax.set_ylabel(val_label)
 		time_display = f"Year: T+{m_filter}" if is_year_offset else f"Year: {m_filter}"
-		ax.set_title(f"{val_label}s for {time_display}")
+		ax.set_title(f"{val_label} for {time_display}")
 		plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
 		if items:

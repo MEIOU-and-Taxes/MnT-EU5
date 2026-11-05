@@ -106,12 +106,17 @@ class MenuBuilder:
 		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
 		menu_view.addAction(self.act_stats_mode)
 
-		self.act_ratio_mode = QAction("Index (Ratio mode)", self, checkable=True)
-		self.act_ratio_mode.setChecked(self.is_ratio_mode)
-		self.act_ratio_mode.setShortcut(QKeySequence("I"))
-		self.act_ratio_mode.toggled.connect(self.toggle_ratio_mode)
-		menu_view.addAction(self.act_ratio_mode)
-		self.addAction(self.act_ratio_mode)
+		self.act_baseline_ratio = QAction("Baseline: Ratio (%)", self)
+		self.act_baseline_ratio.setShortcut(QKeySequence("I"))
+		self.act_baseline_ratio.triggered.connect(self.handle_i_shortcut)
+		menu_view.addAction(self.act_baseline_ratio)
+		self.addAction(self.act_baseline_ratio)
+
+		self.act_baseline_diff = QAction("Baseline: Difference (Δ)", self)
+		self.act_baseline_diff.setShortcut(QKeySequence("Shift+I"))
+		self.act_baseline_diff.triggered.connect(self.handle_shift_i_shortcut)
+		menu_view.addAction(self.act_baseline_diff)
+		self.addAction(self.act_baseline_diff)
 
 		self.act_density_loc = QAction("Density: Loc", self, checkable=True)
 		self.act_density_loc.setChecked(self.density_mode == "location")
@@ -147,7 +152,6 @@ class MenuBuilder:
 		self.act_moving_avg.setChecked(self.is_moving_average)
 		self.act_moving_avg.setShortcut(QKeySequence("W"))
 		self.act_moving_avg.toggled.connect(self.toggle_moving_average)
-		self.act_moving_avg.setVisible(self.is_stats_mode)
 		menu_view.addAction(self.act_moving_avg)
 
 		act_hide_inc = QAction("Hide more percentiles", self)
@@ -197,9 +201,6 @@ class MenuBuilder:
 		menu_help.addAction(act_docs)
 		self.addAction(act_docs)
 
-		# Keep hotkeys triggered across fullscreen
-
-		# Keep hotkeys triggered across fullscreen
 		for act in [act_open_folder, act_backup, act_load_sess, act_save_sess,
 					act_clear_data, act_export, act_charts, act_presets,
 					self.act_fullscreen, self.act_stats_mode, self.act_year_offset,

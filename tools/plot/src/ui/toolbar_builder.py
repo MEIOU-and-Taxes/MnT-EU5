@@ -2,8 +2,7 @@
 from PyQt6.QtGui import QShortcut, QKeySequence
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPushButton, QTextEdit, QLabel, \
-	QComboBox, QGridLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTextEdit, QComboBox, QGridLayout
 
 from src.constants import POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE, POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE, \
 	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE, STATS_PANEL_WIDTH
@@ -45,11 +44,10 @@ class ToolbarBuilder:
 		self.plot_container.addWidget(self.stats_panel, stretch=1)
 		self.layout.addLayout(self.plot_container, 1)
 
-
 		self.toolbar = NavigationToolbar(self.canvas, self)
 		self.layout.addWidget(self.toolbar)
 
-		# Controls
+		# Controls layout
 		self.top_button_layout = QHBoxLayout()
 		self.btn_charts = QPushButton("Charts [`]")
 		self.btn_preset_config = QPushButton("Presets [Ctrl+P]")
@@ -105,7 +103,16 @@ class ToolbarBuilder:
 		self.combo_density.setToolTip("Select density normalization (Right-click to reset): Base, Population [P], Location [D]")
 		self.combo_density.currentIndexChanged.connect(self._on_density_changed)
 
-		# Derivative Dropdown with label & right-click support
+		# Baseline Mode Dropdown (Ratio / Difference)
+		self.lbl_baseline = QLabel("Baseline:")
+		self.combo_baseline = RightClickableComboBox()
+		self.combo_baseline.addItems(["Base", "Ratio (%)", "Difference (Δ)"])
+		base_idx_map = {"none": 0, "ratio": 1, "difference": 2}
+		self.combo_baseline.setCurrentIndex(base_idx_map.get(getattr(self, 'baseline_mode', 'none'), 0))
+		self.combo_baseline.setToolTip("Scale values from start year: Base, Ratio (%) [I], Difference (Δ) [Shift+I]")
+		self.combo_baseline.currentIndexChanged.connect(self._on_baseline_changed)
+
+		# Derivative Dropdown
 		self.lbl_derivative = QLabel("Rate of change:")
 		self.combo_derivative = RightClickableComboBox()
 		self.combo_derivative.addItems(["Base", "Rate", "Acceleration"])
@@ -120,18 +127,12 @@ class ToolbarBuilder:
 		self.btn_moving_avg = QPushButton("Smooth [W]")
 		self.btn_moving_avg.setCheckable(True)
 		self.btn_moving_avg.setChecked(self.is_moving_average)
-		self.btn_moving_avg.setVisible(not self.is_stats_mode)
-
-		self.btn_ratio_mode = QPushButton("Index [I]")
-		self.btn_ratio_mode.setCheckable(True)
-		self.btn_ratio_mode.setChecked(self.is_ratio_mode)
-		self.btn_ratio_mode.setToolTip("Scale values as relative change from baseline ((val / base) - 1) [I]")
-		self.btn_ratio_mode.toggled.connect(self.act_ratio_mode.setChecked)
+		self.btn_moving_avg.setVisible(True)
 
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
 				  self.btn_bar_chart, self.btn_year_offset, self.btn_stats_mode,
 				  self.lbl_density, self.combo_density,
-				  self.btn_ratio_mode,
+				  self.lbl_baseline, self.combo_baseline,
 				  self.lbl_derivative, self.combo_derivative,
 				  self.btn_log_scale, self.btn_moving_avg,
 				  self.lbl_percentiles_to_hide, self.combo_stats_hide]:

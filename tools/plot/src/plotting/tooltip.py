@@ -6,12 +6,10 @@ TOOLTIP_DISPLAYED_LINES = 25
 LINE_WIDTH_SELECTED = 5
 TOOLTIP_OPACITY = 0.75
 TOOLTIP_PADDING = 20
-TOOLTIP_PADDING_X = 40  # horizontal gap from the point (points)
-TOOLTIP_PADDING_Y = 0  # vertical gap from the point (points)
-TOOLTIP_FONT_SIZE = 10          # match annotate font size (default is 10)
-TOOLTIP_CHAR_WIDTH_RATIO = 0.62 # monospace char width ≈ 0.6 * font size
+TOOLTIP_FONT_SIZE = 10
+TOOLTIP_CHAR_WIDTH_RATIO = 0.62
 TOOLTIP_LINE_HEIGHT_RATIO = 1.3
-TOOLTIP_MARGIN = 20             # extra safety gap from the axes border (points)
+TOOLTIP_MARGIN = 20
 TOOLTIP_UP_FRACTION = 0.6
 
 class InteractiveLineTooltip:
@@ -89,8 +87,6 @@ class InteractiveLineTooltip:
                 legend._set_loc(1 if desired_loc == "upper right" else 2)
                 self.fig.canvas.draw_idle()
 
-        # ---
-
         cur_x = int(round(event.xdata))
         min_dist = float('inf')
         closest_point = None
@@ -156,7 +152,7 @@ class InteractiveLineTooltip:
                 "biggest_decrease": yearly_decrease
             })
 
-        # Only display the percentile curve tooltip in Stats Mode; otherwise proceed to normal line tooltip
+        # Stats Mode: curve tooltip
         if is_stats_mode_chart and moments_data and orig_x in moments_data:
             target_val, curve_label = None, ""
             min_curve_dist = float('inf')
@@ -189,7 +185,7 @@ class InteractiveLineTooltip:
                 self._place_annotation(event, cur_x, target_val, "\n".join(lines))
             return
 
-        # Normal Line Mode
+        # Standard Mode: multi-series tooltip
         if cur_x == self.last_integer_x and self.closest_line == (current_hovered.get_label() if current_hovered else None):
             return
         self.last_integer_x = cur_x

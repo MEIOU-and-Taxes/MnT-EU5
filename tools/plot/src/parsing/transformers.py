@@ -6,6 +6,34 @@ from src.parsing.log_parser import parse_data_countries, parse_data_credit_raw, 
 from src.parsing.stores import cr_cumulative_store, tg_cumulative_store, region_locations_store, pop_cumulative_store, \
 	rt_cumulative_store
 
+_reported_duplicate_names = set()
+
+def _check_and_notify_duplicate_names(entity_type: str, name_to_identifiers: dict):
+	"""Checks if different entities share identical display names and notifies once."""
+	duplicates = {name: ids for name, ids in name_to_identifiers.items() if len(ids) > 1}
+	if not duplicates:
+		return
+
+	new_duplicates = {k: v for k, v in duplicates.items() if (entity_type, k) not in _reported_duplicate_names}
+	if not new_duplicates:
+		return
+
+	for k in new_duplicates:
+		_reported_duplicate_names.add((entity_type, k))
+
+	msg_lines = [f"Duplicate {entity_type} names detected across different entities:\n"]
+	for name, ids in sorted(new_duplicates.items()):
+		msg_lines.append(f"  • '{name}' used by: {', '.join(sorted(ids))}")
+	msg_lines.append("\nDifferent tags/identifiers will be appended in parentheses.")
+
+	print("[WARNING] " + "\n".join(msg_lines))
+	try:
+		from PyQt6.QtWidgets import QApplication, QMessageBox
+		if QApplication.instance():
+			QMessageBox.warning(None, f"Duplicate {entity_type.capitalize()} Names", "\n".join(msg_lines))
+	except Exception:
+		pass
+
 
 def parse_data_country_metrics(data: str = None):
 	"""Combines Country Metrics and Credit Statistics into one unified dataset with computed metrics."""
@@ -14,6 +42,15 @@ def parse_data_country_metrics(data: str = None):
 
 	countries = parse_data_countries(data)
 	parse_data_credit_raw(data)
+
+	# Check for countries sharing the exact same name with different tags
+	name_to_tags = {}
+	for r in countries:
+		tag = r.get("tag", "")
+		name = r.get("name", "")
+		if name and tag:
+			name_to_tags.setdefault(name, set()).add(tag)
+	_check_and_notify_duplicate_names("country", name_to_tags)
 
 	computed_defs = [
 		d for d in load_computed_series_definitions()
@@ -38,7 +75,8 @@ def parse_data_country_metrics(data: str = None):
 		year = int(r["year"]) if r.get("year") else 0
 		tag = r.get("tag", "")
 		name = r.get("name", "")
-		label = f"{name} ({tag})" if name and name != tag else tag
+		# Distinct naming if identical names or name != tag
+		label = f"{name} ({tag})" if name and name != tag else (name or tag)
 		processed_combos.add((year, tag))
 
 		# Standard Country metrics
@@ -114,7 +152,7 @@ def parse_data_country_metrics(data: str = None):
 			continue
 		country_rec = tg_cumulative_store.get((moment, tag))
 		name = country_rec.get("name", "") if country_rec else ""
-		label = f"{name} ({tag})" if name and name != tag else tag
+		label = f"{name} ({tag})" if name and name != tag else (name or tag)
 
 		locs = 0.0
 		pop = 0.0

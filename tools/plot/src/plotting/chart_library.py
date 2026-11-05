@@ -43,7 +43,7 @@ def _create_generic_graph(
 	get_stats_shading_all=lambda: False,
 	get_is_year_offset=lambda: False,
 	get_derivative_order=lambda: 0,
-	get_is_ratio_mode=lambda: False,
+	get_baseline_mode=lambda: "none",  # "none", "ratio", "difference"
 	get_is_bar_chart=lambda: False,
 	*,
 	config
@@ -75,7 +75,7 @@ def _create_generic_graph(
 
 	all_moments = sorted(list(set(item['moment'] for item in all_data)))
 
-	# Time, From, To, Metric, Region/Country ---
+	# Dropdowns
 	time_label_text = "View year:"
 	lbl_moment = QLabel(time_label_text)
 	combo_moment = RightClickableComboBox()
@@ -223,11 +223,11 @@ def _create_generic_graph(
 
 		density_mode = get_density_mode()
 		deriv_order = get_derivative_order()
-		is_ratio_mode = get_is_ratio_mode() and (selected_moment is None)
+		baseline_mode = get_baseline_mode() if selected_moment is None else "none"
 		base_year_disp = None
 		effective_val_label = value_label_str
 
-		# Density Transformation
+		# 1. Density Transformation
 		if density_mode == "location":
 			effective_val_label = f"{effective_val_label} / Location"
 			rloc_map = get_region_locations()
@@ -280,18 +280,19 @@ def _create_generic_graph(
 				if on_stats_computed:
 					on_stats_computed(None)
 				return
-
 			filtered = transformed
 
-		# Ratio / Indexation Transformation (100% at base year)
-		if is_ratio_mode:
-			# Base year is from_moment if picked; otherwise the earliest available year in filtered data
+		# 2. Baseline Transformation: Ratio (% change) or Difference (absolute delta)
+		if baseline_mode in ("ratio", "difference"):
 			all_filt_moments = sorted(set(i['moment'] for i in filtered))
 			base_year = from_moment if (from_moment is not None and from_moment in all_filt_moments) else (all_filt_moments[0] if all_filt_moments else None)
 
 			if base_year is not None:
 				base_year_disp = str(base_year - 1337) if is_yr_offset else str(base_year)
-				effective_val_label = f"% of Year {base_year_disp}"
+				if baseline_mode == "ratio":
+					effective_val_label = f"% of Year {base_year_disp} ({effective_val_label})"
+				else:
+					effective_val_label = f"Δ from Year {base_year_disp} ({effective_val_label})"
 
 				# Collect baseline values for each (entity, category) pair at base_year
 				base_lookup = {}
@@ -301,23 +302,27 @@ def _create_generic_graph(
 						cat = itm.get(category_key, '')
 						base_lookup[(ent, cat)] = float(itm[value_key])
 
-				ratio_transformed = []
+				base_transformed = []
 				for itm in filtered:
 					ent = itm.get(entity_key, itm.get('country', itm.get('region', '')))
 					cat = itm.get(category_key, '')
 					base_val = base_lookup.get((ent, cat))
 
-					# Exclude entities that had 0 or missing baseline value
-					if base_val is None or base_val <= 0:
+					if base_val is None:
+						continue
+					if baseline_mode == "ratio" and base_val == 0:
 						continue
 
 					copy_item = dict(itm)
-					copy_item[value_key] = ((float(itm[value_key]) / base_val) - 1.0) * 100.0
-					ratio_transformed.append(copy_item)
+					if baseline_mode == "ratio":
+						copy_item[value_key] = ((float(itm[value_key]) / base_val) - 1.0) * 100.0
+					else:
+						copy_item[value_key] = float(itm[value_key]) - base_val
+					base_transformed.append(copy_item)
 
-				filtered = ratio_transformed
+				filtered = base_transformed
 
-		# Derivative Transformation (Rate or Acceleration)
+		# 3. Derivative Transformation (Rate or Acceleration)
 		if deriv_order > 0:
 			if deriv_order == 1:
 				effective_val_label = f"Δ {effective_val_label} / Year"
@@ -369,7 +374,7 @@ def _create_generic_graph(
 							   get_is_moving_avg, get_period_value,
 							   get_stats_shading_all=get_stats_shading_all,
 							   is_year_offset=is_yr_offset,
-							   is_ratio_mode=is_ratio_mode,
+							   is_ratio_mode=(baseline_mode != "none"),
 							   base_year_disp=base_year_disp)
 			return
 
@@ -378,7 +383,7 @@ def _create_generic_graph(
 							  get_is_moving_avg, get_period_value, config, on_stats_computed, on_lines_plotted,
 							  entity_key=entity_key, all_region_str=all_region_str,
 							  is_year_offset=is_yr_offset,
-							  is_ratio_mode=is_ratio_mode,
+							  is_ratio_mode=(baseline_mode != "none"),
 							  base_year_disp=base_year_disp)
 
 	if set_redraw_fn:

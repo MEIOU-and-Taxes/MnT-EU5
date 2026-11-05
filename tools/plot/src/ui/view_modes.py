@@ -36,10 +36,8 @@ class ViewNodes:
 		self.is_stats_mode = checked
 		self.btn_stats_mode.setChecked(checked)
 		self.act_stats_mode.setChecked(checked)
-		self.stats_panel.setVisible(checked)
 		self.combo_stats_hide.setVisible(checked)
-		self.btn_moving_avg.setVisible(checked)
-		self.act_moving_avg.setVisible(checked)
+		self.lbl_percentiles_to_hide.setVisible(checked)
 		self.save_app_settings()
 		self.redraw_current_plot()
 
@@ -113,19 +111,23 @@ class ViewNodes:
 		self.save_app_settings()
 		self.redraw_current_plot()
 
-	def toggle_rate(self, checked):
-		self.is_rate = checked
-		self.btn_rate.setChecked(checked)
-		self.act_rate.setChecked(checked)
+	def set_baseline_mode(self, mode):
+		self.baseline_mode = mode
+		idx_map = {"none": 0, "ratio": 1, "difference": 2}
+		if hasattr(self, 'combo_baseline'):
+			self.combo_baseline.blockSignals(True)
+			self.combo_baseline.setCurrentIndex(idx_map.get(mode, 0))
+			self.combo_baseline.blockSignals(False)
 		self.save_app_settings()
 		self.redraw_current_plot()
 
-	def toggle_ratio_mode(self, checked):
-		self.is_ratio_mode = checked
-		self.btn_ratio_mode.setChecked(checked)
-		self.act_ratio_mode.setChecked(checked)
-		self.save_app_settings()
-		self.redraw_current_plot()
+	def handle_i_shortcut(self):
+		cur = self.combo_baseline.currentIndex()
+		self.set_baseline_mode("none" if cur == 1 else "ratio")
+
+	def handle_shift_i_shortcut(self):
+		cur = self.combo_baseline.currentIndex()
+		self.set_baseline_mode("none" if cur == 2 else "difference")
 
 	def toggle_bar_chart(self, checked):
 		self.is_bar_chart = checked
@@ -241,26 +243,23 @@ class ViewNodes:
 		elif self.is_bar_chart:
 			view_year_chosen = True
 
-		show_index_stats = not view_year_chosen
+		show_time_series_controls = not view_year_chosen
 
-		self.btn_ratio_mode.setVisible(show_index_stats)
-		self.btn_ratio_mode.setEnabled(show_index_stats)
-		if hasattr(self, 'act_ratio_mode'):
-			self.act_ratio_mode.setVisible(show_index_stats)
-			self.act_ratio_mode.setEnabled(show_index_stats)
+		self.lbl_baseline.setVisible(show_time_series_controls)
+		self.combo_baseline.setVisible(show_time_series_controls)
+		self.combo_baseline.setEnabled(show_time_series_controls)
 
-		self.btn_stats_mode.setVisible(show_index_stats)
-		self.btn_stats_mode.setEnabled(show_index_stats)
+		self.btn_stats_mode.setVisible(show_time_series_controls)
+		self.btn_stats_mode.setEnabled(show_time_series_controls)
 		if hasattr(self, 'act_stats_mode'):
-			self.act_stats_mode.setVisible(show_index_stats)
-			self.act_stats_mode.setEnabled(show_index_stats)
+			self.act_stats_mode.setVisible(show_time_series_controls)
+			self.act_stats_mode.setEnabled(show_time_series_controls)
 
-		self.combo_stats_hide.setVisible(show_index_stats and self.is_stats_mode)
-		self.combo_stats_hide.setEnabled(show_index_stats)
-		self.lbl_derivative.setVisible(show_index_stats)
-		self.combo_derivative.setVisible(show_index_stats)
+		self.combo_stats_hide.setVisible(show_time_series_controls and self.is_stats_mode)
+		self.lbl_percentiles_to_hide.setVisible(show_time_series_controls and self.is_stats_mode)
+		self.lbl_derivative.setVisible(show_time_series_controls)
+		self.combo_derivative.setVisible(show_time_series_controls)
 		self.stats_panel.setVisible(self.is_stats_panel_visible)
-		self.btn_moving_avg.setVisible(show_index_stats and not self.is_stats_mode)
 
 	def on_plot_updated(self):
 		self.cursor_hover_handler = InteractiveLineTooltip(
@@ -287,3 +286,7 @@ class ViewNodes:
 		mode = modes[idx] if 0 <= idx < len(modes) else "none"
 		self.set_density_mode(mode)
 
+	def _on_baseline_changed(self, idx):
+		modes = ["none", "ratio", "difference"]
+		mode = modes[idx] if 0 <= idx < len(modes) else "none"
+		self.set_baseline_mode(mode)

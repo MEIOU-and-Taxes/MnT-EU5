@@ -18,6 +18,7 @@ class SettingsStore:
 			self.stats_hide_idx = data.get("stats_hide_idx", 0)
 			self.density_mode = data.get("density_mode", "location" if data.get("is_density", False) else "none")
 			self.derivative_order = data.get("derivative_order", 1 if data.get("is_rate", False) else 0)
+			self.baseline_mode = data.get("baseline_mode", "ratio" if data.get("is_ratio_mode", False) else "none")
 			self.is_bar_chart = data.get("is_bar_chart", False)
 			self.is_year_offset = data.get("is_year_offset", False)
 			self.is_ratio_mode = data.get("is_ratio_mode", False)
@@ -36,14 +37,12 @@ class SettingsStore:
 				"autosave_interval_idx": self.autosave_interval_idx,
 				"period_value": self.period_value,
 				"is_stats_mode": self.is_stats_mode,
-				"stats_hide_idx": self.combo_stats_hide.currentIndex() if hasattr(self,
-																				  'combo_stats_hide') else self.stats_hide_idx,
+				"stats_hide_idx": self.combo_stats_hide.currentIndex() if hasattr(self, 'combo_stats_hide') else self.stats_hide_idx,
 				"density_mode": self.density_mode,
-				"derivative_order": self.combo_derivative.currentIndex() if hasattr(self,
-																					'combo_derivative') else self.derivative_order,
+				"derivative_order": self.combo_derivative.currentIndex() if hasattr(self, 'combo_derivative') else self.derivative_order,
+				"baseline_mode": self.baseline_mode,
 				"is_bar_chart": self.is_bar_chart,
 				"is_year_offset": self.is_year_offset,
-				"is_ratio_mode": self.is_ratio_mode,
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,

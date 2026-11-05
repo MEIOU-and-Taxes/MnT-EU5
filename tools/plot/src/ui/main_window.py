@@ -75,11 +75,11 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.current_preset_chart = None
 		self.is_log_scale = False
 		self.is_moving_average = False
-		self.is_ratio_mode = False	  
+		self.baseline_mode = "none"   # "none", "ratio", "difference"
 		self.is_bar_chart = False
 		self.is_stats_panel_visible = True
-		self.density_mode = "none"  # "none", "location", "population"
-		self.derivative_order = 0	# 0: Base, 1: Rate, 2: Acceleration
+		self.density_mode = "none"    # "none", "location", "population"
+		self.derivative_order = 0     # 0: Base, 1: Rate, 2: Acceleration
 		self.is_year_offset = False
 		self.stats_hide_idx = 0
 		self.period_value = 5
@@ -239,9 +239,11 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 			self.is_moving_average = False
 			self.btn_moving_avg.setChecked(False)
 			self.act_moving_avg.setChecked(False)
-			self.is_ratio_mode = False
-			self.btn_ratio_mode.setChecked(False)
-			self.act_ratio_mode.setChecked(False)
+			self.baseline_mode = "none"
+			if hasattr(self, 'combo_baseline'):
+				self.combo_baseline.blockSignals(True)
+				self.combo_baseline.setCurrentIndex(0)
+				self.combo_baseline.blockSignals(False)
 			self.density_mode = "none"
 			if hasattr(self, 'combo_density'):
 				self.combo_density.blockSignals(True)
@@ -274,7 +276,7 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 				get_stats_shading_all=lambda: self.stats_shading_all,
 				get_is_year_offset=lambda: self.is_year_offset,
 				get_derivative_order=lambda: self.combo_derivative.currentIndex(),
-				get_is_ratio_mode=lambda: self.is_ratio_mode,
+				get_baseline_mode=lambda: self.baseline_mode,
 				get_is_bar_chart=lambda: self.is_bar_chart
 			)
 			for combo in self.filter_widget_map.values():
@@ -306,9 +308,9 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 	def clear_tooltip_handler(self):
 		self.cursor_hover_handler = None
 
-
 	def update_stats_summary_panel(self, global_stats, year_stats=None):
-		if not global_stats or not self.is_stats_mode:
+		# Render stats in sidebar for both stats and non-stats modes
+		if not global_stats:
 			self.stats_panel.clear()
 			return
 		self.stats_panel.setPlainText(
