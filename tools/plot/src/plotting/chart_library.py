@@ -298,7 +298,7 @@ def _create_generic_graph(
 			filtered = transformed
 
 		elif density_mode == "population":
-			effective_val_label = f"{effective_val_label} / Population"
+			effective_val_label = f"{effective_val_label} / 1M Pop"
 			has_valid_population = False
 			transformed = []
 			for itm in filtered:
@@ -309,7 +309,7 @@ def _create_generic_graph(
 
 				if pop > 0:
 					has_valid_population = True
-					copy_item[value_key] = copy_item[value_key] / pop
+					copy_item[value_key] = (copy_item[value_key] / pop) * 1_000_000.0
 				else:
 					copy_item[value_key] = 0.0
 				transformed.append(copy_item)
@@ -433,11 +433,72 @@ def _create_generic_graph(
 		combo_region.currentIndexChanged.connect(update_plot)
 	update_plot()
 
+def _calculate_series_stats(country_series, all_values, value_label):
+	"""Helper to calculate consecutive deltas, overall deltas, volatility, and summary metrics."""
+	consecutive_changes = []
+	overall_changes = []
+	entity_volatilities = []
+
+	for ent, history in country_series.items():
+		vals = list(history.values())
+		if len(vals) >= 2:
+			h_sorted = sorted(history.keys())
+			entity_volatilities.append((
+				ent,
+				float(np.std(vals)),
+				h_sorted[0],
+				h_sorted[-1]
+			))
+			# Consecutive step deltas
+			for i in range(len(h_sorted) - 1):
+				y_from, y_to = h_sorted[i], h_sorted[i + 1]
+				v_from, v_to = history[y_from], history[y_to]
+				if v_from != 0 and v_to != 0:
+					delta = v_to - v_from
+					consecutive_changes.append((ent, delta, v_from, v_to, y_from, y_to))
+
+			# Non-consecutive: find maximum rise and fall across all chronological pairs
+			max_pos_delta = 0
+			best_pos_pair = None
+			max_neg_delta = 0
+			best_neg_pair = None
+
+			for i in range(len(h_sorted)):
+				for j in range(i + 1, len(h_sorted)):
+					y_i, y_j = h_sorted[i], h_sorted[j]
+					v_i, v_j = history[y_i], history[y_j]
+					if v_i == 0 or v_j == 0:
+						continue
+					d = v_j - v_i
+					if d > max_pos_delta:
+						max_pos_delta = d
+						best_pos_pair = (ent, d, v_i, v_j, y_i, y_j)
+					elif d < max_neg_delta:
+						max_neg_delta = d
+						best_neg_pair = (ent, d, v_i, v_j, y_i, y_j)
+
+			if best_pos_pair:
+				overall_changes.append(best_pos_pair)
+			if best_neg_pair:
+				overall_changes.append(best_neg_pair)
+
+	return {
+		"value_label": value_label,
+		"biggest_increase": sorted(consecutive_changes, key=lambda x: x[1], reverse=True)[:5],
+		"biggest_decrease": sorted(consecutive_changes, key=lambda x: x[1])[:5],
+		"overall_increase": sorted([c for c in overall_changes if c[1] > 0], key=lambda x: x[1], reverse=True)[:5],
+		"overall_decrease": sorted([c for c in overall_changes if c[1] < 0], key=lambda x: x[1])[:5],
+		"most_volatile": sorted(entity_volatilities, key=lambda x: x[1], reverse=True)[:5],
+		"overall_mean": float(np.mean(all_values)) if all_values else 0.0,
+		"overall_std": float(np.std(all_values)) if all_values else 0.0
+	}
+
 
 def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title, entity_key,
 					   hide_level, on_stats_computed, on_lines_plotted, get_is_moving_avg, get_period_value,
 					   get_stats_shading_all=lambda: False, is_year_offset=False,
 					   is_ratio_mode=False, base_year_disp=None):
+	ax._is_stats_mode_chart = True
 	moments_dict = {}
 	country_series = {}
 	for item in filtered_data:
@@ -451,7 +512,6 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 	offset = 1337 if is_year_offset else 0
 	x_coords = [m - offset for m in sorted_moments]
 
-	# Map hide level to active IDs
 	hide_map = {
 		0: ["max", "p99", "p95", "p75", "p50", "p25", "p05", "p01", "min"],
 		1: ["p99", "p95", "p75", "p50", "p25", "p05", "p01"],
@@ -470,7 +530,6 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 			elif p == 50: stat_curves[s_id].append(float(np.median(vals)))
 			else: stat_curves[s_id].append(float(np.percentile(vals, p)))
 
-	# Apply moving average if active
 	is_ma = get_is_moving_avg()
 	period = get_period_value()
 	if is_ma and period > 1:
@@ -483,70 +542,10 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 				]
 
 	ax._stats_moments_data = moments_dict
-
-	# Consecutive changes (data-plot to consecutive data-plot) & entity volatilities
-	consecutive_changes = []
-	overall_changes = []
-	entity_volatilities = []
-	for ent, history in country_series.items():
-		vals = list(history.values())
-		if len(vals) >= 2:
-			h_sorted = sorted(history.keys())
-			entity_volatilities.append((
-				ent,
-				float(np.std(vals)),
-				h_sorted[0],
-				h_sorted[-1]
-			))
-			# Consecutive step deltas
-			for i in range(len(h_sorted) - 1):
-				y_from, y_to = h_sorted[i], h_sorted[i + 1]
-				v_from, v_to = history[y_from], history[y_to]
-				# Exclude transitions to or from exactly 0
-				if v_from != 0 and v_to != 0:
-					delta = v_to - v_from
-					consecutive_changes.append((ent, delta, v_from, v_to, y_from, y_to))
-
-			# Non-consecutive: find maximum rise and fall across all chronological pairs
-			max_pos_delta = 0
-			best_pos_pair = None
-			max_neg_delta = 0
-			best_neg_pair = None
-
-			for i in range(len(h_sorted)):
-				for j in range(i + 1, len(h_sorted)):
-					y_i, y_j = h_sorted[i], h_sorted[j]
-					v_i, v_j = history[y_i], history[y_j]
-					# Exclude transitions to or from exactly 0
-					if v_i == 0 or v_j == 0:
-						continue
-					d = v_j - v_i
-					if d > max_pos_delta:
-						max_pos_delta = d
-						best_pos_pair = (ent, d, v_i, v_j, y_i, y_j)
-					elif d < max_neg_delta:
-						max_neg_delta = d
-						best_neg_pair = (ent, d, v_i, v_j, y_i, y_j)
-
-			if best_pos_pair:
-				overall_changes.append(best_pos_pair)
-			if best_neg_pair:
-				overall_changes.append(best_neg_pair)
-
 	all_values = [i[value_key] for i in filtered_data]
-	global_stats = {
-		"value_label": value_label,
-		"biggest_increase": sorted(consecutive_changes, key=lambda x: x[1], reverse=True)[:5],
-		"biggest_decrease": sorted(consecutive_changes, key=lambda x: x[1])[:5],
-		"overall_increase": sorted([c for c in overall_changes if c[1] > 0], key=lambda x: x[1], reverse=True)[:5],
-		"overall_decrease": sorted([c for c in overall_changes if c[1] < 0], key=lambda x: x[1], reverse=True)[:5],
-		"most_volatile": sorted(entity_volatilities, key=lambda x: x[1], reverse=True)[:5],
-		"overall_mean": float(np.mean(all_values)) if all_values else 0.0,
-		"overall_std": float(np.std(all_values)) if all_values else 0.0
-	}
+	global_stats = _calculate_series_stats(country_series, all_values, value_label)
 	ax._global_stats = global_stats
 
-	# Plot percentile lines
 	for s_id in active_ids:
 		name = PERCENTILE_BY_ID[s_id][1]
 		color = STAT_COLORS[s_id]
@@ -559,7 +558,6 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 			ax.fill_between(x_coords, stat_curves["p25"], stat_curves["p75"],
 							color=STATS_IQR_COLOR_FULL, alpha=STATS_IQR_ALPHA_FULL,
 							label='IQR (25%-75%)')
-
 		for low_id, high_id, color in STATS_UPPER_BANDS + STATS_LOWER_BANDS:
 			if low_id in stat_curves and high_id in stat_curves:
 				ax.fill_between(x_coords, stat_curves[low_id], stat_curves[high_id],
@@ -569,7 +567,6 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 			ax.fill_between(x_coords, stat_curves["p25"], stat_curves["p75"],
 							color=STATS_IQR_COLOR_CLASSIC, alpha=STATS_IQR_ALPHA_CLASSIC,
 							label='IQR (25%-75%)')
-
 		for low_id, high_id in [("min", "max"), ("p01", "p99"), ("p05", "p95")]:
 			if low_id in stat_curves and high_id in stat_curves:
 				ax.fill_between(x_coords, stat_curves[low_id], stat_curves[high_id],
@@ -588,7 +585,6 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 	ax._current_legend = ax.legend(loc="upper left", ncol=2 if len(active_ids) > 5 else 1, fontsize=9, framealpha=0.85)
 
 	ax.margins(x=MARGIN_BETWEEN_BORDERS_AND_OUTER_DATA_POINTS)
-
 	_draw_horizontal_axis(ax)
 
 	if on_stats_computed:
@@ -603,16 +599,30 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 						  config, on_stats_computed, on_lines_plotted,
 						  entity_key="region", all_region_str=STR_ALL_REGIONS,
 						  is_year_offset=False, is_ratio_mode=False, base_year_disp=None):
-	ax._stats_moments_data = None
-	ax._global_stats = None
-	if on_stats_computed:
-		on_stats_computed(None)
-
+	ax._is_stats_mode_chart = False
 	is_m_all = (m_filter == STR_ALL_MOMENTS)
 	is_c_picked = (c_filter != all_cat)
 	is_r_picked = (r_filter != all_region_str)
 	colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
 	offset = 1337 if is_year_offset else 0
+
+	# Calculate statistical summaries for standard mode as well
+	moments_dict = {}
+	country_series = {}
+	for item in filtered_data:
+		m = item['moment']
+		val = item[val_key]
+		ent = item.get(entity_key, item.get('country', item.get('region', '')))
+		moments_dict.setdefault(m, []).append((ent, val))
+		country_series.setdefault(ent, {})[m] = val
+
+	ax._stats_moments_data = moments_dict
+	all_values = [i[val_key] for i in filtered_data]
+	global_stats = _calculate_series_stats(country_series, all_values, val_label)
+	ax._global_stats = global_stats
+
+	if on_stats_computed:
+		on_stats_computed(global_stats)
 
 	if is_m_all and (is_c_picked or is_r_picked):
 		if is_r_picked and all_cat is None:
@@ -696,7 +706,7 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 
 		ax.bar(labels, values, color=b_colors)
 		ax.set_ylabel(val_label)
-		time_display = f"{m_filter} (Relative year)" if is_year_offset else f"Year: {m_filter}"
+		time_display = f"Year: T+{m_filter}" if is_year_offset else f"Year: {m_filter}"
 		ax.set_title(f"{val_label}s for {time_display}")
 		plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
 
@@ -707,10 +717,8 @@ def _render_standard_mode(ax, filtered_data, m_filter, c_filter, r_filter, all_c
 		ax.text(0.5, 0.5, "Please select a filter to display a graph.", ha='center', va='center')
 
 	_draw_horizontal_axis(ax)
-
 	ax.figure.canvas.draw_idle()
 	on_lines_plotted()
-
 
 # --- Chart entry wrappers ---
 def graph_country_metrics(*args, **kwargs):

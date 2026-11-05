@@ -70,6 +70,7 @@ CREDIT_HEADERS = [
 
 POPULATION_HEADERS = [
     "Total population",
+    "Wealth (potential tax base)",
     "Average literacy",
     "Average satisfaction",
     "Average prosperity",
@@ -78,30 +79,30 @@ POPULATION_HEADERS = [
     "Food production",
     "Garrison strength",
     "Average garrison percentage",
-    "Max population",
+    "Max population", # send sorted
     "Net building profit",
     "Num works of art",
     "Average population percentage",
-    "Potential tax base",
+    "Potential tax base", # = Wealth
     "Tax base",
     "Works of art star rating",
     "Average market access",
-    "Average control",
+    "Average control", # empty
     "Average max control",
     "Max garrison strength",
     "Average migration attraction",
     "Monthly conversion",
     "Num army constructions",
     "Num navy constructions",
-    "Average peasant enfranchisment",
+    "Average peasant enfranchisement",
     "Average proximity",
     "Average winter power",
     "Average local control",
     "Average local cultural unity",
     "Average local political power fraction",
     "Average local religious unity",
-    "Forts",
-    "Volcanoes",
+    "Forts", # last one checked
+    "Volcanoes", # constant
     "Earthquakes",
     "Combat",
     "Cities",

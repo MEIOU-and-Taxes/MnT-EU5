@@ -120,43 +120,44 @@ class InteractiveLineTooltip:
         moments_data = getattr(self.ax, '_stats_moments_data', None)
         global_stats = getattr(self.ax, '_global_stats', None)
         is_year_offset = getattr(self.ax, '_is_year_offset', False)
+        is_stats_mode_chart = getattr(self.ax, '_is_stats_mode_chart', False)
         year_offset = 1337 if is_year_offset else 0
         orig_x = cur_x + year_offset
 
-        if moments_data and orig_x in moments_data:
-            if self.on_stats_hover_callback:
-                vals = [x[1] for x in moments_data[orig_x]]
-                sorted_moments = sorted(moments_data.keys())
-                cur_idx = sorted_moments.index(orig_x)
-                prev_m = sorted_moments[cur_idx - 1] if cur_idx > 0 else None
+        if moments_data and orig_x in moments_data and self.on_stats_hover_callback:
+            vals = [x[1] for x in moments_data[orig_x]]
+            sorted_moments = sorted(moments_data.keys())
+            cur_idx = sorted_moments.index(orig_x)
+            prev_m = sorted_moments[cur_idx - 1] if cur_idx > 0 else None
 
-                yearly_increase = []
-                yearly_decrease = []
-                if prev_m is not None:
-                    prev_dict = dict(moments_data[prev_m])
-                    cur_dict = dict(moments_data[orig_x])
-                    step_deltas = []
-                    for ent, val_cur in cur_dict.items():
-                        if ent in prev_dict:
-                            val_prev = prev_dict[ent]
-                            # Exclude transitions to or from exactly 0
-                            if val_prev != 0 and val_cur != 0:
-                                delta = val_cur - val_prev
-                                step_deltas.append((ent, delta, val_prev, val_cur))
-                    yearly_increase = sorted(step_deltas, key=lambda x: x[1], reverse=True)[:3]
-                    yearly_decrease = sorted(step_deltas, key=lambda x: x[1])[:3]
+            yearly_increase = []
+            yearly_decrease = []
+            if prev_m is not None:
+                prev_dict = dict(moments_data[prev_m])
+                cur_dict = dict(moments_data[orig_x])
+                step_deltas = []
+                for ent, val_cur in cur_dict.items():
+                    if ent in prev_dict:
+                        val_prev = prev_dict[ent]
+                        if val_prev != 0 and val_cur != 0:
+                            delta = val_cur - val_prev
+                            step_deltas.append((ent, delta, val_prev, val_cur))
+                yearly_increase = sorted(step_deltas, key=lambda x: x[1], reverse=True)[:3]
+                yearly_decrease = sorted(step_deltas, key=lambda x: x[1])[:3]
 
-                self.on_stats_hover_callback(global_stats, {
-                    "year": orig_x,
-                    "prev_year": prev_m,
-                    "mean": float(np.mean(vals)),
-                    "median": float(np.median(vals)),
-                    "std": float(np.std(vals)),
-                    "count": len(vals),
-                    "biggest_increase": yearly_increase,
-                    "biggest_decrease": yearly_decrease
-                })
+            self.on_stats_hover_callback(global_stats, {
+                "year": orig_x,
+                "prev_year": prev_m,
+                "mean": float(np.mean(vals)),
+                "median": float(np.median(vals)),
+                "std": float(np.std(vals)),
+                "count": len(vals),
+                "biggest_increase": yearly_increase,
+                "biggest_decrease": yearly_decrease
+            })
 
+        # Only display the percentile curve tooltip in Stats Mode; otherwise proceed to normal line tooltip
+        if is_stats_mode_chart and moments_data and orig_x in moments_data:
             target_val, curve_label = None, ""
             min_curve_dist = float('inf')
             for line in self.lines:
@@ -177,7 +178,7 @@ class InteractiveLineTooltip:
                 max_ent = max((len(str(ent)) for ent, _ in top_formatted), default=10)
                 max_v = max((len(v_str) for _, v_str in top_formatted), default=6)
 
-                year_hdr = f"Year: {cur_x}" if is_year_offset else f"Year: {cur_x}"
+                year_hdr = f"Year: {cur_x}"
                 header_label = f"{year_hdr} | {curve_label}"
                 val_str = f"Val: {format_metric_3digits(target_val)}"
                 sep_len = max(len(header_label), max_ent + max_v + 5, 30)

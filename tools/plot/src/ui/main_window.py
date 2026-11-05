@@ -10,12 +10,12 @@ from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from PyQt6.QtCore import QTimer, QUrl
+from PyQt6.QtCore import QTimer, QUrl, Qt
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QAction, QDesktopServices
 from PyQt6.QtWidgets import (
 	QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 	QPushButton, QComboBox, QTextEdit, QMessageBox,
-	QFileDialog, QLabel
+	QFileDialog, QLabel, QApplication
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -80,6 +80,7 @@ class MainWindow(QMainWindow):
 		self.is_moving_average = False
 		self.is_ratio_mode = False	  
 		self.is_bar_chart = False
+		self.is_stats_panel_visible = True
 		self.density_mode = "none"  # "none", "location", "population"
 		self.derivative_order = 0	# 0: Base, 1: Rate, 2: Acceleration
 		self.is_year_offset = False
@@ -100,6 +101,7 @@ class MainWindow(QMainWindow):
 		self.load_key_configs()
 		self.load_graph_definitions()
 		self.display_info_screen()
+		QApplication.instance().installEventFilter(self)
 
 		# Constant 1-second watcher: checks and reads log files from disk
 		self.timer_file_watcher = QTimer(self)
@@ -140,6 +142,7 @@ class MainWindow(QMainWindow):
 			self.is_log_scale = data.get("is_log_scale", False)
 			self.is_moving_average = data.get("is_moving_average", False)
 			self.stats_shading_all = data.get("stats_shading_all", True)
+			self.is_stats_panel_visible = data.get("is_stats_panel_visible", True)
 		except Exception as e:
 			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
 
@@ -159,6 +162,7 @@ class MainWindow(QMainWindow):
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,
+				"is_stats_panel_visible": self.is_stats_panel_visible,
 			}
 			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
 				json.dump(data, f, indent=2)
@@ -240,6 +244,13 @@ class MainWindow(QMainWindow):
 		self.act_fullscreen.setShortcut(QKeySequence("F"))
 		self.act_fullscreen.toggled.connect(self.toggle_fullscreen)
 		menu_view.addAction(self.act_fullscreen)
+
+		self.act_stats_panel = QAction("Stats panel", self, checkable=True)
+		self.act_stats_panel.setChecked(self.is_stats_panel_visible)
+		self.act_stats_panel.setShortcut(QKeySequence("S"))
+		self.act_stats_panel.toggled.connect(self.toggle_stats_panel)
+		menu_view.addAction(self.act_stats_panel)
+		self.addAction(self.act_stats_panel)
 
 		self.act_bar_chart = QAction("Bar chart", self, checkable=True)
 		self.act_bar_chart.setChecked(self.is_bar_chart)
@@ -391,9 +402,10 @@ class MainWindow(QMainWindow):
 				padding: 8px; line-height: 1.4;
 			}
 		""")
-		self.stats_panel.setVisible(self.is_stats_mode)
+		self.stats_panel.setVisible(self.is_stats_panel_visible)
 		self.plot_container.addWidget(self.stats_panel, stretch=1)
 		self.layout.addLayout(self.plot_container, 1)
+
 
 		self.toolbar = NavigationToolbar(self.canvas, self)
 		self.layout.addWidget(self.toolbar)
@@ -403,36 +415,44 @@ class MainWindow(QMainWindow):
 		self.btn_charts = QPushButton("Charts [`]")
 		self.btn_preset_config = QPushButton("Presets [Ctrl+P]")
 		self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
-		self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately [Ctrl+R]")
+		self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately")
 
-		self.btn_bar_chart = QPushButton("Bar chart [B]")
+		self.btn_bar_chart = QPushButton("[B]ar chart")
 		self.btn_bar_chart.setCheckable(True)
 		self.btn_bar_chart.setChecked(self.is_bar_chart)
-		self.btn_bar_chart.setToolTip("Toggle Bar chart mode (single year view) [B]")
+		self.btn_bar_chart.setToolTip("Toggle Bar chart mode (single year view)")
 		self.btn_bar_chart.toggled.connect(self.act_bar_chart.setChecked)
 
 		self.btn_find = QPushButton("Find [Ctrl+F]")
-		self.btn_find.setToolTip("Quick search all dropdown values in the current chart [Ctrl+F]")
+		self.btn_find.setToolTip("Quick search all dropdown values in the current chart")
 		self.btn_find.clicked.connect(self.open_filter_search)
 
 		self.btn_stats_mode = QPushButton("Stats mode [T]")
 		self.btn_stats_mode.setCheckable(True)
 		self.btn_stats_mode.setChecked(self.is_stats_mode)
 
-		self.btn_year_offset = QPushButton("Relative year [Y]")
+		self.btn_year_offset = QPushButton("Relative [Y]ear")
 		self.btn_year_offset.setCheckable(True)
 		self.btn_year_offset.setChecked(self.is_year_offset)
-		self.btn_year_offset.setToolTip("Toggle time axis between absolute & relative [Y]")
+		self.btn_year_offset.setToolTip("Toggle time axis between absolute & relative")
 
+		self.btn_stats_panel = QPushButton("[S]tats panel")
+		self.btn_stats_panel.setCheckable(True)
+		self.btn_stats_panel.setChecked(self.is_stats_panel_visible)
+		self.btn_stats_panel.setToolTip("Toggle sidebar statistics panel")
+		self.btn_stats_panel.toggled.connect(self.act_stats_panel.setChecked)
+
+		self.lbl_percentiles_to_hide = QLabel("Percentiles to hide:")
 		self.combo_stats_hide = QComboBox()
 		self.combo_stats_hide.addItems([
-			"Hide: None",
-			"Hide: Min / Max",
-			"Hide: Min/Max & 99th/1st",
-			"Hide: Min/Max, 99th/1st, 95th/5th"
+			"None",
+			"Min / Max",
+			"Min/Max & 99th/1st",
+			"Min/Max, 99th/1st, 95th/5th"
 		])
 		if 0 <= self.stats_hide_idx < self.combo_stats_hide.count():
 			self.combo_stats_hide.setCurrentIndex(self.stats_hide_idx)
+		self.lbl_percentiles_to_hide.setVisible(self.is_stats_mode)
 		self.combo_stats_hide.setVisible(self.is_stats_mode)
 		self.combo_stats_hide.setToolTip("Select outliers/percentile bands to hide from the chart.")
 		self.combo_stats_hide.currentIndexChanged.connect(self._on_stats_hide_changed)
@@ -474,7 +494,8 @@ class MainWindow(QMainWindow):
 				  self.lbl_density, self.combo_density,
 				  self.btn_ratio_mode,
 				  self.lbl_derivative, self.combo_derivative,
-				  self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
+				  self.btn_log_scale, self.btn_moving_avg,
+				  self.lbl_percentiles_to_hide, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
 		self.top_button_layout.addStretch(1)
@@ -1779,5 +1800,137 @@ class MainWindow(QMainWindow):
 		self.combo_stats_hide.setEnabled(show_index_stats)
 		self.lbl_derivative.setVisible(show_index_stats)
 		self.combo_derivative.setVisible(show_index_stats)
-		self.stats_panel.setVisible(show_index_stats and self.is_stats_mode)
+		self.stats_panel.setVisible(self.is_stats_panel_visible)
 		self.btn_moving_avg.setVisible(show_index_stats and not self.is_stats_mode)
+
+	def toggle_stats_panel(self, checked):
+		self.is_stats_panel_visible = checked
+		if self.btn_stats_panel.isChecked() != checked:
+			self.btn_stats_panel.blockSignals(True)
+			self.btn_stats_panel.setChecked(checked)
+			self.btn_stats_panel.blockSignals(False)
+		self.stats_panel.setVisible(checked)
+		self.save_app_settings()
+
+	def _get_available_moments(self):
+		combo = self.filter_widget_map.get('from_year') or self.filter_widget_map.get('moment')
+		if not combo or combo.count() <= 1:
+			return []
+		moments = []
+		for i in range(1, combo.count()):
+			m = combo.itemData(i)
+			if m is not None:
+				moments.append(m)
+		return sorted(moments)
+
+	def adjust_year_start(self, delta):
+		# If in bar chart mode, adjust View Year instead
+		if self.is_bar_chart:
+			self.adjust_moment(delta)
+			return
+
+		combo = self.filter_widget_map.get('from_year')
+		if not combo or combo.count() <= 1:
+			return
+		moments = self._get_available_moments()
+		if not moments:
+			return
+
+		min_year, max_year = moments[0], moments[-1]
+		cur_year = combo.currentData()
+		if cur_year is None:
+			cur_year = min_year
+
+		target_year = cur_year + delta
+
+		to_combo = self.filter_widget_map.get('to_year')
+		end_year = to_combo.currentData() if to_combo else None
+		upper_limit = end_year if end_year is not None else max_year
+		target_year = min(target_year, upper_limit)
+
+		if target_year <= min_year:
+			combo.setCurrentIndex(0)
+		else:
+			best_m = min(moments, key=lambda m: abs(m - target_year))
+			if best_m > upper_limit:
+				best_m = upper_limit
+			idx = combo.findData(best_m)
+			if idx != -1:
+				combo.setCurrentIndex(idx)
+
+	def adjust_year_end(self, delta):
+		if self.is_bar_chart:
+			self.adjust_moment(delta)
+			return
+
+		combo = self.filter_widget_map.get('to_year')
+		if not combo or combo.count() <= 1:
+			return
+		moments = self._get_available_moments()
+		if not moments:
+			return
+
+		min_year, max_year = moments[0], moments[-1]
+		cur_year = combo.currentData()
+		if cur_year is None:
+			cur_year = max_year
+
+		target_year = cur_year + delta
+
+		from_combo = self.filter_widget_map.get('from_year')
+		start_year = from_combo.currentData() if from_combo else None
+		lower_limit = start_year if start_year is not None else min_year
+		target_year = max(target_year, lower_limit)
+
+		if target_year >= max_year:
+			combo.setCurrentIndex(0)
+		else:
+			best_m = min(moments, key=lambda m: abs(m - target_year))
+			if best_m < lower_limit:
+				best_m = lower_limit
+			idx = combo.findData(best_m)
+			if idx != -1:
+				combo.setCurrentIndex(idx)
+
+	def adjust_moment(self, delta):
+		combo = self.filter_widget_map.get('moment')
+		if not combo or combo.count() <= 1:
+			return
+		moments = self._get_available_moments()
+		if not moments:
+			return
+
+		cur_year = combo.currentData() or moments[-1]
+		target_year = cur_year + delta
+		best_m = min(moments, key=lambda m: abs(m - target_year))
+		idx = combo.findData(best_m)
+		if idx != -1:
+			combo.setCurrentIndex(idx)
+
+	def eventFilter(self, obj, event):
+		if event.type() == event.Type.KeyPress:
+			mods = event.modifiers()
+			is_keypad = bool(mods & Qt.KeyboardModifier.KeypadModifier)
+			if is_keypad:
+				step = 100 if (mods & Qt.KeyboardModifier.ShiftModifier) else (
+					10 if (mods & Qt.KeyboardModifier.ControlModifier) else 1)
+				key = event.key()
+
+				# Numpad 8: increment year start
+				if key in (Qt.Key.Key_8, Qt.Key.Key_Up):
+					self.adjust_year_start(step)
+					return True
+				# Numpad 2: decrement year start
+				elif key in (Qt.Key.Key_2, Qt.Key.Key_Down):
+					self.adjust_year_start(-step)
+					return True
+				# Numpad 6: increment year end
+				elif key in (Qt.Key.Key_6, Qt.Key.Key_Right):
+					self.adjust_year_end(step)
+					return True
+				# Numpad 4: decrement year end
+				elif key in (Qt.Key.Key_4, Qt.Key.Key_Left):
+					self.adjust_year_end(-step)
+					return True
+
+		return super().eventFilter(obj, event)
