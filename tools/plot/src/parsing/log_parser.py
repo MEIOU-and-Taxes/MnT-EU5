@@ -101,7 +101,7 @@ def parse_lines(line_iterable):
 
 		if lines_after_tg <= 15:
 			if current_tg_record is not None:
-				m = re.search(r"(-?\d+(?|\.\d+)?)$", line.strip())
+				m = re.search(r"(-?\d+(?:\.\d+)?)$", line.strip())
 				if m:
 					current_tg_record[SOCIETAL_VALUE_NAMES[lines_after_tg]] = float(m.group(1))
 					if lines_after_tg == 15:
