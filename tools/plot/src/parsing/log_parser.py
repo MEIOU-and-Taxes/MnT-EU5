@@ -1,10 +1,11 @@
 ﻿import os
 import re
 
-from src.parsing.computed_series import load_computed_series_definitions, evaluate_expression
-from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, EXCLUDED_KEYS_COUNTRY, \
-	market_stats, CREDIT_HEADERS, POPULATION_HEADERS
+import src.parsing.stores
+from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, market_stats, CREDIT_HEADERS, POPULATION_HEADERS
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
+from src.parsing.stores import parsed_file_signatures, tg_cumulative_store, bt_cumulative_store, gp_cumulative_store, \
+	pop_cumulative_store, rt_cumulative_store, mk_cumulative_store, region_locations_store, cr_cumulative_store
 
 # Column count mismatch callback (hooked by UI)
 _column_mismatch_callback = None
@@ -13,62 +14,8 @@ def set_column_mismatch_callback(cb):
 	global _column_mismatch_callback
 	_column_mismatch_callback = cb
 
-# Caches
-_bt_cache = None
-_gp_cache = None
-_pop_cache = None
-_mk_cache = None
-_rt_cache = None
-_tg_cache = None
-_cm_cache = None
-_rloc_cache = None
-_cr_cache = None
-_crm_cache = None
-_reg_cache = None
-
-# Cache signatures of files: filepath -> (mtime, size)
-parsed_file_signatures = {}
-
-# Cumulative stores across log overwrites / reloads
-tg_cumulative_store = {}
-bt_cumulative_store = {}
-gp_cumulative_store = {}
-pop_cumulative_store = {}
-rt_cumulative_store = {}
-mk_cumulative_store = {}
-region_locations_store = {}
-cr_cumulative_store = {}
-
 _mismatch_count = 0
 _valid_tg_count = 0
-
-def clear_all_caches():
-	global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache, _crm_cache, _reg_cache
-	_bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = _crm_cache = _reg_cache = None
-
-def reset_cumulative_history():
-	global _mismatch_count, _valid_tg_count
-	parsed_file_signatures.clear()
-	tg_cumulative_store.clear()
-	bt_cumulative_store.clear()
-	gp_cumulative_store.clear()
-	pop_cumulative_store.clear()
-	rt_cumulative_store.clear()
-	mk_cumulative_store.clear()
-	region_locations_store.clear()
-	cr_cumulative_store.clear()
-	clear_all_caches()
-
-
-def should_parse_file(filepath: str) -> bool:
-	if not os.path.exists(filepath):
-		return False
-	try:
-		s = os.stat(filepath)
-		sig = (s.st_mtime, s.st_size)
-		return parsed_file_signatures.get(filepath) != sig
-	except OSError:
-		return False
 
 def parse_log_file(filepath: str):
 	"""Streams a log file line by line without holding entire multi-hundred MBs in memory."""
@@ -271,35 +218,32 @@ def parse_lines(line_iterable):
 	commit_tg(current_tg_record)
 
 def parse_data_region_locations(data: str = None):
-	global _rloc_cache
-	if _rloc_cache is not None:
-		return _rloc_cache
+	if src.parsing.stores._rloc_cache is not None:
+		return src.parsing.stores._rloc_cache
 	if not region_locations_store and data:
 		parse_lines(data.splitlines())
-	_rloc_cache = region_locations_store
-	return _rloc_cache
+	src.parsing.stores._rloc_cache = region_locations_store
+	return src.parsing.stores._rloc_cache
 
 def get_region_locations():
 	return region_locations_store
 
 def parse_data_countries(data: str = None):
-	global _tg_cache
-	if _tg_cache is not None:
-		return _tg_cache
+	if src.parsing.stores._tg_cache is not None:
+		return src.parsing.stores._tg_cache
 	if not tg_cumulative_store and data:
 		parse_lines(data.splitlines())
-	_tg_cache = sorted(tg_cumulative_store.values(), key=lambda r: int(r.get("year", 0)))
-	return _tg_cache
+	src.parsing.stores._tg_cache = sorted(tg_cumulative_store.values(), key=lambda r: int(r.get("year", 0)))
+	return src.parsing.stores._tg_cache
 
 def parse_data_building_types(data: str = None):
-	global _bt_cache
-	if _bt_cache is not None:
-		return _bt_cache
+	if src.parsing.stores._bt_cache is not None:
+		return src.parsing.stores._bt_cache
 	if not bt_cumulative_store and data:
 		parse_lines(data.splitlines())
 	if not bt_cumulative_store:
-		_bt_cache = []
-		return _bt_cache
+		src.parsing.stores._bt_cache = []
+		return src.parsing.stores._bt_cache
 
 	all_moments = sorted(set(k[0] for k in bt_cumulative_store.keys()))
 	# Limit to active (region, building) pairs that actually exist in the game
@@ -315,40 +259,36 @@ def parse_data_building_types(data: str = None):
 				"region": reg
 			})
 
-	_bt_cache = filled_data
-	return _bt_cache
+	src.parsing.stores._bt_cache = filled_data
+	return src.parsing.stores._bt_cache
 
 def parse_data_goods_prices(data: str = None):
-	global _gp_cache
-	if _gp_cache is not None:
-		return _gp_cache
+	if src.parsing.stores._gp_cache is not None:
+		return src.parsing.stores._gp_cache
 	if not gp_cumulative_store and data:
 		parse_lines(data.splitlines())
-	_gp_cache = sorted(gp_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["good"]))
-	return _gp_cache
+	src.parsing.stores._gp_cache = sorted(gp_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["good"]))
+	return src.parsing.stores._gp_cache
 
 def parse_data_population(data: str = None):
-	global _pop_cache
-	if _pop_cache is not None:
-		return _pop_cache
+	if src.parsing.stores._pop_cache is not None:
+		return src.parsing.stores._pop_cache
 	if not pop_cumulative_store and data:
 		parse_lines(data.splitlines())
-	_pop_cache = sorted(pop_cumulative_store.values(), key=lambda x: (x["moment"], x["region"]))
-	return _pop_cache
+	src.parsing.stores._pop_cache = sorted(pop_cumulative_store.values(), key=lambda x: (x["moment"], x["region"]))
+	return src.parsing.stores._pop_cache
 
 def parse_data_road_types(data: str = None):
-	global _rt_cache
-	if _rt_cache is not None:
-		return _rt_cache
+	if src.parsing.stores._rt_cache is not None:
+		return src.parsing.stores._rt_cache
 	if not rt_cumulative_store and data:
 		parse_lines(data.splitlines())
-	_rt_cache = sorted(rt_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["road_type"]))
-	return _rt_cache
+	src.parsing.stores._rt_cache = sorted(rt_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["road_type"]))
+	return src.parsing.stores._rt_cache
 
 def parse_data_markets(data: str = None):
-	global _mk_cache
-	if _mk_cache is not None:
-		return _mk_cache
+	if src.parsing.stores._mk_cache is not None:
+		return src.parsing.stores._mk_cache
 	if not mk_cumulative_store and data:
 		parse_lines(data.splitlines())
 
@@ -366,320 +306,17 @@ def parse_data_markets(data: str = None):
 		if not record.get("population") and (m, reg) in pop_lookup:
 			record["population"] = pop_lookup[(m, reg)]
 
-	_mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["statistic"]))
-	return _mk_cache
+	src.parsing.stores._mk_cache = sorted(mk_cumulative_store.values(), key=lambda x: (x["moment"], x["region"], x["statistic"]))
+	return src.parsing.stores._mk_cache
 
 def parse_data_credit_raw(data: str = None):
-	global _cr_cache
-	if _cr_cache is not None:
-		return _cr_cache
+	if src.parsing.stores._cr_cache is not None:
+		return src.parsing.stores._cr_cache
 	if not cr_cumulative_store and data:
 		parse_lines(data.splitlines())
-	_cr_cache = sorted(cr_cumulative_store.values(), key=lambda x: (x["moment"], x["tag"]))
-	return _cr_cache
+	src.parsing.stores._cr_cache = sorted(cr_cumulative_store.values(), key=lambda x: (x["moment"], x["tag"]))
+	return src.parsing.stores._cr_cache
 
-def parse_data_country_metrics(data: str = None):
-	"""Combines Country Metrics and Credit Statistics into one unified dataset with computed metrics."""
-	global _cm_cache
-	if _cm_cache is not None:
-		return _cm_cache
-
-	countries = parse_data_countries(data)
-	parse_data_credit_raw(data)
-
-	computed_defs = [
-		d for d in load_computed_series_definitions()
-		if d["dataset_type"] in ("country", "country_metric", "country_stats", "credit", "credit_metric", "credit_stats")
-	]
-
-	transformed = []
-	processed_combos = set()
-
-	for r in countries:
-		locs_val = r.get("locations") or r.get("num_locations") or 0
-		try: country_locations = float(locs_val)
-		except (ValueError, TypeError): country_locations = 0.0
-
-		if country_locations <= 0:
-			continue
-
-		pop_val = r.get("Population", 0)
-		try: country_pop = float(pop_val)
-		except (ValueError, TypeError): country_pop = 0.0
-
-		year = int(r["year"]) if r.get("year") else 0
-		tag = r.get("tag", "")
-		name = r.get("name", "")
-		label = f"{name} ({tag})" if name and name != tag else tag
-		processed_combos.add((year, tag))
-
-		# Standard Country metrics
-		for k, v in r.items():
-			if k not in EXCLUDED_KEYS_COUNTRY and isinstance(v, (int, float)):
-				transformed.append({
-					"moment": year,
-					"region": label,
-					"country": label,
-					"tag": tag,
-					"metric": k,
-					"country_metric": k,
-					"value": float(v),
-					"locations": country_locations,
-					"population": country_pop,
-					"total_population": country_pop
-				})
-
-		# Credit metrics for this country and year
-		credit_rec = cr_cumulative_store.get((year, tag), {})
-		for header in CREDIT_HEADERS:
-			val = credit_rec.get(header)
-			if isinstance(val, (int, float)):
-				transformed.append({
-					"moment": year,
-					"region": label,
-					"country": label,
-					"tag": tag,
-					"credit_metric": header,
-					"metric": header,
-					"country_metric": header,
-					"value": float(val),
-					"locations": country_locations,
-					"population": country_pop,
-					"total_population": country_pop
-				})
-
-		# Combined variables for formulas
-		combined_vars = {}
-		combined_vars.update(r)
-		combined_vars.update(credit_rec)
-
-		for cdef in computed_defs:
-			calc_val = evaluate_expression(
-				cdef["expression"],
-				combined_vars,
-				precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
-			)
-
-			metric_name = cdef["metric_name"]
-			combined_vars[metric_name] = calc_val
-			combined_vars[metric_name.lower()] = calc_val
-			combined_vars[metric_name.replace(' ', '_')] = calc_val
-			combined_vars[metric_name.lower().replace(' ', '_')] = calc_val
-
-			transformed.append({
-				"moment": year,
-				"region": label,
-				"country": label,
-				"tag": tag,
-				"metric": cdef["metric_name"],
-				"country_metric": cdef["metric_name"],
-				"credit_metric": cdef["metric_name"],
-				"value": round(calc_val, 4),
-				"locations": country_locations,
-				"population": country_pop,
-				"total_population": country_pop
-			})
-
-	# Credit records that had no corresponding country record
-	for (moment, tag), record in cr_cumulative_store.items():
-		if (moment, tag) in processed_combos:
-			continue
-		country_rec = tg_cumulative_store.get((moment, tag))
-		name = country_rec.get("name", "") if country_rec else ""
-		label = f"{name} ({tag})" if name and name != tag else tag
-
-		locs = 0.0
-		pop = 0.0
-		if country_rec:
-			loc_val = country_rec.get("locations") or country_rec.get("num_locations") or 0
-			try: locs = float(loc_val)
-			except (ValueError, TypeError): locs = 0.0
-			p_val = country_rec.get("Population", 0)
-			try: pop = float(p_val)
-			except (ValueError, TypeError): pop = 0.0
-
-		for header in CREDIT_HEADERS:
-			val = record.get(header)
-			if isinstance(val, (int, float)):
-				transformed.append({
-					"moment": moment,
-					"region": label,
-					"country": label,
-					"tag": tag,
-					"credit_metric": header,
-					"metric": header,
-					"country_metric": header,
-					"value": float(val),
-					"locations": locs,
-					"population": pop,
-					"total_population": pop
-				})
-
-	_cm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["country_metric"]))
-	return _cm_cache
-
-def parse_data_regional_metrics(data: str = None):
-	"""Combines Building Types, Goods Prices, Population, Road Coverages, and Regional Computed Series."""
-	global _reg_cache
-	if _reg_cache is not None:
-		return _reg_cache
-
-	parse_data_region_locations(data)
-	parse_data_population(data)
-	parse_data_road_types(data)
-	buildings = parse_data_building_types(data)
-	prices = parse_data_goods_prices(data)
-
-	rloc_map = region_locations_store
-	computed_defs = [
-		d for d in load_computed_series_definitions()
-		if d["dataset_type"] in ("region", "regional", "regional_metric", "regional_stats")
-	]
-
-	transformed = []
-	context_vars_by_moment_region = {}
-
-	def get_locs(reg):
-		return float(rloc_map.get(reg, 0.0))
-
-	pop_lookup = {
-		(m, reg): float(rec.get("population", 0.0))
-		for (m, reg), rec in pop_cumulative_store.items()
-	}
-
-	# 1. Population & Regional SLV Metrics
-	for (m, reg), rec in pop_cumulative_store.items():
-		locs = get_locs(reg)
-		p_val = float(rec.get("population", 0.0))
-		v = context_vars_by_moment_region.setdefault(
-			(m, reg),
-			{"locations": locs, "population": p_val, "total_population": p_val}
-		)
-		v["population"] = p_val
-		v["total_population"] = p_val
-
-		for header in POPULATION_HEADERS:
-			if header in rec:
-				val = float(rec[header])
-				transformed.append({
-					"moment": m,
-					"region": reg,
-					"regional_metric": header,
-					"metric": header,
-					"statistic": header,
-					"value": val,
-					"locations": locs,
-					"population": p_val,
-					"total_population": p_val
-				})
-				# Make variables available to regional computed series formulas
-				v[header] = val
-				v[header.lower()] = val
-				v[header.lower().replace(' ', '_')] = val
-
-	# 2. Road Coverage
-	for (m, reg, road_type), rec in rt_cumulative_store.items():
-		locs = float(rec.get("locations", get_locs(reg)))
-		cov = float(rec.get("coverage_percentage", 0.0))
-		p_val = pop_lookup.get((m, reg), 0.0)
-		transformed.append({
-			"moment": m,
-			"region": reg,
-			"regional_metric": road_type,
-			"metric": road_type,
-			"road_type": road_type,
-			"value": cov,
-			"locations": locs,
-			"population": p_val,
-			"total_population": p_val
-		})
-		v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
-		v[road_type] = cov
-		v[road_type.lower().replace(' ', '_')] = cov
-
-	# 3. Building Types
-	for item in buildings:
-		m = item["moment"]
-		reg = item["region"]
-		bld = item["building"]
-		cnt = float(item["count"])
-		locs = get_locs(reg)
-		p_val = pop_lookup.get((m, reg), 0.0)
-		transformed.append({
-			"moment": m,
-			"region": reg,
-			"regional_metric": bld,
-			"metric": bld,
-			"building": bld,
-			"value": cnt,
-			"locations": locs,
-			"population": p_val,
-			"total_population": p_val
-		})
-		v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
-		v[bld] = cnt
-		v[bld.lower().replace(' ', '_')] = cnt
-
-	# 4. Goods Prices
-	for item in prices:
-		m = item["moment"]
-		reg = item["region"]
-		raw_good = item["good"]
-		good = raw_good if raw_good.lower().endswith(" price") else f"{raw_good} price"
-		price = float(item["price"])
-		locs = get_locs(reg)
-		p_val = pop_lookup.get((m, reg), 0.0)
-		transformed.append({
-			"moment": m,
-			"region": reg,
-			"regional_metric": good,
-			"metric": good,
-			"good": good,
-			"value": price,
-			"locations": locs,
-			"population": p_val,
-			"total_population": p_val
-		})
-		v = context_vars_by_moment_region.setdefault((m, reg), {"locations": locs, "population": p_val, "total_population": p_val})
-		v[good] = price
-		v[good.lower().replace(' ', '_')] = price
-		base_name = good[:-6] if good.lower().endswith(" price") else good
-		v[base_name] = price
-		v[base_name.lower().replace(' ', '_')] = price
-		v[f"price_{base_name.lower().replace(' ', '_')}"] = price
-
-	# 5. Regional Computed Series
-	if computed_defs:
-		for (m, reg), vars_dict in context_vars_by_moment_region.items():
-			locs = vars_dict.get("locations", get_locs(reg))
-			p_val = vars_dict.get("total_population", pop_lookup.get((m, reg), 0.0))
-			for cdef in computed_defs:
-				calc_val = evaluate_expression(
-					cdef["expression"],
-					vars_dict,
-					precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
-				)
-
-				# Feed back into context:
-				metric_name = cdef["metric_name"]
-				vars_dict[metric_name] = calc_val
-				vars_dict[metric_name.lower()] = calc_val
-				vars_dict[metric_name.replace(' ', '_')] = calc_val
-				vars_dict[metric_name.lower().replace(' ', '_')] = calc_val
-
-				transformed.append({
-					"moment": m,
-					"region": reg,
-					"regional_metric": cdef["metric_name"],
-					"metric": cdef["metric_name"],
-					"value": round(calc_val, 4),
-					"locations": locs,
-					"population": p_val,
-					"total_population": p_val
-				})
-
-	_reg_cache = sorted(transformed, key=lambda x: (x["moment"], x["region"], x["regional_metric"]))
-	return _reg_cache
 
 def _format_mismatch_report(values, expected_headers):
 	"""Generates a detailed diagnostic report when a column count mismatch occurs."""
