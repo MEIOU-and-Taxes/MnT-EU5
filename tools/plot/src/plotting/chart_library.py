@@ -16,6 +16,9 @@ from src.parsing.log_parser import get_region_locations
 from src.plotting.configs import MK_CONFIG, CM_CONFIG, REGIONAL_CONFIG
 from src.widgets.custom_combobox import RightClickableComboBox
 
+STR_START_MOMENT = "Start"
+STR_END_MOMENT = "End"
+
 # Reference bands by ID
 STATS_UPPER_BANDS = [
     ("p75", "p95", "#00ff00"),
@@ -81,6 +84,7 @@ def _create_generic_graph(
     get_stats_shading_all=lambda: False,
     get_is_year_offset=lambda: False,
     get_derivative_order=lambda: 0,
+    get_is_ratio_mode=lambda: False,
     *,
     config
 ):
@@ -109,11 +113,12 @@ def _create_generic_graph(
     is_year_offset = get_is_year_offset()
     ax._is_year_offset = is_year_offset
 
-    # Time dropdown
+    all_moments = sorted(list(set(item['moment'] for item in all_data)))
+
+    # --- ROW 0: Time Moment, Category/Metric, Entity (Country/Region/Market) ---
     time_label_text = "Relative Year:" if is_year_offset else "Time:"
     lbl_moment = QLabel(time_label_text)
     combo_moment = RightClickableComboBox()
-    all_moments = sorted(list(set(item['moment'] for item in all_data)))
     combo_moment._last_offset_state = is_year_offset
     combo_moment.addItem(STR_ALL_MOMENTS, userData=None)
     for m in all_moments:
@@ -157,6 +162,49 @@ def _create_generic_graph(
     else:
         filter_layout.setColumnStretch(4, 1)
 
+    # --- ROW 1: Interval of Interest (From: and To:) ---
+    lbl_from = QLabel("From:")
+    combo_from = RightClickableComboBox()
+    combo_from._last_offset_state = is_year_offset
+    combo_from.addItem(STR_START_MOMENT, userData=None)
+    for m in all_moments:
+        lbl = str(m - 1337) if is_year_offset else str(m)
+        combo_from.addItem(lbl, userData=m)
+    filter_widget_map['from_year'] = combo_from
+
+    lbl_to = QLabel("To:")
+    combo_to = RightClickableComboBox()
+    combo_to._last_offset_state = is_year_offset
+    combo_to.addItem(STR_END_MOMENT, userData=None)
+    for m in all_moments:
+        lbl = str(m - 1337) if is_year_offset else str(m)
+        combo_to.addItem(lbl, userData=m)
+    filter_widget_map['to_year'] = combo_to
+
+    filter_layout.addWidget(lbl_from, 1, 0)
+    filter_layout.addWidget(combo_from, 1, 1)
+    filter_layout.addWidget(lbl_to, 1, 2)
+    filter_layout.addWidget(combo_to, 1, 3)
+    filter_widgets_list.extend([lbl_from, combo_from, lbl_to, combo_to])
+
+    def _sync_combo_years(combo, default_text):
+        is_yr_offset = get_is_year_offset()
+        if getattr(combo, '_last_offset_state', None) != is_yr_offset:
+            combo._last_offset_state = is_yr_offset
+            cur_data = combo.currentData()
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItem(default_text, userData=None)
+            for m in all_moments:
+                lbl = str(m - 1337) if is_yr_offset else str(m)
+                combo.addItem(lbl, userData=m)
+            if cur_data is not None:
+                idx = combo.findData(cur_data)
+                combo.setCurrentIndex(idx if idx != -1 else 0)
+            else:
+                combo.setCurrentIndex(0)
+            combo.blockSignals(False)
+
     def update_plot():
         on_plot_cleared()
         ax.clear()
@@ -164,28 +212,19 @@ def _create_generic_graph(
         is_yr_offset = get_is_year_offset()
         ax._is_year_offset = is_yr_offset
 
-        # Dynamically refresh combobox items and label when offset toggle changes
-        if getattr(combo_moment, '_last_offset_state', None) != is_yr_offset:
-            combo_moment._last_offset_state = is_yr_offset
-            lbl_moment.setText("Relative Year:" if is_yr_offset else "Time:")
-            cur_data = combo_moment.currentData()
-            combo_moment.blockSignals(True)
-            combo_moment.clear()
-            combo_moment.addItem(STR_ALL_MOMENTS, userData=None)
-            for m in all_moments:
-                lbl = str(m - 1337) if is_yr_offset else str(m)
-                combo_moment.addItem(lbl, userData=m)
-            if cur_data is not None:
-                idx = combo_moment.findData(cur_data)
-                combo_moment.setCurrentIndex(idx if idx != -1 else 0)
-            else:
-                combo_moment.setCurrentIndex(0)
-            combo_moment.blockSignals(False)
+        # Refresh year dropdown labels when offset toggles
+        lbl_moment.setText("Relative Year:" if is_yr_offset else "Time:")
+        _sync_combo_years(combo_moment, STR_ALL_MOMENTS)
+        _sync_combo_years(combo_from, STR_START_MOMENT)
+        _sync_combo_years(combo_to, STR_END_MOMENT)
 
         m_filter = combo_moment.currentText()
         selected_moment = combo_moment.currentData()
         c_filter = combo_category.currentText()
         r_filter = combo_region.currentText() if combo_region else all_region_str
+
+        from_moment = combo_from.currentData()
+        to_moment = combo_to.currentData()
 
         if has_region and all_category_str and c_filter != all_category_str and r_filter != all_region_str:
             ax.text(0.5, 0.5, f"Please select a specific {category_label_str.replace(':', '')} OR a {region_label_str.replace(':', '')}, not both.",
@@ -193,9 +232,12 @@ def _create_generic_graph(
             ax.figure.canvas.draw_idle()
             return
 
+        # Base filter
         pre_filtered = [
             item for item in all_data
             if (selected_moment is None or item['moment'] == selected_moment) and
+               (from_moment is None or item['moment'] >= from_moment) and
+               (to_moment is None or item['moment'] <= to_moment) and
                (c_filter == all_category_str or c_filter == item.get(category_key)) and
                (r_filter == all_region_str or r_filter == (item.get(entity_key) or item.get('country') or item.get('region')))
         ]
@@ -210,20 +252,12 @@ def _create_generic_graph(
 
         density_mode = get_density_mode()
         deriv_order = get_derivative_order()
+        is_ratio_mode = get_is_ratio_mode()
         effective_val_label = value_label_str
-
-        if density_mode == "location":
-            effective_val_label = f"{effective_val_label} / Location"
-        elif density_mode == "population":
-            effective_val_label = f"{effective_val_label} / Population"
-
-        if deriv_order == 1:
-            effective_val_label = f"Δ {effective_val_label} / Year"
-        elif deriv_order == 2:
-            effective_val_label = f"Δ² {effective_val_label} / Year²"
 
         # Density Transformation
         if density_mode == "location":
+            effective_val_label = f"{effective_val_label} / Location"
             rloc_map = get_region_locations()
             has_valid_locations = False
             transformed = []
@@ -251,6 +285,7 @@ def _create_generic_graph(
             filtered = transformed
 
         elif density_mode == "population":
+            effective_val_label = f"{effective_val_label} / Population"
             has_valid_population = False
             transformed = []
             for itm in filtered:
@@ -276,8 +311,46 @@ def _create_generic_graph(
 
             filtered = transformed
 
-        # Derivative Transformation (Rate or Acceleration)
+        # Ratio / Indexation Transformation (100% at base year)
+        if is_ratio_mode:
+            # Base year is from_moment if picked; otherwise the earliest available year in filtered data
+            all_filt_moments = sorted(set(i['moment'] for i in filtered))
+            base_year = from_moment if (from_moment is not None and from_moment in all_filt_moments) else (all_filt_moments[0] if all_filt_moments else None)
+
+            if base_year is not None:
+                base_year_disp = str(base_year - 1337) if is_yr_offset else str(base_year)
+                effective_val_label = f"% of Year {base_year_disp}"
+
+                # Collect baseline values for each (entity, category) pair at base_year
+                base_lookup = {}
+                for itm in filtered:
+                    if itm['moment'] == base_year:
+                        ent = itm.get(entity_key, itm.get('country', itm.get('region', '')))
+                        cat = itm.get(category_key, '')
+                        base_lookup[(ent, cat)] = float(itm[value_key])
+
+                ratio_transformed = []
+                for itm in filtered:
+                    ent = itm.get(entity_key, itm.get('country', itm.get('region', '')))
+                    cat = itm.get(category_key, '')
+                    base_val = base_lookup.get((ent, cat))
+
+                    copy_item = dict(itm)
+                    if base_val is not None and abs(base_val) > 1e-12:
+                        copy_item[value_key] = (float(itm[value_key]) / base_val) * 100.0
+                    else:
+                        copy_item[value_key] = 0.0
+                    ratio_transformed.append(copy_item)
+
+                filtered = ratio_transformed
+
+        # 4. Derivative Transformation (Rate or Acceleration)
         if deriv_order > 0:
+            if deriv_order == 1:
+                effective_val_label = f"Δ {effective_val_label} / Year"
+            elif deriv_order == 2:
+                effective_val_label = f"Δ² {effective_val_label} / Year²"
+
             deriv_transformed = []
             entity_series_map = {}
             for item in filtered:
@@ -336,6 +409,8 @@ def _create_generic_graph(
 
     combo_moment.currentIndexChanged.connect(update_plot)
     combo_category.currentIndexChanged.connect(update_plot)
+    combo_from.currentIndexChanged.connect(update_plot)
+    combo_to.currentIndexChanged.connect(update_plot)
     if combo_region:
         combo_region.currentIndexChanged.connect(update_plot)
     update_plot()
@@ -476,7 +551,7 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
                             color=STATS_IQR_COLOR_CLASSIC, alpha=STATS_IQR_ALPHA_CLASSIC,
                             label='IQR (25%-75%)')
 
-        for low_id, high_id in STATS_OUTER_PAIRS:
+        for low_id, high_id in [("min", "max"), ("p01", "p99"), ("p05", "p95")]:
             if low_id in stat_curves and high_id in stat_curves:
                 ax.fill_between(x_coords, stat_curves[low_id], stat_curves[high_id],
                                 color=STATS_OUTER_COLOR, alpha=STATS_OUTER_ALPHA)

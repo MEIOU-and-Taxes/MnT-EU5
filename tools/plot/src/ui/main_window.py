@@ -77,8 +77,9 @@ class MainWindow(QMainWindow):
 		self.current_preset_chart = None
 		self.is_log_scale = False
 		self.is_moving_average = False
+		self.is_ratio_mode = False	  
 		self.density_mode = "none"  # "none", "location", "population"
-		self.derivative_order = 0    # 0: Base, 1: Rate, 2: Acceleration
+		self.derivative_order = 0	# 0: Base, 1: Rate, 2: Acceleration
 		self.is_year_offset = False
 		self.stats_hide_idx = 0
 		self.period_value = 5
@@ -132,6 +133,7 @@ class MainWindow(QMainWindow):
 			self.density_mode = data.get("density_mode", "location" if data.get("is_density", False) else "none")
 			self.derivative_order = data.get("derivative_order", 1 if data.get("is_rate", False) else 0)
 			self.is_year_offset = data.get("is_year_offset", False)
+			self.is_ratio_mode = data.get("is_ratio_mode", False)
 			self.is_log_scale = data.get("is_log_scale", False)
 			self.is_moving_average = data.get("is_moving_average", False)
 			self.stats_shading_all = data.get("stats_shading_all", True)
@@ -149,6 +151,7 @@ class MainWindow(QMainWindow):
 				"density_mode": self.density_mode,
 				"derivative_order": self.combo_derivative.currentIndex() if hasattr(self, 'combo_derivative') else self.derivative_order,
 				"is_year_offset": self.is_year_offset,
+				"is_ratio_mode": self.is_ratio_mode,
 				"is_log_scale": self.is_log_scale,
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,
@@ -234,25 +237,32 @@ class MainWindow(QMainWindow):
 		self.act_fullscreen.toggled.connect(self.toggle_fullscreen)
 		menu_view.addAction(self.act_fullscreen)
 
-		self.act_stats_mode = QAction("Stats mode", self, checkable=True)
-		self.act_stats_mode.setChecked(self.is_stats_mode)
-		self.act_stats_mode.setShortcut(QKeySequence("T"))
-		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
-		menu_view.addAction(self.act_stats_mode)
-
 		self.act_year_offset = QAction("Relative year", self, checkable=True)
 		self.act_year_offset.setChecked(self.is_year_offset)
 		self.act_year_offset.setShortcut(QKeySequence("Y"))
 		self.act_year_offset.toggled.connect(self.toggle_year_offset)
 		menu_view.addAction(self.act_year_offset)
 
-		self.act_density_loc = QAction("Location density mode", self, checkable=True)
+		self.act_stats_mode = QAction("Stats mode", self, checkable=True)
+		self.act_stats_mode.setChecked(self.is_stats_mode)
+		self.act_stats_mode.setShortcut(QKeySequence("T"))
+		self.act_stats_mode.toggled.connect(self.toggle_stats_mode)
+		menu_view.addAction(self.act_stats_mode)
+
+		self.act_ratio_mode = QAction("Index 100% (Ratio mode)", self, checkable=True)
+		self.act_ratio_mode.setChecked(self.is_ratio_mode)
+		self.act_ratio_mode.setShortcut(QKeySequence("I"))
+		self.act_ratio_mode.toggled.connect(self.toggle_ratio_mode)
+		menu_view.addAction(self.act_ratio_mode)
+		self.addAction(self.act_ratio_mode)
+
+		self.act_density_loc = QAction("Density: Loc", self, checkable=True)
 		self.act_density_loc.setChecked(self.density_mode == "location")
 		self.act_density_loc.setShortcut(QKeySequence("D"))
 		self.act_density_loc.triggered.connect(self.toggle_location_density)
 		menu_view.addAction(self.act_density_loc)
 
-		self.act_density_pop = QAction("Population density mode", self, checkable=True)
+		self.act_density_pop = QAction("Density: Pop", self, checkable=True)
 		self.act_density_pop.setChecked(self.density_mode == "population")
 		self.act_density_pop.setShortcut(QKeySequence("P"))
 		self.act_density_pop.triggered.connect(self.toggle_population_density)
@@ -276,7 +286,7 @@ class MainWindow(QMainWindow):
 		self.act_log_scale.toggled.connect(self.toggle_log_scale)
 		menu_view.addAction(self.act_log_scale)
 
-		self.act_moving_avg = QAction("Moving average", self, checkable=True)
+		self.act_moving_avg = QAction("Smooth", self, checkable=True)
 		self.act_moving_avg.setChecked(self.is_moving_average)
 		self.act_moving_avg.setShortcut(QKeySequence("W"))
 		self.act_moving_avg.toggled.connect(self.toggle_moving_average)
@@ -400,13 +410,13 @@ class MainWindow(QMainWindow):
 		self.combo_stats_hide.currentIndexChanged.connect(self._on_stats_hide_changed)
 
 		# Density Buttons
-		self.btn_density_loc = QPushButton("Loc density [D]")
+		self.btn_density_loc = QPushButton("Density: Loc [D]")
 		self.btn_density_loc.setCheckable(True)
 		self.btn_density_loc.setChecked(self.density_mode == "location")
 		self.btn_density_loc.setToolTip("Divides values by the number of locations [D].")
 		self.btn_density_loc.clicked.connect(self.toggle_location_density)
 
-		self.btn_density_pop = QPushButton("Pop density [P]")
+		self.btn_density_pop = QPushButton("Density: Pop [P]")
 		self.btn_density_pop.setCheckable(True)
 		self.btn_density_pop.setChecked(self.density_mode == "population")
 		self.btn_density_pop.setToolTip("Divides values by population [P].")
@@ -423,14 +433,20 @@ class MainWindow(QMainWindow):
 		self.btn_log_scale.setCheckable(True)
 		self.btn_log_scale.setChecked(self.is_log_scale)
 
-		self.btn_moving_avg = QPushButton("Moving avg [W]")
+		self.btn_moving_avg = QPushButton("Smooth [W]")
 		self.btn_moving_avg.setCheckable(True)
 		self.btn_moving_avg.setChecked(self.is_moving_average)
 		self.btn_moving_avg.setVisible(not self.is_stats_mode)
 
+		self.btn_ratio_mode = QPushButton("Index 100% [I]")
+		self.btn_ratio_mode.setCheckable(True)
+		self.btn_ratio_mode.setChecked(self.is_ratio_mode)
+		self.btn_ratio_mode.setToolTip("Scale values as percentages (100% at starting year) [I]")
+		self.btn_ratio_mode.toggled.connect(self.act_ratio_mode.setChecked)
+
 		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
 				  self.btn_year_offset, self.btn_stats_mode, self.btn_density_loc, self.btn_density_pop,
-				  self.combo_derivative, self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
+				  self.btn_ratio_mode, self.combo_derivative, self.btn_log_scale, self.btn_moving_avg, self.combo_stats_hide]:
 			self.top_button_layout.addWidget(w)
 
 		self.top_button_layout.addStretch(1)
@@ -767,6 +783,9 @@ class MainWindow(QMainWindow):
 			self.is_moving_average = False
 			self.btn_moving_avg.setChecked(False)
 			self.act_moving_avg.setChecked(False)
+			self.is_ratio_mode = False
+			self.btn_ratio_mode.setChecked(False)
+			self.act_ratio_mode.setChecked(False)
 			self.density_mode = "none"
 			self.btn_density_loc.setChecked(False)
 			self.btn_density_pop.setChecked(False)
@@ -796,7 +815,8 @@ class MainWindow(QMainWindow):
 				get_stats_hide_level=lambda: self.combo_stats_hide.currentIndex(),
 				get_stats_shading_all=lambda: self.stats_shading_all,
 				get_is_year_offset=lambda: self.is_year_offset,
-				get_derivative_order=lambda: self.combo_derivative.currentIndex()
+				get_derivative_order=lambda: self.combo_derivative.currentIndex(),
+				get_is_ratio_mode=lambda: self.is_ratio_mode
 			)
 			for combo in self.filter_widget_map.values():
 				if isinstance(combo, QComboBox):
@@ -1469,7 +1489,6 @@ class MainWindow(QMainWindow):
 			msg_box.setWindowTitle("Restore Session?")
 			msg_box.setText(f"Most recent saved session found:\n{file_label} ({mod_time})\n\nRestore?")
 			btn_yes = msg_box.addButton("Yes", QMessageBox.ButtonRole.YesRole)
-			btn_no = msg_box.addButton("No", QMessageBox.ButtonRole.NoRole)
 			btn_no_clear = msg_box.addButton("No, and clear error logs", QMessageBox.ButtonRole.DestructiveRole)
 			msg_box.setDefaultButton(btn_yes)
 			msg_box.exec()
@@ -1621,5 +1640,12 @@ class MainWindow(QMainWindow):
 		self.is_rate = checked
 		self.btn_rate.setChecked(checked)
 		self.act_rate.setChecked(checked)
+		self.save_app_settings()
+		self.redraw_current_plot()
+		
+	def toggle_ratio_mode(self, checked):
+		self.is_ratio_mode = checked
+		self.btn_ratio_mode.setChecked(checked)
+		self.act_ratio_mode.setChecked(checked)
 		self.save_app_settings()
 		self.redraw_current_plot()
