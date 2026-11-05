@@ -51,30 +51,30 @@ def parse_lines(line_iterable):
 			line = line.replace('\x00', '')
 
 		# --- TG handling ---
-		if '::TG' in line:
+		if '||TG' in line:
 			values = None
-			if '::TG1::' in line:
+			if '||TG1||' in line:
 				commit_tg(current_tg_record)
 				current_tg_record = None
-				pending_chunks = [line.split('::TG1::', 1)[1].strip()]
+				pending_chunks = [line.split('||TG1||', 1)[1].strip()]
 				lines_after_tg = 99
 				continue
-			elif '::TG2::' in line and pending_chunks:
-				pending_chunks.append(line.split('::TG2::', 1)[1].strip())
+			elif '||TG2||' in line and pending_chunks:
+				pending_chunks.append(line.split('||TG2||', 1)[1].strip())
 				lines_after_tg = 99
 				continue
-			elif '::TG3::' in line and len(pending_chunks) == 2:
-				pending_chunks.append(line.split('::TG3::', 1)[1].strip())
+			elif '||TG3||' in line and len(pending_chunks) == 2:
+				pending_chunks.append(line.split('||TG3||', 1)[1].strip())
 				lines_after_tg = 99
 				continue
-			elif '::TG4::' in line and len(pending_chunks) == 3:
-				pending_chunks.append(line.split('::TG4::', 1)[1].strip())
-				values = ":".join(pending_chunks).split(':')
+			elif '||TG4||' in line and len(pending_chunks) == 3:
+				pending_chunks.append(line.split('||TG4||', 1)[1].strip())
+				values = "|".join(pending_chunks).split('|')
 				pending_chunks = []
-			elif '::TG::' in line:
+			elif '||TG||' in line:
 				commit_tg(current_tg_record)
 				current_tg_record = None
-				values = line.split('::TG::', 1)[1].strip().split(':')
+				values = line.split('||TG||', 1)[1].strip().split(':')
 
 			if values is not None:
 				global _mismatch_count, _valid_tg_count
@@ -101,7 +101,7 @@ def parse_lines(line_iterable):
 
 		if lines_after_tg <= 15:
 			if current_tg_record is not None:
-				m = re.search(r"(-?\d+(?:\.\d+)?)$", line.strip())
+				m = re.search(r"(-?\d+(?|\.\d+)?)$", line.strip())
 				if m:
 					current_tg_record[SOCIETAL_VALUE_NAMES[lines_after_tg]] = float(m.group(1))
 					if lines_after_tg == 15:
@@ -111,17 +111,17 @@ def parse_lines(line_iterable):
 			continue
 
 		# --- Other tags ---
-		if '::BT:' in line:
-			part = line.split('::BT:', 1)[1]
-			p = part.split(':')
+		if '||BT|' in line:
+			part = line.split('||BT|', 1)[1]
+			p = part.split('|')
 			if len(p) >= 4:
 				try:
 					bt_cumulative_store[(int(p[0]), p[3].strip(), p[1].strip())] = int(p[2])
 				except (ValueError, TypeError):
 					pass
-		elif '::GP::' in line:
-			part = line.split('::GP::', 1)[1]
-			p = part.split(':')
+		elif '||GP||' in line:
+			part = line.split('||GP||', 1)[1]
+			p = part.split('|')
 			if len(p) >= 4 and 'Ocean' not in p[2]:
 				try:
 					moment = int(p[0])
@@ -132,9 +132,9 @@ def parse_lines(line_iterable):
 					}
 				except (ValueError, TypeError):
 					pass
-		elif '::POP::' in line:
-			part = line.split('::POP::', 1)[1]
-			p = part.split(':')
+		elif '||POP||' in line:
+			part = line.split('||POP||', 1)[1]
+			p = part.split('|')
 			if len(p) >= 3:
 				try:
 					moment = int(p[0])
@@ -153,9 +153,9 @@ def parse_lines(line_iterable):
 				except (ValueError, TypeError):
 					pass
 
-		elif '::RT::' in line:
-			part = line.split('::RT::', 1)[1]
-			p = part.split(':')
+		elif '||RT||' in line:
+			part = line.split('||RT||', 1)[1]
+			p = part.split('|')
 			if len(p) >= 5:
 				try:
 					moment = int(p[0])
@@ -168,14 +168,14 @@ def parse_lines(line_iterable):
 					}
 				except (ValueError, TypeError):
 					pass
-		elif '::MK::' in line:
-			part = line.split('::MK::', 1)[1]
-			p = part.split(':', 2)
+		elif '||MK||' in line:
+			part = line.split('||MK||', 1)[1]
+			p = part.split('|', 2)
 			if len(p) >= 3:
 				try:
 					moment = int(p[0])
 					market_name = p[1].strip()
-					raw_vals = p[2].strip().split(':')
+					raw_vals = p[2].strip().split('|')
 					vals = []
 					for v in raw_vals:
 						try: vals.append(float(v))
@@ -192,23 +192,23 @@ def parse_lines(line_iterable):
 						}
 				except (ValueError, TypeError):
 					pass
-		elif '::CR::' in line:
-			part = line.split('::CR::', 1)[1]
-			p = part.split(':', 2)
+		elif '||CR||' in line:
+			part = line.split('||CR||', 1)[1]
+			p = part.split('|', 2)
 			if len(p) >= 3:
 				try:
 					moment = int(p[0])
 					tag = p[1].strip()
-					raw_vals = p[2].strip().split(':')
+					raw_vals = p[2].strip().split('|')
 					record = {"moment": moment, "tag": tag, "country": tag}
 					for name, val_str in zip(CREDIT_HEADERS, raw_vals):
 						record[name] = parse_dynamic_numeric_value(val_str)
 					cr_cumulative_store[(moment, tag)] = record
 				except (ValueError, TypeError):
 					pass
-		elif '::RLOC::' in line:
-			part = line.split('::RLOC::', 1)[1]
-			p = part.split(':')
+		elif '||RLOC||' in line:
+			part = line.split('||RLOC||', 1)[1]
+			p = part.split('|')
 			if len(p) >= 2:
 				try:
 					region_locations_store[p[0].strip()] = int(float(p[1].strip().replace(',', '')))

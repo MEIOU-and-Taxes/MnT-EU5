@@ -107,20 +107,20 @@ class MenuBuilder:
 		menu_view.addAction(self.act_stats_mode)
 
 		self.act_baseline_ratio = QAction("Baseline: Ratio (%)", self)
-		self.act_baseline_ratio.setShortcut(QKeySequence("I"))
+		self.act_baseline_ratio.setShortcut(QKeySequence("Shift+I"))
 		self.act_baseline_ratio.triggered.connect(self.handle_i_shortcut)
 		menu_view.addAction(self.act_baseline_ratio)
 		self.addAction(self.act_baseline_ratio)
 
 		self.act_baseline_diff = QAction("Baseline: Difference (Δ)", self)
-		self.act_baseline_diff.setShortcut(QKeySequence("Shift+I"))
+		self.act_baseline_diff.setShortcut(QKeySequence("I"))
 		self.act_baseline_diff.triggered.connect(self.handle_shift_i_shortcut)
 		menu_view.addAction(self.act_baseline_diff)
 		self.addAction(self.act_baseline_diff)
 
 		self.act_density_loc = QAction("Density: Loc", self, checkable=True)
 		self.act_density_loc.setChecked(self.density_mode == "location")
-		self.act_density_loc.setShortcut(QKeySequence("D"))
+		self.act_density_loc.setShortcut(QKeySequence("G"))
 		self.act_density_loc.triggered.connect(self.toggle_location_density)
 		menu_view.addAction(self.act_density_loc)
 

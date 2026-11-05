@@ -17,7 +17,7 @@ def _excepthook(exc_type, exc, tb):
 
 if __name__ == '__main__':
     try:
-        sys.excepthook = _excepthook
+        # sys.excepthook = _excepthook
         app = QApplication(sys.argv)
 
         main_window = MainWindow()
