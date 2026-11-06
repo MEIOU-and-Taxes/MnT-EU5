@@ -110,7 +110,7 @@ print_regional_building_types = {
 
 print_regional_population = {
     every_region = {
-		# Locations
+		# Locations - float
 		set_local_variable = { name = avg_average_location_literacy  value = 0 }
 		set_local_variable = { name = avg_average_satisfaction  value = 0 }
 		set_local_variable = { name = avg_prosperity  value = 0 }
@@ -138,8 +138,28 @@ print_regional_population = {
 		set_local_variable = { name = avg_winter_power  value = 0 }
 		set_local_variable = { name = avg_local_control  value = 0 }
 		set_local_variable = { name = avg_local_cultural_unity  value = 0 }
-		set_local_variable = { name = avg_local_political_power_fraction  value = 0 }
 		set_local_variable = { name = avg_local_religious_unity  value = 0 }
+
+		set_local_variable = { name = tribes_power value = 0 }
+		set_local_variable = { name = peasants_power value = 0 }
+		set_local_variable = { name = clergy_power value = 0 }
+		set_local_variable = { name = cossacks_power value = 0 }
+		set_local_variable = { name = dhimmi_power value = 0 }
+		set_local_variable = { name = burghers_power value = 0 }
+		set_local_variable = { name = nobles_power value = 0 }
+		set_local_variable = { name = crown_power value = 0 }
+
+		set_local_variable = { name = avg_tribes_relative_power value = 0 }
+		set_local_variable = { name = avg_peasants_relative_power value = 0 }
+		set_local_variable = { name = avg_clergy_relative_power value = 0 }
+		set_local_variable = { name = avg_cossacks_relative_power value = 0 }
+		set_local_variable = { name = avg_dhimmi_relative_power value = 0 }
+		set_local_variable = { name = avg_burghers_relative_power value = 0 }
+		set_local_variable = { name = avg_nobles_relative_power value = 0 }
+		set_local_variable = { name = avg_crown_relative_power value = 0 }
+		set_local_variable = { name = avg_local_political_power_fraction  value = 0 }
+
+		# Locations - bool
 		set_local_variable = { name = has_fort value = 0 }
 		set_local_variable = { name = has_volcano value = 0 }
 		set_local_variable = { name = has_earthquakes value = 0 }
@@ -151,7 +171,7 @@ print_regional_population = {
 		set_local_variable = { name = is_looted value = 0 }
 		set_local_variable = { name = is_port value = 0 }
 
-		# Provinces
+		# Provinces - float
 		set_local_variable = { name = army_levy_percentage value = 0 }
 		set_local_variable = { name = army_levy_size value = 0 }
 		set_local_variable = { name = average_integration value = 0 }
@@ -182,15 +202,18 @@ print_regional_population = {
 		set_local_variable = { name = unemployed_pops_of_pop_type value = 0 }
 		set_local_variable = { name = unfilled_jobs value = 0 }
 		set_local_variable = { name = unfilled_jobs_percentage value = 0 }
-
-
+		# Provinces - bool
 		set_local_variable = { name = has_migration value = 0 }
 		set_local_variable = { name = has_possible_institution_spawn value = 0 }
 		set_local_variable = { name = is_starving value = 0 }
+		# Special
+		set_local_variable = { name = immigrating_locs value = 0 }
+		set_local_variable = { name = starving_locs value = 0 }
 
 		set_local_variable = { name = provinces value = 0 }
 		every_area_in_region = {
 			every_province_in_area = {
+				# Provinces - float
 				change_local_variable = { name = provinces add = 1 }
 				change_local_variable = { name = army_levy_percentage add = province_army_levy_percentage }
 				change_local_variable = { name = army_levy_size add = province_army_levy_size }
@@ -221,16 +244,28 @@ print_regional_population = {
 				change_local_variable = { name = rebel_progress add = province_rebel_progress }
 				change_local_variable = { name = unfilled_jobs add = unfilled_jobs_in_province }
 				change_local_variable = { name = unfilled_jobs_percentage add = unfilled_jobs_in_province_percentage }
+				# Provinces - bool
+				if = { limit = { has_migration = yes }
+					change_local_variable = { name = has_migration add = 1 }
+					change_local_variable = { name = immigrating_locs add = location_counter }
+				}
+				if = { limit = { has_possible_institution_spawn = yes } change_local_variable = { name = has_possible_institution_spawn add = 1 } }
+				if = { limit = { is_starving = yes }
+					change_local_variable = { name = is_starving add = 1 }
+					change_local_variable = { name = starving_locs add = location_counter } # Special
+				}
+
 			}
 		}
 
-		# Provinces
+		# Locations - change
 		every_location_in_region = {
+			# Locations - float
 			change_local_variable = { name = avg_average_location_literacy  add = average_location_literacy  }
 			change_local_variable = { name = avg_average_satisfaction  add = average_satisfaction  }
 			change_local_variable = { name = avg_prosperity  add = prosperity  }
 			change_local_variable = { name = avg_development  add = development  }
-			change_local_variable = { name = food_consumption  add = food_consumption  }
+			change_local_variable = { name = food_consumption  subtract = food_consumption  }
 			change_local_variable = { name = food_production  add = food_production  }
 			change_local_variable = { name = garrison_strength  add = garrison_strength  }
 			change_local_variable = { name = avg_garrison_percentage  add = garrison_percentage  }
@@ -242,7 +277,6 @@ print_regional_population = {
 			change_local_variable = { name = location_tax_base  add = location_tax_base  }
 			change_local_variable = { name = location_works_of_art_star_rating  add = location_works_of_art_star_rating  }
 			change_local_variable = { name = avg_market_access  add = market_access  }
-
 			change_local_variable = { name = avg_max_control  add = max_control  }
 			change_local_variable = { name = max_garrison_strength  add = max_garrison_strength  }
 			change_local_variable = { name = avg_migration_attraction  add = migration_attraction  }
@@ -257,6 +291,25 @@ print_regional_population = {
 			change_local_variable = { name = avg_local_political_power_fraction  add = local_political_power_fraction  }
 			change_local_variable = { name = avg_local_religious_unity  add = local_religious_unity  }
 
+			change_local_variable = { name = tribes_power add = "local_estate_power(estate_type:tribes_estate)" }
+			change_local_variable = { name = peasants_power add = "local_estate_power(estate_type:peasants_estate)" }
+			change_local_variable = { name = clergy_power add = "local_estate_power(estate_type:clergy_estate)" }
+			change_local_variable = { name = cossacks_power add = "local_estate_power(estate_type:cossacks_estate)" }
+			change_local_variable = { name = dhimmi_power add = "local_estate_power(estate_type:dhimmi_estate)" }
+			change_local_variable = { name = burghers_power add = "local_estate_power(estate_type:burghers_estate)" }
+			change_local_variable = { name = nobles_power add = "local_estate_power(estate_type:nobles_estate)" }
+			change_local_variable = { name = crown_power add = "local_estate_power(estate_type:crown_estate)" }
+
+			change_local_variable = { name = avg_tribes_relative_power add = "local_relative_estate_power(estate_type:tribes_estate)" }
+			change_local_variable = { name = avg_peasants_relative_power add = "local_relative_estate_power(estate_type:peasants_estate)" }
+			change_local_variable = { name = avg_clergy_relative_power add = "local_relative_estate_power(estate_type:clergy_estate)" }
+			change_local_variable = { name = avg_cossacks_relative_power add = "local_relative_estate_power(estate_type:cossacks_estate)" }
+			change_local_variable = { name = avg_dhimmi_relative_power add = "local_relative_estate_power(estate_type:dhimmi_estate)" }
+			change_local_variable = { name = avg_burghers_relative_power add = "local_relative_estate_power(estate_type:burghers_estate)" }
+			change_local_variable = { name = avg_nobles_relative_power add = "local_relative_estate_power(estate_type:nobles_estate)" }
+			change_local_variable = { name = avg_crown_relative_power add = "local_relative_estate_power(estate_type:crown_estate)" }
+
+			# Locations - bool
 			if = { limit = { has_fort = yes } change_local_variable = { name = has_fort add = 1 } }
 			if = { limit = { has_volcano = yes } change_local_variable = { name = has_volcano add = 1 } }
 			if = { limit = { has_earthquakes = yes } change_local_variable = { name = has_earthquakes add = 1 } }
@@ -264,12 +317,12 @@ print_regional_population = {
 			if = { limit = { is_city = yes } change_local_variable = { name = is_city add = 1 } }
 			if = { limit = { is_frozen = yes } change_local_variable = { name = is_frozen add = 1 } }
 			if = { limit = { is_holding_of_any_religious_order = yes } change_local_variable = { name = is_holding_of_any_religious_order add = 1 } }
-			if = { limit = { is_in_promoted_industry_area = yes } change_local_variable = { name = is_in_promoted_industry_area add = 1 } }
+			if = { limit = { is_in_promoted_industry_area = yes } change_local_variable = { name = is_in_promoted_industry_area add = 1 } } #ERROR
 			if = { limit = { is_looted = yes } change_local_variable = { name = is_looted add = 1 } }
 			if = { limit = { is_port = yes } change_local_variable = { name = is_port add = 1 } }
 
 			# # TEST ----------------
-			# set_local_variable = { name = prosperity value = prosperity }
+			# set_local_variable = { name = prosperity value = "local_estate_power(estate_type:nobles)" }
 			# error_log = "[SCOPE.GetLocalVariable('prosperity').GetValue]"
 			# remove_local_variable = prosperity
 			# # TEST ----------------
@@ -280,7 +333,7 @@ print_regional_population = {
 			# # TEST ----------------
 		}
 
-		# Locations
+		# Locations - divide - float
 		change_local_variable = { name = avg_average_location_literacy  divide = location_counter }
 		change_local_variable = { name = avg_average_satisfaction  divide = location_counter }
 		change_local_variable = { name = avg_prosperity  divide = location_counter }
@@ -298,7 +351,6 @@ print_regional_population = {
 		# change_local_variable = { name = location_tax_base  divide = location_counter }
 		# change_local_variable = { name = location_works_of_art_star_rating  divide = location_counter }
 		change_local_variable = { name = avg_market_access  divide = location_counter }
-		change_local_variable = { name = avg_control divide = location_counter }
 		change_local_variable = { name = avg_max_control  divide = location_counter }
 		# change_local_variable = { name = max_garrison_strength  divide = location_counter }
 		change_local_variable = { name = avg_migration_attraction  divide = location_counter }
@@ -310,10 +362,30 @@ print_regional_population = {
 		change_local_variable = { name = avg_winter_power  divide = location_counter }
 		change_local_variable = { name = avg_local_control  divide = location_counter }
 		change_local_variable = { name = avg_local_cultural_unity  divide = location_counter }
-		change_local_variable = { name = avg_local_estate_power  divide = location_counter }
+		# change_local_variable = { name = avg_local_estate_power  divide = location_counter }
 		change_local_variable = { name = avg_local_political_power_fraction  divide = location_counter }
-		change_local_variable = { name = avg_local_relative_estate_power  divide = location_counter }
+		# change_local_variable = { name = avg_local_relative_estate_power  divide = location_counter }
 		change_local_variable = { name = avg_local_religious_unity  divide = location_counter }
+		
+		# change_local_variable = { name = tribes_power divide = location_counter }
+		# change_local_variable = { name = peasants_power divide = location_counter }
+		# change_local_variable = { name = clergy_power divide = location_counter }
+		# change_local_variable = { name = cossacks_power divide = location_counter }
+		# change_local_variable = { name = dhimmi_power divide = location_counter }
+		# change_local_variable = { name = burghers_power divide = location_counter }
+		# change_local_variable = { name = nobles_power divide = location_counter }
+		# change_local_variable = { name = crown_power divide = location_counter }
+		change_local_variable = { name = avg_tribes_relative_power divide = location_counter }
+		change_local_variable = { name = avg_peasants_relative_power divide = location_counter }
+		change_local_variable = { name = avg_clergy_relative_power divide = location_counter }
+		change_local_variable = { name = avg_cossacks_relative_power divide = location_counter }
+		change_local_variable = { name = avg_dhimmi_relative_power divide = location_counter }
+		change_local_variable = { name = avg_burghers_relative_power divide = location_counter }
+		change_local_variable = { name = avg_nobles_relative_power divide = location_counter }
+		change_local_variable = { name = avg_crown_relative_power divide = location_counter }
+
+		
+		# Locations - divide - bool
 		# change_local_variable = { name = has_fort divide = location_counter }
 		# change_local_variable = { name = has_volcano divide = location_counter }
 		# change_local_variable = { name = has_earthquakes divide = location_counter }
@@ -325,48 +397,52 @@ print_regional_population = {
 		# change_local_variable = { name = is_looted divide = location_counter }
 		# change_local_variable = { name = is_port divide = location_counter }
 
-		# Provinces
-		# change_local_variable = { name = army_levy_percentage divide = local_var:provinces }
-		# change_local_variable = { name = army_levy_size divide = local_var:provinces }
-		change_local_variable = { name = average_integration divide = local_var:provinces }
-		# change_local_variable = { name = food divide = local_var:provinces }
-		change_local_variable = { name = food_percentage divide = local_var:provinces }
-		# change_local_variable = { name = location_wealth divide = local_var:provinces }
-		# change_local_variable = { name = max_food divide = local_var:provinces }
-		# change_local_variable = { name = monthly_food_production divide = local_var:provinces }
-		change_local_variable = { name = navy_levy_percentage  divide = local_var:provinces }
-		# change_local_variable = { name = navy_levy_size divide = local_var:provinces }
-		# change_local_variable = { name = peasants divide = local_var:provinces }
-		# change_local_variable = { name = burghers divide = local_var:provinces }
-		# change_local_variable = { name = clergy divide = local_var:provinces }
-		# change_local_variable = { name = laborers divide = local_var:provinces }
-		# change_local_variable = { name = nobles divide = local_var:provinces }
-		# change_local_variable = { name = slaves divide = local_var:provinces }
-		# change_local_variable = { name = soldiers divide = local_var:provinces }
-		# change_local_variable = { name = tribesmen divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_peasants divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_burghers divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_clergy divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_laborers divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_nobles divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_slaves divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_soldiers divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_tribesmen divide = local_var:provinces }
-		change_local_variable = { name = rebel_progress divide = local_var:provinces }
-		# change_local_variable = { name = unemployed_pops_of_pop_type divide = local_var:provinces }
-		# change_local_variable = { name = unfilled_jobs divide = local_var:provinces }
-		change_local_variable = { name = unfilled_jobs_percentage divide = local_var:provinces }
+		if = { limit = { local_var:provinces > 0 }
+			# Provinces - divide - float
+			change_local_variable = { name = army_levy_percentage divide = local_var:provinces }
+			# change_local_variable = { name = army_levy_size divide = local_var:provinces }
+			change_local_variable = { name = average_integration divide = local_var:provinces }
+			# change_local_variable = { name = food divide = local_var:provinces }
+			change_local_variable = { name = food_percentage divide = local_var:provinces }
+			# change_local_variable = { name = location_wealth divide = local_var:provinces }
+			# change_local_variable = { name = max_food divide = local_var:provinces }
+			# change_local_variable = { name = monthly_food_production divide = local_var:provinces }
+			change_local_variable = { name = navy_levy_percentage divide = local_var:provinces }
+			# change_local_variable = { name = navy_levy_size divide = local_var:provinces }
+			# change_local_variable = { name = peasants divide = local_var:provinces }
+			# change_local_variable = { name = burghers divide = local_var:provinces }
+			# change_local_variable = { name = clergy divide = local_var:provinces }
+			# change_local_variable = { name = laborers divide = local_var:provinces }
+			# change_local_variable = { name = nobles divide = local_var:provinces }
+			# change_local_variable = { name = slaves divide = local_var:provinces }
+			# change_local_variable = { name = soldiers divide = local_var:provinces }
+			# change_local_variable = { name = tribesmen divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_peasants divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_burghers divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_clergy divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_laborers divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_nobles divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_slaves divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_soldiers divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_tribesmen divide = local_var:provinces }
+			change_local_variable = { name = rebel_progress divide = local_var:provinces }
+			# change_local_variable = { name = unemployed_pops_of_pop_type divide = local_var:provinces }
+			# change_local_variable = { name = unfilled_jobs divide = local_var:provinces }
+			change_local_variable = { name = unfilled_jobs_percentage divide = local_var:provinces }
+			# Provinces - divide - bool
+			# change_local_variable = { name = has_migration divide = local_var:provinces }
+			# change_local_variable = { name = has_possible_institution_spawn divide = local_var:provinces }
+			# change_local_variable = { name = is_starving divide = local_var:provinces }
+			# Special
+			# change_local_variable = { name = immigrating_locs divide = local_var:provinces }
+			# change_local_variable = { name = starving_locs divide = local_var:provinces }
+		}
 
-		# change_local_variable = { name = has_migration divide = local_var:provinces }
-		# change_local_variable = { name = has_possible_institution_spawn divide = local_var:provinces }
-		# change_local_variable = { name = is_starving divide = local_var:provinces }
 
-
-
-		error_log = "||POP||[GetCurrentYear]|[THIS.GetRegion.GetNameWithNoTooltip]|[THIS.GetRegion.GetTotalPopulation]|[SLV('avg_average_location_literacy')]|[SLV('avg_average_satisfaction')]|[SLV('avg_prosperity')]|[SLV('avg_development')]|[SLV('food_consumption')]|[SLV('food_production')]|[SLV('garrison_strength')]|[SLV('avg_garrison_percentage')]|[SLV('location_max_population')]|[SLV('location_net_building_profit')]|[SLV('location_num_works_of_art')]|[SLV('avg_location_population_percentage')]|[SLV('location_potential_tax_base')]|[SLV('location_tax_base')]|[SLV('location_works_of_art_star_rating')]|[SLV('avg_market_access')]|[SLV('avg_control')]|[SLV('avg_max_control')]|[SLV('max_garrison_strength')]|[SLV('avg_migration_attraction')]|[SLV('monthly_conversion')]|[SLV('num_army_constructions')]|[SLV('num_navy_constructions')]|[SLV('avg_peasant_enfranchisment')]|[SLV('avg_proximity')]|[SLV('avg_winter_power')]|[SLV('avg_local_control')]|[SLV('avg_local_cultural_unity')]|[SLV('avg_local_political_power_fraction')]|[SLV('avg_local_religious_unity')]|[SLV('has_fort')]|[SLV('has_volcano')]|[SLV('has_earthquakes')]|[SLV('has_combat')]|[SLV('is_city')]|[SLV('is_frozen')]|[SLV('is_holding_of_any_religious_order')]|[SLV('is_in_promoted_industry_area')]|[SLV('is_looted')]|[SLV('is_port')]|[SLV('army_levy_percentage')]|[SLV('army_levy_size')]|[SLV('average_integration')]|[SLV('food')]|[SLV('food_percentage')]|[SLV('location_wealth')]|[SLV('max_food')]|[SLV('monthly_food_production')]|[SLV('navy_levy_percentage')]|[SLV('navy_levy_size')]|[SLV('peasants')]|[SLV('burghers')]|[SLV('clergy')]|[SLV('laborers')]|[SLV('nobles')]|[SLV('slaves')]|[SLV('soldiers')]|[SLV('tribesmen')]|[SLV('unemployed_peasants')]|[SLV('unemployed_burghers')]|[SLV('unemployed_clergy')]|[SLV('unemployed_laborers')]|[SLV('unemployed_nobles')]|[SLV('unemployed_slaves')]|[SLV('unemployed_soldiers')]|[SLV('unemployed_tribesmen')]|[SLV('rebel_progress')]|[SLV('unemployed_pops_of_pop_type')]|[SLV('unfilled_jobs')]|[SLV('unfilled_jobs_percentage')]|[SLV('has_migration')]|[SLV('has_possible_institution_spawn')]|[SLV('is_starving')]"
+		error_log = "||POP||[GetCurrentYear]|[THIS.GetRegion.GetNameWithNoTooltip]|[THIS.GetRegion.GetTotalPopulation]|[SLV('avg_average_location_literacy')]|[SLV('avg_average_satisfaction')]|[SLV('avg_prosperity')]|[SLV('avg_development')]|[SLV('food_consumption')]|[SLV('food_production')]|[SLV('garrison_strength')]|[SLV('avg_garrison_percentage')]|[SLV('location_max_population')]|[SLV('location_net_building_profit')]|[SLV('location_num_works_of_art')]|[SLV('avg_location_population_percentage')]|[SLV('location_potential_tax_base')]|[SLV('location_tax_base')]|[SLV('location_works_of_art_star_rating')]|[SLV('avg_market_access')]|[SLV('avg_max_control')]|[SLV('max_garrison_strength')]|[SLV('avg_migration_attraction')]|[SLV('monthly_conversion')]|[SLV('num_army_constructions')]|[SLV('num_navy_constructions')]|[SLV('avg_peasant_enfranchisment')]|[SLV('avg_proximity')]|[SLV('avg_winter_power')]|[SLV('avg_local_control')]|[SLV('avg_local_cultural_unity')]|[SLV('avg_local_political_power_fraction')]|[SLV('avg_local_religious_unity')]|[SLV('tribes_power')]|[SLV('peasants_power')]|[SLV('clergy_power')]|[SLV('cossacks_power')]|[SLV('dhimmi_power')]|[SLV('burghers_power')]|[SLV('nobles_power')]|[SLV('crown_power')]|[SLV('avg_tribes_relative_power')]|[SLV('avg_peasants_relative_power')]|[SLV('avg_clergy_relative_power')]|[SLV('avg_cossacks_relative_power')]|[SLV('avg_dhimmi_relative_power')]|[SLV('avg_burghers_relative_power')]|[SLV('avg_nobles_relative_power')]|[SLV('avg_crown_relative_power')]|[SLV('has_fort')]|[SLV('has_volcano')]|[SLV('has_earthquakes')]|[SLV('has_combat')]|[SLV('is_city')]|[SLV('is_frozen')]|[SLV('is_holding_of_any_religious_order')]|[SLV('is_in_promoted_industry_area')]|[SLV('is_looted')]|[SLV('is_port')]|[SLV('army_levy_percentage')]|[SLV('army_levy_size')]|[SLV('average_integration')]|[SLV('food')]|[SLV('food_percentage')]|[SLV('location_wealth')]|[SLV('max_food')]|[SLV('monthly_food_production')]|[SLV('navy_levy_percentage')]|[SLV('navy_levy_size')]|[SLV('peasants')]|[SLV('burghers')]|[SLV('clergy')]|[SLV('laborers')]|[SLV('nobles')]|[SLV('slaves')]|[SLV('soldiers')]|[SLV('tribesmen')]|[SLV('unemployed_peasants')]|[SLV('unemployed_burghers')]|[SLV('unemployed_clergy')]|[SLV('unemployed_laborers')]|[SLV('unemployed_nobles')]|[SLV('unemployed_slaves')]|[SLV('unemployed_soldiers')]|[SLV('unemployed_tribesmen')]|[SLV('rebel_progress')]|[SLV('unemployed_pops_of_pop_type')]|[SLV('unfilled_jobs')]|[SLV('unfilled_jobs_percentage')]|[SLV('has_migration')]|[SLV('has_possible_institution_spawn')]|[SLV('is_starving')]|[SLV('immigrating_locs')]|[SLV('starving_locs')]"
 	}
-
-	# Locations
+	# Remove
+	# Locations - float
 	remove_local_variable = locs
 	remove_local_variable = avg_average_location_literacy
 	remove_local_variable = avg_average_satisfaction
@@ -395,9 +471,27 @@ print_regional_population = {
 	remove_local_variable = avg_winter_power
 	remove_local_variable = avg_local_control
 	remove_local_variable = avg_local_cultural_unity
-	remove_local_variable = avg_local_estate_power
 	remove_local_variable = avg_local_political_power_fraction
 	remove_local_variable = avg_local_religious_unity
+
+	remove_local_variable = tribes_power
+	remove_local_variable = peasants_power
+	remove_local_variable = clergy_power
+	remove_local_variable = cossacks_power
+	remove_local_variable = dhimmi_power
+	remove_local_variable = burghers_power
+	remove_local_variable = nobles_power
+	remove_local_variable = crown_power
+	remove_local_variable = avg_tribes_relative_power
+	remove_local_variable = avg_peasants_relative_power
+	remove_local_variable = avg_clergy_relative_power
+	remove_local_variable = avg_cossacks_relative_power
+	remove_local_variable = avg_dhimmi_relative_power
+	remove_local_variable = avg_burghers_relative_power
+	remove_local_variable = avg_nobles_relative_power
+	remove_local_variable = avg_crown_relative_power
+
+	# Locations - bool
 	remove_local_variable = has_fort
 	remove_local_variable = has_volcano
 	remove_local_variable = has_earthquakes
@@ -408,8 +502,7 @@ print_regional_population = {
 	remove_local_variable = is_in_promoted_industry_area
 	remove_local_variable = is_looted
 	remove_local_variable = is_port
-
-	# Provinces
+	# Provinces - float
 	remove_local_variable = army_levy_percentage
 	remove_local_variable = army_levy_size
 	remove_local_variable = average_integration
@@ -440,8 +533,11 @@ print_regional_population = {
 	remove_local_variable = unemployed_pops_of_pop_type
 	remove_local_variable = unfilled_jobs
 	remove_local_variable = unfilled_jobs_percentage
-
+	# Provinces - bool
 	remove_local_variable = has_migration
 	remove_local_variable = has_possible_institution_spawn
 	remove_local_variable = is_starving
+	# Provinces - special
+	remove_local_variable = immigrating_locs
+	remove_local_variable = starving_locs
 }
