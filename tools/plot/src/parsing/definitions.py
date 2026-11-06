@@ -69,6 +69,7 @@ CREDIT_HEADERS = [
 ]
 
 POPULATION_HEADERS = [
+    # Locations - float
     "Total population",
     "Average literacy",
     "Average satisfaction",
@@ -82,11 +83,9 @@ POPULATION_HEADERS = [
     "Net building profit",
     "Num works of art",
     "Average population percentage",
-    "Wealth (Potential tax base)",
     "Tax base",
     "Works of art star rating",
     "Average market access",
-    "Average control", # empty
     "Average max control",
     "Max garrison strength",
     "Average migration attraction",
@@ -96,10 +95,29 @@ POPULATION_HEADERS = [
     "Average peasant enfranchisement",
     "Average proximity",
     "Average winter power",
-    "Average local control",
-    "Average local cultural unity",
-    "Average local political power fraction",
-    "Average local religious unity",
+    "Average control",
+    "Average cultural unity",
+    "Average political power fraction",
+    "Average religious unity",
+    
+    "Tribes power",
+    "Peasants power",
+    "Clergy power",
+    "Cossacks power",
+    "Dhimmi power",
+    "Burghers power",
+    "Nobles power",
+    "Crown power", # only trivial values
+    "Tribes relative power",
+    "Peasants relative power",
+    "Clergy relative power",
+    "Cossacks relative power",
+    "Dhimmi relative power",
+    "Burghers relative power",
+    "Nobles relative power",
+    "Crown relative power", # only trivial values
+    
+    # Locations - bool
     "Forts",
     "Volcanoes", # constant
     "Earthquakes", # constant
@@ -110,4 +128,44 @@ POPULATION_HEADERS = [
     "Locations in promoted industry area",
     "Locations looted",
     "Ports",
+    
+    # Provinces - floats
+    "Army levy percentage",
+    "Army levy size",
+    "Average integration",
+    "Food",
+    "Food percentage",
+    "Wealth (Potential tax base)",
+    "Max food",
+    "Monthly food production",
+    "Navy levy percentage",
+    "Navy levy size",
+    "Peasants",
+    "Burghers",
+    "Clergy",
+    "Laborers",
+    "Nobles",
+    "Slaves",
+    "Soldiers",
+    "Tribesmen",
+    # some are both positive and negative
+    "Unemployed peasants",
+    "Unemployed burghers",
+    "Unemployed clergy",
+    "Unemployed laborers",
+    "Unemployed nobles",
+    "Unemployed slaves",
+    "Unemployed soldiers",
+    "Unemployed tribesmen",
+
+    "Rebel progress",
+    "Unfilled jobs",
+    "Unfilled jobs percentage",
+    # Provinces - bool
+    "Immigration destinations (provinces)",
+    "Provinces having promotable institution spawns",
+    "Provinces starving",
+    # Provinces - special
+    "Immigration destinations (locations)",
+    "Locations starving",
 ]
