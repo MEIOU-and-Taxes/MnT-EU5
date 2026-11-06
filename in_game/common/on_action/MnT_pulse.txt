@@ -247,7 +247,6 @@ pulse_yearly_MnT = {
 	effect = {
 		random_country = {
 			trigger_event_silently = { id = mnt_centers.1 }
-			trigger_event_silently = { id = credit_dynamic_buildings.1 }
 		}
 	}
 }
@@ -310,8 +309,6 @@ monthly_country_pulse_MnT = {
 		cost_of_the_court.2
 		# Aggregate the total diplomatic spending demands in each market
 		diplomatic_spending.2
-		# Aggregate dynamic credit-influencing buildings (since PM/building outputs cannot be influenced directly)
-		credit_dynamic_buildings.1
 	}
 }
 
@@ -321,10 +318,34 @@ MnT_credit_yearly_interest = {
 	}
 }
 
+# One global monthly sequence; no yearly or per-country building aggregation.
 MnT_credit_monthly_loan_demand = {
-	effect = {
-		mnt_recompute_credit_loan_demand_world = yes
+	on_actions = {
+		# Match the other monthly demand aggregators, then wait for a native tick.
+		delay = { days = 1 }
+		MnT_credit_monthly_prepare
+		delay = { days = 1 }
+		MnT_credit_monthly_finish
 	}
+}
+
+MnT_credit_monthly_prepare = {
+	effect = {
+		random_country = {
+			limit = { great_power_ranking = 1 }
+			trigger_event_silently = { id = credit_dynamic_buildings.1 }
+		}
+		mnt_aggregate_credit_loan_demand_world = yes
+		every_country = {
+			limit = { is_human = yes has_global_variable = mnt_credit_debug }
+			error_log = "MNT-Credit phase=monthly-before-engine-refresh"
+			mnt_log_credit_interest_snapshot = yes
+		}
+	}
+}
+
+MnT_credit_monthly_finish = {
+	effect = { mnt_refresh_credit_interest_world = yes }
 }
 
 # Only human players need synchronous quotes between loans while paused.

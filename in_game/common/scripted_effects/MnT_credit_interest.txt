@@ -10,6 +10,10 @@
 }
 
 mnt_apply_credit_interest_modifier = {
+	# Capture one coherent set of inputs before evaluating the rate and tooltip.
+	set_variable = { name = mnt_credit_rate_supply value = mnt_credit_current_market_supply }
+	set_variable = { name = mnt_credit_rate_demand value = mnt_credit_current_lending_demand }
+	set_variable = { name = mnt_credit_rate_building_supply value = mnt_credit_market_building_supply_safe }
 	set_local_variable = { name = mnt_credit_market_interest_size value = 0 }
 	if = {
 		limit = { exists = capital.market }
@@ -98,4 +102,26 @@ mnt_apply_yearly_credit_interest = {
 			recalculate_immediately = yes
 		}
 	}
+	if = { limit = { is_human = yes has_global_variable = mnt_credit_debug }
+		error_log = "MNT-Credit phase=interest-applied"
+	}
+	mnt_log_credit_interest_snapshot = yes
+}
+
+# Enable with the global variable mnt_credit_debug; disabled by default.
+mnt_log_credit_interest_snapshot = {
+    if = { limit = { is_human = yes has_global_variable = mnt_credit_debug }
+        set_local_variable = { name = mnt_debug_native_supply value = mnt_credit_current_market_supply }
+        set_local_variable = { name = mnt_debug_native_demand value = 0 }
+        if = { limit = { exists = capital.market }
+            set_local_variable = { name = mnt_debug_native_demand value = "capital.market.goods_demand_in_market(goods:credit)" }
+        }
+        set_local_variable = { name = mnt_debug_rate_supply value = mnt_credit_tooltip_market_supply }
+        set_local_variable = { name = mnt_debug_rate_demand value = mnt_credit_lending_demand }
+        set_local_variable = { name = mnt_debug_rate_buildings value = mnt_credit_tooltip_building_supply }
+        set_local_variable = { name = mnt_debug_rate_quote value = mnt_credit_lending_quote }
+        set_local_variable = { name = mnt_debug_rate_adjustment value = mnt_credit_market_interest_adjustment }
+        set_local_variable = { name = mnt_debug_rate_matches value = mnt_credit_rate_matches_applied }
+        error_log = "MNT-Credit [THIS.GetCountry.GetNameWithNoTooltip] native_supply=[SCOPE.GetLocalVariable('mnt_debug_native_supply').GetValue] native_demand=[SCOPE.GetLocalVariable('mnt_debug_native_demand').GetValue] rate_supply=[SCOPE.GetLocalVariable('mnt_debug_rate_supply').GetValue] rate_demand=[SCOPE.GetLocalVariable('mnt_debug_rate_demand').GetValue] institutional_stockpile_addition=[SCOPE.GetLocalVariable('mnt_debug_rate_buildings').GetValue] quote=[SCOPE.GetLocalVariable('mnt_debug_rate_quote').GetValue] calculated=[SCOPE.GetLocalVariable('mnt_debug_rate_adjustment').GetValue] applied_matches_calculated=[SCOPE.GetLocalVariable('mnt_debug_rate_matches').GetValue]"
+    }
 }

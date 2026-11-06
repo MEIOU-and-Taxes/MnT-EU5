@@ -25,18 +25,16 @@ mnt_credit_loan_demand_multiplier = {
 	}
 }
 
-# Read-only market-scope values used by the Credit-price interest tooltip.
-mnt_credit_tooltip_market_price = { value = "goods:credit.price_in_market(root)" }
-
-mnt_credit_tooltip_market_supply = {
-	value = 0
+# Native supply, read only when capturing a new interest calculation.
+mnt_credit_current_market_supply = {
+    value = 0
     if = { limit = { exists = capital.market }
         value = "capital.market.goods_supply_in_market(goods:credit)"
     }
 }
 
 # Country scope: replace only the cached loan component with the live ledger.
-mnt_credit_lending_demand = {
+mnt_credit_current_lending_demand = {
     if = { limit = {
             exists = capital.market
             exists = capital.market.location
@@ -71,14 +69,11 @@ mnt_credit_market_interest_adjustment = {
 	}
 }
 
-# Lending quote supply helper
-mnt_credit_total_market_supply = { value = mnt_credit_tooltip_market_supply }
-
 # Credit has base price 1. The one-unit buffer keeps empty markets finite.
 mnt_credit_lending_quote = {
 	value = mnt_credit_lending_demand
 	add = 1
-	divide = { value = mnt_credit_total_market_supply
+	divide = { value = mnt_credit_tooltip_market_supply
 		add = 1
 	}
 	min = 0.01
@@ -122,37 +117,46 @@ mnt_credit_market_building_supply_safe = {
     else = { value = 0 }
 }
 
-# Market credit supply
-mnt_credit_tooltip_building_supply = {
-    value = 0
-    if = { limit = {
-            exists = capital.market.location
-            capital.market.location = { has_variable = mnt_credit_market_building_supply }
-        }
-        value = "capital.market.location.var:mnt_credit_market_building_supply"
+# All interest tooltip inputs come from the calculation that was actually applied.
+# Fallbacks keep old saves readable until their first refresh.
+mnt_credit_lending_demand = {
+    if = { limit = { has_variable = mnt_credit_rate_demand }
+        value = var:mnt_credit_rate_demand
     }
+    else = { value = mnt_credit_current_lending_demand }
 }
 
-# Physical bank trade goods supply
-mnt_credit_tooltip_goods_supply = {
-    value = 0
-    if = { limit = { exists = capital.market }
-        value = "capital.market.goods_supply_in_market(goods:credit)"
-        # Subtract the building credit so only bank production remains
-        subtract = mnt_credit_tooltip_building_supply
-    }
-}
-
-# Total supply (banks + buildings) (Directly from the market ledger)
 mnt_credit_tooltip_market_supply = {
-    value = 0
-    if = { limit = { exists = capital.market }
-        value = "capital.market.goods_supply_in_market(goods:credit)"
+    if = { limit = { has_variable = mnt_credit_rate_supply }
+        value = var:mnt_credit_rate_supply
     }
+    else = { value = mnt_credit_current_market_supply }
 }
 
-# Credit balance (supply - demand)
+mnt_credit_tooltip_building_supply = {
+    if = { limit = { has_variable = mnt_credit_rate_building_supply }
+        value = var:mnt_credit_rate_building_supply
+    }
+    else = { value = mnt_credit_market_building_supply_safe }
+}
+
 mnt_credit_tooltip_market_balance = {
     value = mnt_credit_tooltip_market_supply
     subtract = mnt_credit_lending_demand
+}
+
+# Market scope; the goods price is separate from the inputs used for loan interest.
+mnt_credit_tooltip_market_price = { value = "goods:credit.price_in_market(root)" }
+
+# Use the documented comparison form; the numeric readback returned zero in-game.
+mnt_credit_rate_matches_applied = {
+    if = { limit = {
+        country_modifier_strength = {
+            modifier = mnt_credit_interest_market_price
+            value = mnt_credit_market_interest_adjustment
+        }
+    }
+        value = 1
+    }
+    else = { value = 0 }
 }

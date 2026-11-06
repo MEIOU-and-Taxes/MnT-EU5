@@ -293,7 +293,7 @@ mnt_aggregate_credit_loan_demand_markets = {
 	}
 }
 
-mnt_recompute_credit_loan_demand_world = {
+mnt_aggregate_credit_loan_demand_world = {
 	every_market_in_world = {
 		if = {
 			limit = { location = { has_variable = mnt_credit_loan_work_debt } }
@@ -310,7 +310,21 @@ mnt_recompute_credit_loan_demand_world = {
 		}
 	}
 	mnt_aggregate_credit_loan_demand_markets = yes
-	# Refresh each country once, after all markets have their final demand.
+}
+
+# Retain the synchronous path for player loan changes and old-save cache repair.
+mnt_recompute_credit_loan_demand_world = {
+	mnt_aggregate_credit_loan_demand_world = yes
+	every_country = { mnt_apply_yearly_credit_interest = yes }
+}
+
+# Run after the engine has had a daily tick to incorporate the monthly mutations.
+mnt_refresh_credit_interest_world = {
+	every_market_in_world = {
+		if = { limit = { location = { has_variable = mnt_credit_loan_final_scale } }
+			mnt_prepare_credit_quote_market_base = yes
+		}
+	}
 	every_country = { mnt_apply_yearly_credit_interest = yes }
 }
 
