@@ -49,6 +49,20 @@ class ToolbarBuilder:
 
 		# Controls layout
 		self.top_button_layout = QHBoxLayout()
+
+		# History back and forward buttons
+		self.btn_history_back = QPushButton("◀")
+		self.btn_history_back.setToolTip("Back in history [Alt+Left]")
+		self.btn_history_back.setFixedWidth(30)
+		self.btn_history_back.setEnabled(False)
+		self.btn_history_back.clicked.connect(self.history_back)
+
+		self.btn_history_forward = QPushButton("▶")
+		self.btn_history_forward.setToolTip("Forward in history [Alt+Right]")
+		self.btn_history_forward.setFixedWidth(30)
+		self.btn_history_forward.setEnabled(False)
+		self.btn_history_forward.clicked.connect(self.history_forward)
+
 		self.btn_charts = QPushButton("Charts [`]")
 		self.btn_preset_config = QPushButton("Presets [Ctrl+P]")
 		self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
@@ -100,7 +114,7 @@ class ToolbarBuilder:
 		self.combo_density.addItems(["Base", "Population", "Location"])
 		density_idx_map = {"none": 0, "population": 1, "location": 2}
 		self.combo_density.setCurrentIndex(density_idx_map.get(self.density_mode, 0))
-		self.combo_density.setToolTip("Select density normalization (Right-click to reset): Base, Population [P], Location [D]")
+		self.combo_density.setToolTip("Select density normalization (Right-click to reset): Base, Population [P], Location [G]")
 		self.combo_density.currentIndexChanged.connect(self._on_density_changed)
 
 		# Baseline Mode Dropdown (Ratio / Difference)
@@ -109,7 +123,7 @@ class ToolbarBuilder:
 		self.combo_baseline.addItems(["Base", "Ratio (%)", "Difference (Δ)"])
 		base_idx_map = {"none": 0, "ratio": 1, "difference": 2}
 		self.combo_baseline.setCurrentIndex(base_idx_map.get(getattr(self, 'baseline_mode', 'none'), 0))
-		self.combo_baseline.setToolTip("Scale values from start year: Base, Ratio (%) [I], Difference (Δ) [Shift+I]")
+		self.combo_baseline.setToolTip("Scale values from start year: Base, Ratio (%) [Shift+I], Difference (Δ) [I]")
 		self.combo_baseline.currentIndexChanged.connect(self._on_baseline_changed)
 
 		# Derivative Dropdown
@@ -129,7 +143,8 @@ class ToolbarBuilder:
 		self.btn_moving_avg.setChecked(self.is_moving_average)
 		self.btn_moving_avg.setVisible(True)
 
-		for w in [self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
+		for w in [self.btn_history_back, self.btn_history_forward,
+				  self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
 				  self.btn_bar_chart, self.btn_year_offset, self.btn_stats_mode,
 				  self.lbl_density, self.combo_density,
 				  self.lbl_baseline, self.combo_baseline,
@@ -166,9 +181,9 @@ class ToolbarBuilder:
 		self.sc_next_metric = QShortcut(QKeySequence("."), self)
 		self.sc_next_metric.activated.connect(self.select_next_metric)
 
-		# Hotkeys to navigate preset pages
-		self.sc_prev_preset_page = QShortcut(QKeySequence("Left"), self)
+		# Preset page shortcuts shifted to Shift+Left / Shift+Right to prevent conflicts with Alt+Left/Right history
+		self.sc_prev_preset_page = QShortcut(QKeySequence("Shift+Left"), self)
 		self.sc_prev_preset_page.activated.connect(self._prev_preset_page)
 
-		self.sc_next_preset_page = QShortcut(QKeySequence("Right"), self)
+		self.sc_next_preset_page = QShortcut(QKeySequence("Shift+Right"), self)
 		self.sc_next_preset_page.activated.connect(self._next_preset_page)

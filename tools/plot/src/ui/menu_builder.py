@@ -69,6 +69,22 @@ class MenuBuilder:
 		# View Menu
 		menu_view = menubar.addMenu("&View")
 
+		self.act_history_back = QAction("Back in History", self)
+		self.act_history_back.setShortcut(QKeySequence("Alt+Left"))
+		self.act_history_back.triggered.connect(self.history_back)
+		self.act_history_back.setEnabled(False)
+		menu_view.addAction(self.act_history_back)
+		self.addAction(self.act_history_back)
+
+		self.act_history_forward = QAction("Forward in History", self)
+		self.act_history_forward.setShortcut(QKeySequence("Alt+Right"))
+		self.act_history_forward.triggered.connect(self.history_forward)
+		self.act_history_forward.setEnabled(False)
+		menu_view.addAction(self.act_history_forward)
+		self.addAction(self.act_history_forward)
+
+		menu_view.addSeparator()
+
 		act_find = QAction("Find Filter / Metric...", self)
 		act_find.setShortcut(QKeySequence("Ctrl+F"))
 		act_find.triggered.connect(self.open_filter_search)
@@ -180,6 +196,11 @@ class MenuBuilder:
 		act_refresh.triggered.connect(self.manual_refresh)
 		menu_tools.addAction(act_refresh)
 
+		act_computed_series = QAction("Computed Series", self)
+		act_computed_series.setShortcut(QKeySequence("C"))
+		act_computed_series.triggered.connect(self.open_computed_series_dialog)
+		menu_tools.addAction(act_computed_series)
+
 		act_analysis = QAction("Data Analysis Toolkit", self)
 		act_analysis.setShortcut(QKeySequence("A"))
 		act_analysis.triggered.connect(self.open_analysis_toolkit)
@@ -205,5 +226,5 @@ class MenuBuilder:
 					act_clear_data, act_export, act_charts, act_presets,
 					self.act_fullscreen, self.act_stats_mode, self.act_year_offset,
 					self.act_density_loc, self.act_density_pop, self.act_log_scale,
-					self.act_moving_avg, act_refresh, act_analysis, act_settings]:
+					self.act_moving_avg, act_refresh, act_computed_series, act_analysis, act_settings]:
 			self.addAction(act)

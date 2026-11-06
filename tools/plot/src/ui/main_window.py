@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 )
 
 import src.parsing.stores
+import src.parsing.computed_series
 from src.analysis_toolkit import AnalysisToolkitDialog
 from src.constants import (
 	REFRESH_PERIOD_MS, AUTOSAVE_PERIOD_MS, AUTOSAVE_FILE, APPDATA_DIR, KEY_CONFIGS_PATH,
@@ -25,6 +26,7 @@ from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session
 from src.services.settings_store import SettingsStore
 from src.ui.filter_controller import FilterController
+from src.ui.history_manager import HistoryManager
 from src.ui.log_watcher import MainMenuLogWatcher
 from src.ui.menu_builder import MenuBuilder
 from src.ui.preset_bar import PresetBar
@@ -34,13 +36,14 @@ from src.ui.time_navigation import TimeNavigation
 from src.ui.toolbar_builder import ToolbarBuilder
 from src.ui.view_modes import ViewNodes
 from src.widgets.chart_dialog import ChartSelectionDialog
+from src.widgets.computed_series_dialog import ComputedSeriesDialog
 from src.widgets.hotkey_utils import sort_hotkeys
 from src.widgets.preset_dialog import PresetConfigDialog
 from src.widgets.settings_dialog import SettingsDialog
 from tools.shared.fetch_logs import get_from_config
 
 class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, FilterController,
-				 TimeNavigation, SessionController, ToolbarBuilder, ViewNodes, QMainWindow):
+				 TimeNavigation, SessionController, ToolbarBuilder, ViewNodes, HistoryManager, QMainWindow):
 	def __init__(self):
 		super().__init__()
 		self.setWindowTitle("MEIOU and Taxes Plotter")
@@ -91,6 +94,7 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.stats_shading_all = True
 
 		self.load_app_settings()
+		self.init_history()
 
 		self._build_menu()
 		self._build_ui()
@@ -157,6 +161,21 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 
 	def open_appdata_folder(self):
 		QDesktopServices.openUrl(QUrl.fromLocalFile(APPDATA_DIR))
+
+	def open_computed_series_dialog(self):
+		dlg = ComputedSeriesDialog(self)
+		if dlg.exec():
+			src.parsing.stores.clear_all_caches()
+			if hasattr(src.parsing.computed_series, '_reported_parsing_errors'):
+				src.parsing.computed_series._reported_parsing_errors.clear()
+
+			if self.current_graph_info:
+				self.display_chart(
+					self.current_graph_info['info'],
+					self.current_graph_info['title'],
+					preserve_toggles=True
+				)
+			QMessageBox.information(self, "Formulas Applied", "Computed series formulas updated and applied successfully!")
 
 	def open_settings_dialog(self):
 		dlg = SettingsDialog(self.refresh_interval_idx, self.autosave_interval_idx, self.period_value,

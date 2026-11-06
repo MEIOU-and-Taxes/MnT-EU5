@@ -1,4 +1,5 @@
-﻿from PyQt6.QtCore import Qt
+﻿from PyQt6.QtCore import Qt, QEvent
+from PyQt6.QtWidgets import QLineEdit, QTextEdit, QApplication
 
 
 class TimeNavigation:
@@ -12,7 +13,6 @@ class TimeNavigation:
 			if m is not None:
 				moments.append(m)
 		return sorted(moments)
-
 
 	def adjust_year_start(self, delta):
 		# If in bar chart mode, adjust View Year instead
@@ -49,7 +49,6 @@ class TimeNavigation:
 			if idx != -1:
 				combo.setCurrentIndex(idx)
 
-
 	def adjust_year_end(self, delta):
 		if self.is_bar_chart:
 			self.adjust_moment(delta)
@@ -84,7 +83,6 @@ class TimeNavigation:
 			if idx != -1:
 				combo.setCurrentIndex(idx)
 
-
 	def adjust_moment(self, delta):
 		combo = self.filter_widget_map.get('moment')
 		if not combo or combo.count() <= 1:
@@ -100,31 +98,45 @@ class TimeNavigation:
 		if idx != -1:
 			combo.setCurrentIndex(idx)
 
-
 	def eventFilter(self, obj, event):
-		if event.type() == event.Type.KeyPress:
+		ev_type = event.type()
+		if ev_type in (QEvent.Type.ShortcutOverride, QEvent.Type.KeyPress):
+			focus_widget = QApplication.focusWidget() if QApplication.instance() else None
+			if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+				return super().eventFilter(obj, event)
+
 			mods = event.modifiers()
 			is_keypad = bool(mods & Qt.KeyboardModifier.KeypadModifier)
-			if is_keypad:
-				step = 100 if (mods & Qt.KeyboardModifier.ShiftModifier) else (
-					10 if (mods & Qt.KeyboardModifier.ControlModifier) else 1)
-				key = event.key()
+			key = event.key()
 
-				# Numpad 8: increment year start
-				if key in (Qt.Key.Key_8, Qt.Key.Key_Up):
-					self.adjust_year_start(step)
+			KEYPAD_ALL_KEYS = {
+				Qt.Key.Key_0, Qt.Key.Key_1, Qt.Key.Key_2, Qt.Key.Key_3, Qt.Key.Key_4,
+				Qt.Key.Key_5, Qt.Key.Key_6, Qt.Key.Key_7, Qt.Key.Key_8, Qt.Key.Key_9,
+				Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right,
+			}
+
+			if is_keypad or (key in KEYPAD_ALL_KEYS and bool(mods & Qt.KeyboardModifier.KeypadModifier)):
+				if ev_type == QEvent.Type.ShortcutOverride:
+					event.accept()
 					return True
-				# Numpad 2: decrement year start
-				elif key in (Qt.Key.Key_2, Qt.Key.Key_Down):
-					self.adjust_year_start(-step)
-					return True
-				# Numpad 6: increment year end
-				elif key in (Qt.Key.Key_6, Qt.Key.Key_Right):
-					self.adjust_year_end(step)
-					return True
-				# Numpad 4: decrement year end
-				elif key in (Qt.Key.Key_4, Qt.Key.Key_Left):
-					self.adjust_year_end(-step)
-					return True
+
+				if ev_type == QEvent.Type.KeyPress:
+					step = 100 if (mods & Qt.KeyboardModifier.ShiftModifier) else (
+						10 if (mods & Qt.KeyboardModifier.ControlModifier) else 1)
+
+					if key in (Qt.Key.Key_8, Qt.Key.Key_Up):
+						self.adjust_year_start(step)
+						return True
+					elif key in (Qt.Key.Key_2, Qt.Key.Key_Down):
+						self.adjust_year_start(-step)
+						return True
+					elif key in (Qt.Key.Key_6, Qt.Key.Key_Right):
+						self.adjust_year_end(step)
+						return True
+					elif key in (Qt.Key.Key_4, Qt.Key.Key_Left):
+						self.adjust_year_end(-step)
+						return True
+					else:
+						return True
 
 		return super().eventFilter(obj, event)

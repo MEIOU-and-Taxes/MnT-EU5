@@ -5,6 +5,7 @@ _bt_cache = None
 _gp_cache = None
 _pop_cache = None
 _mk_cache = None
+_mkm_cache = None
 _rt_cache = None
 _tg_cache = None
 _cm_cache = None
@@ -28,12 +29,11 @@ cr_cumulative_store = {}
 
 
 def clear_all_caches():
-	global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache, _crm_cache, _reg_cache
-	_bt_cache = _gp_cache = _pop_cache = _mk_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = _crm_cache = _reg_cache = None
+	global _bt_cache, _gp_cache, _pop_cache, _mk_cache, _mkm_cache, _rt_cache, _tg_cache, _cm_cache, _rloc_cache, _cr_cache, _crm_cache, _reg_cache
+	_bt_cache = _gp_cache = _pop_cache = _mk_cache = _mkm_cache = _rt_cache = _tg_cache = _cm_cache = _rloc_cache = _cr_cache = _crm_cache = _reg_cache = None
 
 
 def reset_cumulative_history():
-	global _mismatch_count, _valid_tg_count
 	parsed_file_signatures.clear()
 	tg_cumulative_store.clear()
 	bt_cumulative_store.clear()

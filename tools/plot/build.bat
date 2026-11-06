@@ -39,6 +39,7 @@ echo [INFO] Verifying runtime dependencies in dist folder...
 if exist "key_configs.json" copy /y "key_configs.json" "dist\MT_grapher\" >nul
 if exist "locations.csv" copy /y "locations.csv" "dist\MT_grapher\" >nul
 if exist "icon.png" copy /y "icon.png" "dist\MT_grapher\" >nul
+if exist "computed_series.csv" copy /y "computed_series.csv" "dist\MT_grapher\" >nul
 
 echo.
 echo [SUCCESS] Build completed successfully!

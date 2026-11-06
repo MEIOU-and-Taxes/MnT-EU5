@@ -15,7 +15,7 @@ pathex = [
 
 # Collect essential data files and dependencies
 datas = []
-for filename in ['key_configs.json', 'locations.csv', 'icon.png']:
+for filename in ['key_configs.json', 'locations.csv', 'icon.png', 'computed_series.csv']:
     if os.path.exists(os.path.join(project_dir, filename)):
         datas.append((filename, '.'))
 

@@ -270,6 +270,8 @@ class ViewNodes:
 		self.cursor_hover_handler.setup_tooltip_handler()
 		self._update_view_year_dependencies()
 		self.apply_plot_settings()
+		if hasattr(self, 'record_history_state'):
+			self.record_history_state()
 
 	def _on_stats_hide_changed(self, idx):
 		self.stats_hide_idx = idx

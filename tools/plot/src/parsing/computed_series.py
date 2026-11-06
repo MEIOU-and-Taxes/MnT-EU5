@@ -13,9 +13,11 @@ COMPUTED_SERIES_APPDATA_PATH = os.path.join(APPDATA_DIR, COMPUTED_SERIES_FILENAM
 
 DEFAULT_COMPUTED_SERIES_CSV = """dataset_type,new_metric_name,expression,description
 country,Debt/Income,total_debt / income,Total debt divided by annual/monthly income
-country,Navy/Army Ratio,navy_size / army_size,Ratio of navy size to army size
+country,Adjusted Burden,[Debt/Income] * bank_interest,Interest payment burden
 country,Credit Supply/Demand,Supply / Demand,Credit supply to demand ratio
-region,Population Density,total_population / locations,Average population per location
+region,Gold/Gold Mine,Gold / gold_mine,Gold price divided by gold mines
+region,Food net,[Food production] + [Food consumption],Remaining produced food
+market,Estate/state trade capacity,[Burgher Trade Capacity] / [Merchant Capacity],
 """
 
 # Safe AST operators map
@@ -157,6 +159,45 @@ def ensure_computed_series_file():
         else:
             with open(COMPUTED_SERIES_APPDATA_PATH, "w", encoding="utf-8") as f:
                 f.write(DEFAULT_COMPUTED_SERIES_CSV)
+
+
+def load_raw_computed_series_rows():
+    """Loads all formula rows as raw dictionaries for UI editing."""
+    ensure_computed_series_file()
+    filepath = COMPUTED_SERIES_APPDATA_PATH if os.path.exists(COMPUTED_SERIES_APPDATA_PATH) else COMPUTED_SERIES_FILENAME
+    rows = []
+    if not os.path.exists(filepath):
+        return rows
+    try:
+        with open(filepath, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                rows.append({
+                    "dataset_type": r.get("dataset_type", "").strip().lower(),
+                    "new_metric_name": r.get("new_metric_name", "").strip(),
+                    "expression": r.get("expression", "").strip(),
+                    "description": r.get("description", "").strip(),
+                })
+    except Exception as e:
+        print(f"Error loading computed series rows: {e}")
+    return rows
+
+
+def save_computed_series_rows(rows):
+    """Writes formula rows back to computed_series.csv in APPDATA."""
+    ensure_computed_series_file()
+    filepath = COMPUTED_SERIES_APPDATA_PATH
+    with open(filepath, mode="w", encoding="utf-8", newline="") as f:
+        fieldnames = ["dataset_type", "new_metric_name", "expression", "description"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({
+                "dataset_type": r.get("dataset_type", "").strip().lower(),
+                "new_metric_name": r.get("new_metric_name", "").strip(),
+                "expression": r.get("expression", "").strip(),
+                "description": r.get("description", "").strip(),
+            })
 
 
 def _show_parsing_error_dialog(err_msg: str, line_num: int):

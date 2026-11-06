@@ -47,7 +47,7 @@ class PresetBar:
 
 		if total_pages > 1:
 			btn_prev = QPushButton("◀")
-			btn_prev.setToolTip("Previous preset page [Alt+Left]")
+			btn_prev.setToolTip("Previous preset page [Shift+Left]")
 			btn_prev.setFixedWidth(32)
 			btn_prev.clicked.connect(self._prev_preset_page)
 
@@ -55,7 +55,7 @@ class PresetBar:
 			lbl_page.setStyleSheet("font-weight: bold; padding: 0 4px;")
 
 			btn_next = QPushButton("▶")
-			btn_next.setToolTip("Next preset page [Alt+Right]")
+			btn_next.setToolTip("Next preset page [Shift+Right]")
 			btn_next.setFixedWidth(32)
 			btn_next.clicked.connect(self._next_preset_page)
 

@@ -2,7 +2,7 @@
 from src.parsing.computed_series import load_computed_series_definitions, evaluate_expression
 from src.parsing.definitions import EXCLUDED_KEYS_COUNTRY, CREDIT_HEADERS, POPULATION_HEADERS
 from src.parsing.log_parser import parse_data_countries, parse_data_credit_raw, parse_data_region_locations, \
-	parse_data_population, parse_data_road_types, parse_data_building_types, parse_data_goods_prices
+	parse_data_population, parse_data_road_types, parse_data_building_types, parse_data_goods_prices, parse_data_markets
 from src.parsing.stores import cr_cumulative_store, tg_cumulative_store, region_locations_store, pop_cumulative_store, \
 	rt_cumulative_store
 
@@ -183,6 +183,80 @@ def parse_data_country_metrics(data: str = None):
 
 	src.parsing.stores._cm_cache = sorted(transformed, key=lambda x: (x["moment"], x["country"], x["country_metric"]))
 	return src.parsing.stores._cm_cache
+
+
+def parse_data_market_metrics(data: str = None):
+	"""Combines Market Statistics with user-defined market computed series formulas."""
+	if src.parsing.stores._mkm_cache is not None:
+		return src.parsing.stores._mkm_cache
+
+	raw_markets = parse_data_markets(data)
+
+	computed_defs = [
+		d for d in load_computed_series_definitions()
+		if d["dataset_type"] in ("market", "markets", "market_metric", "market_stats")
+	]
+
+	if not computed_defs:
+		src.parsing.stores._mkm_cache = raw_markets
+		return src.parsing.stores._mkm_cache
+
+	transformed = list(raw_markets)
+	context_by_moment_market = {}
+
+	for item in raw_markets:
+		m = item["moment"]
+		mkt = item["market"]
+		stat = item["statistic"]
+		val = float(item.get("value", 0.0))
+		locs = float(item.get("locations", 0.0))
+		pop = float(item.get("population", 0.0))
+
+		ctx = context_by_moment_market.setdefault(
+			(m, mkt),
+			{"locations": locs, "population": pop, "total_population": pop}
+		)
+		if locs > 0:
+			ctx["locations"] = locs
+		if pop > 0:
+			ctx["population"] = pop
+			ctx["total_population"] = pop
+
+		ctx[stat] = val
+		ctx[stat.lower()] = val
+		ctx[stat.replace(' ', '_')] = val
+		ctx[stat.lower().replace(' ', '_')] = val
+
+	for (m, mkt), ctx in context_by_moment_market.items():
+		locs = ctx.get("locations", 0.0)
+		pop = ctx.get("population", 0.0)
+		for cdef in computed_defs:
+			calc_val = evaluate_expression(
+				cdef["expression"],
+				ctx,
+				precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
+			)
+
+			metric_name = cdef["metric_name"]
+			ctx[metric_name] = calc_val
+			ctx[metric_name.lower()] = calc_val
+			ctx[metric_name.replace(' ', '_')] = calc_val
+			ctx[metric_name.lower().replace(' ', '_')] = calc_val
+
+			transformed.append({
+				"moment": m,
+				"region": mkt,
+				"market": mkt,
+				"statistic": metric_name,
+				"metric": metric_name,
+				"value": round(calc_val, 4),
+				"locations": locs,
+				"population": pop,
+				"total_population": pop
+			})
+
+	src.parsing.stores._mkm_cache = sorted(transformed, key=lambda x: (x["moment"], x["region"], x["statistic"]))
+	return src.parsing.stores._mkm_cache
 
 
 def parse_data_regional_metrics(data: str = None):

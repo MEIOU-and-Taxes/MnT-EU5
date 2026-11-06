@@ -1,8 +1,5 @@
 ﻿from src.constants import STR_ALL_REGIONS
-from src.parsing.log_parser import (
-    parse_data_markets
-)
-from src.parsing.transformers import parse_data_country_metrics, parse_data_regional_metrics
+from src.parsing.transformers import parse_data_country_metrics, parse_data_regional_metrics, parse_data_market_metrics
 
 CM_CONFIG = {
     "parser": parse_data_country_metrics,
@@ -19,7 +16,7 @@ CM_CONFIG = {
 }
 
 MK_CONFIG = {
-    "parser": parse_data_markets,
+    "parser": parse_data_market_metrics,
     "category_key": "statistic",
     "value_key": "value",
     "category_label": "Statistic:",
