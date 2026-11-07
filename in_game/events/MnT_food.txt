@@ -150,6 +150,7 @@ mnt_food.3 = {
 	}
 }
 # Cache province food response once monthly, after the native month update.
+# Local shortfall excludes market deliveries; only native starvation enables mortality.
 mnt_food.4 = {
     type = country_event
     hidden = yes
@@ -186,6 +187,29 @@ mnt_food.4 = {
             else_if = {
                 limit = { var:mnt_food_local_surplus < 40 }
                 set_variable = { name = mnt_food_ai_weight value = 2 }
+            }
+
+            set_variable = { name = mnt_food_starvation_severity value = 0 }
+            if = {
+                limit = {
+                    province_food <= 0
+                    is_starving = yes
+                    var:mnt_food_local_surplus < 0
+                }
+                set_variable = {
+                    name = mnt_food_starvation_severity
+                    value = {
+                        value = var:mnt_food_local_surplus
+                        multiply = -1
+                        divide = {
+                            value = 0
+                            every_location_in_province = { add = mnt_location_food_consumption_amount }
+                            min = 0.001
+                        }
+                        min = 0
+                        max = 1
+                    }
+                }
             }
         }
     }
