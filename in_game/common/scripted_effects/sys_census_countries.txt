@@ -1,0 +1,137 @@
+﻿# Uses macros. Refer to the macro file in /in_game/data_binding/
+# TC = This country
+# TCE = This country's estate;
+# Estates are abbreviated as N, C, B, P, T, D, Co
+print_country_information = {
+	every_country = {
+		set_local_variable = { name = loc_dev value = 0 }
+		set_local_variable = { name = loc_control value = 0 }
+		set_local_variable = { name = loc_proximity value = 0 }
+		set_local_variable = { name = loc_prosperity value = 0 }
+		set_local_variable = { name = loc_market_access value = 0 }
+		set_local_variable = { name = loc_towns value = 0 }
+		set_local_variable = { name = loc_cities value = 0 }
+		set_local_variable = { name = loc_megalopolises value = 0 }
+		set_local_variable = { name = loc_winter_pow value = 0 }
+		set_local_variable = { name = locs value = 0 }
+
+		every_owned_location = {
+			change_local_variable = { name = loc_dev add = development }
+			change_local_variable = { name = loc_control add = local_control }
+			change_local_variable = { name = loc_proximity add = proximity }
+			change_local_variable = { name = loc_prosperity add = prosperity }
+			change_local_variable = { name = loc_market_access add = market_access }
+			change_local_variable = { name = loc_winter_pow add = winter_power }
+			if = { limit = { location_rank = location_rank:town}
+				change_local_variable = { name = loc_towns add = 1 }}
+			if = { limit = { location_rank = location_rank:city}
+				change_local_variable = { name = loc_cities add = 1 }}
+			if = { limit = { location_rank = location_rank:megalopolis}
+				change_local_variable = { name = loc_megalopolises add = 1 }}
+			change_local_variable = { name = locs add = 1 }
+		}
+
+		if = { limit = { local_var:locs > 0 }
+			change_local_variable = { name = loc_dev divide = local_var:locs }
+			change_local_variable = { name = loc_control divide = local_var:locs }
+			change_local_variable = { name = loc_proximity divide = local_var:locs }
+			change_local_variable = { name = loc_prosperity divide = local_var:locs }
+			change_local_variable = { name = loc_market_access divide = local_var:locs }
+			change_local_variable = { name = loc_winter_pow divide = local_var:locs }
+		}
+
+		set_local_variable = { name = trade_income value = monthly_trade_income }
+		set_local_variable = { name = monthly_balance value = monthly_balance }
+		set_local_variable = { name = monthly_expenses
+			value = { value = monthly_balance subtract = monthly_income_total } }
+		set_local_variable = { name = trade_income_perc
+			value = { value = monthly_trade_income divide = monthly_income_total } }
+		set_local_variable = { name = loan_int value = loan_interest }
+		set_local_variable = { name = population value = total_population }
+
+		## Not working:
+		# [TCEN.GetFoodIncome]:[TCEC.GetFoodIncome]:[TCEB.GetFoodIncome]:[TCEP.GetFoodIncome]:[TCED.GetFoodIncome]:[TCET.GetFoodIncome]:[TCECo.GetFoodIncome]:[TCEN.GetTradeIncome]:[TCEC.GetTradeIncome]:[TCEB.GetTradeIncome]:[TCEP.GetTradeIncome]:[TCED.GetTradeIncome]:[TCET.GetTradeIncome]:[TCECo.GetTradeIncome]:[TCEN.GetLastMonthIncomeCount]:[TCEC.GetLastMonthIncomeCount]:[TCEB.GetLastMonthIncomeCount]:[TCEP.GetLastMonthIncomeCount]:[TCED.GetLastMonthIncomeCount]:[TCET.GetLastMonthIncomeCount]:[TCECo.GetLastMonthIncomeCount]:
+
+		# Identity & institutions
+		error_log = "||TG1||[GetCurrentYear]|[TC.GetTag]|[TC.GetMapName]|[TC.GetCapital.GetArea.GetTag]|[TC.GetCountryTypeNameWithNoTooltip]|[TCG.GetGovernmentType.GetNameKey]|[TC.GetIncomeValue]|[TC.GetCurrentResearch.GetAdvance.GetNameWithNoTooltip]|[TCHasInst('feudalism')]|[TCHasInst('legalism')]|[TCHasInst('meritocracy')]|[TCHasInst('renaissance')]|[TCHasInst('banking')]|[TCHasInst('professional_armies')]|[TCHasInst('new_world')]|[TCHasInst('printing_press')]|[TCHasInst('pike_and_shot')]|[TCHasInst('confessionalism')]|[TCHasInst('global_trade')]|[TCHasInst('artillery_Instution')]|[TCHasInst('manufactories')]|[TCHasInst('scientific_revolution')]|[TCHasInst('military_revolution')]|[TCHasInst('enlightenment')]|[TCHasInst('industrialization')]|[TCHasInst('levee_en_masse')]"
+
+		# Estates income lost & before tax, tax, gold received, balance
+		error_log = "||TG2||[TCEVar('estate_nobles_income_lost')]|[TCEVar('estate_clergy_income_lost')]|[TCEVar('estate_burghers_income_lost')]|[TCEVar('estate_peasants_income_lost')]|[TCEVar('estate_dhimmi_income_lost')]|[TCEVar('estate_tribes_income_lost')]|[TCEVar('estate_cossacks_income_lost')]|[TCEN.GetGold]|[TCEC.GetGold]|[TCEB.GetGold]|[TCEP.GetGold]|[TCED.GetGold]|[TCET.GetGold]|[TCECo.GetGold]|[TCEN.GetBalance]|[TCEC.GetBalance]|[TCEB.GetBalance]|[TCEP.GetBalance]|[TCED.GetBalance]|[TCET.GetBalance]|[TCECo.GetBalance]|[TCEN.GetLastMonthsIncomeBeforeTax]|[TCEC.GetLastMonthsIncomeBeforeTax]|[TCEB.GetLastMonthsIncomeBeforeTax]|[TCEP.GetLastMonthsIncomeBeforeTax]|[TCED.GetLastMonthsIncomeBeforeTax]|[TCET.GetLastMonthsIncomeBeforeTax]|[TCECo.GetLastMonthsIncomeBeforeTax]|[TCEN.GetLastMonthsTax]|[TCEC.GetLastMonthsTax]|[TCEB.GetLastMonthsTax]|[TCEP.GetLastMonthsTax]|[TCED.GetLastMonthsTax]|[TCET.GetLastMonthsTax]|[TCECo.GetLastMonthsTax]"
+
+		# Estate expenses, power, satisfaction, population
+		error_log = "||TG3||[TCEN.GetLastMonthsExpense]|[TCEC.GetLastMonthsExpense]|[TCEB.GetLastMonthsExpense]|[TCEP.GetLastMonthsExpense]|[TCED.GetLastMonthsExpense]|[TCET.GetLastMonthsExpense]|[TCECo.GetLastMonthsExpense]|[TCEN.GetMaxTaxValue]|[TCEC.GetMaxTaxValue]|[TCEB.GetMaxTaxValue]|[TCEP.GetMaxTaxValue]|[TCED.GetMaxTaxValue]|[TCET.GetMaxTaxValue]|[TCECo.GetMaxTaxValue]|[TCEN.GetRelativePower]|[TCEC.GetRelativePower]|[TCEB.GetRelativePower]|[TCEP.GetRelativePower]|[TCED.GetRelativePower]|[TCET.GetRelativePower]|[TCECo.GetRelativePower]|[TCEN.GetSatisfaction]|[TCEC.GetSatisfaction]|[TCEB.GetSatisfaction]|[TCEP.GetSatisfaction]|[TCED.GetSatisfaction]|[TCET.GetSatisfaction]|[TCECo.GetSatisfaction]|[TCEN.GetTaxableIncome]|[TCEC.GetTaxableIncome]|[TCEB.GetTaxableIncome]|[TCEP.GetTaxableIncome]|[TCED.GetTaxableIncome]|[TCET.GetTaxableIncome]|[TCECo.GetTaxableIncome]|[TCEN.GetTotalPopulationNoFormat]|[TCEC.GetTotalPopulationNoFormat]|[TCEB.GetTotalPopulationNoFormat]|[TCEP.GetTotalPopulationNoFormat]|[TCED.GetTotalPopulationNoFormat]|[TCET.GetTotalPopulationNoFormat]|[TCECo.GetTotalPopulationNoFormat]"
+
+		# Military, diplomacy, currency & modifiers
+		error_log = "||TG4||[TCEc.GetNumberOfLoans]|[TCEc.GetTotalDebt]|[TCEc.GetRemainingLoanCapacity]|[TCEc.GetTradeBalance]|[TCEc.IsDuringBankruptcy]|[TCG.GetRegencyType.GetNameWithNoTooltip]|[TCP.GetParliamentType.GetNameWithNoTooltip]|[TCP.GetCurrentDebate.GetEstateType.GetNameWithNoTooltip]|[TCP.GetCurrentDebate.GetNameWithNoTooltip]|[TCP.GetParliamentIssueSupport]|[TC.GetRank.GetLevelNumber]|[TC.GetScore.GetScore]|[TC.GetCharacterArtistsAmount]|[TC.GetGreatPowerRank]|[TC.GetGreatPowerScore]|[TC.GetLivingCharacters]|[TC.GetNumWorksOfArt]|[TC.GetNumberOfCharacters]|[TC.GetPowerProjection]|[TC.GetOwnedLocationCount]|[TC.HasActiveRebels]|[TC.GetArmyLevyPotentialStrength]|[TC.GetArmyLevyPowerValue]|[TC.GetArmySize]|[TC.GetAverageArmyExperience]|[TC.GetAverageNavyExperience]|[TC.GetCurrentFortsAmount]|[TC.GetExpectedArmySize]|[TC.GetExpectedNavySize]|[TC.GetFortLimit]|[TC.GetMaxManpowerValue]|[TC.GetMaxSailorValue]|[TC.GetMilitaryStrength]|[TC.GetNavalRange]|[TC.GetNavyLevyPower]|[TC.GetNavySizeValue]|[TC.GetNavyStrength]|[TC.GetRaisedAndPotentialLevyStrength]|[TC.GetRawArmyLevyPower]|[TC.GetRawNavyLevyPower]|[TC.GetRegularArmySize]|[TC.GetTotalShips]|[TC.GetCrownpower]|[TC.GetAverageLiteracy]|[TC.GetCulturalCapacity]|[TC.GetCulturalUnity]|[TC.GetPrimaryCulturePercentage]|[TC.GetPrimaryReligionPercentage]|[TC.GetTotalCoastalPopulation]|[TC.GetTotalCultureCapacityUsed]|[TC.GetEconomicalBase]|[TC.GetEstimatedMonthlyIncome]|[TC.GetEstimatedMonthlyIncomeTradeAndTax]|[TC.GetStarvingProvincesAmount]|[TC.GetInstitutionEmbracedCount]|[TCD.GetOverlord.GetTag]|[TCD.GetActiveCasusBelliTargetsAmount]|[TCD.GetBeingAnnexedProgress]|[TCD.GetDiplomaticRange]|[TCD.GetLibertyDesire]|[TCD.GetMaxCapacity]|[TCD.GetMaxNumOfDiplomats]|[TCD.GetNumOfDiplomats]|[TCD.GetNumberOfSubjectsOrBelow]|[TCD.GetSubjectLoyalty]|[TCD.GetUsedDiplomaticCapacity]|[TC.GetCurrencyValue('gold')]|[TC.GetCurrencyValue('stability')]|[TC.GetCurrencyValue('legitimacy')]|[TC.GetCurrencyValue('prestige')]|[TC.GetFixedPointCurrencyValue('war_exhaustion')]|[TC.GetCurrencyValue('manpower')]|[TC.GetCurrencyValue('sailors')]|[TC.GetFixedPointCurrencyValue('inflation')]|[TC.GetFixedPointCurrencyValue('army_tradition')]|[TC.GetFixedPointCurrencyValue('navy_tradition')]|[SLV('locs')]|[SLV('loc_control')]|[SLV('loc_proximity')]|[SLV('loc_dev')]|[SLV('loc_prosperity')]|[SLV('loc_market_access')]|[SLV('loc_towns')]|[SLV('loc_cities')]|[SLV('loc_megalopolises')]|[SLV('loc_winter_pow')]|[TCMV('bank_interest')]|[SLV('trade_income')]|[SLV('monthly_balance')]|[SLV('monthly_expenses')]|[SLV('trade_income_perc')]|[SLV('loan_int')]|[SLV('population')]"
+
+		societal_value_type:centralization_vs_decentralization = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:traditionalist_vs_innovative = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:spiritualist_vs_humanist = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:aristocracy_vs_plutocracy = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:serfdom_vs_free_subjects = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:mercantilism_vs_free_trade = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:belligerent_vs_conciliatory = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:quality_vs_quantity = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:offensive_vs_defensive = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:land_vs_naval = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:capital_economy_vs_traditional_economy = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:individualism_vs_communalism = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:outward_vs_inward = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:sinicized_vs_unsinicized = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:absolutism_vs_liberalism = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+		societal_value_type:mysticism_vs_jurisprudence = {
+			error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+	}
+	# What's the point of these?
+	remove_local_variable = loc_dev
+	remove_local_variable = loc_control
+	remove_local_variable = loc_prosperity
+	remove_local_variable = loc_market_access
+	remove_local_variable = loc_towns
+	remove_local_variable = loc_cities
+	remove_local_variable = locs
+}
+
+run_logging_credit = {
+	if = { limit = { has_global_variable = is_logging_yearly_credit_information }
+		print_country_credit_information = yes
+	}
+	error_log = "::Done logging country credit information for this year."
+}
+
+print_country_credit_information = {
+	every_country = {
+		limit = { num_locations > 0 }
+		set_local_variable = { name = cr_balance value = mnt_credit_tooltip_market_balance }
+		set_local_variable = { name = cr_supply value = mnt_credit_tooltip_market_supply }
+		set_local_variable = { name = cr_supply_goods value = mnt_credit_tooltip_goods_supply }
+		set_local_variable = { name = cr_supply_build value = mnt_credit_tooltip_building_supply }
+		set_local_variable = { name = cr_lending_quote value = mnt_credit_lending_quote }
+		set_local_variable = { name = cr_interest_adj value = mnt_credit_market_interest_adjustment }
+		set_local_variable = { name = cr_demand value = mnt_credit_lending_demand }
+
+		error_log = "||CR||[GetCurrentYear]|[TC.GetTag]|[SLV('cr_balance')]|[SLV('cr_supply')]|[SLV('cr_supply_goods')]|[SLV('cr_supply_build')]|[SLV('cr_demand')]|[SLV('cr_lending_quote')]|[SLV('cr_interest_adj')]"
+	}
+	remove_local_variable = cr_balance
+	remove_local_variable = cr_supply
+	remove_local_variable = cr_supply_goods
+	remove_local_variable = cr_supply_build
+	remove_local_variable = cr_lending_quote
+	remove_local_variable = cr_interest_adj
+	remove_local_variable = cr_demand
+}

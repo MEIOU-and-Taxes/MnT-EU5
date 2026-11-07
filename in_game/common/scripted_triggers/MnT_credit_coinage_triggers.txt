@@ -1,0 +1,78 @@
+﻿mnt_credit_coinage_bimetal = {
+	OR = {
+		has_policy = gold_and_silver_coins
+		has_policy = hanseatic_coins_policy
+	}
+}
+
+mnt_credit_coinage_gold = {
+	OR = {
+		has_policy = gold_coins
+		has_policy = custom_union_of_the_rhine_policy
+	}
+}
+
+mnt_credit_coinage_silver = {
+	has_policy = silver_coins
+}
+
+mnt_credit_coinage_copper = {
+	has_policy = copper_coins
+}
+
+mnt_credit_coinage_bullion = {
+	has_policy = bullion_coins
+}
+
+mnt_credit_coinage_barter = {
+	has_policy = barter_exchange
+}
+
+mnt_credit_coinage_fallback = {
+	NOR = {
+		has_policy = gold_and_silver_coins
+		has_policy = hanseatic_coins_policy
+		has_policy = gold_coins
+		has_policy = custom_union_of_the_rhine_policy
+		has_policy = silver_coins
+		has_policy = copper_coins
+		has_policy = bullion_coins
+		has_policy = barter_exchange
+	}
+}
+
+# PM access is checked here so banking countries can bypass advance unlocks.
+mnt_credit_bank_pm_available = {
+	OR = {
+		has_reform = government_reform:banking_country
+		AND = {
+			has_advance = $advance$
+			mnt_credit_coinage_$coinage$ = yes
+		}
+	}
+}
+
+# Historical local houses can operate before the advance unlocks new construction.
+mnt_credit_bank_t1_pm_available = {
+	OR = {
+		has_reform = government_reform:banking_country
+		mnt_credit_coinage_$coinage$ = yes
+	}
+}
+
+# Location scope, used only by the hidden banking-company expansion event.
+mnt_credit_ai_bank_location = {
+	exists = owner
+	exists = market
+	NOT = { location_rank = location_rank:rural_settlement }
+	num_civil_constructions = 0
+	can_build_building = scope:mnt_credit_ai_bank_type
+	location_building_level = {
+		building_type = scope:mnt_credit_ai_bank_type
+		owner = scope:mnt_credit_ai_bank_builder
+		value < mnt_bank_max_level
+	}
+	market = {
+		"goods_demand_in_market(goods:credit)" > "goods_supply_in_market(goods:credit)"
+	}
+}

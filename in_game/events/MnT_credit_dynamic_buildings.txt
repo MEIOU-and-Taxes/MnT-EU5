@@ -1,0 +1,95 @@
+﻿namespace = credit_dynamic_buildings
+
+credit_dynamic_buildings.1 = {
+    type = country_event
+    title = hidden_event.t
+    hidden = yes
+    trigger = {
+        great_power_ranking = 1
+    }
+    immediate = {
+        # error_log = "--- MNT-Credit: Starting Dynamic Building Credit Pulse ---" #TODO: TEMP
+
+        every_market_in_world = {
+            save_temporary_scope_as = current_market
+
+            # Reset market work totals
+            set_local_variable = { name = mkt_dynamic_supply value = 0 }
+            set_local_variable = { name = mkt_dynamic_demand value = 0 }
+            set_local_variable = { name = mkt_locs_with_demand value = 0 } #TODO: TEMP
+            set_local_variable = { name = mkt_locs_with_supply value = 0 } #TODO: TEMP
+
+            # error_log = "Current market: [THIS.GetMarket.GetNameWithNoTooltip]"
+            # Sum across all locations in this market
+            every_location_in_market = {
+                if = {
+                    limit = { "modifier:local_credit_supply" > 0 }
+                    set_local_variable = { name = loc_dynamic_supply_before
+                        value = modifier:local_credit_supply } #TODO: TEMP
+                    set_local_variable = { name = loc_dynamic_supply
+                        value = mnt_location_dynamic_credit_supply_calc } #TODO: TEMP
+                    change_local_variable = { name = mkt_dynamic_supply
+                        add = local_var:loc_dynamic_supply }
+                    change_local_variable = { name = mkt_locs_with_supply add = 1 } #TODO: TEMP
+
+                    # error_log = "[THIS.GetCountry.GetNameWithNoTooltip]:[THIS.GetLocation.GetNameWithNoTooltip]:E:[THIS.GetLocation.GetPeasantEnfranchisment]:LDS:[SCOPE.GetLocalVariable('loc_dynamic_supply_before').GetValue]→:[SCOPE.GetLocalVariable('loc_dynamic_supply').GetValue]:=MDS:[SCOPE.GetLocalVariable('mkt_dynamic_supply').GetValue]"
+                    # societal_value_type:serfdom_vs_free_subjects = { error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+                    # societal_value_type:capital_economy_vs_traditional_economy = { error_log = "[PREV.GetCountry.GetGovernment.GetSocietalValue(THIS.GetSocietalValue.Self)]" }
+                }
+                if = { limit = { "modifier:local_credit_demand" > 0 }
+
+                    set_local_variable = { name = loc_dynamic_demand_before
+                        value = modifier:local_credit_demand } #TODO: TEMP
+                    set_local_variable = { name = loc_dynamic_demand
+                        value = mnt_location_dynamic_credit_demand_calc } #TODO: TEMP
+                    change_local_variable = { name = mkt_dynamic_demand
+                        add = local_var:loc_dynamic_demand }
+                    change_local_variable = { name = mkt_locs_with_demand add = 1 } #TODO: TEMP
+
+                    # error_log = "[THIS.GetCountry.GetNameWithNoTooltip]:[THIS.GetLocation.GetNameWithNoTooltip]:E:[THIS.GetLocation.GetPeasantEnfranchisment]:LDD:[SCOPE.GetLocalVariable('loc_dynamic_demand_before').GetValue]→:[SCOPE.GetLocalVariable('loc_dynamic_demand').GetValue]:=MDD:[SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]"
+                }
+            }
+
+            # Cache totals on the market center location for tooltips and interest quotes
+            location = {
+                set_variable = { name = mnt_credit_market_building_supply
+                    value = local_var:mkt_dynamic_supply }
+                set_variable = { name = mnt_credit_market_building_demand
+                    value = local_var:mkt_dynamic_demand }
+            }
+            # Log market's results
+            if = { limit = { OR = { local_var:mkt_dynamic_demand > 0 } } # local_var:mkt_dynamic_supply > 0 } }
+                # error_log = "[THIS.GetMarket.GetNameWithNoTooltip] -> Supply: [SCOPE.GetLocalVariable('mkt_dynamic_supply').GetValue] (from [SCOPE.GetLocalVariable('mkt_locs_with_supply').GetValue] locs) | Demand: [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue] (from [SCOPE.GetLocalVariable('mkt_locs_with_demand').GetValue] locs)"
+            } #TODO: TEMP
+
+            # Inject demand into the market using the alternating temporary demand pattern
+            if = { limit = { local_var:mkt_dynamic_demand > 0 }
+                if = { limit = { has_temporary_demand = demand:mnt_credit_building_demand1 }
+                    remove_temporary_demand = demand:mnt_credit_building_demand1
+                    add_temporary_demand = {
+                        type = demand:mnt_credit_building_demand2 months = -1 scale = local_var:mkt_dynamic_demand }
+                    #TODO: TEMP
+                    # error_log = "[THIS.GetMarket.GetNameWithNoTooltip]: Added temporary demand [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]."
+                }
+                else = {
+                    remove_temporary_demand = demand:mnt_credit_building_demand2
+                    add_temporary_demand = {
+                        type = demand:mnt_credit_building_demand1 months = -1 scale = local_var:mkt_dynamic_demand }
+                    #TODO: TEMP
+                    # error_log = "[THIS.GetMarket.GetNameWithNoTooltip]: Added temporary demand [SCOPE.GetLocalVariable('mkt_dynamic_demand').GetValue]."
+                }
+            }
+            else = {
+                remove_temporary_demand = demand:mnt_credit_building_demand1
+                remove_temporary_demand = demand:mnt_credit_building_demand2
+            }
+
+            # Inject supply into the market
+            if = { limit = { local_var:mkt_dynamic_supply > 0 }
+                add_goods_supply = { goods = goods:credit amount = local_var:mkt_dynamic_supply }
+            }
+
+        }
+        # error_log = "--- MNT-Credit: Finished Dynamic Building Credit Pulse ---" #TODO: TEMP
+    }
+}
