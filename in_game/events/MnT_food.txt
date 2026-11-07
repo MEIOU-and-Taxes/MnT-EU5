@@ -149,3 +149,44 @@ mnt_food.3 = {
 		}	
 	}
 }
+# Cache province food response once monthly, after the native month update.
+mnt_food.4 = {
+    type = country_event
+    hidden = yes
+    title = hidden_event.t
+
+    immediate = {
+        every_province = {
+            set_variable = {
+                name = mnt_food_local_surplus
+                value = {
+                    value = 0
+                    every_location_in_province = {
+                        add = { value = food_production subtract = mnt_location_food_consumption_amount }
+                    }
+                }
+            }
+            set_variable = { name = mnt_food_ai_weight value = 1 }
+            if = {
+                limit = { var:mnt_food_local_surplus <= 0 }
+                set_variable = { name = mnt_food_ai_weight value = 10 }
+            }
+            else_if = {
+                limit = { var:mnt_food_local_surplus < 5 }
+                set_variable = { name = mnt_food_ai_weight value = 8 }
+            }
+            else_if = {
+                limit = { var:mnt_food_local_surplus < 10 }
+                set_variable = { name = mnt_food_ai_weight value = 6 }
+            }
+            else_if = {
+                limit = { var:mnt_food_local_surplus < 20 }
+                set_variable = { name = mnt_food_ai_weight value = 4 }
+            }
+            else_if = {
+                limit = { var:mnt_food_local_surplus < 40 }
+                set_variable = { name = mnt_food_ai_weight value = 2 }
+            }
+        }
+    }
+}
