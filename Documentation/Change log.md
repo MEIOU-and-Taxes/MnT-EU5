@@ -726,6 +726,10 @@ Date: 21/05/2026
 
 ### Balance
 - Further rebalanced trade routes to actually cost more at long distances. And shifted age 4 trade maintanance bonus to be less overpowering.
+- Subsistence agriculture output: 0.8 → 1.1. Double the food production bonuses from five agricultural advances.
+- Add 27 researched production methods for food RGO buildings.
+- Increase AI construction priority for food RGO buildings and Irrigation in provinces with low food surpluses. AI Irrigation requires at least 40 local food production.
+- Scale the population growth and life expectancy penalties from starvation with the estimated local food shortfall.
 
 ### Features
 - Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
