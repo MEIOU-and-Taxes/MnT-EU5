@@ -726,3 +726,6 @@ Date: 21/05/2026
 
 ### Balance
 - Further rebalanced trade routes to actually cost more at long distances. And shifted age 4 trade maintanance bonus to be less overpowering.
+
+### Features
+- Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
