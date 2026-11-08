@@ -183,26 +183,25 @@ mnt_food.4 = {
                     }
                 }
 
-                # At or below break-even, use the maximum weight. Taper with surplus as a share of consumption.
-                if = {
-                    limit = { local_var:mnt_food_surplus_share <= 0 }
-                    set_variable = { name = mnt_food_ai_weight value = 10 }
+                # Ease the weight from 10 at break-even to 1 at a 40% surplus.
+                set_local_variable = {
+                    name = mnt_food_weight_taper
+                    value = {
+                        value = 0.40
+                        subtract = local_var:mnt_food_surplus_share
+                        divide = 0.40
+                        min = 0
+                        max = 1
+                    }
                 }
-                else_if = {
-                    limit = { local_var:mnt_food_surplus_share < 0.05 }
-                    set_variable = { name = mnt_food_ai_weight value = 8 }
-                }
-                else_if = {
-                    limit = { local_var:mnt_food_surplus_share < 0.10 }
-                    set_variable = { name = mnt_food_ai_weight value = 6 }
-                }
-                else_if = {
-                    limit = { local_var:mnt_food_surplus_share < 0.20 }
-                    set_variable = { name = mnt_food_ai_weight value = 4 }
-                }
-                else_if = {
-                    limit = { local_var:mnt_food_surplus_share < 0.40 }
-                    set_variable = { name = mnt_food_ai_weight value = 2 }
+                set_variable = {
+                    name = mnt_food_ai_weight
+                    value = {
+                        value = 9
+                        multiply = local_var:mnt_food_weight_taper
+                        multiply = local_var:mnt_food_weight_taper
+                        add = 1
+                    }
                 }
 
                 # Keep severity ready if reserves run out after the monthly update.
