@@ -149,7 +149,7 @@ mnt_food.3 = {
 		}	
 	}
 }
-# Cache the local food balance once a month. Native starvation is checked live by the auto modifier.
+# Update local food balance and the provincial starvation penalty once a month.
 mnt_food.4 = {
     type = country_event
     hidden = yes
@@ -204,7 +204,6 @@ mnt_food.4 = {
                     }
                 }
 
-                # Keep severity ready if reserves run out after the monthly update.
                 set_variable = {
                     name = mnt_food_starvation_severity
                     value = {
@@ -214,6 +213,24 @@ mnt_food.4 = {
                         max = 1
                     }
                 }
+            }
+
+            if = {
+                limit = {
+                    province_food <= 0
+                    is_starving = yes
+                    var:mnt_food_starvation_severity > 0
+                }
+                add_province_modifier = {
+                    modifier = mnt_food_starvation_severity
+                    months = 1
+                    mode = replace
+                    size = var:mnt_food_starvation_severity
+                }
+            }
+            else_if = {
+                limit = { has_province_modifier = mnt_food_starvation_severity }
+                remove_province_modifier = mnt_food_starvation_severity
             }
         }
     }
