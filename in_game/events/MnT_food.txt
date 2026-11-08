@@ -149,8 +149,7 @@ mnt_food.3 = {
 		}	
 	}
 }
-# Cache province food response once monthly, after the native month update.
-# Local shortfall excludes market deliveries; only native starvation enables mortality.
+# Cache the local food balance once a month. Native starvation is checked live by the auto modifier.
 mnt_food.4 = {
     type = country_event
     hidden = yes
@@ -158,54 +157,60 @@ mnt_food.4 = {
 
     immediate = {
         every_province = {
+            set_local_variable = { name = mnt_food_production value = 0 }
+            set_local_variable = { name = mnt_food_consumption value = 0 }
+            every_location_in_province = {
+                change_local_variable = { name = mnt_food_production add = food_production }
+                change_local_variable = { name = mnt_food_consumption add = mnt_location_food_consumption_amount }
+            }
             set_variable = {
                 name = mnt_food_local_surplus
                 value = {
-                    value = 0
-                    every_location_in_province = {
-                        add = { value = food_production subtract = mnt_location_food_consumption_amount }
-                    }
+                    value = local_var:mnt_food_production
+                    subtract = local_var:mnt_food_consumption
                 }
-            }
-            set_variable = { name = mnt_food_ai_weight value = 1 }
-            if = {
-                limit = { var:mnt_food_local_surplus <= 0 }
-                set_variable = { name = mnt_food_ai_weight value = 10 }
-            }
-            else_if = {
-                limit = { var:mnt_food_local_surplus < 5 }
-                set_variable = { name = mnt_food_ai_weight value = 8 }
-            }
-            else_if = {
-                limit = { var:mnt_food_local_surplus < 10 }
-                set_variable = { name = mnt_food_ai_weight value = 6 }
-            }
-            else_if = {
-                limit = { var:mnt_food_local_surplus < 20 }
-                set_variable = { name = mnt_food_ai_weight value = 4 }
-            }
-            else_if = {
-                limit = { var:mnt_food_local_surplus < 40 }
-                set_variable = { name = mnt_food_ai_weight value = 2 }
             }
 
+            set_variable = { name = mnt_food_ai_weight value = 1 }
             set_variable = { name = mnt_food_starvation_severity value = 0 }
             if = {
-                limit = {
-                    province_food <= 0
-                    is_starving = yes
-                    var:mnt_food_local_surplus < 0
+                limit = { local_var:mnt_food_consumption > 0 }
+                set_local_variable = {
+                    name = mnt_food_surplus_share
+                    value = {
+                        value = var:mnt_food_local_surplus
+                        divide = local_var:mnt_food_consumption
+                    }
                 }
+
+                # At or below break-even, use the maximum weight. Taper with surplus as a share of consumption.
+                if = {
+                    limit = { local_var:mnt_food_surplus_share <= 0 }
+                    set_variable = { name = mnt_food_ai_weight value = 10 }
+                }
+                else_if = {
+                    limit = { local_var:mnt_food_surplus_share < 0.05 }
+                    set_variable = { name = mnt_food_ai_weight value = 8 }
+                }
+                else_if = {
+                    limit = { local_var:mnt_food_surplus_share < 0.10 }
+                    set_variable = { name = mnt_food_ai_weight value = 6 }
+                }
+                else_if = {
+                    limit = { local_var:mnt_food_surplus_share < 0.20 }
+                    set_variable = { name = mnt_food_ai_weight value = 4 }
+                }
+                else_if = {
+                    limit = { local_var:mnt_food_surplus_share < 0.40 }
+                    set_variable = { name = mnt_food_ai_weight value = 2 }
+                }
+
+                # Keep severity ready if reserves run out after the monthly update.
                 set_variable = {
                     name = mnt_food_starvation_severity
                     value = {
-                        value = var:mnt_food_local_surplus
+                        value = local_var:mnt_food_surplus_share
                         multiply = -1
-                        divide = {
-                            value = 0
-                            every_location_in_province = { add = mnt_location_food_consumption_amount }
-                            min = 0.001
-                        }
                         min = 0
                         max = 1
                     }
