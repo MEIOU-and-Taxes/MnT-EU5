@@ -732,6 +732,7 @@ Date: 21/05/2026
 - Add 27 researched production methods for food RGO buildings.
 - Increase AI construction priority for food RGO buildings and Irrigation in provinces with low food surpluses. AI Irrigation requires at least 40 local food production.
 - Scale the population growth and life expectancy penalties from starvation with the estimated local food shortfall.
+- Add basic PM for most RGO buildings and make sure there is an input for those generating 1 unit.
 
 ### Features
 - Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
