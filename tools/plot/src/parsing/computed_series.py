@@ -33,6 +33,29 @@ ALLOWED_OPERATORS = {
     ast.UAdd: op.pos,
 }
 
+ALLOWED_COMPARATORS = {
+    ast.Eq: op.eq,
+    ast.NotEq: op.ne,
+    ast.Lt: op.lt,
+    ast.LtE: op.le,
+    ast.Gt: op.gt,
+    ast.GtE: op.ge,
+}
+
+ALLOWED_BOOLOPS = {
+    ast.And: lambda vals: all(vals),
+    ast.Or: lambda vals: any(vals),
+}
+
+ALLOWED_UNARYOPS = {
+    ast.USub: op.neg,
+    ast.UAdd: op.pos,
+    ast.Not: lambda x: not bool(x),
+}
+
+BUILTIN_FUNCS = {'countif', 'if', 'iff', 'abs', 'min', 'max', 'round'}
+BUILTIN_VARS = {'prev', 'curr', 'true', 'false'}
+
 _reported_parsing_errors = set()
 
 
@@ -55,7 +78,7 @@ def prepare_expression(expr_str: str):
 
 
 def validate_expression(expr_str: str):
-    """Parses and checks that the expression contains only allowed arithmetic nodes."""
+    """Parses and checks that the expression contains only allowed arithmetic, comparison, and call nodes."""
     clean, var_map = prepare_expression(expr_str)
     parsed = ast.parse(clean, mode='eval')
 
@@ -63,14 +86,14 @@ def validate_expression(expr_str: str):
         if isinstance(n, ast.Expression):
             check_node(n.body)
         elif isinstance(n, ast.Constant):
-            if not isinstance(n.value, (int, float)):
-                raise ValueError(f"Literal '{n.value}' is not a numeric constant")
+            if not isinstance(n.value, (int, float, bool, str)):
+                raise ValueError(f"Literal '{n.value}' is not a permitted constant")
         elif hasattr(ast, 'Num') and isinstance(n, ast.Num):
             pass
         elif isinstance(n, ast.Name):
             pass
         elif isinstance(n, ast.UnaryOp):
-            if type(n.op) not in ALLOWED_OPERATORS:
+            if type(n.op) not in ALLOWED_UNARYOPS:
                 raise ValueError(f"Unary operator '{type(n.op).__name__}' is not allowed")
             check_node(n.operand)
         elif isinstance(n, ast.BinOp):
@@ -78,6 +101,30 @@ def validate_expression(expr_str: str):
                 raise ValueError(f"Binary operator '{type(n.op).__name__}' is not allowed")
             check_node(n.left)
             check_node(n.right)
+        elif isinstance(n, ast.Compare):
+            for op_elem in n.ops:
+                if type(op_elem) not in ALLOWED_COMPARATORS:
+                    raise ValueError(f"Comparator '{type(op_elem).__name__}' is not allowed")
+            check_node(n.left)
+            for c in n.comparators:
+                check_node(c)
+        elif isinstance(n, ast.BoolOp):
+            if type(n.op) not in ALLOWED_BOOLOPS:
+                raise ValueError(f"Logical operator '{type(n.op).__name__}' is not allowed")
+            for val in n.values:
+                check_node(val)
+        elif isinstance(n, ast.IfExp):
+            check_node(n.test)
+            check_node(n.body)
+            check_node(n.orelse)
+        elif isinstance(n, ast.Call):
+            if not isinstance(n.func, ast.Name) or n.func.id.lower() not in BUILTIN_FUNCS:
+                f_name = getattr(n.func, 'id', str(n.func))
+                raise ValueError(f"Function '{f_name}' is not supported. Permitted functions: {', '.join(sorted(BUILTIN_FUNCS))}")
+            if n.func.id.lower() == 'countif' and len(n.args) not in (1, 2):
+                raise ValueError("CountIf requires 1 or 2 arguments: CountIf(Condition, [Effect=1])")
+            for a in n.args:
+                check_node(a)
         else:
             raise ValueError(f"Syntax element '{type(n).__name__}' is not supported")
 
@@ -86,12 +133,14 @@ def validate_expression(expr_str: str):
 
 
 def extract_variable_names(clean_expr: str, var_map: dict) -> list:
-    """Extracts all variable identifiers used in an expression."""
+    """Extracts all variable identifiers used in an expression, omitting built-in functions/constants."""
     parsed = ast.parse(clean_expr, mode='eval')
     names = []
     for node in ast.walk(parsed):
         if isinstance(node, ast.Name):
             raw_name = var_map.get(node.id, node.id)
+            if raw_name.lower() in BUILTIN_FUNCS or raw_name.lower() in BUILTIN_VARS:
+                continue
             names.append(raw_name)
     return names
 
@@ -101,7 +150,7 @@ def get_available_variables_for_dataset(dataset_type: str, prior_names: list = N
     from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, CREDIT_HEADERS, market_stats, POPULATION_HEADERS
     import src.parsing.stores as stores
 
-    vars_set = set()
+    vars_set = set(["PREV", "prev", "CURR", "curr"])
     d_type = (dataset_type or "").strip().lower()
 
     if d_type in ("country", "country_metric", "country_stats", "credit", "credit_metric", "credit_stats"):
@@ -151,15 +200,21 @@ def check_missing_variables(clean_expr: str, var_map: dict, dataset_type: str, p
     missing = []
     for var in used:
         c = canon(var)
+        if c in ("prev", "curr", "true", "false"):
+            continue
         if c not in known_canon and f"{c} price" not in known_canon:
             missing.append(var)
     return missing
 
 
 def _eval_node(node, variables, var_map=None):
-    """Recursively evaluates an AST node across binary/unary trees, constants, and variables."""
+    """Recursively evaluates an AST node across operators, functions, and variables."""
     if isinstance(node, ast.Constant):
-        return float(node.value)
+        if isinstance(node.value, bool):
+            return node.value
+        if isinstance(node.value, (int, float)):
+            return float(node.value)
+        return node.value
     elif hasattr(ast, 'Num') and isinstance(node, ast.Num):
         return float(node.n)
     elif isinstance(node, ast.Name):
@@ -167,7 +222,16 @@ def _eval_node(node, variables, var_map=None):
         if var_map and var_name in var_map:
             var_name = var_map[var_name]
 
-        # Resolution across multiple naming styles (exact, lower, spaced, underscored)
+        low = var_name.lower()
+        if low == 'true':
+            return True
+        if low == 'false':
+            return False
+        if low == 'prev':
+            return float(variables.get('PREV', variables.get('prev', 0.0)))
+        if low == 'curr':
+            return float(variables.get('CURR', variables.get('curr', 0.0)))
+
         candidates = [
             var_name,
             var_name.lower(),
@@ -182,16 +246,23 @@ def _eval_node(node, variables, var_map=None):
                 val = variables[cand]
                 break
 
-        try:
-            return float(val) if val is not None else 0.0
-        except (ValueError, TypeError):
+        if val is None:
             return 0.0
+        if isinstance(val, (int, float, bool)):
+            return val
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return val
+
     elif isinstance(node, ast.UnaryOp):
         operand = _eval_node(node.operand, variables, var_map)
         op_type = type(node.op)
-        if op_type in ALLOWED_OPERATORS:
-            return ALLOWED_OPERATORS[op_type](operand)
+        if op_type in ALLOWED_UNARYOPS:
+            res = ALLOWED_UNARYOPS[op_type](operand)
+            return float(res) if isinstance(res, bool) else res
         raise ValueError(f"Unsupported unary operator: {op_type}")
+
     elif isinstance(node, ast.BinOp):
         left = _eval_node(node.left, variables, var_map)
         right = _eval_node(node.right, variables, var_map)
@@ -202,6 +273,69 @@ def _eval_node(node, variables, var_map=None):
                     return 0.0
             return ALLOWED_OPERATORS[op_type](left, right)
         raise ValueError(f"Unsupported binary operator: {op_type}")
+
+    elif isinstance(node, ast.Compare):
+        left = _eval_node(node.left, variables, var_map)
+        is_true = True
+        for op_node, comp_node in zip(node.ops, node.comparators):
+            comp_val = _eval_node(comp_node, variables, var_map)
+            cmp_func = ALLOWED_COMPARATORS[type(op_node)]
+            try:
+                if not cmp_func(left, comp_val):
+                    is_true = False
+                    break
+            except TypeError:
+                is_true = False
+                break
+            left = comp_val
+        return is_true
+
+    elif isinstance(node, ast.BoolOp):
+        if isinstance(node.op, ast.And):
+            for v_node in node.values:
+                if not bool(_eval_node(v_node, variables, var_map)):
+                    return False
+            return True
+        elif isinstance(node.op, ast.Or):
+            for v_node in node.values:
+                if bool(_eval_node(v_node, variables, var_map)):
+                    return True
+            return False
+        return False
+
+    elif isinstance(node, ast.IfExp):
+        test_val = _eval_node(node.test, variables, var_map)
+        if bool(test_val):
+            return _eval_node(node.body, variables, var_map)
+        return _eval_node(node.orelse, variables, var_map)
+
+    elif isinstance(node, ast.Call):
+        func_name = node.func.id.lower()
+        if func_name == 'countif':
+            if len(node.args) == 0:
+                return 0.0
+            cond_val = bool(_eval_node(node.args[0], variables, var_map))
+            effect_val = _eval_node(node.args[1], variables, var_map) if len(node.args) > 1 else 1.0
+            return float(effect_val) if cond_val else 0.0
+        elif func_name in ('if', 'iff'):
+            if len(node.args) < 2:
+                return 0.0
+            cond_val = bool(_eval_node(node.args[0], variables, var_map))
+            if cond_val:
+                return _eval_node(node.args[1], variables, var_map)
+            return _eval_node(node.args[2], variables, var_map) if len(node.args) > 2 else 0.0
+        elif func_name == 'abs':
+            return abs(float(_eval_node(node.args[0], variables, var_map)))
+        elif func_name == 'min':
+            return min(float(_eval_node(a, variables, var_map)) for a in node.args)
+        elif func_name == 'max':
+            return max(float(_eval_node(a, variables, var_map)) for a in node.args)
+        elif func_name == 'round':
+            val = float(_eval_node(node.args[0], variables, var_map))
+            ndigits = int(_eval_node(node.args[1], variables, var_map)) if len(node.args) > 1 else 0
+            return round(val, ndigits)
+        raise ValueError(f"Unsupported function call: {func_name}")
+
     else:
         raise ValueError(f"Unsupported AST node expression: {type(node)}")
 
@@ -217,9 +351,27 @@ def evaluate_expression(expr_str: str, variables: dict, precompiled=None) -> flo
             clean_expr, var_map = prepare_expression(expr_str)
         parsed = ast.parse(clean_expr, mode='eval')
         res = _eval_node(parsed.body, variables, var_map)
+        if isinstance(res, bool):
+            return 1.0 if res else 0.0
         return float(res) if res is not None else 0.0
     except Exception:
         return 0.0
+
+
+def evaluate_condition(condition_str: str, variables: dict, precompiled=None) -> bool:
+    """Evaluates a logical boolean expression (supporting AND, OR, NOT, comparisons)."""
+    if not condition_str or not condition_str.strip():
+        return False
+    try:
+        if precompiled:
+            clean_expr, var_map = precompiled
+        else:
+            clean_expr, var_map = prepare_expression(condition_str)
+        parsed = ast.parse(clean_expr, mode='eval')
+        res = _eval_node(parsed.body, variables, var_map)
+        return bool(res)
+    except Exception:
+        return False
 
 
 def ensure_computed_series_file():

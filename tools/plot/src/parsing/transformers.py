@@ -59,6 +59,7 @@ def parse_data_country_metrics(data: str = None):
 
 	transformed = []
 	processed_combos = set()
+	prev_values_by_entity = {}  # (metric_name, tag) -> float
 
 	for r in countries:
 		locs_val = r.get("locations") or r.get("num_locations") or 0
@@ -120,13 +121,25 @@ def parse_data_country_metrics(data: str = None):
 		combined_vars.update(credit_rec)
 
 		for cdef in computed_defs:
+			metric_name = cdef["metric_name"]
+			prev_val = prev_values_by_entity.get((metric_name, tag), 0.0)
+			curr_val = combined_vars.get(metric_name, combined_vars.get('value', 0.0))
+			try: curr_val = float(curr_val)
+			except (ValueError, TypeError): curr_val = 0.0
+
+			combined_vars['PREV'] = prev_val
+			combined_vars['prev'] = prev_val
+			combined_vars['CURR'] = curr_val
+			combined_vars['curr'] = curr_val
+
 			calc_val = evaluate_expression(
 				cdef["expression"],
 				combined_vars,
 				precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
 			)
 
-			metric_name = cdef["metric_name"]
+			prev_values_by_entity[(metric_name, tag)] = calc_val
+
 			combined_vars[metric_name] = calc_val
 			combined_vars[metric_name.lower()] = calc_val
 			combined_vars[metric_name.replace(' ', '_')] = calc_val
@@ -227,17 +240,33 @@ def parse_data_market_metrics(data: str = None):
 		ctx[stat.replace(' ', '_')] = val
 		ctx[stat.lower().replace(' ', '_')] = val
 
-	for (m, mkt), ctx in context_by_moment_market.items():
+	sorted_market_keys = sorted(context_by_moment_market.keys(), key=lambda k: (k[0], k[1]))
+	prev_values_by_market = {}  # (metric_name, mkt) -> float
+
+	for (m, mkt) in sorted_market_keys:
+		ctx = context_by_moment_market[(m, mkt)]
 		locs = ctx.get("locations", 0.0)
 		pop = ctx.get("population", 0.0)
+
 		for cdef in computed_defs:
+			metric_name = cdef["metric_name"]
+			prev_val = prev_values_by_market.get((metric_name, mkt), 0.0)
+			curr_val = ctx.get(metric_name, ctx.get('value', 0.0))
+			try: curr_val = float(curr_val)
+			except (ValueError, TypeError): curr_val = 0.0
+
+			ctx['PREV'] = prev_val
+			ctx['prev'] = prev_val
+			ctx['CURR'] = curr_val
+			ctx['curr'] = curr_val
+
 			calc_val = evaluate_expression(
 				cdef["expression"],
 				ctx,
 				precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
 			)
 
-			metric_name = cdef["metric_name"]
+			prev_values_by_market[(metric_name, mkt)] = calc_val
 			ctx[metric_name] = calc_val
 			ctx[metric_name.lower()] = calc_val
 			ctx[metric_name.replace(' ', '_')] = calc_val
@@ -390,18 +419,33 @@ def parse_data_regional_metrics(data: str = None):
 
 	# 5. Regional Computed Series
 	if computed_defs:
-		for (m, reg), vars_dict in context_vars_by_moment_region.items():
+		sorted_region_keys = sorted(context_vars_by_moment_region.keys(), key=lambda k: (k[0], k[1]))
+		prev_values_by_region = {}  # (metric_name, reg) -> float
+
+		for (m, reg) in sorted_region_keys:
+			vars_dict = context_vars_by_moment_region[(m, reg)]
 			locs = vars_dict.get("locations", get_locs(reg))
 			p_val = vars_dict.get("total_population", pop_lookup.get((m, reg), 0.0))
+
 			for cdef in computed_defs:
+				metric_name = cdef["metric_name"]
+				prev_val = prev_values_by_region.get((metric_name, reg), 0.0)
+				curr_val = vars_dict.get(metric_name, vars_dict.get('value', 0.0))
+				try: curr_val = float(curr_val)
+				except (ValueError, TypeError): curr_val = 0.0
+
+				vars_dict['PREV'] = prev_val
+				vars_dict['prev'] = prev_val
+				vars_dict['CURR'] = curr_val
+				vars_dict['curr'] = curr_val
+
 				calc_val = evaluate_expression(
 					cdef["expression"],
 					vars_dict,
 					precompiled=(cdef.get("clean_expr"), cdef.get("var_map"))
 				)
 
-				# Feed back into context:
-				metric_name = cdef["metric_name"]
+				prev_values_by_region[(metric_name, reg)] = calc_val
 				vars_dict[metric_name] = calc_val
 				vars_dict[metric_name.lower()] = calc_val
 				vars_dict[metric_name.replace(' ', '_')] = calc_val

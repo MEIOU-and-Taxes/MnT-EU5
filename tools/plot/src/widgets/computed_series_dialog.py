@@ -78,7 +78,7 @@ class ComputedSeriesDialog(QDialog):
 
         bottom_layout = QHBoxLayout()
         bottom_layout.addStretch()
-        self.btn_save = QPushButton("Save & Apply")
+        self.btn_save = QPushButton("Save and Apply")
         self.btn_save.setStyleSheet("font-weight: bold; padding: 6px 16px;")
         self.btn_save.clicked.connect(self._on_save_and_apply)
         self.btn_cancel = QPushButton("Cancel")
@@ -245,8 +245,6 @@ class ComputedSeriesDialog(QDialog):
         else:
             self.lbl_status.setStyleSheet("color: #51cf66; font-weight: bold;")
             self.lbl_status.setText(f"✓ All {len(rows)} formula(s) are valid!")
-            if show_success_popup:
-                QMessageBox.information(self, "Formulas Valid", f"All {len(rows)} formula(s) passed validation!")
             return True, []
 
     def _on_save_and_apply(self):

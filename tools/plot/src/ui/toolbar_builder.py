@@ -65,6 +65,10 @@ class ToolbarBuilder:
 
 		self.btn_charts = QPushButton("Charts [`]")
 		self.btn_preset_config = QPushButton("Presets [Ctrl+P]")
+		self.btn_alerts = QPushButton("Alerts [Ctrl+Shift+A]")
+		self.btn_alerts.setToolTip("Configure automated alerts and trigger thresholds")
+		self.btn_alerts.clicked.connect(self.open_alert_dialog)
+
 		self.btn_refresh = QPushButton("Refresh [Ctrl+R]")
 		self.btn_refresh.setToolTip("Reload log files from disk and re-render immediately")
 
@@ -85,7 +89,7 @@ class ToolbarBuilder:
 		self.btn_year_offset = QPushButton("Relative [Y]ear")
 		self.btn_year_offset.setCheckable(True)
 		self.btn_year_offset.setChecked(self.is_year_offset)
-		self.btn_year_offset.setToolTip("Toggle time axis between absolute & relative")
+		self.btn_year_offset.setToolTip("Toggle time axis between absolute and relative")
 
 		self.btn_stats_panel = QPushButton("[S]tats panel")
 		self.btn_stats_panel.setCheckable(True)
@@ -98,7 +102,7 @@ class ToolbarBuilder:
 		self.combo_stats_hide.addItems([
 			"None",
 			"Min / Max",
-			"Min/Max & 99th/1st",
+			"Min/Max, 99th/1st",
 			"Min/Max, 99th/1st, 95th/5th"
 		])
 		if 0 <= self.stats_hide_idx < self.combo_stats_hide.count():
@@ -144,7 +148,7 @@ class ToolbarBuilder:
 		self.btn_moving_avg.setVisible(True)
 
 		for w in [self.btn_history_back, self.btn_history_forward,
-				  self.btn_charts, self.btn_preset_config, self.btn_find, self.btn_refresh,
+				  self.btn_charts, self.btn_preset_config, self.btn_alerts, self.btn_find, self.btn_refresh,
 				  self.btn_bar_chart, self.btn_year_offset, self.btn_stats_mode,
 				  self.lbl_density, self.combo_density,
 				  self.lbl_baseline, self.combo_baseline,

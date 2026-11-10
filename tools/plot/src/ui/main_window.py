@@ -25,6 +25,7 @@ from src.plotting import chart_library, configs
 from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session
 from src.services.settings_store import SettingsStore
+from src.services.alert_manager import check_active_alerts
 from src.ui.filter_controller import FilterController
 from src.ui.history_manager import HistoryManager
 from src.ui.log_watcher import MainMenuLogWatcher
@@ -35,6 +36,8 @@ from src.ui.stats_panel import format_stats_panel_text
 from src.ui.time_navigation import TimeNavigation
 from src.ui.toolbar_builder import ToolbarBuilder
 from src.ui.view_modes import ViewNodes
+from src.widgets.alert_dialog import AlertDialog
+from src.widgets.alert_notification_dialog import AlertNotificationDialog
 from src.widgets.chart_dialog import ChartSelectionDialog
 from src.widgets.computed_series_dialog import ComputedSeriesDialog
 from src.widgets.hotkey_utils import sort_hotkeys
@@ -124,6 +127,27 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.timer_auto_save.start()
 		self._apply_autosave_interval()
 
+	def open_alert_dialog(self):
+		dlg = AlertDialog(self)
+		if dlg.exec():
+			self.check_alerts_notification()
+
+	def check_alerts_notification(self):
+		"""Checks all active alert conditions and presents a notification if fired."""
+		fired = check_active_alerts(latest_only=True)
+		if not fired:
+			return
+
+		has_sound = any(a.get("notify_sound", True) for a in fired)
+		has_popup = any(a.get("notify_popup", True) for a in fired)
+
+		if has_sound:
+			QApplication.beep()
+
+		if has_popup:
+			dlg = AlertNotificationDialog(fired, self)
+			dlg.exec()
+
 	def set_density_mode(self, mode):
 		if mode == "location":
 			rloc_map = log_parser.get_region_locations()
@@ -175,7 +199,6 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 					self.current_graph_info['title'],
 					preserve_toggles=True
 				)
-			QMessageBox.information(self, "Formulas Applied", "Computed series formulas updated and applied successfully!")
 
 	def open_settings_dialog(self):
 		dlg = SettingsDialog(self.refresh_interval_idx, self.autosave_interval_idx, self.period_value,

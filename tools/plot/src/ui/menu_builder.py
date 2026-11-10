@@ -191,6 +191,12 @@ class MenuBuilder:
 		# Tools Menu
 		menu_tools = menubar.addMenu("&Tools")
 
+		act_alerts = QAction("Manage Alerts...", self)
+		act_alerts.setShortcut(QKeySequence("Ctrl+Shift+A"))
+		act_alerts.triggered.connect(self.open_alert_dialog)
+		menu_tools.addAction(act_alerts)
+		self.addAction(act_alerts)
+
 		act_refresh = QAction("Refresh Logs", self)
 		act_refresh.setShortcut(QKeySequence("Ctrl+R"))
 		act_refresh.triggered.connect(self.manual_refresh)

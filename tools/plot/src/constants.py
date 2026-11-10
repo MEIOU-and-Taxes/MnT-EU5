@@ -5,6 +5,7 @@ os.makedirs(APPDATA_DIR, exist_ok=True)
 
 KEY_CONFIGS_PATH = os.path.join(APPDATA_DIR, "key_configs.json")
 SETTINGS_PATH = os.path.join(APPDATA_DIR, "settings.json")
+ALERTS_PATH = os.path.join(APPDATA_DIR, "alerts.json")
 AUTOSAVE_DIR = os.path.join(APPDATA_DIR, "autosaves")
 os.makedirs(AUTOSAVE_DIR, exist_ok=True)
 
