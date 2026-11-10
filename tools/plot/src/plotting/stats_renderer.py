@@ -59,10 +59,19 @@ def _render_stats_mode(ax, filtered_data, value_key, value_label, display_title,
 		vals = sorted([x[1] for x in moments_dict[m]])
 		for s_id in active_ids:
 			p = PERCENTILE_BY_ID[s_id][2]
-			if p == 100: stat_curves[s_id].append(vals[-1])
-			elif p == 0: stat_curves[s_id].append(vals[0])
-			elif p == 50: stat_curves[s_id].append(float(np.median(vals)))
-			else: stat_curves[s_id].append(float(np.percentile(vals, p)))
+			if p == 100:
+				stat_curves[s_id].append(vals[-1])
+			elif p == 0:
+				stat_curves[s_id].append(vals[0])
+			elif p == 50:
+				stat_curves[s_id].append(float(np.median(vals)))
+			else:
+				# Use nearest-rank interpolation to prevent artificial fractional values in discrete data
+				try:
+					stat_curves[s_id].append(float(np.percentile(vals, p, method='nearest')))
+				except TypeError:
+					# Compatibility with NumPy < 1.22
+					stat_curves[s_id].append(float(np.percentile(vals, p, interpolation='nearest')))
 
 	is_ma = get_is_moving_avg()
 	period = get_period_value()

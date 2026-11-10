@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 from src.parsing.computed_series import (
     load_raw_computed_series_rows, save_computed_series_rows, validate_expression, check_missing_variables
 )
+from src.widgets.formula_completer import FormulaItemDelegate
 
 DATASET_OPTIONS = ["country", "market", "region"]
 
@@ -88,6 +89,14 @@ class ComputedSeriesDialog(QDialog):
         main_layout.addLayout(bottom_layout)
 
         self._populate_rows(load_raw_computed_series_rows())
+
+        self.table.setItemDelegateForColumn(
+            2,
+            FormulaItemDelegate(
+                get_dataset_type_fn=lambda row: self._get_row_data(row)["dataset_type"],
+                parent=self.table
+            )
+        )
 
     def _populate_rows(self, rows):
         self.table.setRowCount(0)

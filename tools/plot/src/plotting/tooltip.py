@@ -167,8 +167,18 @@ class InteractiveLineTooltip:
                         curve_label = line.get_label()
 
             if target_val is not None:
-                closest_entries = sorted(moments_data[orig_x], key=lambda x: abs(x[1] - target_val))[:TOOLTIP_DISPLAYED_LINES]
-                top_sorted = sorted(closest_entries, key=lambda x: x[1], reverse=True)
+                # Rank entities around the percentile or highest non-zeros if inspecting upper tiers
+                all_entries = list(moments_data[orig_x])
+                if "high" in curve_label.lower() or "maximum" in curve_label.lower() or "75th" in curve_label.lower():
+                    # Upper percentiles: prioritize highest real values
+                    top_sorted = sorted(all_entries, key=lambda x: x[1], reverse=True)[:TOOLTIP_DISPLAYED_LINES]
+                elif "low" in curve_label.lower() or "minimum" in curve_label.lower() or "25th" in curve_label.lower():
+                    # Lower percentiles: prioritize lowest real values
+                    top_sorted = sorted(all_entries, key=lambda x: x[1])[:TOOLTIP_DISPLAYED_LINES]
+                else:
+                    closest_entries = sorted(all_entries, key=lambda x: abs(x[1] - target_val))[:TOOLTIP_DISPLAYED_LINES]
+                    top_sorted = sorted(closest_entries, key=lambda x: x[1], reverse=True)
+
                 top_formatted = [(ent, format_metric_3digits(v)) for ent, v in top_sorted]
 
                 max_ent = max((len(str(ent)) for ent, _ in top_formatted), default=10)

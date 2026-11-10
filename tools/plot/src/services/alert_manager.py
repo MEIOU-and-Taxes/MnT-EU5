@@ -1,6 +1,5 @@
 ﻿import json
 import os
-import uuid
 
 from src.constants import ALERTS_PATH
 from src.parsing.computed_series import validate_expression, evaluate_condition
@@ -33,6 +32,8 @@ DEFAULT_ALERTS = [
     }
 ]
 
+# Set of already triggered alert keys: (rule_id, entity, moment, condition)
+_triggered_alert_keys = set()
 
 def load_alerts() -> list:
     """Loads configured alert rules from ALERTS_PATH, returning defaults if not found."""
@@ -162,13 +163,22 @@ def evaluate_alert_rule(rule: dict, latest_only=False):
 
 
 def check_active_alerts(latest_only=True):
-    """Evaluates all enabled alert rules and returns fired matches."""
+    """Evaluates all enabled alert rules and returns newly fired matches."""
     rules = load_alerts()
-    all_fired = []
+    newly_fired = []
     for rule in rules:
         if not rule.get("enabled", True):
             continue
         status, matches, _ = evaluate_alert_rule(rule, latest_only=latest_only)
         if status == "FIRED":
-            all_fired.extend(matches)
-    return all_fired
+            for m in matches:
+                sig = (m.get("rule_id"), m.get("entity"), m.get("moment"), m.get("condition"))
+                if sig not in _triggered_alert_keys:
+                    _triggered_alert_keys.add(sig)
+                    newly_fired.append(m)
+    return newly_fired
+
+def clear_triggered_alerts():
+    """Clears history of fired alert keys."""
+    global _triggered_alert_keys
+    _triggered_alert_keys.clear()

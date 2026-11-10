@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QHeaderView,
     QPushButton, QTableWidgetItem
 )
+from src.services.alert_manager import clear_triggered_alerts
 
 
 class AlertWindow(QWidget):
@@ -14,6 +15,7 @@ class AlertWindow(QWidget):
         self.setWindowTitle("Triggered Alerts History")
         self.resize(800, 420)
         self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
+        self._seen_alert_rows = set()
 
         layout = QVBoxLayout(self)
 
@@ -45,7 +47,14 @@ class AlertWindow(QWidget):
     def add_alerts(self, fired_alerts: list):
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.table.setSortingEnabled(False)
+        has_new = False
         for a in fired_alerts:
+            sig = (str(a.get("moment", "")), str(a.get("entity", "")), str(a.get("condition", "")))
+            if sig in self._seen_alert_rows:
+                continue
+            self._seen_alert_rows.add(sig)
+            has_new = True
+
             row = 0
             self.table.insertRow(row)
             self.table.setItem(row, 0, QTableWidgetItem(current_time))
@@ -54,9 +63,12 @@ class AlertWindow(QWidget):
             self.table.setItem(row, 3, QTableWidgetItem(str(a.get("entity", ""))))
             self.table.setItem(row, 4, QTableWidgetItem(str(a.get("condition", ""))))
 
-        self.show()
-        self.raise_()
-        self.activateWindow()
+        if has_new:
+            self.show()
+            self.raise_()
+            self.activateWindow()
 
     def clear_alerts(self):
         self.table.setRowCount(0)
+        self._seen_alert_rows.clear()
+        clear_triggered_alerts()

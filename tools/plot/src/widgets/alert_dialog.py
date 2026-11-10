@@ -1,13 +1,15 @@
 ﻿import uuid
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QStringListModel
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QHeaderView,
     QPushButton, QComboBox, QLineEdit, QCheckBox, QGroupBox, QFormLayout,
-    QTableWidgetItem, QSplitter, QWidget, QSizePolicy
+    QTableWidgetItem, QSplitter, QWidget, QSizePolicy, QCompleter
 )
 
 from src.services.alert_manager import load_alerts, save_alerts, evaluate_alert_rule
+from src.widgets.formula_completer import FormulaLineEdit
+import src.parsing.stores as stores
 
 
 class AlertDialog(QDialog):
@@ -84,8 +86,13 @@ class AlertDialog(QDialog):
         self.edit_name = QLineEdit()
         self.combo_dataset = QComboBox()
         self.combo_dataset.addItems(["country", "market", "region"])
+        self.combo_dataset.currentIndexChanged.connect(self._on_dataset_changed)
+
         self.edit_entity = QLineEdit("All")
-        self.edit_entity.setPlaceholderText("All, or tag (e.g. FRA, London)")
+        self.entity_completer = QCompleter(self)
+        self.entity_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.edit_entity.setCompleter(self.entity_completer)
+
         row1.addWidget(QLabel("Name:"))
         row1.addWidget(self.edit_name, stretch=2)
         row1.addWidget(QLabel("Dataset:"))
@@ -94,11 +101,13 @@ class AlertDialog(QDialog):
         row1.addWidget(self.edit_entity, stretch=1)
         form_layout.addRow(row1)
 
-        # Condition Expression
-        self.edit_condition = QLineEdit()
+        # Autocompleting Condition Expression
+        self.edit_condition = FormulaLineEdit(dataset_type="country")
         self.edit_condition.setPlaceholderText("e.g. rate(total_debt) > 24 and density_by_population([Unemployed peasants]) > 0.7")
         self.edit_condition.setFont(QFont("Consolas", 10))
         form_layout.addRow("Condition:", self.edit_condition)
+
+        self._update_entity_completer("country")
 
         row2 = QHBoxLayout()
         self.chk_enabled = QCheckBox("Alert Enabled")
@@ -267,3 +276,24 @@ class AlertDialog(QDialog):
             self.rules[self.current_rule_idx] = self._collect_current_rule()
         save_alerts(self.rules)
         self.accept()
+
+    def _on_dataset_changed(self):
+        d_type = self.combo_dataset.currentText()
+        self.edit_condition.set_dataset_type(d_type)
+        self._update_entity_completer(d_type)
+
+    def _update_entity_completer(self, d_type):
+        entities = {"All"}
+        if d_type == "country":
+            for r in stores.tg_cumulative_store.values():
+                if r.get("tag"): entities.add(r["tag"])
+                if r.get("name"): entities.add(r["name"])
+        elif d_type == "market":
+            for k in stores.mk_cumulative_store.keys():
+                entities.add(k[1])
+        elif d_type == "region":
+            entities.update(stores.region_locations_store.keys())
+            for k in stores.pop_cumulative_store.keys():
+                entities.add(k[1])
+
+        self.entity_completer.setModel(QStringListModel(sorted(entities), self.entity_completer))
