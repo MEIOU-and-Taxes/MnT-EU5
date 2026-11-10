@@ -1,6 +1,6 @@
 ﻿import uuid
 from PyQt6.QtCore import Qt, QStringListModel
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QHeaderView,
     QPushButton, QComboBox, QLineEdit, QCheckBox, QGroupBox, QFormLayout,
@@ -18,10 +18,11 @@ class AlertDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Alert Rules & Monitoring Configuration")
-        self.resize(1080, 680)
+        self.resize(1120, 720)
 
         self.rules = load_alerts()
         self.current_rule_idx = -1
+        self.main_window = parent
 
         self._build_ui()
         self._populate_table()
@@ -34,10 +35,33 @@ class AlertDialog(QDialog):
         header = QLabel(
             "<h3>Alert Rules Configuration</h3>"
             "Configure alerts using boolean criteria and transformation functions: "
-            "<code>rate(X)</code>, <code>acceleration(X)</code>, <code>ratio(X)</code>, "
-            "<code>difference(X)</code>, <code>density_by_location(X)</code>, <code>density_by_population(X)</code>"
+            "<code>rate(X)</code>, <code>relative_rate(X)</code>, <code>acceleration(X)</code>, "
+            "<code>ratio(X)</code>, <code>difference(X)</code>, <code>density_by_location(X)</code>, <code>density_by_population(X)</code>"
         )
         main_layout.addWidget(header)
+
+        # Global Master Toggles Row
+        global_controls_row = QHBoxLayout()
+        self.chk_global_alerts = QCheckBox("Enable Alerts Monitoring [Alt+A]")
+        self.chk_global_alerts.setChecked(getattr(self.main_window, 'alerts_enabled', True))
+        self.chk_global_alerts.toggled.connect(self._on_toggle_global_alerts)
+
+        self.chk_global_sounds = QCheckBox("Enable Alert Sounds [Alt+S]")
+        self.chk_global_sounds.setChecked(getattr(self.main_window, 'alert_sounds_enabled', True))
+        self.chk_global_sounds.toggled.connect(self._on_toggle_global_sounds)
+
+        global_controls_row.addWidget(self.chk_global_alerts)
+        global_controls_row.addWidget(self.chk_global_sounds)
+        global_controls_row.addStretch()
+
+        self.btn_disable_all = QPushButton("Turn Off All Alerts [Alt+D]")
+        self.btn_disable_all.clicked.connect(self._turn_off_all_alerts)
+        self.btn_enable_all = QPushButton("Turn On All Alerts [Alt+E]")
+        self.btn_enable_all.clicked.connect(self._turn_on_all_alerts)
+
+        global_controls_row.addWidget(self.btn_disable_all)
+        global_controls_row.addWidget(self.btn_enable_all)
+        main_layout.addLayout(global_controls_row)
 
         splitter = QSplitter(Qt.Orientation.Vertical)
         main_layout.addWidget(splitter, stretch=1)
@@ -49,9 +73,10 @@ class AlertDialog(QDialog):
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Enabled", "Alert Name", "Dataset", "Entity Filter", "Condition"])
+        self.table.setHorizontalHeaderLabels(["Active", "Alert Name", "Dataset", "Entity Filter", "Condition"])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -110,7 +135,7 @@ class AlertDialog(QDialog):
         self._update_entity_completer("country")
 
         row2 = QHBoxLayout()
-        self.chk_enabled = QCheckBox("Alert Enabled")
+        self.chk_enabled = QCheckBox("Rule Enabled")
         self.chk_enabled.setChecked(True)
         row2.addWidget(self.chk_enabled)
         row2.addStretch()
@@ -129,7 +154,7 @@ class AlertDialog(QDialog):
 
         bottom_layout.addWidget(editor_group)
 
-        # Test Result Status Label (Fixed vertical height so it does NOT stretch)
+        # Test Result Status Label
         self.lbl_test_result = QLabel("Click 'Test Condition' to check if the condition fires against loaded data.")
         self.lbl_test_result.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.lbl_test_result.setFixedHeight(40)
@@ -142,6 +167,7 @@ class AlertDialog(QDialog):
         self.table_matches = QTableWidget()
         self.table_matches.setColumnCount(3)
         self.table_matches.setHorizontalHeaderLabels(["Year", "Entity", "Condition Fired"])
+        self.table_matches.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table_matches.verticalHeader().setVisible(False)
         self.table_matches.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table_matches.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -162,6 +188,36 @@ class AlertDialog(QDialog):
         bottom_dialog_row.addWidget(self.btn_apply)
         bottom_dialog_row.addWidget(self.btn_cancel)
         main_layout.addLayout(bottom_dialog_row)
+
+        self._setup_dialog_shortcuts()
+
+    def _setup_dialog_shortcuts(self):
+        QShortcut(QKeySequence("Alt+D"), self).activated.connect(self._turn_off_all_alerts)
+        QShortcut(QKeySequence("Alt+E"), self).activated.connect(self._turn_on_all_alerts)
+        QShortcut(QKeySequence("Alt+A"), self).activated.connect(self.chk_global_alerts.toggle)
+        QShortcut(QKeySequence("Alt+S"), self).activated.connect(self.chk_global_sounds.toggle)
+
+    def _on_toggle_global_alerts(self, checked):
+        if self.main_window:
+            self.main_window.alerts_enabled = checked
+            self.main_window.save_app_settings()
+
+    def _on_toggle_global_sounds(self, checked):
+        if self.main_window:
+            self.main_window.alert_sounds_enabled = checked
+            self.main_window.save_app_settings()
+
+    def _turn_off_all_alerts(self):
+        for r in self.rules:
+            r["enabled"] = False
+        self.chk_enabled.setChecked(False)
+        self._populate_table()
+
+    def _turn_on_all_alerts(self):
+        for r in self.rules:
+            r["enabled"] = True
+        self.chk_enabled.setChecked(True)
+        self._populate_table()
 
     def _populate_table(self):
         self.table.blockSignals(True)
@@ -184,8 +240,13 @@ class AlertDialog(QDialog):
         if 0 <= idx < len(self.rules):
             self.current_rule_idx = idx
             r = self.rules[idx]
+            d_type = r.get("dataset_type", "country")
             self.edit_name.setText(r.get("name", ""))
-            self.combo_dataset.setCurrentText(r.get("dataset_type", "country"))
+            self.combo_dataset.blockSignals(True)
+            self.combo_dataset.setCurrentText(d_type)
+            self.combo_dataset.blockSignals(False)
+            self.edit_condition.set_dataset_type(d_type)
+            self._update_entity_completer(d_type)
             self.edit_entity.setText(r.get("entity_filter", "All"))
             self.edit_condition.setText(r.get("condition", ""))
             self.chk_enabled.setChecked(r.get("enabled", True))

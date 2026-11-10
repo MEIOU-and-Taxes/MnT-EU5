@@ -101,6 +101,8 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.has_new_data = False
 		self.stats_shading_all = True
 
+		self.alerts_enabled = True
+		self.alert_sounds_enabled = True
 		self.load_app_settings()
 		self.init_history()
 
@@ -138,6 +140,8 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 			self.check_alerts_notification()
 
 	def play_alarm_sound(self):
+		if not getattr(self, 'alert_sounds_enabled', True):
+			return
 		sound_path = getattr(self, 'alarm_sound_path', '')
 		if sound_path and os.path.exists(sound_path):
 			try:
@@ -152,6 +156,8 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 
 	def check_alerts_notification(self):
 		"""Checks all active alert conditions and appends them to the persistent AlertWindow."""
+		if not getattr(self, 'alerts_enabled', True):
+			return
 		fired = check_active_alerts(latest_only=True)
 		if not fired:
 			return
@@ -527,3 +533,11 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 			self.read_and_parse_logs()
 			self.has_new_data = True
 			self.check_alerts_notification()
+
+	def _set_alerts_enabled(self, enabled):
+		self.alerts_enabled = enabled
+		self.save_app_settings()
+
+	def _set_alert_sounds_enabled(self, enabled):
+		self.alert_sounds_enabled = enabled
+		self.save_app_settings()

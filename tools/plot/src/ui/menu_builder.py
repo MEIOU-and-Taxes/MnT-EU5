@@ -234,3 +234,17 @@ class MenuBuilder:
 					self.act_density_loc, self.act_density_pop, self.act_log_scale,
 					self.act_moving_avg, act_refresh, act_computed_series, act_analysis, act_settings]:
 			self.addAction(act)
+
+		act_toggle_alerts = QAction("Enable Alerts Monitoring", self, checkable=True)
+		act_toggle_alerts.setChecked(self.alerts_enabled)
+		act_toggle_alerts.setShortcut(QKeySequence("Alt+A"))
+		act_toggle_alerts.toggled.connect(self._set_alerts_enabled)
+		menu_tools.addAction(act_toggle_alerts)
+		self.addAction(act_toggle_alerts)
+
+		act_toggle_sounds = QAction("Enable Alert Sounds", self, checkable=True)
+		act_toggle_sounds.setChecked(self.alert_sounds_enabled)
+		act_toggle_sounds.setShortcut(QKeySequence("Alt+S"))
+		act_toggle_sounds.toggled.connect(self._set_alert_sounds_enabled)
+		menu_tools.addAction(act_toggle_sounds)
+		self.addAction(act_toggle_sounds)

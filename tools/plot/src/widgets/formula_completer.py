@@ -7,15 +7,17 @@ from src.parsing.computed_series import BUILTIN_FUNCS, get_available_variables_f
 
 
 class FormulaLineEdit(QLineEdit):
-    """QLineEdit providing multi-word token autocompletion for formulas and metrics."""
+    """QLineEdit providing substring token autocompletion for formulas, functions, and metrics."""
 
     def __init__(self, dataset_type="country", parent=None):
         super().__init__(parent)
         self.dataset_type = dataset_type
         self.completer = QCompleter(self)
         self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        # Enable substring matching across words
+        self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.completer.setWidget(self)
-        self.completer.activated.connect(self._insert_completion)
+        self.completer.activated[str].connect(self._insert_completion)
         self.update_available_words()
 
     def set_dataset_type(self, dataset_type: str):
@@ -40,20 +42,33 @@ class FormulaLineEdit(QLineEdit):
     def _get_current_token(self):
         cursor_pos = self.cursorPosition()
         text = self.text()[:cursor_pos]
-        # Match word tokens or partially typed bracket tokens like `[Credit `
-        match = re.search(r'(\[?[a-zA-Z0-9_ -]*)$', text)
+
+        # If inside an unclosed bracket, match from the bracket
+        last_open = text.rfind('[')
+        last_close = text.rfind(']')
+        if last_open > last_close:
+            return text[last_open:]
+
+        # Otherwise match the trailing alphanumeric / underscore word
+        match = re.search(r'([a-zA-Z0-9_]+)$', text)
         return match.group(1) if match else ""
 
     def _insert_completion(self, completion: str):
         cursor_pos = self.cursorPosition()
-        prefix = self._get_current_token()
-        start = cursor_pos - len(prefix)
+        token = self._get_current_token()
+
+        start = cursor_pos - len(token)
         end = cursor_pos
 
+        is_function = completion.endswith('(')
+        insert_text = f"{completion})" if is_function else completion
+
         full_text = self.text()
-        new_text = full_text[:start] + completion + full_text[end:]
+        new_text = full_text[:start] + insert_text + full_text[end:]
         self.setText(new_text)
-        new_cursor = start + len(completion)
+
+        # Place cursor inside parentheses if function, otherwise after the insertion
+        new_cursor = (start + len(completion)) if is_function else (start + len(insert_text))
         self.setCursorPosition(new_cursor)
 
     def keyPressEvent(self, event):
@@ -61,7 +76,7 @@ class FormulaLineEdit(QLineEdit):
             if event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return, Qt.Key.Key_Tab):
                 current_index = self.completer.popup().currentIndex()
                 if current_index.isValid():
-                    self.completer.activated.emit(current_index.data())
+                    self._insert_completion(current_index.data())
                     self.completer.popup().hide()
                     event.accept()
                     return
@@ -69,13 +84,18 @@ class FormulaLineEdit(QLineEdit):
         super().keyPressEvent(event)
 
         token = self._get_current_token()
-        if len(token) >= 2 or (token.startswith('[') and len(token) >= 2):
-            self.completer.setCompletionPrefix(token)
+        # Trigger when at least 1 letter is typed or opening bracket is entered
+        if len(token) >= 1:
+            search_prefix = token[1:] if token.startswith('[') else token
+            self.completer.setCompletionPrefix(search_prefix)
             popup = self.completer.popup()
-            popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
-            cr = self.cursorRect()
-            cr.setWidth(self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width() + 20)
-            self.completer.complete(cr)
+            if popup.model().rowCount() > 0:
+                popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
+                cr = self.cursorRect()
+                cr.setWidth(popup.sizeHintForColumn(0) + popup.verticalScrollBar().sizeHint().width() + 40)
+                self.completer.complete(cr)
+            else:
+                popup.hide()
         else:
             self.completer.popup().hide()
 

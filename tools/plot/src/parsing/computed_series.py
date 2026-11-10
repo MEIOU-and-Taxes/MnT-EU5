@@ -55,7 +55,7 @@ ALLOWED_UNARYOPS = {
 
 BUILTIN_FUNCS = {
     'countif', 'if', 'iff', 'abs', 'min', 'max', 'round',
-    'rate', 'acceleration', 'ratio', 'difference',
+    'rate', 'relative_rate', 'rel_rate', 'acceleration', 'ratio', 'difference',
     'density_by_location', 'density_by_population'
 }
 BUILTIN_VARS = {'prev', 'true', 'false'}
@@ -315,7 +315,7 @@ def _eval_node(node, variables, var_map=None, series_history=None, moment=None):
         func_name = node.func.id.lower()
 
         # Domain calculation functions across series history
-        if func_name in ('rate', 'acceleration', 'ratio', 'difference', 'density_by_location', 'density_by_population'):
+        if func_name in ('rate', 'relative_rate', 'rel_rate', 'acceleration', 'ratio', 'difference', 'density_by_location', 'density_by_population'):
             arg_node = node.args[0]
             val = float(_eval_node(arg_node, variables, var_map, series_history, moment))
 
@@ -335,6 +335,11 @@ def _eval_node(node, variables, var_map=None, series_history=None, moment=None):
                         if idx >= 1:
                             prev_val = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
                             return val - prev_val
+                        return 0.0
+                    elif func_name in ('relative_rate', 'rel_rate'):
+                        if idx >= 1:
+                            prev_val = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
+                            return (((val - prev_val) / prev_val) * 100.0) if abs(prev_val) > 1e-12 else 0.0
                         return 0.0
                     elif func_name == 'acceleration':
                         if idx >= 2:

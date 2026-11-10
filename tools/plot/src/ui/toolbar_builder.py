@@ -133,9 +133,9 @@ class ToolbarBuilder:
 		# Derivative Dropdown
 		self.lbl_derivative = QLabel("Rate of change:")
 		self.combo_derivative = RightClickableComboBox()
-		self.combo_derivative.addItems(["Base", "Rate", "Acceleration"])
+		self.combo_derivative.addItems(["Base", "Rate (Δ)", "Rel Rate (%Δ)", "Acceleration (Δ²)"])
 		self.combo_derivative.setCurrentIndex(self.derivative_order)
-		self.combo_derivative.setToolTip("Select derivative order (Right-click to reset): Base, Rate (Δ) [R], Acceleration (Δ²) [Shift+R]")
+		self.combo_derivative.setToolTip("Select derivative order (Right-click to reset): Base, Rate (Δ) [R], Rel Rate (%Δ) [R], Acceleration (Δ²) [Shift+R]")
 		self.combo_derivative.currentIndexChanged.connect(self._on_derivative_changed)
 
 		self.btn_log_scale = QPushButton("[L]og scale")

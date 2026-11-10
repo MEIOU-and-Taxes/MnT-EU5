@@ -27,6 +27,8 @@ class SettingsStore:
 			self.stats_shading_all = data.get("stats_shading_all", True)
 			self.is_stats_panel_visible = data.get("is_stats_panel_visible", True)
 			self.alarm_sound_path = data.get("alarm_sound_path", "")
+			self.alerts_enabled = data.get("alerts_enabled", True)
+			self.alert_sounds_enabled = data.get("alert_sounds_enabled", True)
 		except Exception as e:
 			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
 
@@ -49,6 +51,8 @@ class SettingsStore:
 				"stats_shading_all": self.stats_shading_all,
 				"is_stats_panel_visible": self.is_stats_panel_visible,
 				"alarm_sound_path": getattr(self, 'alarm_sound_path', ""),
+				"alerts_enabled": getattr(self, 'alerts_enabled', True),
+				"alert_sounds_enabled": getattr(self, 'alert_sounds_enabled', True),
 			}
 			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
 				json.dump(data, f, indent=2)

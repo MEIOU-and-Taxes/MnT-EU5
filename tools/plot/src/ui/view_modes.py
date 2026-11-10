@@ -145,19 +145,22 @@ class ViewNodes:
 
 	def handle_r_shortcut(self):
 		cur = self.combo_derivative.currentIndex()
-		if cur == 2:  # Acceleration -> Rate
+		# Cycle: Base (0) -> Rate (1) -> Rel Rate (2) -> Base (0)
+		if cur == 0:
 			self.combo_derivative.setCurrentIndex(1)
-		elif cur == 0:  # Base -> Rate
-			self.combo_derivative.setCurrentIndex(1)
-		else:  # Rate -> Base
+		elif cur == 1:
+			self.combo_derivative.setCurrentIndex(2)
+		elif cur == 2:
 			self.combo_derivative.setCurrentIndex(0)
+		else:  # Acceleration -> Rate
+			self.combo_derivative.setCurrentIndex(1)
 
 	def handle_shift_r_shortcut(self):
 		cur = self.combo_derivative.currentIndex()
-		if cur == 2:  # Acceleration -> Base
+		if cur == 3:  # Acceleration -> Base
 			self.combo_derivative.setCurrentIndex(0)
-		else:  # Base or Rate -> Acceleration
-			self.combo_derivative.setCurrentIndex(2)
+		else:  # Any other -> Acceleration
+			self.combo_derivative.setCurrentIndex(3)
 
 	def apply_plot_settings(self):
 		if not (self.ax.get_lines() or self.ax.patches):

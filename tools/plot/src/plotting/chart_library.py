@@ -327,6 +327,8 @@ def _create_generic_graph(
 			if deriv_order == 1:
 				effective_val_label = f"Δ {effective_val_label} / Year"
 			elif deriv_order == 2:
+				effective_val_label = f"%Δ {effective_val_label} / Year"
+			elif deriv_order == 3:
 				effective_val_label = f"Δ² {effective_val_label} / Year²"
 
 			deriv_transformed = []
@@ -346,6 +348,12 @@ def _create_generic_graph(
 						diff_item[value_key] = series_items[i][value_key] - series_items[i - 1][value_key]
 						deriv_transformed.append(diff_item)
 				elif deriv_order == 2:
+					for i in range(1, len(series_items)):
+						rel_item = dict(series_items[i])
+						prev_v = series_items[i - 1][value_key]
+						rel_item[value_key] = (((series_items[i][value_key] - prev_v) / prev_v) * 100.0) if abs(prev_v) > 1e-12 else 0.0
+						deriv_transformed.append(rel_item)
+				elif deriv_order == 3:
 					for i in range(2, len(series_items)):
 						accel_item = dict(series_items[i])
 						d_curr = series_items[i][value_key] - series_items[i - 1][value_key]
@@ -354,8 +362,8 @@ def _create_generic_graph(
 						deriv_transformed.append(accel_item)
 
 			if not deriv_transformed:
-				needed = 2 if deriv_order == 1 else 3
-				d_term = "rate (Δ)" if deriv_order == 1 else "acceleration (Δ²)"
+				needed = 3 if deriv_order == 3 else 2
+				d_term = "relative rate (%Δ)" if deriv_order == 2 else ("rate (Δ)" if deriv_order == 1 else "acceleration (Δ²)")
 				ax.text(0.5, 0.5, f"Need at least {needed} consecutive time steps to calculate {d_term}.",
 						ha='center', va='center', fontsize=12)
 				ax.figure.canvas.draw_idle()
