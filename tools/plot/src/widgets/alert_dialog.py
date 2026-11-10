@@ -165,13 +165,14 @@ class AlertDialog(QDialog):
 
         # Matches Preview Table
         self.table_matches = QTableWidget()
-        self.table_matches.setColumnCount(3)
-        self.table_matches.setHorizontalHeaderLabels(["Year", "Entity", "Condition Fired"])
+        self.table_matches.setColumnCount(4)
+        self.table_matches.setHorizontalHeaderLabels(["Year", "Entity", "Condition", "Values"])
         self.table_matches.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table_matches.verticalHeader().setVisible(False)
         self.table_matches.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table_matches.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.table_matches.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.table_matches.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.table_matches.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         bottom_layout.addWidget(self.table_matches, stretch=1)
 
@@ -315,10 +316,15 @@ class AlertDialog(QDialog):
                 f"✓ CONDITION FIRED! Triggered {len(matches)} time(s). Most recent: {most_recent['entity']} at Year {most_recent['moment']}."
             )
             for row, m in enumerate(matches[:50]):
+                val_str = str(m.get("values", ""))
+                val_item = QTableWidgetItem(val_str)
+                val_item.setToolTip(val_str)
+
                 self.table_matches.insertRow(row)
                 self.table_matches.setItem(row, 0, QTableWidgetItem(str(m["moment"])))
                 self.table_matches.setItem(row, 1, QTableWidgetItem(m["entity"]))
                 self.table_matches.setItem(row, 2, QTableWidgetItem(m["condition"]))
+                self.table_matches.setItem(row, 3, val_item)
 
         elif status == "NOT_FIRED":
             self.lbl_test_result.setStyleSheet(

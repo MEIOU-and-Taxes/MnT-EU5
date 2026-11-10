@@ -78,8 +78,11 @@ def prepare_expression(expr_str: str):
         return safe_id
 
     clean = re.sub(r'\[([^\]]+)\]', repl, clean)
-    return clean, var_map
 
+    # Convert single '=' to '==' when not already part of '==', '!=', '<=', or '>='
+    clean = re.sub(r'(?<![<>=!])=(?!=)', '==', clean)
+
+    return clean, var_map
 
 def validate_expression(expr_str: str):
     """Parses and checks that the expression contains only allowed arithmetic, comparison, and call nodes."""
