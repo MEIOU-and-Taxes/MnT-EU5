@@ -192,7 +192,7 @@ class MenuBuilder:
 		menu_tools = menubar.addMenu("&Tools")
 
 		act_alerts = QAction("Manage Alerts...", self)
-		act_alerts.setShortcut(QKeySequence("Ctrl+Shift+A"))
+		act_alerts.setShortcut(QKeySequence("Shift+A"))
 		act_alerts.triggered.connect(self.open_alert_dialog)
 		menu_tools.addAction(act_alerts)
 		self.addAction(act_alerts)

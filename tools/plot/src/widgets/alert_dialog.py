@@ -1,22 +1,22 @@
 ﻿import uuid
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QHeaderView,
     QPushButton, QComboBox, QLineEdit, QCheckBox, QGroupBox, QFormLayout,
-    QTableWidgetItem, QMessageBox, QSplitter, QWidget
+    QTableWidgetItem, QSplitter, QWidget, QSizePolicy
 )
 
 from src.services.alert_manager import load_alerts, save_alerts, evaluate_alert_rule
 
 
 class AlertDialog(QDialog):
-    """Alert Management dialog with live test highlighting and transformation options."""
+    """Alert Management dialog for configuring rules and testing boolean conditions live."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Alert Rules and Monitoring")
-        self.resize(1120, 700)
+        self.setWindowTitle("Alert Rules & Monitoring Configuration")
+        self.resize(1080, 680)
 
         self.rules = load_alerts()
         self.current_rule_idx = -1
@@ -29,7 +29,12 @@ class AlertDialog(QDialog):
     def _build_ui(self):
         main_layout = QVBoxLayout(self)
 
-        header = QLabel("<h3>Alert Rules & Trigger Conditions</h3>Configure automated alerts with complex boolean criteria and test them live.")
+        header = QLabel(
+            "<h3>Alert Rules Configuration</h3>"
+            "Configure alerts using boolean criteria and transformation functions: "
+            "<code>rate(X)</code>, <code>acceleration(X)</code>, <code>ratio(X)</code>, "
+            "<code>difference(X)</code>, <code>density_by_location(X)</code>, <code>density_by_population(X)</code>"
+        )
         main_layout.addWidget(header)
 
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -41,10 +46,8 @@ class AlertDialog(QDialog):
         top_layout.setContentsMargins(0, 0, 0, 0)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels([
-            "Active", "Alert Name", "Dataset", "Entity Filter", "Density", "Baseline", "Order", "Condition"
-        ])
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["Enabled", "Alert Name", "Dataset", "Entity Filter", "Condition"])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.verticalHeader().setVisible(False)
@@ -52,10 +55,7 @@ class AlertDialog(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
         self.table.itemSelectionChanged.connect(self._on_rule_selected)
         top_layout.addWidget(self.table)
 
@@ -85,7 +85,7 @@ class AlertDialog(QDialog):
         self.combo_dataset = QComboBox()
         self.combo_dataset.addItems(["country", "market", "region"])
         self.edit_entity = QLineEdit("All")
-        self.edit_entity.setPlaceholderText("All, or specific tag (e.g. FRA, London)")
+        self.edit_entity.setPlaceholderText("All, or tag (e.g. FRA, London)")
         row1.addWidget(QLabel("Name:"))
         row1.addWidget(self.edit_name, stretch=2)
         row1.addWidget(QLabel("Dataset:"))
@@ -96,44 +96,16 @@ class AlertDialog(QDialog):
 
         # Condition Expression
         self.edit_condition = QLineEdit()
-        self.edit_condition.setPlaceholderText("e.g. [Total Population] < 45000000 and [Average literacy] < 0.2")
+        self.edit_condition.setPlaceholderText("e.g. rate(total_debt) > 24 and density_by_population([Unemployed peasants]) > 0.7")
         self.edit_condition.setFont(QFont("Consolas", 10))
-        form_layout.addRow("Condition (AND/OR/NOT):", self.edit_condition)
+        form_layout.addRow("Condition:", self.edit_condition)
 
-        # Transformations: Density, Baseline, Derivative
         row2 = QHBoxLayout()
-        self.combo_density = QComboBox()
-        self.combo_density.addItems(["none", "location", "population"])
-        self.combo_baseline = QComboBox()
-        self.combo_baseline.addItems(["none", "ratio", "difference"])
-        self.combo_derivative = QComboBox()
-        self.combo_derivative.addItems(["0 (Base)", "1 (Rate Δ)", "2 (Acceleration Δ²)"])
-
-        row2.addWidget(QLabel("Density Mode:"))
-        row2.addWidget(self.combo_density)
-        row2.addWidget(QLabel("Baseline Mode:"))
-        row2.addWidget(self.combo_baseline)
-        row2.addWidget(QLabel("Derivative:"))
-        row2.addWidget(self.combo_derivative)
-        row2.addStretch()
-        form_layout.addRow(row2)
-
-        # Notification toggles and active state
-        row3 = QHBoxLayout()
-        self.chk_enabled = QCheckBox("Rule Enabled")
+        self.chk_enabled = QCheckBox("Alert Enabled")
         self.chk_enabled.setChecked(True)
-        self.chk_popup = QCheckBox("Show Popup Dialog")
-        self.chk_popup.setChecked(True)
-        self.chk_sound = QCheckBox("Play Sound / Beep")
-        self.chk_sound.setChecked(True)
-        row3.addWidget(self.chk_enabled)
-        row3.addWidget(self.chk_popup)
-        row3.addWidget(self.chk_sound)
-        row3.addStretch()
-        form_layout.addRow(row3)
+        row2.addWidget(self.chk_enabled)
+        row2.addStretch()
 
-        # Test and Save buttons
-        action_row = QHBoxLayout()
         self.btn_test = QPushButton("Test Condition")
         self.btn_test.setStyleSheet("font-weight: bold; background-color: #2b5797; color: white; padding: 6px 14px;")
         self.btn_test.clicked.connect(self._on_test_condition)
@@ -142,28 +114,31 @@ class AlertDialog(QDialog):
         self.btn_update.setStyleSheet("font-weight: bold; padding: 6px 14px;")
         self.btn_update.clicked.connect(self._on_save_rule_changes)
 
-        action_row.addWidget(self.btn_test)
-        action_row.addStretch()
-        action_row.addWidget(self.btn_update)
-        form_layout.addRow(action_row)
+        row2.addWidget(self.btn_test)
+        row2.addWidget(self.btn_update)
+        form_layout.addRow(row2)
 
         bottom_layout.addWidget(editor_group)
 
-        # Live Test Result Indicator
+        # Test Result Status Label (Fixed vertical height so it does NOT stretch)
         self.lbl_test_result = QLabel("Click 'Test Condition' to check if the condition fires against loaded data.")
-        self.lbl_test_result.setStyleSheet("padding: 8px; border-radius: 4px; background-color: #2e2e2e; color: #dcdcdc; font-weight: bold;")
+        self.lbl_test_result.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.lbl_test_result.setFixedHeight(40)
+        self.lbl_test_result.setStyleSheet(
+            "padding: 8px; border-radius: 4px; background-color: #2e2e2e; color: #dcdcdc; font-weight: bold;"
+        )
         bottom_layout.addWidget(self.lbl_test_result)
 
         # Matches Preview Table
         self.table_matches = QTableWidget()
         self.table_matches.setColumnCount(3)
-        self.table_matches.setHorizontalHeaderLabels(["Moment / Year", "Entity", "Condition Fired"])
+        self.table_matches.setHorizontalHeaderLabels(["Year", "Entity", "Condition Fired"])
         self.table_matches.verticalHeader().setVisible(False)
         self.table_matches.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table_matches.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.table_matches.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self.table_matches.setFixedHeight(120)
-        bottom_layout.addWidget(self.table_matches)
+        self.table_matches.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        bottom_layout.addWidget(self.table_matches, stretch=1)
 
         splitter.addWidget(bottom_widget)
 
@@ -189,10 +164,7 @@ class AlertDialog(QDialog):
             self.table.setItem(row, 1, QTableWidgetItem(r.get("name", "Unnamed")))
             self.table.setItem(row, 2, QTableWidgetItem(r.get("dataset_type", "country")))
             self.table.setItem(row, 3, QTableWidgetItem(r.get("entity_filter", "All")))
-            self.table.setItem(row, 4, QTableWidgetItem(r.get("density_mode", "none")))
-            self.table.setItem(row, 5, QTableWidgetItem(r.get("baseline_mode", "none")))
-            self.table.setItem(row, 6, QTableWidgetItem(str(r.get("derivative_order", 0))))
-            self.table.setItem(row, 7, QTableWidgetItem(r.get("condition", "")))
+            self.table.setItem(row, 4, QTableWidgetItem(r.get("condition", "")))
         self.table.blockSignals(False)
 
     def _on_rule_selected(self):
@@ -207,14 +179,10 @@ class AlertDialog(QDialog):
             self.combo_dataset.setCurrentText(r.get("dataset_type", "country"))
             self.edit_entity.setText(r.get("entity_filter", "All"))
             self.edit_condition.setText(r.get("condition", ""))
-            self.combo_density.setCurrentText(r.get("density_mode", "none"))
-            self.combo_baseline.setCurrentText(r.get("baseline_mode", "none"))
-            deriv = r.get("derivative_order", 0)
-            self.combo_derivative.setCurrentIndex(min(max(0, int(deriv)), 2))
             self.chk_enabled.setChecked(r.get("enabled", True))
-            self.chk_popup.setChecked(r.get("notify_popup", True))
-            self.chk_sound.setChecked(r.get("notify_sound", True))
-            self.lbl_test_result.setStyleSheet("padding: 8px; border-radius: 4px; background-color: #2e2e2e; color: #dcdcdc; font-weight: bold;")
+            self.lbl_test_result.setStyleSheet(
+                "padding: 8px; border-radius: 4px; background-color: #2e2e2e; color: #dcdcdc; font-weight: bold;"
+            )
             self.lbl_test_result.setText("Rule selected. Click 'Test Condition' to evaluate.")
             self.table_matches.setRowCount(0)
 
@@ -226,12 +194,7 @@ class AlertDialog(QDialog):
             "dataset_type": self.combo_dataset.currentText(),
             "entity_filter": self.edit_entity.text().strip() or "All",
             "condition": self.edit_condition.text().strip(),
-            "density_mode": self.combo_density.currentText(),
-            "baseline_mode": self.combo_baseline.currentText(),
-            "derivative_order": self.combo_derivative.currentIndex(),
             "enabled": self.chk_enabled.isChecked(),
-            "notify_popup": self.chk_popup.isChecked(),
-            "notify_sound": self.chk_sound.isChecked(),
         }
 
     def _on_new_rule(self):
@@ -240,13 +203,8 @@ class AlertDialog(QDialog):
             "name": "New Alert",
             "dataset_type": "country",
             "entity_filter": "All",
-            "condition": "[Total Population] < 1000000",
-            "density_mode": "none",
-            "baseline_mode": "none",
-            "derivative_order": 0,
-            "enabled": True,
-            "notify_popup": True,
-            "notify_sound": True
+            "condition": "rate(total_debt) > 100",
+            "enabled": True
         }
         self.rules.append(new_rule)
         self._populate_table()
@@ -279,27 +237,30 @@ class AlertDialog(QDialog):
         self.table_matches.setRowCount(0)
 
         if status == "FIRED":
-            # Highlight GREEN
-            self.lbl_test_result.setStyleSheet("padding: 8px; border-radius: 4px; background-color: #1e4620; color: #7cfc00; font-weight: bold; border: 1px solid #4caf50;")
+            self.lbl_test_result.setStyleSheet(
+                "padding: 8px; border-radius: 4px; background-color: #1e4620; color: #7cfc00; font-weight: bold; border: 1px solid #4caf50;"
+            )
             most_recent = matches[0]
             self.lbl_test_result.setText(
-                f"✓ CONDITION FIRED! Triggered {len(matches)} times. Most recent match: {most_recent['entity']} at Year {most_recent['moment']}."
+                f"✓ CONDITION FIRED! Triggered {len(matches)} time(s). Most recent: {most_recent['entity']} at Year {most_recent['moment']}."
             )
-            for row, m in enumerate(matches[:15]):
+            for row, m in enumerate(matches[:50]):
                 self.table_matches.insertRow(row)
                 self.table_matches.setItem(row, 0, QTableWidgetItem(str(m["moment"])))
                 self.table_matches.setItem(row, 1, QTableWidgetItem(m["entity"]))
                 self.table_matches.setItem(row, 2, QTableWidgetItem(m["condition"]))
 
         elif status == "NOT_FIRED":
-            # Highlight RED
-            self.lbl_test_result.setStyleSheet("padding: 8px; border-radius: 4px; background-color: #4a1c1a; color: #ff6b6b; font-weight: bold; border: 1px solid #f44336;")
+            self.lbl_test_result.setStyleSheet(
+                "padding: 8px; border-radius: 4px; background-color: #4a1c1a; color: #ff6b6b; font-weight: bold; border: 1px solid #f44336;"
+            )
             self.lbl_test_result.setText("✗ CONDITION NOT FIRED. Criteria not satisfied in any loaded record.")
 
         else:
-            # Highlight DARK RED for error
-            self.lbl_test_result.setStyleSheet("padding: 8px; border-radius: 4px; background-color: #3b0000; color: #ff9999; font-weight: bold; border: 1px solid #d32f2f;")
-            self.lbl_test_result.setText(f"⚠ ERROR EVALUATING CONDITION: {err_msg}")
+            self.lbl_test_result.setStyleSheet(
+                "padding: 8px; border-radius: 4px; background-color: #3b0000; color: #ff9999; font-weight: bold; border: 1px solid #d32f2f;"
+            )
+            self.lbl_test_result.setText(f"⚠ ERROR: {err_msg}")
 
     def _on_apply_and_close(self):
         if 0 <= self.current_rule_idx < len(self.rules):

@@ -13,12 +13,7 @@ DEFAULT_ALERTS = [
         "dataset_type": "country",
         "entity_filter": "All",
         "condition": "total_debt > (income * 24) and bank_interest > 0.05",
-        "density_mode": "none",
-        "baseline_mode": "none",
-        "derivative_order": 0,
-        "enabled": False,
-        "notify_popup": True,
-        "notify_sound": True
+        "enabled": False
     },
     {
         "id": "sample-2",
@@ -26,25 +21,15 @@ DEFAULT_ALERTS = [
         "dataset_type": "market",
         "entity_filter": "All",
         "condition": "[Food Stockpile Perc] < 0.20 or [Monthly Food] < -100",
-        "density_mode": "none",
-        "baseline_mode": "none",
-        "derivative_order": 0,
-        "enabled": False,
-        "notify_popup": True,
-        "notify_sound": True
+        "enabled": False
     },
     {
         "id": "sample-3",
         "name": "Rapid Population Decline",
         "dataset_type": "region",
         "entity_filter": "All",
-        "condition": "[Total population] < -1000",
-        "density_mode": "none",
-        "baseline_mode": "none",
-        "derivative_order": 1,
-        "enabled": False,
-        "notify_popup": True,
-        "notify_sound": False
+        "condition": "rate([Total population]) < -1000",
+        "enabled": False
     }
 ]
 
@@ -130,80 +115,6 @@ def build_entity_time_contexts(dataset_type: str, entity_filter: str = "All"):
     return entity_series
 
 
-def apply_transformations(series_moments: list, density_mode="none", baseline_mode="none", derivative_order=0):
-    """
-    Applies density (per location/pop), baseline (ratio/diff), and derivative (rate/accel)
-    to numeric metrics across time series moments for a single entity.
-    """
-    if not series_moments:
-        return []
-
-    # 1. Density normalization
-    dense_series = []
-    for m, ctx in series_moments:
-        c = dict(ctx)
-        locs = c.get("locations", 0.0)
-        pop = c.get("total_population", c.get("population", 0.0))
-
-        if density_mode == "location" and locs > 0:
-            for k, v in list(c.items()):
-                if isinstance(v, (int, float)) and k not in ("moment", "year", "locations", "population", "total_population"):
-                    c[k] = v / locs
-        elif density_mode == "population" and pop > 0:
-            for k, v in list(c.items()):
-                if isinstance(v, (int, float)) and k not in ("moment", "year", "locations", "population", "total_population"):
-                    c[k] = (v / pop) * 1_000_000.0
-
-        dense_series.append((m, c))
-
-    # 2. Baseline transformation (% change or diff from base year)
-    base_transformed = []
-    if baseline_mode in ("ratio", "difference") and dense_series:
-        base_ctx = dense_series[0][1]
-        for m, ctx in dense_series:
-            c = dict(ctx)
-            for k, v in list(ctx.items()):
-                if isinstance(v, (int, float)) and k not in ("moment", "year", "locations", "population", "total_population"):
-                    base_v = base_ctx.get(k)
-                    if base_v is not None:
-                        if baseline_mode == "ratio":
-                            c[k] = (((v / base_v) - 1.0) * 100.0) if abs(base_v) > 1e-12 else 0.0
-                        else:
-                            c[k] = v - base_v
-            base_transformed.append((m, c))
-    else:
-        base_transformed = dense_series
-
-    # 3. Derivative transformation (order 1: rate, order 2: acceleration)
-    deriv_transformed = []
-    if derivative_order == 1:
-        for i in range(1, len(base_transformed)):
-            curr_m, curr_c = base_transformed[i]
-            prev_m, prev_c = base_transformed[i - 1]
-            c = dict(curr_c)
-            for k, v in curr_c.items():
-                if isinstance(v, (int, float)) and k not in ("moment", "year", "locations", "population", "total_population"):
-                    prev_v = prev_c.get(k, 0.0)
-                    c[k] = v - prev_v
-            deriv_transformed.append((curr_m, c))
-    elif derivative_order == 2:
-        for i in range(2, len(base_transformed)):
-            curr_m, curr_c = base_transformed[i]
-            prev1_m, prev1_c = base_transformed[i - 1]
-            prev2_m, prev2_c = base_transformed[i - 2]
-            c = dict(curr_c)
-            for k, v in curr_c.items():
-                if isinstance(v, (int, float)) and k not in ("moment", "year", "locations", "population", "total_population"):
-                    d_curr = v - prev1_c.get(k, 0.0)
-                    d_prev = prev1_c.get(k, 0.0) - prev2_c.get(k, 0.0)
-                    c[k] = d_curr - d_prev
-            deriv_transformed.append((curr_m, c))
-    else:
-        deriv_transformed = base_transformed
-
-    return deriv_transformed
-
-
 def evaluate_alert_rule(rule: dict, latest_only=False):
     """
     Evaluates an alert rule against loaded data.
@@ -233,12 +144,9 @@ def evaluate_alert_rule(rule: dict, latest_only=False):
     precompiled = (clean_expr, var_map)
 
     for ent, moments in entity_series.items():
-        transformed = apply_transformations(moments, density_mode, baseline_mode, derivative_order)
-        if latest_only and transformed:
-            transformed = [transformed[-1]]
-
-        for m, ctx in transformed:
-            fired = evaluate_condition(cond_str, ctx, precompiled=precompiled)
+        eval_list = [moments[-1]] if latest_only and moments else moments
+        for m, ctx in eval_list:
+            fired = evaluate_condition(cond_str, ctx, precompiled=precompiled, series_history=moments, moment=m)
             if fired:
                 matches.append({
                     "moment": m,
@@ -246,8 +154,6 @@ def evaluate_alert_rule(rule: dict, latest_only=False):
                     "rule_id": rule.get("id"),
                     "rule_name": rule.get("name"),
                     "condition": cond_str,
-                    "notify_popup": rule.get("notify_popup", True),
-                    "notify_sound": rule.get("notify_sound", True),
                 })
 
     matches.sort(key=lambda x: (x["moment"], x["entity"]), reverse=True)

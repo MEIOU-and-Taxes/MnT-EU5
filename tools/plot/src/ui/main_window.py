@@ -6,6 +6,7 @@ from functools import partial
 import pandas as pd
 from PyQt6.QtCore import QTimer, QUrl
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QDesktopServices
+from PyQt6.QtMultimedia import QSoundEffect
 from PyQt6.QtWidgets import (
 	QMainWindow, QComboBox, QMessageBox,
 	QApplication
@@ -37,7 +38,7 @@ from src.ui.time_navigation import TimeNavigation
 from src.ui.toolbar_builder import ToolbarBuilder
 from src.ui.view_modes import ViewNodes
 from src.widgets.alert_dialog import AlertDialog
-from src.widgets.alert_notification_dialog import AlertNotificationDialog
+from src.widgets.alert_notification_dialog import AlertWindow
 from src.widgets.chart_dialog import ChartSelectionDialog
 from src.widgets.computed_series_dialog import ComputedSeriesDialog
 from src.widgets.hotkey_utils import sort_hotkeys
@@ -60,7 +61,11 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		if os.path.exists(ICON_PATH):
 			self.setWindowIcon(QIcon(ICON_PATH))
 
+		self.setMinimumWidth(200)
 		self.setGeometry(100, 100, 1800, 800)
+		self.alarm_sound_path = ""
+		self.alert_window = None
+		self.sound_effect = None
 		self.setStyleSheet("QPushButton:checked { background-color: #cce8ff; border: 1px solid #99c8ef; }")
 
 		# State
@@ -132,21 +137,30 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		if dlg.exec():
 			self.check_alerts_notification()
 
+	def play_alarm_sound(self):
+		sound_path = getattr(self, 'alarm_sound_path', '')
+		if sound_path and os.path.exists(sound_path):
+			try:
+				if self.sound_effect is None:
+					self.sound_effect = QSoundEffect(self)
+				self.sound_effect.setSource(QUrl.fromLocalFile(sound_path))
+				self.sound_effect.play()
+				return
+			except Exception as e:
+				print(f"Error playing alarm sound: {e}")
+		QApplication.beep()
+
 	def check_alerts_notification(self):
-		"""Checks all active alert conditions and presents a notification if fired."""
+		"""Checks all active alert conditions and appends them to the persistent AlertWindow."""
 		fired = check_active_alerts(latest_only=True)
 		if not fired:
 			return
 
-		has_sound = any(a.get("notify_sound", True) for a in fired)
-		has_popup = any(a.get("notify_popup", True) for a in fired)
+		self.play_alarm_sound()
 
-		if has_sound:
-			QApplication.beep()
-
-		if has_popup:
-			dlg = AlertNotificationDialog(fired, self)
-			dlg.exec()
+		if self.alert_window is None:
+			self.alert_window = AlertWindow(self)
+		self.alert_window.add_alerts(fired)
 
 	def set_density_mode(self, mode):
 		if mode == "location":
@@ -200,25 +214,17 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 					preserve_toggles=True
 				)
 
-	def open_settings_dialog(self):
-		dlg = SettingsDialog(self.refresh_interval_idx, self.autosave_interval_idx, self.period_value,
-							 self.stats_shading_all, self)
-		if dlg.exec():
-			vals = dlg.get_settings()
-			self.refresh_interval_idx = vals["refresh_idx"]
-			self.autosave_interval_idx = vals["autosave_idx"]
-			self.period_value = vals["period"]
-			shading_changed = (self.stats_shading_all != vals["stats_shading_all"])
-			self.stats_shading_all = vals["stats_shading_all"]
-			if hasattr(self, 'act_stats_shading_all'):
-				self.act_stats_shading_all.setChecked(self.stats_shading_all)
-
-			self._apply_refresh_interval()
-			self._apply_autosave_interval()
-			self.save_app_settings()
-
-			if self.is_moving_average or shading_changed:
-				self.redraw_current_plot()
+	def auto_refresh_graph(self):
+		if not self.has_new_data:
+			return
+		self.has_new_data = False
+		if self.current_graph_info:
+			self.display_chart(
+				self.current_graph_info['info'],
+				self.current_graph_info['title'],
+				preserve_toggles=True
+			)
+		self.check_alerts_notification()
 
 	def _apply_refresh_interval(self):
 		intervals = [10, 30, 60, 300, 600, 0]
@@ -475,3 +481,49 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 			cur = self.combo_stats_hide.currentIndex()
 			if cur < self.combo_stats_hide.count() - 1:
 				self.combo_stats_hide.setCurrentIndex(cur + 1)
+
+	def open_settings_dialog(self):
+		dlg = SettingsDialog(
+			self.refresh_interval_idx, self.autosave_interval_idx, self.period_value,
+			self.stats_shading_all, getattr(self, 'alarm_sound_path', ""), self
+		)
+		if dlg.exec():
+			vals = dlg.get_settings()
+			self.refresh_interval_idx = vals["refresh_idx"]
+			self.autosave_interval_idx = vals["autosave_idx"]
+			self.period_value = vals["period"]
+			shading_changed = (self.stats_shading_all != vals["stats_shading_all"])
+			self.stats_shading_all = vals["stats_shading_all"]
+			self.alarm_sound_path = vals.get("alarm_sound_path", "")
+			if hasattr(self, 'act_stats_shading_all'):
+				self.act_stats_shading_all.setChecked(self.stats_shading_all)
+
+			self._apply_refresh_interval()
+			self._apply_autosave_interval()
+			self.save_app_settings()
+
+			if self.is_moving_average or shading_changed:
+				self.redraw_current_plot()
+
+	def check_log_updates(self):
+		"""Runs every second to inspect files on disk and ingest changes."""
+		files = self.get_all_log_files()
+		if not files:
+			return
+		cur = []
+		for f in files:
+			try:
+				s = os.stat(f)
+				cur.append((f, s.st_size, s.st_mtime))
+			except OSError:
+				return
+
+		if self.last_log_state is None:
+			self.last_log_state = cur
+			return
+
+		if cur != self.last_log_state:
+			self.last_log_state = cur
+			self.read_and_parse_logs()
+			self.has_new_data = True
+			self.check_alerts_notification()

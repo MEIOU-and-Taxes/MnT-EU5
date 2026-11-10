@@ -65,7 +65,7 @@ class ToolbarBuilder:
 
 		self.btn_charts = QPushButton("Charts [`]")
 		self.btn_preset_config = QPushButton("Presets [Ctrl+P]")
-		self.btn_alerts = QPushButton("Alerts [Ctrl+Shift+A]")
+		self.btn_alerts = QPushButton("Alerts [Shift+A]")
 		self.btn_alerts.setToolTip("Configure automated alerts and trigger thresholds")
 		self.btn_alerts.clicked.connect(self.open_alert_dialog)
 

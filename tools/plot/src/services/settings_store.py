@@ -26,6 +26,7 @@ class SettingsStore:
 			self.is_moving_average = data.get("is_moving_average", False)
 			self.stats_shading_all = data.get("stats_shading_all", True)
 			self.is_stats_panel_visible = data.get("is_stats_panel_visible", True)
+			self.alarm_sound_path = data.get("alarm_sound_path", "")
 		except Exception as e:
 			print(f"Failed to load settings from {SETTINGS_PATH}: {e}")
 
@@ -47,6 +48,7 @@ class SettingsStore:
 				"is_moving_average": self.is_moving_average,
 				"stats_shading_all": self.stats_shading_all,
 				"is_stats_panel_visible": self.is_stats_panel_visible,
+				"alarm_sound_path": getattr(self, 'alarm_sound_path', ""),
 			}
 			with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
 				json.dump(data, f, indent=2)

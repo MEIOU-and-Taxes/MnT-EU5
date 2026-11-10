@@ -53,8 +53,12 @@ ALLOWED_UNARYOPS = {
     ast.Not: lambda x: not bool(x),
 }
 
-BUILTIN_FUNCS = {'countif', 'if', 'iff', 'abs', 'min', 'max', 'round'}
-BUILTIN_VARS = {'prev', 'curr', 'true', 'false'}
+BUILTIN_FUNCS = {
+    'countif', 'if', 'iff', 'abs', 'min', 'max', 'round',
+    'rate', 'acceleration', 'ratio', 'difference',
+    'density_by_location', 'density_by_population'
+}
+BUILTIN_VARS = {'prev', 'true', 'false'}
 
 _reported_parsing_errors = set()
 
@@ -150,7 +154,7 @@ def get_available_variables_for_dataset(dataset_type: str, prior_names: list = N
     from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, CREDIT_HEADERS, market_stats, POPULATION_HEADERS
     import src.parsing.stores as stores
 
-    vars_set = set(["PREV", "prev", "CURR", "curr"])
+    vars_set = set(["PREV", "prev"])
     d_type = (dataset_type or "").strip().lower()
 
     if d_type in ("country", "country_metric", "country_stats", "credit", "credit_metric", "credit_stats"):
@@ -200,15 +204,30 @@ def check_missing_variables(clean_expr: str, var_map: dict, dataset_type: str, p
     missing = []
     for var in used:
         c = canon(var)
-        if c in ("prev", "curr", "true", "false"):
+        if c in ("prev", "true", "false"):
             continue
         if c not in known_canon and f"{c} price" not in known_canon:
             missing.append(var)
     return missing
 
 
-def _eval_node(node, variables, var_map=None):
-    """Recursively evaluates an AST node across operators, functions, and variables."""
+def _resolve_var_val(var_name, variables):
+    candidates = [
+        var_name,
+        var_name.lower(),
+        var_name.replace('_', ' '),
+        var_name.replace(' ', '_'),
+        var_name.lower().replace('_', ' '),
+        var_name.lower().replace(' ', '_')
+    ]
+    for cand in candidates:
+        if cand in variables:
+            return variables[cand]
+    return 0.0
+
+
+def _eval_node(node, variables, var_map=None, series_history=None, moment=None):
+    """Recursively evaluates an AST node."""
     if isinstance(node, ast.Constant):
         if isinstance(node.value, bool):
             return node.value
@@ -229,25 +248,8 @@ def _eval_node(node, variables, var_map=None):
             return False
         if low == 'prev':
             return float(variables.get('PREV', variables.get('prev', 0.0)))
-        if low == 'curr':
-            return float(variables.get('CURR', variables.get('curr', 0.0)))
 
-        candidates = [
-            var_name,
-            var_name.lower(),
-            var_name.replace('_', ' '),
-            var_name.replace(' ', '_'),
-            var_name.lower().replace('_', ' '),
-            var_name.lower().replace(' ', '_')
-        ]
-        val = None
-        for cand in candidates:
-            if cand in variables:
-                val = variables[cand]
-                break
-
-        if val is None:
-            return 0.0
+        val = _resolve_var_val(var_name, variables)
         if isinstance(val, (int, float, bool)):
             return val
         try:
@@ -256,7 +258,7 @@ def _eval_node(node, variables, var_map=None):
             return val
 
     elif isinstance(node, ast.UnaryOp):
-        operand = _eval_node(node.operand, variables, var_map)
+        operand = _eval_node(node.operand, variables, var_map, series_history, moment)
         op_type = type(node.op)
         if op_type in ALLOWED_UNARYOPS:
             res = ALLOWED_UNARYOPS[op_type](operand)
@@ -264,8 +266,8 @@ def _eval_node(node, variables, var_map=None):
         raise ValueError(f"Unsupported unary operator: {op_type}")
 
     elif isinstance(node, ast.BinOp):
-        left = _eval_node(node.left, variables, var_map)
-        right = _eval_node(node.right, variables, var_map)
+        left = _eval_node(node.left, variables, var_map, series_history, moment)
+        right = _eval_node(node.right, variables, var_map, series_history, moment)
         op_type = type(node.op)
         if op_type in ALLOWED_OPERATORS:
             if op_type in (ast.Div, ast.FloorDiv):
@@ -275,10 +277,10 @@ def _eval_node(node, variables, var_map=None):
         raise ValueError(f"Unsupported binary operator: {op_type}")
 
     elif isinstance(node, ast.Compare):
-        left = _eval_node(node.left, variables, var_map)
+        left = _eval_node(node.left, variables, var_map, series_history, moment)
         is_true = True
         for op_node, comp_node in zip(node.ops, node.comparators):
-            comp_val = _eval_node(comp_node, variables, var_map)
+            comp_val = _eval_node(comp_node, variables, var_map, series_history, moment)
             cmp_func = ALLOWED_COMPARATORS[type(op_node)]
             try:
                 if not cmp_func(left, comp_val):
@@ -293,46 +295,84 @@ def _eval_node(node, variables, var_map=None):
     elif isinstance(node, ast.BoolOp):
         if isinstance(node.op, ast.And):
             for v_node in node.values:
-                if not bool(_eval_node(v_node, variables, var_map)):
+                if not bool(_eval_node(v_node, variables, var_map, series_history, moment)):
                     return False
             return True
         elif isinstance(node.op, ast.Or):
             for v_node in node.values:
-                if bool(_eval_node(v_node, variables, var_map)):
+                if bool(_eval_node(v_node, variables, var_map, series_history, moment)):
                     return True
             return False
         return False
 
     elif isinstance(node, ast.IfExp):
-        test_val = _eval_node(node.test, variables, var_map)
+        test_val = _eval_node(node.test, variables, var_map, series_history, moment)
         if bool(test_val):
-            return _eval_node(node.body, variables, var_map)
-        return _eval_node(node.orelse, variables, var_map)
+            return _eval_node(node.body, variables, var_map, series_history, moment)
+        return _eval_node(node.orelse, variables, var_map, series_history, moment)
 
     elif isinstance(node, ast.Call):
         func_name = node.func.id.lower()
+
+        # Domain calculation functions across series history
+        if func_name in ('rate', 'acceleration', 'ratio', 'difference', 'density_by_location', 'density_by_population'):
+            arg_node = node.args[0]
+            val = float(_eval_node(arg_node, variables, var_map, series_history, moment))
+
+            if func_name == 'density_by_location':
+                locs = float(_resolve_var_val('locations', variables) or _resolve_var_val('num_locations', variables))
+                return (val / locs) if locs > 0 else 0.0
+
+            if func_name == 'density_by_population':
+                pop = float(_resolve_var_val('population', variables) or _resolve_var_val('total_population', variables))
+                return ((val / pop) * 1_000_000.0) if pop > 0 else 0.0
+
+            if series_history and moment is not None:
+                moments_list = [m for m, ctx in series_history]
+                if moment in moments_list:
+                    idx = moments_list.index(moment)
+                    if func_name == 'rate':
+                        if idx >= 1:
+                            prev_val = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
+                            return val - prev_val
+                        return 0.0
+                    elif func_name == 'acceleration':
+                        if idx >= 2:
+                            prev1 = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
+                            prev2 = float(_eval_node(arg_node, series_history[idx - 2][1], var_map, series_history, series_history[idx - 2][0]))
+                            return (val - prev1) - (prev1 - prev2)
+                        return 0.0
+                    elif func_name == 'difference':
+                        base_val = float(_eval_node(arg_node, series_history[0][1], var_map, series_history, series_history[0][0]))
+                        return val - base_val
+                    elif func_name == 'ratio':
+                        base_val = float(_eval_node(arg_node, series_history[0][1], var_map, series_history, series_history[0][0]))
+                        return (((val / base_val) - 1.0) * 100.0) if abs(base_val) > 1e-12 else 0.0
+
+            return 0.0
+
         if func_name == 'countif':
             if len(node.args) == 0:
                 return 0.0
-            cond_val = bool(_eval_node(node.args[0], variables, var_map))
-            effect_val = _eval_node(node.args[1], variables, var_map) if len(node.args) > 1 else 1.0
+            cond_val = bool(_eval_node(node.args[0], variables, var_map, series_history, moment))
+            effect_val = _eval_node(node.args[1], variables, var_map, series_history, moment) if len(node.args) > 1 else 1.0
             return float(effect_val) if cond_val else 0.0
         elif func_name in ('if', 'iff'):
             if len(node.args) < 2:
                 return 0.0
-            cond_val = bool(_eval_node(node.args[0], variables, var_map))
+            cond_val = bool(_eval_node(node.args[0], variables, var_map, series_history, moment))
             if cond_val:
-                return _eval_node(node.args[1], variables, var_map)
-            return _eval_node(node.args[2], variables, var_map) if len(node.args) > 2 else 0.0
+                return _eval_node(node.args[1], variables, var_map, series_history, moment)
+            return _eval_node(node.args[2], variables, var_map, series_history, moment) if len(node.args) > 2 else 0.0
         elif func_name == 'abs':
-            return abs(float(_eval_node(node.args[0], variables, var_map)))
+            return abs(float(_eval_node(node.args[0], variables, var_map, series_history, moment)))
         elif func_name == 'min':
-            return min(float(_eval_node(a, variables, var_map)) for a in node.args)
+            return min(float(_eval_node(a, variables, var_map, series_history, moment)) for a in node.args)
         elif func_name == 'max':
-            return max(float(_eval_node(a, variables, var_map)) for a in node.args)
+            return max(float(_eval_node(a, variables, var_map, series_history, moment)) for a in node.args)
         elif func_name == 'round':
-            val = float(_eval_node(node.args[0], variables, var_map))
-            ndigits = int(_eval_node(node.args[1], variables, var_map)) if len(node.args) > 1 else 0
+            val = float(_eval_node(node.args[0], variables, var_map, series_history, moment))
+            ndigits = int(_eval_node(node.args[1], variables, var_map, series_history, moment)) if len(node.args) > 1 else 0
             return round(val, ndigits)
         raise ValueError(f"Unsupported function call: {func_name}")
 
@@ -345,10 +385,7 @@ def evaluate_expression(expr_str: str, variables: dict, precompiled=None) -> flo
     if not expr_str or not expr_str.strip():
         return 0.0
     try:
-        if precompiled:
-            clean_expr, var_map = precompiled
-        else:
-            clean_expr, var_map = prepare_expression(expr_str)
+        clean_expr, var_map = precompiled if precompiled else prepare_expression(expr_str)
         parsed = ast.parse(clean_expr, mode='eval')
         res = _eval_node(parsed.body, variables, var_map)
         if isinstance(res, bool):
@@ -358,17 +395,13 @@ def evaluate_expression(expr_str: str, variables: dict, precompiled=None) -> flo
         return 0.0
 
 
-def evaluate_condition(condition_str: str, variables: dict, precompiled=None) -> bool:
-    """Evaluates a logical boolean expression (supporting AND, OR, NOT, comparisons)."""
+def evaluate_condition(condition_str: str, variables: dict, precompiled=None, series_history=None, moment=None) -> bool:
     if not condition_str or not condition_str.strip():
         return False
     try:
-        if precompiled:
-            clean_expr, var_map = precompiled
-        else:
-            clean_expr, var_map = prepare_expression(condition_str)
+        clean_expr, var_map = precompiled if precompiled else prepare_expression(condition_str)
         parsed = ast.parse(clean_expr, mode='eval')
-        res = _eval_node(parsed.body, variables, var_map)
+        res = _eval_node(parsed.body, variables, var_map, series_history=series_history, moment=moment)
         return bool(res)
     except Exception:
         return False
