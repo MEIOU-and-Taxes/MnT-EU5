@@ -11,48 +11,67 @@ aut_apply_integration_script = {
 	set_variable = {
 		name = location_integration_gain_base
 		value = {
+			#Base gain
 			value = 0.1
 			if = {
 				limit = {
 					OR = {
-						any_neighbor_location = {
+						#Bordering integrated Location directly or via sea
+						any_coast_border_location = {
 							is_ownable = yes
 							has_owner = yes
 							owner ?= scope:owner_scope
 							MnT_location_needs_integration_trigger = no
 						}
+						#Bordering via lake
 						AND = {
-							is_port = yes
-							any_coast_border_location = {
-								is_ownable = yes
-								has_owner = yes
-								owner ?= scope:owner_scope
-								MnT_location_needs_integration_trigger = no
+							is_adjacent_to_lake = yes
+							any_neighbor_location = {
+								OR = {
+									topography = lakes
+									topography = high_lakes
+								}
+								any_neighbor_location = {
+									is_ownable = yes
+									has_owner = yes
+									owner ?= scope:owner_scope
+									MnT_location_needs_integration_trigger = no
+								}
 							}
 						}
 					}
 				}
+				#Gain speed
 				add = 0.20
 				if = {
 					limit = {
 						OR = {
-							any_neighbor_location = {
+							#Next to core or next core to via sea
+							any_coast_border_location = {
 								is_ownable = yes
 								has_owner = yes
 								owner ?= scope:owner_scope
 								integration_level = core
 							}
+							#Next to core via lake
 							AND = {
-								is_port = yes
-								any_coast_border_location = {
-									is_ownable = yes
-									has_owner = yes
-									owner ?= scope:owner_scope
-									integration_level = core
+								is_adjacent_to_lake = yes
+								any_neighbor_location = {
+									OR = {
+										topography = lakes
+										topography = high_lakes
+									}
+									any_neighbor_location = {
+										is_ownable = yes
+										has_owner = yes
+										owner ?= scope:owner_scope
+										integration_level = core
+									}
 								}
 							}
 						}
 					}
+					#Gain more speed
 					add = 0.10
 				}
 			}
@@ -190,6 +209,11 @@ aut_apply_integration_script = {
 			if = {
 				limit = {
 					is_capital = yes
+					NOT = {
+						owner = {
+							in_civil_war = yes
+						}
+					}
 				}
 				min = 100
 			}

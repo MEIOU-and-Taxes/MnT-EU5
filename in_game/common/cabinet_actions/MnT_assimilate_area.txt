@@ -8,7 +8,7 @@
 	}
 	
 	allow = {
-		cultural_unity < 1.0
+		cultural_unity < 0.95
 	}
 
 	select_trigger = {
@@ -39,16 +39,16 @@
 								value >= 0.01
 							}
 						}
-						
+
 						cultural_view = {
 							target = scope:actor.culture
-							value > neutral 
+							value > neutral
 						}
 						reverse_cultural_view = {
 							target = scope:actor.culture
-							value > neutral 
+							value > neutral
 						}
-						
+
 						is_primary_or_accepted_in = scope:actor
 					}
 				}
@@ -57,7 +57,7 @@
 					scope:actor = {
 						is_ai = yes
 					}
-					is_primary_in = scope:actor 
+					is_primary_in = scope:actor
 				}
 			}
 		}
@@ -81,7 +81,7 @@
 		default_sort = area_primary_culture_percentage
 		visible = {
 			any_location_in_area = {
-				local_cultural_unity < 1.0
+				local_cultural_unity < 0.95
 				owner ?= {
 					this = scope:actor
 				}
@@ -151,6 +151,54 @@
 					scope:target_culture != scope:actor.culture
 				}
 				value = -1000
+			}
+		}
+		if = {
+			limit = {
+				scope:target = {
+					any_location_in_area = {
+						owner ?= { this = scope:actor }
+						exists = dominant_culture
+						dominant_culture = { is_discriminated_in = scope:actor }
+					}
+				}
+			}
+			add = 6
+		}
+		else_if = {
+			limit = {
+				scope:target = {
+					any_location_in_area = {
+						owner ?= { this = scope:actor }
+						exists = dominant_culture
+						dominant_culture = {
+							NOT = { is_primary_or_accepted_in = scope:actor }
+							NOT = { is_tolerated_in = scope:actor }
+							NOT = { is_discriminated_in = scope:actor }
+						}
+					}
+				}
+			}
+			add = 4
+		}
+		else_if = {
+			limit = {
+				scope:target = {
+					any_location_in_area = {
+						owner ?= { this = scope:actor }
+						exists = dominant_culture
+						dominant_culture = { is_tolerated_in = scope:actor }
+					}
+				}
+			}
+			add = 2
+		}
+		multiply = {
+			value = 1
+			subtract = {
+				scope:target = {
+					value = "culture_percentage_in_area(scope:actor|scope:target_culture)"
+				}
 			}
 		}
 	}

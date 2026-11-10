@@ -107,7 +107,13 @@
 		NOT = { scope:target ?= { is_subject_of = scope:recipient } }
 	}
 	join_defensive_wars_always = {
-		always = yes
+		#protect against external threats
+		scope:actor ?= {
+			is_subject_of = scope:recipient
+		}
+		scope:target ?= {
+			NOT = { is_subject_of = scope:recipient }
+		}
 	}
 	
 	diplomatic_capacity_cost_scale = 0.75
@@ -201,7 +207,7 @@
 	}
 
 	ai_wants_to_be_overlord = {
-        scope:subject = {
+        scope:subject ?= {
 			add = {
                 desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
                 value = {

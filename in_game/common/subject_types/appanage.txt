@@ -35,7 +35,13 @@
 			OR = {
 				AND = {
 					scope:attacker = { has_country_modifier = granted_autonomy_to_expand_modifier }
-					scope:attacker.overlord ?= scope:defender.overlord
+					trigger_if = {
+						limit = { exists = scope:defender.overlord }
+						scope:attacker.overlord ?= scope:defender.overlord
+					}
+					trigger_else = {
+						always = no
+					}
 				}
 				scope:attacker.overlord ?= scope:defender
 			}
@@ -119,7 +125,11 @@
 				capital.area = area:brabant_area
 				capital.area = area:flanders_area
 				capital.area = area:holland_area
-				culture = { has_culture_group = culture_group:french_group }			
+				culture = { has_culture_group = culture_group:french_group }
+				AND = {
+					has_or_had_tag = NAV
+					has_variable = nav_appanage_rights_granted
+				}
 			}
 		}		
 	}
@@ -134,13 +144,27 @@
 				capital.area = area:flanders_area
 				capital.area = area:holland_area
 				culture = { has_culture_group = culture_group:french_group }
+				AND = {
+					has_or_had_tag = NAV
+					has_variable = nav_appanage_rights_granted
+				}
 			}			
 			exists = root.ruler_or_heir_if_regent.dynasty
+			exists = ruler_or_heir_if_regent
 			OR = {
 				ruler_or_heir_if_regent = { is_patrilineal_descendant_of = root.ruler_or_heir_if_regent.dynasty }
 				AND = {
 					root.ruler_or_heir_if_regent = { is_patrilineal_descendant_of = dynasty:capet_dynasty }
 					ruler_or_heir_if_regent = { is_patrilineal_descendant_of = dynasty:capet_dynasty }
+				}
+				heir ?= { is_patrilineal_descendant_of = root.ruler_or_heir_if_regent.dynasty }
+				AND = {
+					root.ruler_or_heir_if_regent = { is_patrilineal_descendant_of = dynasty:capet_dynasty }
+					heir ?= { is_patrilineal_descendant_of = dynasty:capet_dynasty }
+				}
+				AND = {
+					has_or_had_tag = NAV
+					has_variable = nav_appanage_rights_granted
 				}
 			}	
 		}	
@@ -164,7 +188,7 @@
 	}
 
 	ai_wants_to_be_overlord = {
-        scope:subject = {
+        scope:subject ?= {
 			add = {
                 desc = "COALITION_GRADE_ANTAGONISM_TOWARDS_THEM_SUBJECT"
                 value = {

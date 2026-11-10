@@ -1,4 +1,4 @@
-﻿@city_marker_icon_size = 20
+@city_marker_icon_size = 20
 @city_marker_fort_icon_size = 16
 
 template MapMarkerFlags
@@ -129,7 +129,7 @@ types map_marker_city {
 
 			text_single = {
 				text = "[CityMarker.GetLocation.GetNameWithNoTooltip|U]"
-				snap_to_pixels = no
+				snap_to_pixels = "[IsLowestIconScalingQuality]"
 				default_format = "#map_city_label_capital"
 				align = nobaseline
 
@@ -138,7 +138,7 @@ types map_marker_city {
 
 			text_single = {
 				text = "[CityMarker.GetLocation.GetNameWithNoTooltip|U]"
-				snap_to_pixels = no
+				snap_to_pixels = "[IsLowestIconScalingQuality]"
 				default_format = "#map_city_label"
 				align = nobaseline
 
@@ -268,15 +268,44 @@ widget = {
 						alwaystransparent = no
 						onmousehierarchyenter = "[PdxGuiWidget.SetHighlightFort(CityMarker.GetLocation)]"
 						visible = "[And(CityMarker.GetLocation.HasAnyFort, CityMarker.IsFortSettingEnabled)]"
-						texture = "gfx/interface/icons/map_modes/fort_level_icon.dds"
+						texture = "[GetBuildingIcon(CityMarker.GetLocation.GetBestFortBuilding.GetType)]"
 						size = { @city_marker_fort_icon_size @city_marker_fort_icon_size }
 					}
+				}
+
+				hbox = {
+					visible = "[EqualTo_int32(GetDataModelSize(CityMarker.GetLocation.GetTownRights), '(int32)1')]"
+					datamodel = "[CityMarker.GetLocation.GetTownRights]"
+					item = {
+						icon = {
+							size = { @city_marker_fort_icon_size @city_marker_fort_icon_size }
+							texture = "[TownRights.GetIcon]"
+							tooltipwidget = { using = TownRights_tooltip }
+						}
+					}
+				}
+
+				hbox = {
+					datacontext = "[CityMarker.GetLocation]"
+					visible = "[GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)1')]"
+					spacing = 1
+					text_single = {
+						autoresize = yes
+						fontsize = 11
+						text = "[GetDataModelSize(Location.GetTownRights)]"
+						align = nobaseline
+					}
+					icon = {
+						size = { @city_marker_fort_icon_size @city_marker_fort_icon_size }
+						texture = "[GetConceptTexture('town_rights')]"
+					}
+					tooltipwidget = { using = location_town_rights_tooltip }
 				}
 
 				text_single = {
 					visible = "[CityMarker.ShowDetails]"
 					text = "[CityMarker.GetLocation.GetNameWithNoTooltip|U]"
-					snap_to_pixels = yes
+					snap_to_pixels = "[IsLowestIconScalingQuality]"
 					fontsize = 12
 					align = nobaseline
 					default_format = "#map_city_label"

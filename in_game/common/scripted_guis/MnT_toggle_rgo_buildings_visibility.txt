@@ -1,4 +1,6 @@
 ﻿# Single source of truth for RGO visibility in Production view.
+# Missing preference means visible, including on day one and existing saves.
+# Explicit actions record initialization so a deliberate OFF choice stays OFF.
 # Goods view actions should call the explicit ON/OFF scripted GUIs below.
 
 mnt_set_rgo_buildings_visible_on = {
@@ -11,6 +13,7 @@ mnt_set_rgo_buildings_visible_on = {
 		remove_variable = mnt_force_show_rgo_category
 		remove_variable = mnt_force_show_non_rgo_category
 		set_variable = { name = mnt_show_rgo_buildings value = 1 }
+		set_variable = { name = mnt_rgo_visibility_initialized value = 1 }
 	}
 }
 
@@ -24,6 +27,7 @@ mnt_set_rgo_buildings_visible_off = {
 		remove_variable = mnt_force_show_rgo_category
 		remove_variable = mnt_force_show_non_rgo_category
 		remove_variable = mnt_show_rgo_buildings
+		set_variable = { name = mnt_rgo_visibility_initialized value = 1 }
 	}
 }
 
@@ -36,16 +40,27 @@ mnt_toggle_rgo_buildings_visibility = {
 		remove_variable = mnt_force_show_rgo_category
 		remove_variable = mnt_force_show_non_rgo_category
 		if = {
-			limit = { has_variable = mnt_show_rgo_buildings }
+			limit = {
+				OR = {
+					has_variable = mnt_show_rgo_buildings
+					NOT = { has_variable = mnt_rgo_visibility_initialized }
+				}
+			}
 			remove_variable = mnt_show_rgo_buildings
 		}
 		else = {
 			set_variable = { name = mnt_show_rgo_buildings value = 1 }
 		}
+		set_variable = { name = mnt_rgo_visibility_initialized value = 1 }
 	}
 }
 
 mnt_is_rgo_buildings_visible = {
 	scope = country
-	is_shown = { has_variable = mnt_show_rgo_buildings }
+	is_shown = {
+		OR = {
+			has_variable = mnt_show_rgo_buildings
+			NOT = { has_variable = mnt_rgo_visibility_initialized }
+		}
+	}
 }

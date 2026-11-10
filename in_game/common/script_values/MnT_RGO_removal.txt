@@ -15,6 +15,7 @@ mnt_location_max_rgo_building_level = {
 	if = { limit = { raw_material = goods:alum } value = rgo_alum_max_level }
 	else_if = { limit = { raw_material = goods:amber } value = rgo_amber_max_level }
 	else_if = { limit = { raw_material = goods:beeswax } value = rgo_beeswax_max_level }
+	else_if = { limit = { raw_material = goods:camels } value = rgo_camels_max_level }
 	else_if = { limit = { raw_material = goods:chili } value = rgo_chili_max_level }
 	else_if = { limit = { raw_material = goods:clay } value = rgo_clay_max_level }
 	else_if = { limit = { raw_material = goods:cloves } value = rgo_cloves_max_level }
@@ -562,6 +563,34 @@ rgo_horses_max_level = {
 	}
 }
 
+rgo_camels_max_level = {
+	if = {
+		limit = { has_owner = yes }
+		if = {
+			limit = { raw_material = goods:camels }
+			add = { desc = "MNT_RGO_BASE_IDEAL"
+				value = modifier:mnt_rgo_base_size
+				save_temporary_value_as = base_before_ideal
+				value = 1
+				add = modifier:local_raw_material_output
+				add = owner.modifier:global_raw_material_output
+				multiply = scope:base_before_ideal
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
+			min = 1
+		}
+		else = {
+			add = { desc = "MNT_RGO_BASE_SIZE"
+				value = modifier:mnt_rgo_base_size
+			}
+			save_temporary_value_as = base_value
+			add = mnt_rgo_size_modifiers
+		}
+		min = 0
+	}
+}
+
 rgo_fiber_crops_max_level = {
 	if = {
 		limit = { has_owner = yes }
@@ -625,3 +654,21 @@ rgo_lead_max_level = { value = rgo_mining_max_level }
 rgo_mercury_max_level = { value = rgo_mining_max_level }
 rgo_silver_max_level = { value = rgo_mining_max_level }
 rgo_tin_max_level = { value = rgo_mining_max_level }
+
+# Food consumption can be a signed deduction. Use its magnitude in the food balance.
+mnt_location_food_consumption_amount = {
+    value = food_consumption
+    if = {
+        limit = { food_consumption < 0 }
+        multiply = -1
+    }
+}
+
+# Location-scoped native AI preference. Province totals are cached monthly.
+mnt_food_construction_weight = {
+    value = 1
+    if = {
+        limit = { province = { has_variable = mnt_food_ai_weight } }
+        value = province.var:mnt_food_ai_weight
+    }
+}

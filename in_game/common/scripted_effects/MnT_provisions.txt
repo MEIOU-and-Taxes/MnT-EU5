@@ -22,7 +22,7 @@ mnt_provisions_food_demand_month = {
 			# The engine reports consumption as a negative number
 			change_local_variable = { name = mnt_food subtract = food_consumption }
 			# Decay on the province stockpile, counted only at the province capital and includes
-			# the country's decay rate plus the location's, scaled by the location's decay modifier
+			# the country's decay rate plus the location's, reduced by the location's food preservation
 			if = {
 				limit = { is_province_capital = yes }
 				set_local_variable = {
@@ -35,8 +35,9 @@ mnt_provisions_food_demand_month = {
 				set_local_variable = {
 					name = mnt_decay_scale
 					value = {
-						value = modifier:local_food_decay_modifier
-						add = 1
+						value = 1
+						subtract = modifier:local_food_preservation_efficiency_modifier
+						min = 0
 					}
 				}
 				change_local_variable = { name = mnt_decay_rate multiply = local_var:mnt_decay_scale }

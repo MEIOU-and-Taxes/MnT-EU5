@@ -13,23 +13,27 @@
 		}
 	}
 
-	can_end = {
-		#We make sure that all important regions have been infected before ending the situation
-		custom_tooltip = {
-			text = great_pestilence_regions_infected_tt
-			var:var_carib_was_infected = yes
-			var:var_mesoamerica_was_infected = yes
-			var:var_andes_was_infected = yes
-		}
+	outcome = {
+		name = "great_pestilence_disease_exhausted"
+		desc = "great_pestilence_disease_exhausted_desc"
+		trigger = {
+			#We make sure that all important regions have been infected before ending the situation
+			custom_tooltip = {
+				text = great_pestilence_regions_infected_tt
+				var:var_carib_was_infected = yes
+				var:var_mesoamerica_was_infected = yes
+				var:var_andes_was_infected = yes
+			}
 
-		#The Situation ends if no settled country in America has not been through it already
-		continent:america = {
-			any_country_with_capital_in_geography = {
-				count <= 15
-				country_type = location
-				custom_tooltip = {
-					text = great_pestilence_americas_spread_tt
-					NOT = { has_variable = had_great_pestilence }
+			#The Situation ends if no settled country in America has not been through it already
+			continent:america = {
+				any_country_with_capital_in_geography = {
+					count <= 15
+					country_type = location
+					custom_tooltip = {
+						text = great_pestilence_americas_spread_tt
+						NOT = { has_variable = had_great_pestilence }
+					}
 				}
 			}
 		}
@@ -107,7 +111,27 @@
 			random_list = {
 				1 = { trigger_event_non_silently = great_pestilence.3 }
 				1 = { trigger_event_non_silently = great_pestilence.4 }
-				1 = { trigger_event_non_silently = great_pestilence.5 }
+				1 = {
+					if = {
+						limit = {
+							any_owned_location = {
+								disease_presence = { disease = disease:great_pestilence value > 0 }
+								is_capital = no
+								NOT = { continent = owner.capital.continent }
+								any_pop = {
+									OR = {
+										NOT = { religion = owner.religion }
+										NOT = { culture = owner.culture }
+									}
+								}
+							}
+						}
+						trigger_event_non_silently = great_pestilence.8
+					}
+					else = {
+						trigger_event_non_silently = great_pestilence.5
+					}
+				}
 				1 = { trigger_event_non_silently = great_pestilence.6 }
 				1 = { trigger_event_non_silently = great_pestilence.7 }
 				50 = { }
@@ -159,6 +183,11 @@
 	}
 
 	on_ended = {
+		add_timeline_note = {
+			key = timeline_note_great_pestilence_end
+			show_in_pop_graph = yes
+			unique = yes
+		}
 		every_country = {
 			limit = {
 				has_variable = had_great_pestilence

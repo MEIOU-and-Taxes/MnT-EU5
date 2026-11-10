@@ -28,15 +28,17 @@ VANILLA_GAME_CANDIDATES = [
 MODIFIER = "epbm_starting_maintenance" # -100% building maintenance multiplier
 START_DATE = "1337.4.1"
 END_DATE = "1337.6.1"
+# Since 1.4.0 vanilla keeps its setup files in setup/1337.
+VANILLA_SETUP_FOLDER = "1337"
 
 _HERE = Path(__file__).resolve().parent
 _MOD_ROOT = _HERE.parents[1]
-OUTPUT = _MOD_ROOT / "main_menu" / "setup" / "start" / "99_epbm_starting_maintenance.txt"
+OUTPUT = _MOD_ROOT / "main_menu" / "setup" / VANILLA_SETUP_FOLDER / "99_epbm_starting_maintenance.txt"
 
 
 def vanilla_countries_setup() -> Path:
     for game in VANILLA_GAME_CANDIDATES:
-        p = game / "main_menu" / "setup" / "start" / "10_countries.txt"
+        p = game / "main_menu" / "setup" / VANILLA_SETUP_FOLDER / "10_countries.txt"
         if p.exists():
             return p
     sys.exit("vanilla 10_countries.txt not found; add its install to VANILLA_GAME_CANDIDATES")

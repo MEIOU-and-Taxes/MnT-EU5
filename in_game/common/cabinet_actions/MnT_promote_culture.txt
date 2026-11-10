@@ -18,11 +18,10 @@
 			}
 		}
 	}
-	
+
 	select_trigger = {
 		looking_for_a = culture
 		target_flag = target
-		#for the AI we have an optimisation to only look through religions that are present. Human can look at all...but will have some disabled
 		source_ai_override = actor
 		source_flags_ai_override = include_any_present
 		name = "promote_culture_select_culture"
@@ -35,39 +34,23 @@
 		}
 		default_sort = culture_percentage_in_country
 		visible = {
-			OR = {
-				AND = { # for humans
-					scope:actor = {
-						is_ai = no
-					}
+			scope:actor = {
+				OR = {
+					is_ai = no
 					OR = {
-						scope:actor = {
-							culture_percentage_in_country = {
-								culture = root
-								value >= 0.01
-							}
+						culture_percentage_in_country = {
+							culture = root
+							value >= 0.01
 						}
-						
-						cultural_view = {
-							target = scope:actor.culture
-							value > neutral 
+						root = {
+							is_primary_in = scope:actor
 						}
-						reverse_cultural_view = {
-							target = scope:actor.culture
-							value > neutral 
-						}
-						
-						is_primary_or_accepted_in = scope:actor
 					}
-				}
-
-				AND = { # for AI
-					scope:actor = {
-						is_ai = yes
-					}
-					is_primary_in = scope:actor 
 				}
 			}
+		}
+		enabled = {
+			is_primary_or_accepted_in = scope:actor
 		}
 	}
 
@@ -90,11 +73,44 @@
 		visible = {
 			any_location_in_province = {
 				OR = {
-					NOT = { dominant_culture = owner.culture }
-					local_cultural_unity < 1.0
+					NOT = { dominant_culture = scope:target }
+					local_cultural_unity < 0.95
 				}
 			}
+			OR = {
+				"culture_percentage(scope:target)" < 0.95
+				any_location_in_province = { NOT = { dominant_culture = scope:target } }
+			}
 			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = promote_culture interaction_target = target_1 } }
+		}
+		enabled = {
+			OR = {
+				scope:actor = { is_ai = no }
+				AND = {
+					trigger_if = {
+						limit = { this = scope:actor.capital.province }
+						scope:target = scope:actor.culture
+					}
+					any_location_in_province = { naturally_assimilating_culture = scope:target }
+					trigger_if = {
+						limit = { exists = dominant_culture }
+						OR = {
+							AND = {
+								NOT = { dominant_culture = scope:target }
+								dominant_culture = { NOT = { is_primary_or_accepted_in = scope:actor } }
+							}
+							AND = {
+								dominant_culture = scope:target
+								any_location_in_province = {
+									exists = secondary_culture
+									secondary_culture = { NOT = { is_primary_or_accepted_in = scope:actor } }
+								}
+							}
+						}
+					}
+					trigger_else = { always = no }
+				}
+			}
 		}
 		map_color = {
 			lerp = {
@@ -107,7 +123,7 @@
 
 	is_finished = {
 		scope:target_1 = {
-			"culture_percentage(scope:target)" >= 1.0
+			"culture_percentage(scope:target)" >= 0.95
 			not = {
 				any_location_in_province = {
 					NOT = { dominant_culture = scope:target }
@@ -158,15 +174,49 @@
 	}
 
 	ai_will_do = {
-		add = {
-			desc = "Wrong culture"
+		if = {
+			limit = { scope:target_1 = { NOT = { dominant_culture = scope:target } } }
 			if = {
-				limit = {
-					exists = scope:target
-					scope:target != scope:actor.culture				
-				}
-				value = -1000
+				limit = { scope:target_1.dominant_culture = { is_discriminated_in = scope:actor } }
+				add = 6
 			}
+			else_if = {
+				limit = {
+					scope:target_1.dominant_culture = {
+						NOT = { is_primary_or_accepted_in = scope:actor }
+						NOT = { is_tolerated_in = scope:actor }
+						NOT = { is_discriminated_in = scope:actor }
+					}
+				}
+				add = 4
+			}
+			else_if = {
+				limit = { scope:target_1.dominant_culture = { is_tolerated_in = scope:actor } }
+				add = 2
+			}
+			subtract = "scope:target_1.dominant_culture.culture_opinion_impact(scope:actor.culture)"
+		}
+		else = {
+			if = {
+				limit = { scope:target_1 = { any_location_in_province = { exists = secondary_culture  secondary_culture = { is_discriminated_in = scope:actor } } } }
+				add = 6
+			}
+			else_if = {
+				limit = { scope:target_1 = { any_location_in_province = { exists = secondary_culture  secondary_culture = { NOT = { is_primary_or_accepted_in = scope:actor } NOT = { is_tolerated_in = scope:actor } NOT = { is_discriminated_in = scope:actor } } } } }
+				add = 4
+			}
+			else_if = {
+				limit = { scope:target_1 = { any_location_in_province = { exists = secondary_culture  secondary_culture = { is_tolerated_in = scope:actor } } } }
+				add = 2
+			}
+			if = {
+				limit = { exists = scope:target_1.assimilating_from_culture }
+				subtract = "scope:target_1.assimilating_from_culture.culture_opinion_impact(scope:actor.culture)"
+			}
+		}
+		multiply = {
+			value = 1
+			subtract = "scope:target_1.culture_percentage(scope:target)"
 		}
 	}
 }

@@ -81,6 +81,7 @@ mnt_rgo_maintain_yearly = {
 
 monthly_country_pulse = {
 	on_actions = {
+		MnT_food_monthly_response
 		monthly_country_pulse_MnT
 		epbm_on_country_monthly
 	}
@@ -131,8 +132,12 @@ on_game_has_started_MnT = {
 			limit = {
 				is_human = yes
 			}
-			# Show RGO buildings in the UI for the player by default
-			set_variable = { name = mnt_show_rgo_buildings value = 1 }
+			# Do not overwrite a visibility choice made before this delayed startup pulse.
+			if = {
+				limit = { NOT = { has_variable = mnt_rgo_visibility_initialized } }
+				set_variable = { name = mnt_show_rgo_buildings value = 1 }
+				set_variable = { name = mnt_rgo_visibility_initialized value = 1 }
+			}
 			# M&T Startup welcome event	
 			trigger_event_non_silently = { id = mnt_information.1 }
 			# Income graph for the player
@@ -208,6 +213,7 @@ hide_buildings_on_start = {
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_alum }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_amber }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_beeswax }
+			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_camels }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_chili }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_clay }
 			add_to_global_variable_list = { name = mnt_global_hidden_buildings target = building_type:RGO_building_cloves }
@@ -282,4 +288,11 @@ mnt_provisions_food_demand_monthly = {
 	effect = {
 		mnt_provisions_food_demand_month = yes
 	}
+}
+
+MnT_food_monthly_response = {
+    events = {
+        delay = { days = 2 }
+        mnt_food.4
+    }
 }

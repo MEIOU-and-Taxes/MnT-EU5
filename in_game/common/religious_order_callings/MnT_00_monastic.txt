@@ -1,0 +1,55 @@
+﻿REPLACE:cultivators_calling = {
+	valid_for_types = { monastic_order_type }
+	holding_goods_demand = cultivators_holding_demand
+	preferred_societal_values = { spiritualist_focus traditional_economy_focus }
+	location_revenue_modifier = 1.0
+	location_trigger = {
+		dominant_religion = religion:catholic
+		has_building_with_at_least_one_level = monastery
+		is_city = no
+	}
+	location_modifier = {
+		local_clergy_estate_power = 8.0
+		local_monthly_prosperity = 0.01
+		#MnT removed: local_monthly_food_modifier = monthly_food_productivity_mild_bonus
+		local_wheat_output_modifier = 0.05
+		local_legumes_output_modifier = 0.05
+		local_max_rgo_size_modifier = 0.1
+	}
+	country_modifier = {
+		#MnT removed: global_monthly_food_modifier = monthly_food_productivity_weak_bonus
+		global_wheat_output_modifier = 0.025
+		global_legumes_output_modifier = 0.025
+	}
+	low_zeal_country_modifier = {
+		global_max_rgo_size_modifier = -0.05
+	}
+	trait_category = cabinet
+	leader_adm = 15
+	leader_dip = 5
+	leader_mil = -20
+
+	zeal_target_base = 10
+	ai_will_select = {
+		add = 20	# always good
+		add = {
+			value = "scope:actor.modifier:bias_for_administrative_policies"
+			multiply = 1
+		}
+		add = {
+			value = "scope:actor.societal_value:spiritualist_vs_humanist"
+			multiply = -1.25
+		}
+		add = {
+			value = "scope:actor.societal_value:capital_economy_vs_traditional_economy"
+			multiply = 2
+		}
+		if = {
+			limit = { exists = scope:location }
+			add = {
+				value = "scope:location.local_control"
+				multiply = "scope:location.population"
+			}
+		}
+	}
+}

@@ -33,8 +33,8 @@ COUNTRIES_FILE = SCRIPT_FOLDER / "building_setup_countries.csv"
 # CSV column prefixes: each building type has a max_level (what the game caps it at) and a level (what it starts with)
 MAX_LEVEL_COLUMN = "max_level_"
 LEVEL_COLUMN = "level_"
-RGO_OUTPUT_FILE = MOD_FOLDER / "main_menu" / "setup" / "start" / "98_mnt_rgo_setup.txt"
-BUILDING_OUTPUT_FILE = MOD_FOLDER / "main_menu" / "setup" / "start" / "98_mnt_building_setup.txt"
+RGO_OUTPUT_FILE = MOD_FOLDER / "main_menu" / "setup" / "1337" / "98_mnt_rgo_setup.txt"
+BUILDING_OUTPUT_FILE = MOD_FOLDER / "main_menu" / "setup" / "1337" / "98_mnt_building_setup.txt"
 DUMP_EFFECT_FILE = MOD_FOLDER / "in_game" / "common" / "scripted_effects" / "MnT_setup_generated_loc_data_dump.txt"
 REMOVALS_EFFECT_FILE = MOD_FOLDER / "in_game" / "common" / "scripted_effects" / "MnT_setup_generated_building_removals.txt"
 
