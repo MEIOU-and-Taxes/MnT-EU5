@@ -2,11 +2,12 @@
 import os
 import re
 
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox, QFileDialog
 
 import src.parsing.stores
 from src.constants import TARGET_FILE_NAME_ROOT
 from src.parsing import log_parser
+from tools.shared import fetch_logs
 
 
 class MainMenuLogWatcher:

@@ -7,35 +7,32 @@ import pandas as pd
 from PyQt6.QtCore import QTimer, QUrl
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon, QDesktopServices
 from PyQt6.QtMultimedia import QSoundEffect
-from PyQt6.QtWidgets import (
-	QMainWindow, QComboBox, QMessageBox,
-	QApplication
-)
+from PyQt6.QtWidgets import QMainWindow, QComboBox, QMessageBox, QApplication
 
-import src.parsing.stores
-import src.parsing.computed_series
 from src.analysis_toolkit import AnalysisToolkitDialog
 from src.constants import (
 	REFRESH_PERIOD_MS, AUTOSAVE_PERIOD_MS, AUTOSAVE_FILE, APPDATA_DIR, KEY_CONFIGS_PATH,
 	ICON_PATH, GRAPH_INTRODUCTION, POS_SUBPLOT_TOP_EDGE, POS_SUBPLOT_BOTTOM_EDGE,
-	POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE,
-	POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE
+	POS_SUBPLOT_LEFT_EDGE, POS_SUBPLOT_RIGHT_EDGE, POS_SUBPLOT_HSPACE, POS_SUBPLOT_WSPACE
 )
-from src.parsing import log_parser
+from src.parsing import log_parser, computed_series_storage
+from src.parsing.computed_series_storage import set_parsing_error_callback, _reported_parsing_errors
+from src.parsing.stores import clear_all_caches, pop_cumulative_store, tg_cumulative_store, mk_cumulative_store
+from src.parsing.transformer_core import set_duplicate_name_callback
 from src.plotting import chart_library, configs
+from src.services.alert_manager import check_active_alerts
 from src.services.exporter import run_export_pipeline
 from src.services.session_manager import save_session
 from src.services.settings_store import SettingsStore
-from src.services.alert_manager import check_active_alerts
 from src.ui.filter_controller import FilterController
 from src.ui.history_manager import HistoryManager
 from src.ui.log_watcher import MainMenuLogWatcher
-from src.ui.menu_builder import MenuBuilder
+from src.ui.menu_builder import build_menu
 from src.ui.preset_bar import PresetBar
 from src.ui.session_controller import SessionController
 from src.ui.stats_panel import format_stats_panel_text
 from src.ui.time_navigation import TimeNavigation
-from src.ui.toolbar_builder import ToolbarBuilder
+from src.ui.toolbar_builder import build_toolbar_ui
 from src.ui.view_modes import ViewNodes
 from src.widgets.alert_dialog import AlertDialog
 from src.widgets.alert_notification_dialog import AlertWindow
@@ -46,8 +43,9 @@ from src.widgets.preset_dialog import PresetConfigDialog
 from src.widgets.settings_dialog import SettingsDialog
 from tools.shared.fetch_logs import get_from_config
 
-class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, FilterController,
-				 TimeNavigation, SessionController, ToolbarBuilder, ViewNodes, HistoryManager, QMainWindow):
+
+class MainWindow(PresetBar, MainMenuLogWatcher, SettingsStore, FilterController,
+				 TimeNavigation, SessionController, ViewNodes, HistoryManager, QMainWindow):
 	def __init__(self):
 		super().__init__()
 		self.setWindowTitle("MEIOU and Taxes Plotter")
@@ -55,8 +53,10 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.current_redraw_fn = None
 		self._handling_mismatch = False
 
-		# Register callback for column count mismatch in country logs
+		# Hook parsing diagnostics callbacks without PyQt6 in parser modules
 		log_parser.set_column_mismatch_callback(self.handle_column_mismatch)
+		set_duplicate_name_callback(self._on_duplicate_names_found)
+		set_parsing_error_callback(self._on_formula_parsing_error)
 
 		if os.path.exists(ICON_PATH):
 			self.setWindowIcon(QIcon(ICON_PATH))
@@ -68,7 +68,7 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.sound_effect = None
 		self.setStyleSheet("QPushButton:checked { background-color: #cce8ff; border: 1px solid #99c8ef; }")
 
-		# State
+		# State initialization
 		self.log_folder = get_from_config('Paths', 'log_directory')
 		self.logs = []
 		self.data = ""
@@ -106,21 +106,22 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.load_app_settings()
 		self.init_history()
 
-		self._build_menu()
-		self._build_ui()
+		# Build UI via modular builders
+		build_menu(self)
+		build_toolbar_ui(self)
 		self.setup_shortcuts()
 		self.load_key_configs()
 		self.load_graph_definitions()
 		self.display_info_screen()
 		QApplication.instance().installEventFilter(self)
 
-		# Constant 1-second watcher: checks and reads log files from disk
+		# File watcher timer
 		self.timer_file_watcher = QTimer(self)
 		self.timer_file_watcher.setInterval(REFRESH_PERIOD_MS)
 		self.timer_file_watcher.timeout.connect(self.check_log_updates)
 		self.timer_file_watcher.start()
 
-		# Graph re-render timer: controlled by combo_refresh
+		# Graph re-render timer
 		self.timer_graph_refresh = QTimer(self)
 		self.timer_graph_refresh.setInterval(10 * 1000)
 		self.timer_graph_refresh.timeout.connect(self.auto_refresh_graph)
@@ -133,6 +134,24 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 		self.timer_auto_save.timeout.connect(self.auto_save_data)
 		self.timer_auto_save.start()
 		self._apply_autosave_interval()
+
+	def _on_duplicate_names_found(self, entity_type: str, message: str):
+		QMessageBox.warning(self, f"Duplicate {entity_type.capitalize()} Names", message)
+
+	def _on_formula_parsing_error(self, err_msg: str, line_num: int):
+		QMessageBox.critical(
+			self,
+			"Computed Series Parsing Error",
+			f"Failed to parse formula in 'computed_series.csv' on line {line_num}:\n\n{err_msg}"
+		)
+
+	def set_alerts_enabled(self, enabled):
+		self.alerts_enabled = enabled
+		self.save_app_settings()
+
+	def set_alert_sounds_enabled(self, enabled):
+		self.alert_sounds_enabled = enabled
+		self.save_app_settings()
 
 	def open_alert_dialog(self):
 		dlg = AlertDialog(self)
@@ -170,19 +189,20 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 
 	def set_density_mode(self, mode):
 		if mode == "location":
-			rloc_map = log_parser.get_region_locations()
+			from src.parsing.transformers.region import parse_data_region_locations
+			rloc_map = parse_data_region_locations(self.data)
 			has_locs = any(v > 0 for v in rloc_map.values()) or any(
 				(r.get("locations", 0) or r.get("num_locations", 0) or 0) > 0
-				for r in src.parsing.stores.tg_cumulative_store.values()
+				for r in tg_cumulative_store.values()
 			)
 			if not has_locs:
 				QMessageBox.warning(self, "No Location Data", "No location counts are stored in the current logs.")
 				mode = "none"
 		elif mode == "population":
 			has_pop = (
-				bool(src.parsing.stores.pop_cumulative_store)
-				or any(float(r.get("Population", 0) or 0) > 0 for r in src.parsing.stores.tg_cumulative_store.values())
-				or any(r.get("statistic") == "Population" and float(r.get("value", 0) or 0) > 0 for r in src.parsing.stores.mk_cumulative_store.values())
+				bool(pop_cumulative_store)
+				or any(float(r.get("Population", 0) or 0) > 0 for r in tg_cumulative_store.values())
+				or any(r.get("statistic") == "Population" and float(r.get("value", 0) or 0) > 0 for r in mk_cumulative_store.values())
 			)
 			if not has_pop:
 				QMessageBox.warning(self, "No Population Data", "No population data is stored in the current logs.")
@@ -209,9 +229,9 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 	def open_computed_series_dialog(self):
 		dlg = ComputedSeriesDialog(self)
 		if dlg.exec():
-			src.parsing.stores.clear_all_caches()
-			if hasattr(src.parsing.computed_series, '_reported_parsing_errors'):
-				src.parsing.computed_series._reported_parsing_errors.clear()
+			clear_all_caches()
+			if hasattr(computed_series_storage, '_reported_parsing_errors'):
+				_reported_parsing_errors.clear()
 
 			if self.current_graph_info:
 				self.display_chart(
@@ -430,22 +450,9 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 
 		self._render_preset_buttons()
 
-
 	def manual_refresh(self):
 		"""Forces an immediate read of all log files and re-renders the current chart."""
 		self.reload_log(is_interactive=True)
-
-	def auto_refresh_graph(self):
-		"""Re-renders current chart when new data has arrived."""
-		if not self.has_new_data:
-			return
-		self.has_new_data = False
-		if self.current_graph_info:
-			self.display_chart(
-				self.current_graph_info['info'],
-				self.current_graph_info['title'],
-				preserve_toggles=True
-			)
 
 	def open_analysis_toolkit(self):
 		csv_path = os.path.join(self.log_folder, "csv_export", "country_stats.csv")
@@ -534,36 +541,19 @@ class MainWindow(MenuBuilder, PresetBar, MainMenuLogWatcher, SettingsStore, Filt
 			self.has_new_data = True
 			self.check_alerts_notification()
 
-	def _set_alerts_enabled(self, enabled):
-		self.alerts_enabled = enabled
-		self.save_app_settings()
+	def setup_shortcuts(self):
+		# Keyboard shortcuts are already handled by QAction shortcuts in the menu bar.
 
-	def _set_alert_sounds_enabled(self, enabled):
-		self.alert_sounds_enabled = enabled
-		self.save_app_settings()
+		# Hotkeys to step metric/category backward and forward
+		self.sc_prev_metric = QShortcut(QKeySequence(","), self)
+		self.sc_prev_metric.activated.connect(self.select_previous_metric)
 
-	def _check_and_notify_duplicate_names(entity_type: str, name_to_identifiers: dict):
-		"""Checks if different entities share identical display names and notifies once."""
-		duplicates = {name: ids for name, ids in name_to_identifiers.items() if len(ids) > 1}
-		if not duplicates:
-			return
+		self.sc_next_metric = QShortcut(QKeySequence("."), self)
+		self.sc_next_metric.activated.connect(self.select_next_metric)
 
-		new_duplicates = {k: v for k, v in duplicates.items() if (entity_type, k) not in _reported_duplicate_names}
-		if not new_duplicates:
-			return
+		# Preset page shortcuts shifted to Shift+Left / Shift+Right to prevent conflicts with Alt+Left/Right history
+		self.sc_prev_preset_page = QShortcut(QKeySequence("Shift+Left"), self)
+		self.sc_prev_preset_page.activated.connect(self._prev_preset_page)
 
-		for k in new_duplicates:
-			_reported_duplicate_names.add((entity_type, k))
-
-		msg_lines = [f"Duplicate {entity_type} names detected across different entities:\n"]
-		for name, ids in sorted(new_duplicates.items()):
-			msg_lines.append(f"  • '{name}' used by: {', '.join(sorted(ids))}")
-		msg_lines.append("\nDifferent tags/identifiers will be appended in parentheses.")
-
-		print("[WARNING] " + "\n".join(msg_lines))
-		try:
-			from PyQt6.QtWidgets import QApplication, QMessageBox
-			if QApplication.instance():
-				QMessageBox.warning(None, f"Duplicate {entity_type.capitalize()} Names", "\n".join(msg_lines))
-		except Exception:
-			pass
+		self.sc_next_preset_page = QShortcut(QKeySequence("Shift+Right"), self)
+		self.sc_next_preset_page.activated.connect(self._next_preset_page)

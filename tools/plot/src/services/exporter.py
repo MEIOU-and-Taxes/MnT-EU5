@@ -1,25 +1,25 @@
 ﻿import csv
 import os
+
 import numpy as np
 import pandas as pd
-from PyQt6.QtWidgets import QMessageBox, QProgressDialog, QApplication
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtWidgets import QMessageBox, QProgressDialog, QApplication
 
-import src.parsing.transformers
-import src.parsing.transformers.country
-
-import src.parsing.transformers.region
-from src.parsing import log_parser
+from src.parsing.transformers.country import parse_data_countries, parse_data_credit_raw
+from src.parsing.transformers.region import parse_data_building_types, parse_data_road_types, \
+    parse_data_population, parse_data_goods_prices
+from src.parsing.transformers.market import parse_data_markets
 
 PARSERS = {
-    "building_types": src.parsing.transformers.region.parse_data_building_types,
-    "goods_prices": src.parsing.transformers.region.parse_data_goods_prices,
-    "markets": src.parsing.transformers.region.parse_data_markets,
-    "population": src.parsing.transformers.region.parse_data_population,
-    "road_types": src.parsing.transformers.region.parse_data_road_types,
-    "country_stats": src.parsing.transformers.country.parse_data_countries,
-    "credit_stats": src.parsing.transformers.country.parse_data_credit_raw,
+    "building_types": parse_data_building_types,
+    "goods_prices": parse_data_goods_prices,
+    "markets": parse_data_markets,
+    "population": parse_data_population,
+    "road_types": parse_data_road_types,
+    "country_stats": parse_data_countries,
+    "credit_stats": parse_data_credit_raw,
 }
 
 def check_file_locks(export_folder_path, filenames):

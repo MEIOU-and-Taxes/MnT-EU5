@@ -1,66 +1,16 @@
 ﻿"""Module to calculate derived metrics from mathematical formulas specified in CSV."""
 import ast
 import csv
-import operator as op
 import os
 
-from src.constants import APPDATA_DIR
-from src.parsing.ast_engine import prepare_expression, validate_expression, _resolve_var_val, _eval_node
-from src.parsing.computed_series_storage import ensure_computed_series_file, _show_parsing_error_dialog
-
-COMPUTED_SERIES_FILENAME = "computed_series.csv"
-COMPUTED_SERIES_APPDATA_PATH = os.path.join(APPDATA_DIR, COMPUTED_SERIES_FILENAME)
-
-DEFAULT_COMPUTED_SERIES_CSV = """dataset_type,new_metric_name,expression,description
-country,Debt/Income,total_debt / income,Total debt divided by annual/monthly income
-country,Adjusted Burden,[Debt/Income] * bank_interest,Interest payment burden
-country,Credit Supply/Demand,Supply / Demand,Credit supply to demand ratio
-region,Gold/Gold Mine,Gold / gold_mine,Gold price divided by gold mines
-region,Food net,[Food production] + [Food consumption],Remaining produced food
-market,Estate/state trade capacity,[Burgher Trade Capacity] / [Merchant Capacity],
-"""
-
-# Safe AST operators map
-ALLOWED_OPERATORS = {
-    ast.Add: op.add,
-    ast.Sub: op.sub,
-    ast.Mult: op.mul,
-    ast.Div: op.truediv,
-    ast.FloorDiv: op.floordiv,
-    ast.Mod: op.mod,
-    ast.Pow: op.pow,
-    ast.USub: op.neg,
-    ast.UAdd: op.pos,
-}
-
-ALLOWED_COMPARATORS = {
-    ast.Eq: op.eq,
-    ast.NotEq: op.ne,
-    ast.Lt: op.lt,
-    ast.LtE: op.le,
-    ast.Gt: op.gt,
-    ast.GtE: op.ge,
-}
-
-ALLOWED_BOOLOPS = {
-    ast.And: lambda vals: all(vals),
-    ast.Or: lambda vals: any(vals),
-}
-
-ALLOWED_UNARYOPS = {
-    ast.USub: op.neg,
-    ast.UAdd: op.pos,
-    ast.Not: lambda x: not bool(x),
-}
-
-BUILTIN_FUNCS = {
-    'countif', 'if', 'iff', 'abs', 'min', 'max', 'round',
-    'rate', 'relative_rate', 'rel_rate', 'acceleration', 'ratio', 'difference',
-    'density_by_location', 'density_by_population'
-}
-BUILTIN_VARS = {'prev', 'true', 'false'}
-
-_reported_parsing_errors = set()
+from src.parsing.ast_engine import (
+    BUILTIN_FUNCS, BUILTIN_VARS,
+    prepare_expression, validate_expression, resolve_var_val, eval_node
+)
+from src.parsing.computed_series_storage import (
+    COMPUTED_SERIES_FILENAME, COMPUTED_SERIES_APPDATA_PATH,
+    ensure_computed_series_file, notify_parsing_error
+)
 
 
 def extract_variable_names(clean_expr: str, var_map: dict) -> list:
@@ -177,10 +127,10 @@ def load_computed_series_definitions():
             })
         except Exception as err:
             details = f"Metric: {name}\nExpression: {expr}\nError: {err}"
-            print(f"[COMPUTED SERIES ERROR] Line {row_idx}: {details}")
-            _show_parsing_error_dialog(details, row_idx)
+            notify_parsing_error(details, row_idx)
 
     return definitions
+
 
 def extract_condition_values_str(condition_str: str, variables: dict, precompiled=None, series_history=None, moment=None) -> str:
     """Evaluates individual function calls and variables inside the condition to provide human-readable values."""
@@ -204,7 +154,7 @@ def extract_condition_values_str(condition_str: str, variables: dict, precompile
                     arg_name = "..."
                 call_label = f"{f_name}({arg_name})"
                 try:
-                    call_val = _eval_node(node, variables, var_map, series_history, moment)
+                    call_val = eval_node(node, variables, var_map, series_history, moment)
                     val_str = f"{call_val:.2f}%" if "relative" in f_name or "rel_" in f_name or "ratio" in f_name else format_metric_3digits(call_val)
                     eval_pairs.append(f"{call_label}={val_str}")
                 except Exception:
@@ -213,7 +163,7 @@ def extract_condition_values_str(condition_str: str, variables: dict, precompile
         # Also extract raw metrics
         used_vars = extract_variable_names(clean_expr, var_map)
         for v in used_vars:
-            val = _resolve_var_val(v, variables)
+            val = resolve_var_val(v, variables)
             eval_pairs.append(f"{v}={format_metric_3digits(val)}")
 
         # Deduplicate preserving order

@@ -1,5 +1,4 @@
-﻿import os
-from functools import partial
+﻿from functools import partial
 
 from PyQt6.QtWidgets import QPushButton, QLabel, QComboBox
 
@@ -63,7 +62,6 @@ class PresetBar:
 			self.preset_button_layout.addWidget(lbl_page)
 			self.preset_button_layout.addWidget(btn_next)
 
-
 	def _prev_preset_page(self):
 		if not getattr(self, 'current_preset_chart', None):
 			return
@@ -73,7 +71,6 @@ class PresetBar:
 			return
 		self.preset_page = (self.preset_page - 1) % total_pages
 		self._render_preset_buttons()
-
 
 	def _next_preset_page(self):
 		if not getattr(self, 'current_preset_chart', None):
@@ -95,7 +92,6 @@ class PresetBar:
 			sc.deleteLater()
 		self.preset_shortcuts.clear()
 
-
 	def _apply_preset_filter(self, filters):
 		for combo in self.filter_widget_map.values():
 			combo.blockSignals(True)
@@ -113,33 +109,12 @@ class PresetBar:
 						target_key = 'market'
 				if target_key in self.filter_widget_map:
 					idx = self._find_matching_combo_index(self.filter_widget_map[target_key], v)
-					if idx != -1: self.filter_widget_map[target_key].setCurrentIndex(idx)
+					if idx != -1:
+						self.filter_widget_map[target_key].setCurrentIndex(idx)
 		finally:
 			for combo in self.filter_widget_map.values():
 				combo.blockSignals(False)
 		self.redraw_current_plot()
-
-	def check_log_updates(self):
-		"""Runs every 5 seconds to inspect files on disk and ingest changes."""
-		files = self.get_all_log_files()
-		if not files:
-			return
-		cur = []
-		for f in files:
-			try:
-				s = os.stat(f)
-				cur.append((f, s.st_size, s.st_mtime))
-			except OSError:
-				return
-
-		if self.last_log_state is None:
-			self.last_log_state = cur
-			return
-
-		if cur != self.last_log_state:
-			self.last_log_state = cur
-			self.read_and_parse_logs()
-			self.has_new_data = True
 
 	def _find_matching_combo_index(self, widget: QComboBox, val: str) -> int:
 		"""Finds item index, gracefully resolving with or without ' price' suffix."""
