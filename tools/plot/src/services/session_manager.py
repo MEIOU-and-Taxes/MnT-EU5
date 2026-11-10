@@ -12,12 +12,13 @@ def _safe_int(val):
     except (ValueError, TypeError):
         return 0
 
-def save_session(filepath, raw_data, logs, chart_filter_memory, current_chart_title) -> bool:
+def save_session(filepath, raw_data, logs, chart_filter_memory, current_chart_title, session_name="") -> bool:
     if not raw_data:
         return False
     session = {
         "version": 3,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "session_name": session_name,
         "data": raw_data,
         "logs": logs,
         "cumulative_stores": {

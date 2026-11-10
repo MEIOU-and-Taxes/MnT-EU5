@@ -85,6 +85,77 @@ def validate_expression(expr_str: str):
     return clean, var_map
 
 
+def extract_variable_names(clean_expr: str, var_map: dict) -> list:
+    """Extracts all variable identifiers used in an expression."""
+    parsed = ast.parse(clean_expr, mode='eval')
+    names = []
+    for node in ast.walk(parsed):
+        if isinstance(node, ast.Name):
+            raw_name = var_map.get(node.id, node.id)
+            names.append(raw_name)
+    return names
+
+
+def get_available_variables_for_dataset(dataset_type: str, prior_names: list = None) -> set:
+    """Returns the set of valid metric/variable names for a dataset."""
+    from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, CREDIT_HEADERS, market_stats, POPULATION_HEADERS
+    import src.parsing.stores as stores
+
+    vars_set = set()
+    d_type = (dataset_type or "").strip().lower()
+
+    if d_type in ("country", "country_metric", "country_stats", "credit", "credit_metric", "credit_stats"):
+        vars_set.update(COUNTRY_FIRST_HEADERS)
+        vars_set.update(SOCIETAL_VALUE_NAMES)
+        vars_set.update(CREDIT_HEADERS)
+        vars_set.update([
+            "Supply", "Demand", "Credit supply", "Credit demand", "locations", "num_locations",
+            "Population", "population", "total_population"
+        ])
+    elif d_type in ("market", "markets", "market_metric", "market_stats"):
+        vars_set.update(market_stats)
+        vars_set.update(["locations", "population", "total_population"])
+    elif d_type in ("region", "regional", "regional_metric", "regional_stats"):
+        vars_set.update(POPULATION_HEADERS)
+        vars_set.update([
+            "locations", "population", "total_population",
+            "Gravel Road", "Paved Road",
+            "Castle", "University", "Gold mine", "Farm", "Harbour", "Port"
+        ])
+        if stores.rt_cumulative_store:
+            for k in stores.rt_cumulative_store.keys():
+                vars_set.add(k[2])
+        if stores.bt_cumulative_store:
+            for k in stores.bt_cumulative_store.keys():
+                vars_set.add(k[2])
+        if stores.gp_cumulative_store:
+            for k in stores.gp_cumulative_store.keys():
+                good = k[2]
+                vars_set.add(good)
+                if good.lower().endswith(" price"):
+                    vars_set.add(good[:-6].strip())
+                    vars_set.add(f"price_{good[:-6].strip()}")
+
+    if prior_names:
+        vars_set.update(prior_names)
+
+    return vars_set
+
+
+def check_missing_variables(clean_expr: str, var_map: dict, dataset_type: str, prior_names: list = None) -> list:
+    """Returns a list of variables in the expression that do not exist in the dataset."""
+    known = get_available_variables_for_dataset(dataset_type, prior_names)
+    canon = lambda s: s.strip().lower().replace('_', ' ')
+    known_canon = {canon(k) for k in known}
+    used = extract_variable_names(clean_expr, var_map)
+    missing = []
+    for var in used:
+        c = canon(var)
+        if c not in known_canon and f"{c} price" not in known_canon:
+            missing.append(var)
+    return missing
+
+
 def _eval_node(node, variables, var_map=None):
     """Recursively evaluates an AST node across binary/unary trees, constants, and variables."""
     if isinstance(node, ast.Constant):

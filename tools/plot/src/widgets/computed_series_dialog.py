@@ -1,9 +1,11 @@
-﻿from PyQt6.QtWidgets import (
+﻿from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QHeaderView,
     QPushButton, QComboBox, QTableWidgetItem, QMessageBox, QTextEdit
 )
 from src.parsing.computed_series import (
-    load_raw_computed_series_rows, save_computed_series_rows, validate_expression
+    load_raw_computed_series_rows, save_computed_series_rows, validate_expression, check_missing_variables
 )
 
 DATASET_OPTIONS = ["country", "market", "region"]
@@ -21,7 +23,7 @@ class ComputedSeriesDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Manage Computed Series Formulas")
-        self.resize(980, 620)
+        self.resize(1020, 620)
 
         main_layout = QVBoxLayout(self)
 
@@ -166,35 +168,85 @@ class ComputedSeriesDialog(QDialog):
     def validate_all(self, show_success_popup=False):
         errors = []
         rows = self.get_table_rows()
+        prior_names_by_type = {}
+
+        err_bg = QColor("#7a1f1d")
+        err_fg = QColor("#ffffff")
+
+        # Reset all highlighting first
+        for r in range(self.table.rowCount()):
+            for c in range(1, 4):
+                item = self.table.item(r, c)
+                if item:
+                    item.setData(Qt.ItemDataRole.BackgroundRole, None)
+                    item.setData(Qt.ItemDataRole.ForegroundRole, None)
+                    item.setToolTip("")
 
         for idx, row in enumerate(rows, start=1):
+            r_idx = idx - 1
             d_type = row["dataset_type"].strip().lower()
             name = row["new_metric_name"].strip()
             expr = row["expression"].strip()
 
+            item_name = self.table.item(r_idx, 1)
+            item_expr = self.table.item(r_idx, 2)
+            row_has_error = False
+
             if not d_type:
                 errors.append(f"Row {idx}: Dataset Type cannot be empty.")
+                row_has_error = True
             elif d_type not in DATASET_OPTIONS:
                 errors.append(f"Row {idx}: Invalid dataset type '{d_type}'. Must be one of {DATASET_OPTIONS}.")
+                row_has_error = True
 
             if not name:
                 errors.append(f"Row {idx}: Metric Name cannot be empty.")
+                if item_name:
+                    item_name.setBackground(err_bg)
+                    item_name.setForeground(err_fg)
+                    item_name.setToolTip("Metric Name cannot be empty.")
+                row_has_error = True
 
             if not expr:
                 errors.append(f"Row {idx}: Expression cannot be empty.")
+                if item_expr:
+                    item_expr.setBackground(err_bg)
+                    item_expr.setForeground(err_fg)
+                    item_expr.setToolTip("Expression cannot be empty.")
+                row_has_error = True
             else:
                 try:
-                    validate_expression(expr)
+                    clean_expr, var_map = validate_expression(expr)
+                    priors = prior_names_by_type.get(d_type, [])
+                    missing_vars = check_missing_variables(clean_expr, var_map, d_type, priors)
+                    if missing_vars:
+                        err_text = f"Unknown variable(s) in {d_type} dataset: {', '.join(missing_vars)}. If there is no dataset, the software might not be aware of it."
+                        errors.append(f"Row {idx} ('{name or 'Unnamed'}'): {err_text}")
+                        if item_expr:
+                            item_expr.setBackground(err_bg)
+                            item_expr.setForeground(err_fg)
+                            item_expr.setToolTip(err_text)
+                        row_has_error = True
                 except Exception as e:
                     errors.append(f"Row {idx} ('{name or 'Unnamed'}'): {e}")
+                    if item_expr:
+                        item_expr.setBackground(err_bg)
+                        item_expr.setForeground(err_fg)
+                        item_expr.setToolTip(str(e))
+                    row_has_error = True
+
+            if not row_has_error and name:
+                prior_names_by_type.setdefault(d_type, []).append(name)
 
         if errors:
             self.lbl_status.setStyleSheet("color: #ff6b6b; font-weight: bold;")
-            self.lbl_status.setText(f"Validation failed with {len(errors)} error(s).")
+            self.lbl_status.setText(f"Validation failed with {len(errors)} error(s). Hover highlighted cells for details.")
             return False, errors
         else:
             self.lbl_status.setStyleSheet("color: #51cf66; font-weight: bold;")
             self.lbl_status.setText(f"✓ All {len(rows)} formula(s) are valid!")
+            if show_success_popup:
+                QMessageBox.information(self, "Formulas Valid", f"All {len(rows)} formula(s) passed validation!")
             return True, []
 
     def _on_save_and_apply(self):

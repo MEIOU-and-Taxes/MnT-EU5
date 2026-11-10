@@ -1,5 +1,40 @@
 ﻿"""Column and metadata definitions for log parsing."""
 
+# Multipliers for series that are logged in smaller units (e.g. population numbers logged in thousands)
+SERIES_CONFIG_MULTIPLIERS = [
+    {"type": "Peasants", "multiplier": 1000},
+    {"type": "Burghers", "multiplier": 1000},
+    {"type": "Clergy", "multiplier": 1000},
+    {"type": "Laborers", "multiplier": 1000},
+    {"type": "Nobles", "multiplier": 1000},
+    {"type": "Slaves", "multiplier": 1000},
+    {"type": "Soldiers", "multiplier": 1000},
+    {"type": "Tribesmen", "multiplier": 1000},
+    {"type": "Unemployed peasants", "multiplier": 1000},
+    {"type": "Unemployed burghers", "multiplier": 1000},
+    {"type": "Unemployed clergy", "multiplier": 1000},
+    {"type": "Unemployed laborers", "multiplier": 1000},
+    {"type": "Unemployed nobles", "multiplier": 1000},
+    {"type": "Unemployed slaves", "multiplier": 1000},
+    {"type": "Unemployed soldiers", "multiplier": 1000},
+    {"type": "Unemployed tribesmen", "multiplier": 1000},
+    {"type": "Army levy size", "multiplier": 1000},
+    {"type": "Navy levy size", "multiplier": 1000},
+    {"type": "Max population", "multiplier": 1000},
+    {"type": "Unfilled jobs", "multiplier": -1},
+    {"type": "Food consumption", "multiplier": -1},
+]
+
+SERIES_MULTIPLIERS = {item["type"].strip().lower(): float(item["multiplier"]) for item in SERIES_CONFIG_MULTIPLIERS}
+
+
+def get_series_multiplier(metric_name: str) -> float:
+    """Returns the scaling multiplier for a metric (default: 1.0)."""
+    if not metric_name:
+        return 1.0
+    return SERIES_MULTIPLIERS.get(metric_name.strip().lower(), 1.0)
+
+
 COUNTRY_FIRST_HEADERS = [
     "year", "tag", "name", "capital_area", "country_type", "government_type", "income", "current_research",
     "has_feudalism", "has_legalism", "has_meritocracy", "has_renaissance", "has_banking", "has_professional_armies",
@@ -82,7 +117,7 @@ POPULATION_HEADERS = [
     "Max population", # send sorted
     "Net building profit",
     "Num works of art",
-    "Average population percentage",
+    "Population vs population capacity",
     "Tax base",
     "Works of art star rating",
     "Average market access",
@@ -169,3 +204,5 @@ POPULATION_HEADERS = [
     "Immigration destinations (locations)",
     "Locations starving",
 ]
+
+

@@ -162,6 +162,9 @@ class MainMenuLogWatcher:
 
 		self._update_last_log_state()
 
+		if hasattr(self, 'prompt_new_session_name'):
+			self.prompt_new_session_name()
+
 		status_msg = (
 			f"App data cleared and contents of {cleared_files_count} log file(s) emptied."
 			if clicked == btn_clear_both

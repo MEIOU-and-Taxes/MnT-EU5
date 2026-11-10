@@ -2,10 +2,15 @@
 import re
 
 import src.parsing.stores
-from src.parsing.definitions import COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS, market_stats, CREDIT_HEADERS, POPULATION_HEADERS
+from src.parsing.definitions import (
+	COUNTRY_FIRST_HEADERS, SOCIETAL_VALUE_NAMES, STRING_COLUMNS,
+	market_stats, CREDIT_HEADERS, POPULATION_HEADERS, get_series_multiplier
+)
 from src.parsing.numeric_utils import parse_dynamic_numeric_value
-from src.parsing.stores import parsed_file_signatures, tg_cumulative_store, bt_cumulative_store, gp_cumulative_store, \
+from src.parsing.stores import (
+	parsed_file_signatures, tg_cumulative_store, bt_cumulative_store, gp_cumulative_store,
 	pop_cumulative_store, rt_cumulative_store, mk_cumulative_store, region_locations_store, cr_cumulative_store
+)
 
 # Column count mismatch callback (hooked by UI)
 _column_mismatch_callback = None
@@ -40,7 +45,11 @@ def parse_lines(line_iterable):
 		if rec is not None:
 			for k, val in rec.items():
 				if k not in STRING_COLUMNS:
-					rec[k] = parse_dynamic_numeric_value(val)
+					num = parse_dynamic_numeric_value(val)
+					mult = get_series_multiplier(k)
+					if mult != 1.0 and isinstance(num, (int, float)):
+						num *= mult
+					rec[k] = num
 			yr = rec.get("year")
 			tag = rec.get("tag")
 			if yr and tag:
@@ -147,7 +156,14 @@ def parse_lines(line_iterable):
 					}
 					# Map all population and SLV metrics from index 2 onwards
 					for header, val_str in zip(POPULATION_HEADERS, p[2:]):
-						record[header] = parse_dynamic_numeric_value(val_str.strip())
+						val = parse_dynamic_numeric_value(val_str.strip())
+						mult = get_series_multiplier(header)
+						if mult != 1.0 and isinstance(val, (int, float)):
+							val *= mult
+						record[header] = val
+
+					if "Total population" in record:
+						record["population"] = record["Total population"]
 
 					pop_cumulative_store[(moment, region)] = record
 				except (ValueError, TypeError):
@@ -184,6 +200,9 @@ def parse_lines(line_iterable):
 					loc_count = float(stat_map.get("Locations", 0.0))
 					pop_count = float(stat_map.get("Population", 0.0))
 					for name, v in stat_map.items():
+						mult = get_series_multiplier(name)
+						if mult != 1.0:
+							v *= mult
 						mk_cumulative_store[(moment, market_name, name)] = {
 							"moment": moment, "region": market_name, "market": market_name,
 							"statistic": name, "value": v,
@@ -202,7 +221,11 @@ def parse_lines(line_iterable):
 					raw_vals = p[2].strip().split('|')
 					record = {"moment": moment, "tag": tag, "country": tag}
 					for name, val_str in zip(CREDIT_HEADERS, raw_vals):
-						record[name] = parse_dynamic_numeric_value(val_str)
+						val = parse_dynamic_numeric_value(val_str)
+						mult = get_series_multiplier(name)
+						if mult != 1.0 and isinstance(val, (int, float)):
+							val *= mult
+						record[name] = val
 					cr_cumulative_store[(moment, tag)] = record
 				except (ValueError, TypeError):
 					pass
@@ -246,18 +269,28 @@ def parse_data_building_types(data: str = None):
 		return src.parsing.stores._bt_cache
 
 	all_moments = sorted(set(k[0] for k in bt_cumulative_store.keys()))
-	# Limit to active (region, building) pairs that actually exist in the game
-	active_pairs = sorted(set((k[1], k[2]) for k in bt_cumulative_store.keys()))
+	all_buildings = sorted(set(k[2] for k in bt_cumulative_store.keys()))
+
+	# Include all known regions so regions without a building have a count of 0
+	all_regions = sorted(
+		set(region_locations_store.keys()) |
+		set(k[1] for k in pop_cumulative_store.keys()) |
+		set(k[1] for k in bt_cumulative_store.keys()) |
+		set(k[1] for k in rt_cumulative_store.keys())
+	)
+	if not all_regions:
+		all_regions = sorted(set(k[1] for k in bt_cumulative_store.keys()))
 
 	filled_data = []
 	for m in all_moments:
-		for reg, bld in active_pairs:
-			filled_data.append({
-				"moment": m,
-				"building": bld,
-				"count": bt_cumulative_store.get((m, reg, bld), 0),
-				"region": reg
-			})
+		for bld in all_buildings:
+			for reg in all_regions:
+				filled_data.append({
+					"moment": m,
+					"building": bld,
+					"count": bt_cumulative_store.get((m, reg, bld), 0),
+					"region": reg
+				})
 
 	src.parsing.stores._bt_cache = filled_data
 	return src.parsing.stores._bt_cache
