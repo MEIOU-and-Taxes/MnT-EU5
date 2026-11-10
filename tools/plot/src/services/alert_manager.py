@@ -2,9 +2,12 @@
 import os
 
 from src.constants import ALERTS_PATH
-from src.parsing.computed_series import validate_expression, evaluate_condition, extract_variable_names, \
+from src.parsing.computed_series import extract_variable_names, \
     extract_condition_values_str
-from src.parsing.transformers import parse_data_country_metrics, parse_data_market_metrics, parse_data_regional_metrics
+from src.parsing.ast_engine import validate_expression, evaluate_condition
+from src.parsing.transformers.region import parse_data_regional_metrics
+from src.parsing.transformers.market import parse_data_market_metrics
+from src.parsing.transformers.country import parse_data_country_metrics
 
 DEFAULT_ALERTS = [
     {

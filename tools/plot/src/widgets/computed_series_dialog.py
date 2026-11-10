@@ -5,8 +5,10 @@ from PyQt6.QtWidgets import (
     QPushButton, QComboBox, QTableWidgetItem, QMessageBox, QTextEdit
 )
 from src.parsing.computed_series import (
-    load_raw_computed_series_rows, save_computed_series_rows, validate_expression, check_missing_variables
+    check_missing_variables
 )
+from src.parsing.computed_series_storage import load_raw_computed_series_rows, save_computed_series_rows
+from src.parsing.ast_engine import validate_expression
 from src.widgets.formula_completer import FormulaItemDelegate
 
 DATASET_OPTIONS = ["country", "market", "region"]

@@ -1,6 +1,7 @@
 ﻿import numpy as np
 
 from src.parsing.numeric_utils import format_metric_3digits
+from src.plotting.plot_common import relocate_legend_out_of_way
 
 TOOLTIP_DISPLAYED_LINES = 25
 LINE_WIDTH_SELECTED = 5
@@ -49,7 +50,7 @@ class InteractiveLineTooltip:
         self.annot.set_visible(False)
 
         # Relocate legend out of the way immediately when plot changes
-        self.relocate_legend_out_of_way()
+        relocate_legend_out_of_way(self.ax, self.fig)
 
         self.fig.canvas.mpl_connect("motion_notify_event", self.on_hover)
         self.fig.canvas.mpl_connect("axes_leave_event", self.on_leave)
@@ -79,7 +80,7 @@ class InteractiveLineTooltip:
             return
 
         # Dynamic Legend Relocation
-        self.relocate_legend_out_of_way(event.xdata)
+        relocate_legend_out_of_way(self.ax, self.fig, event.xdata)
         legend = getattr(self.ax, '_current_legend', None) or self.ax.get_legend()
         if legend is not None:
             xlim = self.ax.get_xlim()
@@ -290,31 +291,3 @@ class InteractiveLineTooltip:
                 pts.sort(key=lambda item: item['y_val'], reverse=True)
                 cache[x_val] = pts
         return cache
-
-    def relocate_legend_out_of_way(self, cursor_x=None):
-        legend = getattr(self.ax, '_current_legend', None) or self.ax.get_legend()
-        if legend is None:
-            return
-
-        xlim = self.ax.get_xlim()
-        mid_x = (xlim[0] + xlim[1]) / 2.0
-
-        if cursor_x is None:
-            try:
-                from PyQt6.QtGui import QCursor
-                pos = self.fig.canvas.mapFromGlobal(QCursor.pos())
-                mpl_x = pos.x()
-                mpl_y = self.fig.canvas.height() - pos.y()
-                if self.ax.bbox.contains(mpl_x, mpl_y):
-                    inv = self.ax.transData.inverted()
-                    cursor_x = inv.transform((mpl_x, mpl_y))[0]
-            except Exception:
-                pass
-
-        if cursor_x is not None:
-            desired_loc = "upper right" if cursor_x < mid_x else "upper left"
-        else:
-            desired_loc = getattr(self.ax, '_last_legend_loc', 'upper left')
-
-        self.ax._last_legend_loc = desired_loc
-        legend._set_loc(1 if desired_loc == "upper right" else 2)

@@ -6,16 +6,20 @@ from PyQt6.QtWidgets import QMessageBox, QProgressDialog, QApplication
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QDesktopServices
 
+import src.parsing.transformers
+import src.parsing.transformers.country
+
+import src.parsing.transformers.region
 from src.parsing import log_parser
 
 PARSERS = {
-    "building_types": log_parser.parse_data_building_types,
-    "goods_prices": log_parser.parse_data_goods_prices,
-    "markets": log_parser.parse_data_markets,
-    "population": log_parser.parse_data_population,
-    "road_types": log_parser.parse_data_road_types,
-    "country_stats": log_parser.parse_data_countries,
-    "credit_stats": log_parser.parse_data_credit_raw,
+    "building_types": src.parsing.transformers.region.parse_data_building_types,
+    "goods_prices": src.parsing.transformers.region.parse_data_goods_prices,
+    "markets": src.parsing.transformers.region.parse_data_markets,
+    "population": src.parsing.transformers.region.parse_data_population,
+    "road_types": src.parsing.transformers.region.parse_data_road_types,
+    "country_stats": src.parsing.transformers.country.parse_data_countries,
+    "credit_stats": src.parsing.transformers.country.parse_data_credit_raw,
 }
 
 def check_file_locks(export_folder_path, filenames):

@@ -1,5 +1,7 @@
 ﻿from src.constants import STR_ALL_REGIONS
-from src.parsing.transformers import parse_data_country_metrics, parse_data_regional_metrics, parse_data_market_metrics
+from src.parsing.transformers.region import parse_data_regional_metrics
+from src.parsing.transformers.market import parse_data_market_metrics
+from src.parsing.transformers.country import parse_data_country_metrics
 
 CM_CONFIG = {
     "parser": parse_data_country_metrics,
