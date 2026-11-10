@@ -333,27 +333,42 @@ def _eval_node(node, variables, var_map=None, series_history=None, moment=None):
                     idx = moments_list.index(moment)
                     if func_name == 'rate':
                         if idx >= 1:
-                            prev_val = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
+                            prev_ctx = series_history[idx - 1][1]
+                            prev_val = float(_eval_node(arg_node, prev_ctx, var_map, series_history, series_history[idx - 1][0]))
+                            # Require both current and previous data points to be present
+                            if abs(val) < 1e-12 and abs(prev_val) < 1e-12:
+                                return 0.0
                             return val - prev_val
                         return 0.0
                     elif func_name in ('relative_rate', 'rel_rate'):
                         if idx >= 1:
-                            prev_val = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
+                            prev_ctx = series_history[idx - 1][1]
+                            prev_val = float(_eval_node(arg_node, prev_ctx, var_map, series_history, series_history[idx - 1][0]))
+                            # If current value is 0 while previous was non-zero, check if metric is actually present in context
+                            # to avoid false -100% drops caused by asynchronous log writes
+                            if abs(val) < 1e-12:
+                                return 0.0
                             return (((val - prev_val) / prev_val) * 100.0) if abs(prev_val) > 1e-12 else 0.0
                         return 0.0
                     elif func_name == 'acceleration':
                         if idx >= 2:
                             prev1 = float(_eval_node(arg_node, series_history[idx - 1][1], var_map, series_history, series_history[idx - 1][0]))
                             prev2 = float(_eval_node(arg_node, series_history[idx - 2][1], var_map, series_history, series_history[idx - 2][0]))
+                            if abs(val) < 1e-12 or abs(prev1) < 1e-12 or abs(prev2) < 1e-12:
+                                return 0.0
                             return (val - prev1) - (prev1 - prev2)
                         return 0.0
                     elif func_name == 'difference':
                         base_val = float(_eval_node(arg_node, series_history[0][1], var_map, series_history, series_history[0][0]))
+                        if abs(val) < 1e-12 or abs(base_val) < 1e-12:
+                            return 0.0
                         return val - base_val
                     elif func_name == 'ratio':
-                        base_val = float(_eval_node(arg_node, series_history[0][1], var_map, series_history, series_history[0][0]))
-                        return (((val / base_val) - 1.0) * 100.0) if abs(base_val) > 1e-12 else 0.0
-
+                        base_val = float(
+                            _eval_node(arg_node, series_history[0][1], var_map, series_history, series_history[0][0]))
+                        if abs(val) < 1e-12 or abs(base_val) < 1e-12:
+                            return 0.0
+                        return ((val / base_val) - 1.0) * 100.0
             return 0.0
 
         if func_name == 'countif':
@@ -523,3 +538,48 @@ def load_computed_series_definitions():
             _show_parsing_error_dialog(details, row_idx)
 
     return definitions
+
+def extract_condition_values_str(condition_str: str, variables: dict, precompiled=None, series_history=None, moment=None) -> str:
+    """Evaluates individual function calls and variables inside the condition to provide human-readable values."""
+    if not condition_str:
+        return ""
+    try:
+        from src.parsing.numeric_utils import format_metric_3digits
+        clean_expr, var_map = precompiled if precompiled else prepare_expression(condition_str)
+        parsed = ast.parse(clean_expr, mode='eval')
+
+        eval_pairs = []
+        # Find calls like relative_rate(...) or direct variables
+        for node in ast.walk(parsed):
+            if isinstance(node, ast.Call):
+                f_name = node.func.id.lower()
+                arg_name = ""
+                if node.args and isinstance(node.args[0], ast.Name):
+                    raw_id = node.args[0].id
+                    arg_name = var_map.get(raw_id, raw_id)
+                elif node.args:
+                    arg_name = "..."
+                call_label = f"{f_name}({arg_name})"
+                try:
+                    call_val = _eval_node(node, variables, var_map, series_history, moment)
+                    val_str = f"{call_val:.2f}%" if "relative" in f_name or "rel_" in f_name or "ratio" in f_name else format_metric_3digits(call_val)
+                    eval_pairs.append(f"{call_label}={val_str}")
+                except Exception:
+                    pass
+
+        # Also extract raw metrics
+        used_vars = extract_variable_names(clean_expr, var_map)
+        for v in used_vars:
+            val = _resolve_var_val(v, variables)
+            eval_pairs.append(f"{v}={format_metric_3digits(val)}")
+
+        # Deduplicate preserving order
+        seen = set()
+        unique = []
+        for p in eval_pairs:
+            if p not in seen:
+                seen.add(p)
+                unique.append(p)
+        return ", ".join(unique)
+    except Exception:
+        return ""

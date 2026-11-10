@@ -2,7 +2,8 @@
 import os
 
 from src.constants import ALERTS_PATH
-from src.parsing.computed_series import validate_expression, evaluate_condition
+from src.parsing.computed_series import validate_expression, evaluate_condition, extract_variable_names, \
+    extract_condition_values_str
 from src.parsing.transformers import parse_data_country_metrics, parse_data_market_metrics, parse_data_regional_metrics
 
 DEFAULT_ALERTS = [
@@ -133,9 +134,6 @@ def evaluate_alert_rule(rule: dict, latest_only=False):
 
     dataset_type = rule.get("dataset_type", "country")
     entity_filter = rule.get("entity_filter", "All")
-    density_mode = rule.get("density_mode", "none")
-    baseline_mode = rule.get("baseline_mode", "none")
-    derivative_order = int(rule.get("derivative_order", 0))
 
     entity_series = build_entity_time_contexts(dataset_type, entity_filter)
     if not entity_series:
@@ -143,18 +141,41 @@ def evaluate_alert_rule(rule: dict, latest_only=False):
 
     matches = []
     precompiled = (clean_expr, var_map)
+    required_vars = extract_variable_names(clean_expr, var_map)
 
     for ent, moments in entity_series.items():
-        eval_list = [moments[-1]] if latest_only and moments else moments
+        if not moments:
+            continue
+
+        # If evaluating latest_only, find the most recent moment where all required variables are present and non-zero
+        if latest_only:
+            target_moments = []
+            for m_item in reversed(moments):
+                ctx = m_item[1]
+                # Check if at least one metric referenced by the rule exists in this context
+                has_metric = any((v in ctx or v.lower() in ctx or v.lower().replace(' ', '_') in ctx) for v in required_vars)
+                if has_metric or not required_vars:
+                    target_moments = [m_item]
+                    break
+            eval_list = target_moments
+        else:
+            eval_list = moments
+
         for m, ctx in eval_list:
+            # Skip if none of the referenced variables are populated in this context
+            if required_vars and not any((v in ctx or v.lower() in ctx or v.lower().replace(' ', '_') in ctx) for v in required_vars):
+                continue
+
             fired = evaluate_condition(cond_str, ctx, precompiled=precompiled, series_history=moments, moment=m)
             if fired:
+                val_summary = extract_condition_values_str(cond_str, ctx, precompiled=precompiled, series_history=moments, moment=m)
                 matches.append({
                     "moment": m,
                     "entity": ent,
                     "rule_id": rule.get("id"),
                     "rule_name": rule.get("name"),
                     "condition": cond_str,
+                    "values": val_summary
                 })
 
     matches.sort(key=lambda x: (x["moment"], x["entity"]), reverse=True)

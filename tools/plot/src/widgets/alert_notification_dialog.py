@@ -13,7 +13,7 @@ class AlertWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(None)  # Top-level window
         self.setWindowTitle("Triggered Alerts History")
-        self.resize(800, 420)
+        self.resize(1000, 450)
         self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         self._seen_alert_rows = set()
 
