@@ -42,6 +42,7 @@ Date: 21/05/2026
 - Fix diplomatic spending not transferring gold to nobles estate
 - Stability map mode works
 - Backend error fixes 
+- AI will now consider producing a good in a rural location even if it can be built in a urban location in the same province instead
 
 #### Balancing
 
