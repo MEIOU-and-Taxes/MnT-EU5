@@ -419,3 +419,594 @@ template building_tooltip_detail {
 		}
 	}
 }
+
+# Vanilla BuildingType_tooltip. MnT hides the rural icon for buildings with the mnt_urban_only tag.
+template BuildingType_tooltip {
+	ContextualTooltipType = {
+		tooltipmeta = {
+			texture = "[GetBuildingIcon(BuildingType.Self)]"
+			game_concept = [building_type|e]
+		}
+	
+		blockoverride "title_icon" {
+			icon = {
+				size = { 48 48 }
+				texture = "[GetBuildingIcon(BuildingType.Self)]"
+			}
+		}
+
+		blockoverride "title_text" {
+			block "building_type_tooltip_title" {
+				text = "[BuildingType.GetNameWithNoTooltip]"
+			}
+		}
+
+		blockoverride "concept_link" {
+			text = "[building_type|e] | [BuildingType.GetCategory.GetName]"
+		}
+
+		blockoverride "title_button" {
+			widget = { #estate building
+				visible = "[BuildingType.OnlyEstatesCanBuild]"
+				using = tooltip_title_icon_size
+				icon = {
+					using = tooltip_title_icon_size
+					texture = "[GetEstateIcon(BuildingType.GetEligibleEstate)]"
+					datacontext = "[BuildingType.GetEligibleEstate]"
+					tooltipwidget = {
+						using = Estate_building_Tooltip
+					}
+				}
+			}
+
+			widget = { #non estate building
+				using = tooltip_title_icon_size
+				visible = "[Not(BuildingType.OnlyEstatesCanBuild)]"
+				icon = {
+					visible = "[Or(Not(BuildingType.IsSpecialBuilding), BuildingType.NeedsAdvance)]"
+					using = tooltip_title_icon_size
+					texture = "[GetAgeIcon(BuildingType.GetAge)]"
+					datacontext = "[BuildingType.GetAge]"
+					tooltipwidget = {
+						using = Age_tooltip
+					}
+				}
+			}
+		}
+
+		blockoverride "tooltip_content" {
+			scrollvbox = {
+				layoutpolicy_horizontal = expanding
+				maximumsize = { -1 600 }
+				ignoreinvisible = yes
+
+				scrollbar_vertical = {
+					ScrollbarVertical_Tooltips = {
+						parentanchor = right
+					}
+				}
+
+			TooltipDebugTextBlock = {
+				blockoverride "text" {
+					debug_text = "[BuildingType.GetDebugText]"
+				}
+			}
+
+			TooltipStatsBar = {
+				datacontext = "[BuildingType]"
+				blockoverride "items" {
+					TooltipStatBarIconTextItem = { # EMPLOYMENT
+						visible = yes
+						blockoverride "item_icon" {
+							size = { 31 31 }
+							texture = "[GetGraphicalCultureTextureForPopType(BuildingType.GetPopType)]"
+						}
+						blockoverride "item_text" {
+							text = "[BuildingType.GetEmploymentSize]"
+							# using = goods_details_text
+						}
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "[GetGraphicalCultureTextureForPopType(BuildingType.GetPopType)]"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[employed|e]"
+								}
+
+								textcontext = "BUILDING_TYPE_EMPLOYMENT"
+							}
+						}
+					}
+
+					TooltipStatBarItem = { # CATEGORY
+						visible = yes
+						blockoverride "item_content" {
+							icon = {
+								size = {31 31}
+								texture = "[GetBuildingCategoryIcon(BuildingType.GetCategory)]"
+							}
+						}
+						datacontext = "[BuildingType.GetCategory]"
+						tooltipwidget = {
+							using = BuildingCategory_tooltip
+						}
+					}
+
+					TooltipStatBarItem = { # SPECIAL BUILDING
+						visible = "[BuildingType.IsSpecialBuilding]"
+						blockoverride "item_content" {
+							icon = {
+								size = { 30 30 }
+								texture = "gfx/interface/icons/buildings/_default.dds"
+								icon = {
+									position = { -2 0 }
+									size = { 35 35 }
+									texture = "gfx/interface/component_tiles/specialbuildings_frame_gold.dds"
+								}
+								
+								tooltipwidget = {
+									ContextualTooltipType = {
+										blockoverride "title_icon" {
+											icon = {
+												size = { 37 37 }
+												texture = "gfx/interface/icons/buildings/_default.dds"
+												icon = {
+													using = tooltip_title_icon_size
+													position = { -2 0 }
+													texture = "gfx/interface/component_tiles/specialbuildings_frame_gold.dds"
+												}
+											}
+										}
+									
+										blockoverride "title_text" {
+											text = "SPECIAL_BUILDING"
+										}
+										blockoverride "tooltip_content" {
+											TooltipTextBlock = {
+												blockoverride "text" {
+													text = "SPECIAL_BUILDING_DESC"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+
+					TooltipStatBarItem = { # LEVEL
+						visible = "[BuildingType.IsMultipleLevels]"
+
+						blockoverride "item_content" {
+							icon = {
+								# parentanchor = vcenter
+								size = { 31 31 }
+								texture_density = 2
+								texture = "gfx/interface/icons/bluearrow.dds"
+							}
+						}
+
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/icons/bluearrow.dds"
+									}
+								}
+								textcontext = "BUILDING_TYPE_MULTI_LEVEL"
+							}
+						}
+					}
+
+					TooltipStatBarItem = { # ADVANCE
+						visible = "[BuildingType.NeedsAdvance]"
+						blockoverride "item_content" {
+							# texture = "[GetAgeIcon(BuildingType.GetAge)]"
+							hbox = {
+								# parentanchor = vcenter
+								datamodel = "[BuildingType.GetUnlocks]"
+									
+								item = {
+									widget = {
+										# parentanchor = vcenter
+										size = { 31 31 }
+										using = background_advance
+										tooltipwidget = {
+											using = AdvanceDefinition_tooltip
+										}
+										button = {
+											parentanchor = center
+											size = { 31 31 }
+											texture = "[GetAdvanceIcon(AdvanceDefinition.Self)]"
+
+											action_tooltip = {
+												visible = "[Not(IsLobbyOpen)]"
+												title = "OPEN_TECHNOLOGY_VIEW_AND_PAN_TO_ADVANCE"
+												on_action = "[OpenTechnologyViewAndPanToAdvanceDefinition(AdvanceDefinition.Self)]"
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+
+					# TooltipStatBarItem = { # ESTATE BUILDING
+					#   visible = "[BuildingType.OnlyEstatesCanBuild]"
+					#   blockoverride "item_content" {
+					#       icon =  {
+					#           size = { 31 31 }
+					#           texture = "[GetEstateIcon(BuildingType.GetEligibleEstate)]"
+					#           datacontext = "[BuildingType.GetEligibleEstate]"    
+					#       }
+					#   }
+					#   tooltipwidget = {
+					#       SimpleContextualTooltipType = {
+					#           blockoverride "title_icon" {
+					#               icon = {
+					#                   using = tooltip_title_icon_size
+					#                   texture = "[GetEstateIcon(BuildingType.GetEligibleEstate)]"
+					#               }
+					#           }
+					#           blockoverride "concept_link" {
+					#               text = "[estate|e]"
+					#           }
+
+					#           textcontext = "BUILDING_TYPE_ONLY_ESTATE"
+					#       }
+					#   }   
+					# }
+				}
+			}
+
+			TooltipIconRow = {
+				blockoverride "icon" {
+					tooltipwidget = {
+						SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/icons/unit_actions/build_to_navy.dds"
+									}
+								}
+	
+								blockoverride "concept_link" {
+									text = "[building|e]"
+								}
+								
+								textcontext = "BTYPE_REQUIREMENTS"
+						}
+					}
+	
+					icon = {
+						size = { 27 27 }
+						texture = "gfx/interface/icons/unit_actions/build_to_navy.dds"
+					}
+				}
+
+				blockoverride "items" {
+					icon = { #capital
+						size = { 27 27 }
+						datacontext = "[BuildingType]"
+						visible = "[BuildingType.BuildOnlyInCapital]"
+						texture = "[GetConceptTexture('capital')]"
+						
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "[GetConceptTexture('capital')]"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[capital|e]"
+								}
+
+								textcontext = "BUILDING_TYPE_ONLY_IN_CAPITAL"
+							}
+						}
+					}
+
+					icon = { # foreign
+						size = { 27 27 }
+						datacontext = "[BuildingType]"
+						visible = "[BuildingType.IsForeign]"
+						texture = "[GetConceptTexture('foreign_building')]"
+
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "[GetConceptTexture('foreign_building')]"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[foreign|e]"
+								}
+
+								textcontext = "[BuildingType.GetForeignRequirments]"
+							}
+						}
+					}
+
+					icon = {
+						size = { 30 30 }
+						datacontext = "[BuildingType]"
+						visible = "[BuildingType.CanBuildInLocationRank('megalopolis')]"
+						texture = "gfx/interface/mapitems/megalopolis.dds"
+
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/mapitems/megalopolis.dds"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[location_rank|e]"
+								}
+
+								textcontext = "BUILDING_TYPE_IN_MEGALOPOLIS"
+							}
+						}
+					}
+
+					icon = { # city
+						size = { 27 27 }
+						datacontext = "[BuildingType]"
+						visible = "[BuildingType.CanBuildInLocationRank('city')]"
+						texture = "gfx/interface/mapitems/city.dds"
+						
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/mapitems/city.dds"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[location_rank|e]"
+								}
+
+								textcontext = "BUILDING_TYPE_IN_CITY"
+							}
+						}
+					}
+
+					icon = { # town
+						size = { 23 23 }
+						datacontext = "[BuildingType]"
+						visible = "[BuildingType.CanBuildInLocationRank('town')]"
+						texture = "gfx/interface/mapitems/town.dds"
+						
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/mapitems/town.dds"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[location_rank|e]"
+								}
+
+								textcontext = "BUILDING_TYPE_IN_TOWN"
+							}
+						}
+					}
+
+					icon = { #rural
+						size = { 20 20 }
+						datacontext = "[BuildingType]"
+						# MnT start: hide the rural icon for buildings with the mnt_urban_only tag.
+						# Vanilla: visible = "[BuildingType.CanBuildInLocationRank('rural_settlement')]"
+						visible = "[And(BuildingType.CanBuildInLocationRank('rural_settlement'), Not(GetScriptedGui('mnt_is_building_urban_only').IsShown(GuiScope.SetRoot(BuildingType.MakeScope).End)))]"
+						# MnT end
+						texture = "gfx/interface/mapitems/rural_settlement.dds"
+						
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/mapitems/rural_settlement.dds"
+									}
+								}
+								blockoverride "concept_link" {
+									text = "[location_rank|e]"
+								}
+
+								textcontext = "BUILDING_TYPE_IN_RURAL"
+							}
+						}
+					}
+
+					icon = {
+						texture = "gfx/interface/icons/flat_icons/special_conditions.dds"
+						size = { 27 27 }
+						visible = "[BuildingType.HasAnyRequirements]"
+
+						tooltipwidget = {
+							SimpleContextualTooltipType = {
+								blockoverride "title_icon" {
+									icon = {
+										using = tooltip_title_icon_size
+										texture = "gfx/interface/icons/flat_icons/special_conditions.dds"
+									}
+								}
+								
+								textcontext = "[BuildingType.GetRequirements]"
+							}
+						}
+					}
+				}
+			}
+			
+			TooltipStringPairList = {
+				visible = "[Not(StringIsEmpty(BuildingType.GetModifierInfo))]"
+				textcontext = "[BuildingType.GetModifierInfo]"
+			}
+
+			TooltipContentSection = {
+				datamodel = "[BuildingType.GetPossibleProductionMethods]"
+				item = {
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+
+						TooltipTableHeader = {
+							visible = "[GreaterThan_int32(GetDataModelSize(BuildingType.GetPossibleProductionMethods), '(int32)1')]"
+							blockoverride "tableheader_text" {
+								text = "[PossibleProductionMethods.GetName|W]"
+							}
+						}
+
+						TooltipTableHeader = {
+							visible = "[Not(GreaterThan_int32(GetDataModelSize(BuildingType.GetPossibleProductionMethods), '(int32)1'))]"
+							blockoverride "tableheader_text" {
+								text = "[BuildingType.GetProductionMethodsLabel|W]"
+							}
+						}
+
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 2     
+							datamodel = "[PossibleProductionMethods.GetMethods]"
+
+							item = {
+								using = production_method_simple
+								blockoverride "tooltip" {
+									tooltipwidget = { using = ProductionMethod_tooltip }
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			TooltipStringPairList = {
+				block "building_type_tooltip_missing_input" {
+					visible = no
+				}
+				blockoverride "textblock_background_tint" {
+					modify_texture = {
+						using = color_red_texture
+					}
+				}
+			}
+
+			TooltipListBase = {
+				visible = "[BuildingType.HasUpgradeChain]"
+				datacontext = "[GetQuickBuildingTypeInfo(BuildingType.Self)]"
+
+				blockoverride "block_title" {
+					text = "BUILDING_UPGRADE_PATHS"
+				}
+
+				hbox = {
+					datamodel = "[QuickBuildingTypeInfo.GetChain]"
+					item = {
+						hbox = {
+							visible = "[BuildingType.ShowForPlayer]"
+							spacing = 5
+
+							icon = {
+								size = { 31 31 }
+								texture = "[GetAgeIcon(BuildingType.GetAge)]"
+								datacontext = "[BuildingType.GetAge]"
+								tooltipwidget = {
+									using = Age_tooltip
+								}
+							}
+
+							widget = {
+								size = { 58 58 }
+								tooltip = "[BuildingType.GetName]"
+								tagtooltip_enabled = yes
+
+								background = {
+									using = bg_round_corners_alt_texture
+									margin = {-1 -1}
+									modify_texture = {
+										color = "[BuildingType.GetPopType.GetColor]"
+										alpha = 0.8
+									}
+
+									modify_texture = {
+										visible = "[QuickBuildingTypeInfo.MakesObsolete(BuildingType.Self)]"
+										using = overlay_cloth_texture
+										blend_mode = overlay
+										alpha = 0.1
+									}
+								}
+
+								icon = {
+									#
+									#visible = "[QuickBuildingTypeInfo.ReplacedBy(BuildingType.Self)]"
+									size = { 85% 85% }
+									parentanchor = center
+									texture = "[GetBuildingIcon(BuildingType.Self)]"
+									glow = {
+										name = "drop_shadow"
+										glow_radius = 2
+										color = {0.0 0.0 0.0 1.0}
+										alpha = 0.6
+									}
+								}
+
+								card_header_button_04 = {
+									size = { 100% 100% }
+									alwaystransparent = yes
+									# enabled = "[Not(Or(QuickBuildingTypeInfo.MakesObsolete(BuildingType.Self), QuickBuildingTypeInfo.ReplacedBy(BuildingType.Self)))]"
+								}
+							}
+
+							icon = {
+								visible = "[Not(PdxGuiWidget.AccessParent.IsIndexInParentLast)]"
+								size = { 20 20 }
+								texture = "gfx/interface/buttons/flats/button_simple.dds"
+								modify_texture = {
+									using = color_bone_texture
+									blend_mode = normal
+								}
+							}
+						}
+					}
+				}
+			}
+
+			block "construction_demand" {
+				TooltipContentSection = {
+					visible = "[BuildingType.HasConstructionGoodsDemand]"
+					datacontext = "[BuildingType.GetConstructionDemand]"
+					using = demands_details_no_location
+				}
+			}
+			
+			TooltipStringPairList = { # cost and time
+				datacontext = "[GetQuickBuildingTypeInfo(BuildingType.Self)]"
+				visible = "[QuickBuildingTypeInfo.HasBuildCostAndTime]"
+				textcontext = "[QuickBuildingTypeInfo.GetBuildCostAndTime]"
+			}
+
+			block "building_type_tooltip_extra"{}
+			
+			TooltipFlavorTextBlock = {
+				blockoverride "text" {
+					text = "[BuildingType.GetFlavorText]"
+				}
+			}
+			}
+		}
+	}
+}
