@@ -1,0 +1,63 @@
+﻿# M&T Centers of Importance - country-wide culture centre effects
+#
+# `cultures_capacity` and `monthly_prestige` are country-category modifiers. M&T declared them inside
+# the location static modifiers (category = location), where the engine silently drops them, so culture
+# centres never delivered these two effects. They live here instead, keyed on the highest culture centre
+# tier the country owns - the same rule as the standalone mod: holding a local and a continental centre
+# gives the continental values only, not both. Values are M&T's own per-tier numbers.
+
+mnt_center_culture_local_country = {
+	category = country
+	potential_trigger = {
+		any_owned_location = { has_location_modifier = mnt_center_culture_local }
+		NOT = {
+			any_owned_location = {
+				OR = {
+					has_location_modifier = mnt_center_culture_regional
+					has_location_modifier = mnt_center_culture_continental
+					has_location_modifier = mnt_center_culture_world
+				}
+			}
+		}
+	}
+	cultures_capacity = 0.025
+	monthly_prestige = 0.01
+}
+
+mnt_center_culture_regional_country = {
+	category = country
+	potential_trigger = {
+		any_owned_location = { has_location_modifier = mnt_center_culture_regional }
+		NOT = {
+			any_owned_location = {
+				OR = {
+					has_location_modifier = mnt_center_culture_continental
+					has_location_modifier = mnt_center_culture_world
+				}
+			}
+		}
+	}
+	cultures_capacity = 0.05
+	monthly_prestige = 0.025
+}
+
+mnt_center_culture_continental_country = {
+	category = country
+	potential_trigger = {
+		any_owned_location = { has_location_modifier = mnt_center_culture_continental }
+		NOT = {
+			any_owned_location = { has_location_modifier = mnt_center_culture_world }
+		}
+	}
+	cultures_capacity = 0.25
+	monthly_prestige = 0.05
+}
+
+mnt_center_culture_world_country = {
+	category = country
+	potential_trigger = {
+		any_owned_location = { has_location_modifier = mnt_center_culture_world }
+	}
+	cultures_capacity = 1
+	monthly_prestige = 0.1
+}
