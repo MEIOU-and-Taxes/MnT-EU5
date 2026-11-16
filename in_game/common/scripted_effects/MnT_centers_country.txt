@@ -1,0 +1,26 @@
+﻿# M&T Centers of Importance - culture centre tier for one country
+#
+# The yearly pass raises mnt_center_culture_tier while it hands out awards; this effect exists for the case
+# where a culture centre changes hands mid-year (see MnT_centers_owner_changed in MnT_pulse.txt).
+
+mnt_center_culture_tier_recalc = {
+	set_variable = { name = mnt_center_culture_tier value = 0 }
+	every_owned_location = {
+		if = {
+			limit = { has_location_modifier = mnt_center_culture_world }
+			owner ?= { if = { limit = { NOT = { var:mnt_center_culture_tier > 3 } } set_variable = { name = mnt_center_culture_tier value = 4 } } }
+		}
+		else_if = {
+			limit = { has_location_modifier = mnt_center_culture_continental }
+			owner ?= { if = { limit = { NOT = { var:mnt_center_culture_tier > 2 } } set_variable = { name = mnt_center_culture_tier value = 3 } } }
+		}
+		else_if = {
+			limit = { has_location_modifier = mnt_center_culture_regional }
+			owner ?= { if = { limit = { NOT = { var:mnt_center_culture_tier > 1 } } set_variable = { name = mnt_center_culture_tier value = 2 } } }
+		}
+		else_if = {
+			limit = { has_location_modifier = mnt_center_culture_local }
+			owner ?= { if = { limit = { NOT = { var:mnt_center_culture_tier > 0 } } set_variable = { name = mnt_center_culture_tier value = 1 } } }
+		}
+	}
+}
