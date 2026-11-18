@@ -1,0 +1,378 @@
+﻿# MnT: the farming rework turns off both planting actions. The native actions in this vanilla file stay active.
+#Plant in the Old World
+#Plant tobacco
+#Plant cocoa
+#Plant potatoes
+#Plant maize
+
+REPLACE:move_nw_good_to_new_location = {
+	type = situation
+
+	ai_tick = monthly
+	ai_tick_frequency = 60
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	maximum_targets_in_one_tick = 20
+	disallowed_duplicates_of_targets_for_ai = { target_location }
+
+	potential = { always = no }
+
+	allow = {
+		scope:actor ?= {
+			any_market_present_in_country = {
+				has_new_world_goods_in_market = yes
+			}
+		}
+	}
+	
+	price = price:move_good_to_new_location
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:columbian_exchange = this
+			situation_is_active = yes
+		}
+	}
+
+	
+	#goods in scope:goods
+	select_trigger = {
+		looking_for_a = goods
+		target_flag = target_good
+		ai_interaction_source_list = {# Has a market that demands the good
+			every_goods = {
+				limit = {
+					has_origin_in_new_world = yes
+				}
+				save_temporary_scope_as = temp_good
+
+				scope:actor = { 
+					random_market_present_in_country = {
+						limit = {
+							"goods_demand_in_market(scope:temp_good)" > "goods_supply_in_market(scope:temp_good)"
+						}
+						scope:temp_good = { 
+							add_to_list = source							
+							#If the good is food, double the chances of it being chosen
+							if = {
+								limit = {
+									is_food = yes
+								}
+								add_to_list = source	
+							}
+						}
+					}
+				}
+			}
+		}
+		name = "spread_select_goods"
+		none_available_msg_key = "move_nw_good_to_new_location_no_available_good"
+		column = { data = name }
+		visible = {
+			has_origin_in_new_world = yes
+			scope:actor ?= {
+				any_market_present_in_country = {
+					OR = {
+						is_produced_in_market = root
+						is_traded_in_market = root
+					}
+				}
+			}
+		}
+	}
+	
+	#Select Region
+	select_trigger = {
+		looking_for_a = region
+		source = actor
+		target_flag = target_region
+		name = "choose_a_region"
+		none_available_msg_key = "no_regions_available"
+		column = { data = name }
+		visible = {
+			scope:actor = {
+				owns_or_has_subject_in = prev
+			}
+		}
+	}
+	
+	#Select the owned location where to spread the new resource
+	select_trigger = {
+		looking_for_a = location
+		source = target_region
+		source_flags = only_actual_locations
+		target_flag = target_location
+		ai_interaction_source_list = {
+			scope:target_region = {
+				every_area_in_region = {
+					limit = {
+						scope:actor = { owns_or_has_subject_in = prev }
+					}
+					every_province_definition_in_area = {						
+						limit = {
+							scope:actor = { owns_or_has_subject_in = prev }
+							#Maximum of 2 of the same resource per Province
+							"raw_material_amount(scope:target_good)" < 2
+						}
+						every_ownable_location_in_province_definition = {
+							limit = {
+								owner ?= {
+									is_subject_or_below_of = scope:actor
+									is_human = no
+								}
+								is_candidate_for_NW_good = yes
+								NOT = {raw_material ?= scope:target_good}								
+							}
+							add_to_list = source
+						}
+					}
+				}
+			}
+		}
+		name = "choose_location"
+		none_available_msg_key = "move_nw_good_to_new_location_no_available_location"
+		column = { data = name }
+		column = { data = raw_material }
+		column = { data = population }
+		visible = {
+			is_ownable = yes
+			has_owner = yes
+			OR = {
+				owner ?= scope:actor
+				top_owner ?= scope:actor
+			}
+			NOT = { raw_material ?= scope:target_good }
+			is_goods_valid_for_location = scope:target_good
+		}
+	}
+
+	effect = {
+		scope:target_location ?= {			
+			change_max_raw_material_workers = {
+				value = rgo_workers
+				subtract = 1
+				min = 0
+				multiply = -1
+			}
+			change_prosperity = prosperity_weak_penalty
+			change_raw_material = scope:target_good
+		}
+	}
+	
+	ai_will_do = {
+		value = -1 #Bias against doing anything
+		#scope:target_good, scope:target_location
+		if = {
+			limit = {
+				exists = scope:target_good
+				exists = scope:target_location
+			}
+			scope:target_good = {
+				#We try to keep expensive resources
+				add = "price_in_market(scope:target_location.market)"
+				scope:target_location.raw_material = {
+					subtract = "price_in_market(scope:target_location.market)"
+				}
+				#Multiply the price result to make the action more common if positive
+				multiply = 10
+				#If there is surplus is less valuable
+				if = {
+					limit = {
+						is_in_surplus_in_market = { market = scope:target_location.market country = scope:actor value > 0 }
+					}
+					subtract = 	100
+				}
+				#If the good is food
+				if = {
+					limit = {
+						is_food = yes
+					}
+					subtract = scope:target_good.food_value
+					add = scope:target_location.raw_material.food_value
+				}
+
+			}
+		}
+	}
+}
+
+#Plant in the New World
+#Plant Cotton
+#Plant Wheat
+#Plant Olives
+#Plant coffee
+#Plant millet
+#Plant rice
+#Plant sugar
+#Release horses
+#Release bees
+#Release pigs/ Raise Cattle
+REPLACE:move_ow_good_to_new_location = {
+	type = situation
+
+	ai_tick = monthly
+	ai_tick_frequency = 12
+	automation_tick = never
+	automation_tick_frequency = 12
+
+	maximum_targets_in_one_tick = 20
+	disallowed_duplicates_of_targets_for_ai = { target_location }
+
+	potential = { always = no }
+
+	allow = {
+		scope:actor ?= {
+			any_market_present_in_country = {
+				has_old_world_goods_in_market = yes
+			}
+		}
+	}
+	
+	price = price:move_good_to_new_location
+
+	select_trigger = {
+		looking_for_a = situation
+		target_flag = recipient
+		name = "choose_situation"
+		column = { data = name }
+		visible = {
+			situation:columbian_exchange = this
+			situation_is_active = yes
+		}
+	}
+
+	#goods in scope:goods
+	select_trigger = {
+		looking_for_a = goods
+		target_flag = target_good
+		ai_interaction_source_list = {# Has a market that demands the good
+			every_goods = {
+				limit = {
+					has_origin_in_old_world = yes
+				}
+				save_temporary_scope_as = temp_good
+				scope:actor = { 
+					random_market_present_in_country = {
+						limit = {
+							"goods_demand_in_market(scope:temp_good)" > "goods_supply_in_market(scope:temp_good)"
+						}
+						scope:temp_good = { 
+							add_to_list = source							
+							#If the good is food, double the chances of it being chosen
+							if = {
+								limit = {
+									is_food = yes
+								}
+								add_to_list = source	
+							}
+						}
+					}
+				}
+			}
+		}
+		name = "spread_select_goods"
+		none_available_msg_key = "move_ow_good_to_new_location_no_available_good"
+		column = { data = name }
+		visible = {
+			has_origin_in_old_world = yes
+		}
+	}
+
+	#Select Region
+	select_trigger = {
+		looking_for_a = region
+		source = actor
+		target_flag = target_region
+		name = "choose_a_region"
+		none_available_msg_key = "no_regions_available"
+		column = { data = name }
+		visible = {
+			OR = {
+				continent = continent:america
+				continent = continent:oceania
+				this = region:macaronesia_region
+			}
+			scope:actor = {
+				owns_or_has_subject_in = prev
+			}
+		}
+	}
+	#Select the owned location where to spread the new resource
+	select_trigger = {
+		looking_for_a = location
+		source = target_region
+		source_flags = only_actual_locations
+		target_flag = target_location
+		ai_interaction_source_list = {
+			scope:target_region = {
+				every_area_in_region = {
+					limit = {
+						scope:actor = { owns_or_has_subject_in = prev }
+					}
+					every_province_definition_in_area = {						
+						limit = {
+							scope:actor = { owns_or_has_subject_in = prev }
+							#Maximum of 2 of the same resource per Province
+							"raw_material_amount(scope:target_good)" < 2
+						}
+						every_ownable_location_in_province_definition = {
+							limit = {
+								owner ?= {
+									is_subject_or_below_of = scope:actor
+									is_human = no
+								}
+								is_candidate_for_OW_good = yes
+								NOT = {raw_material ?= scope:target_good}								
+							}
+							add_to_list = source
+						}
+					}
+				}
+			}
+		}
+		name = "choose_location"
+		none_available_msg_key = "move_ow_good_to_new_location_no_available_location"
+		column = { data = name }
+		column = { data = raw_material }
+		column = { data = population }
+		visible = {
+			is_ownable = yes
+			has_owner = yes
+			OR = {
+				owner ?= scope:actor
+				top_owner ?= scope:actor
+			}
+			OR = {
+				continent = continent:america
+				continent = continent:oceania
+				region = region:macaronesia_region
+			}
+			NOT = { raw_material ?= scope:target_good }
+			is_goods_valid_for_location = scope:target_good
+		}
+	}
+
+	effect = {
+		scope:target_location ?= {			
+			change_max_raw_material_workers = {
+				value = rgo_workers
+				subtract = 1
+				min = 0
+				multiply = -1
+			}
+			change_prosperity = prosperity_weak_penalty
+			change_raw_material = scope:target_good
+		}
+	}
+	
+	ai_will_do = {
+		#If the action is doable by the AI, 
+		#meaning there is a combination of target good and target location where it can replace the RGO it should do it
+		add = 200
+	}
+}

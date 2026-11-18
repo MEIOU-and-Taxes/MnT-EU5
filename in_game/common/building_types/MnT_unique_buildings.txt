@@ -194,3 +194,240 @@ REPLACE:maghreb_palm_irrigation = {
 		}
 	}
 }
+
+# Farming rework: food modifiers removed; tambo upkeep uses wheat instead of maize.
+# The unique PMs need new names, because a REPLACE that keeps a vanilla PM name fails.
+REPLACE:polders = {
+	audio_tier = 3
+	is_special = yes
+	is_foreign = no
+	pop_type = laborers
+	max_levels = polders_max_level
+
+	employment_size = village_employment_size
+
+	build_time = infrastructure_build_time
+
+	category = infrastructure_category
+
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	location_potential = {
+		OR = {
+			is_coastal = yes
+			is_adjacent_to_lake = yes
+		}
+		topography = wetlands
+	}
+
+	modifier = {
+		local_population_capacity_modifier = 0.025
+		local_road_building_time = -0.05
+		local_monthly_development_modifier = 0.025
+		#MnT removed: local_monthly_food_modifier = monthly_food_productivity_weak_bonus
+	}
+
+	unique_production_methods = {
+		MnT_polders_maintenance = {
+			icon_type = building_type
+			icon = polders
+			clay = 0.5
+			tools = 0.05
+
+			category = building_maintenance
+		}
+	}
+	construction_demand = polders_construction
+}
+
+REPLACE:terraces = {
+	audio_tier = 2
+	is_special = yes
+	is_foreign = no
+	pop_type = laborers
+	max_levels = 1
+
+	category = infrastructure_category
+	employment_size = granary_employment
+
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	location_potential = {
+		OR = {
+			topography = mountains
+			topography = plateau
+			topography = hills
+		}
+	}
+
+	build_time = infrastructure_build_time
+
+	unique_production_methods = {
+		MnT_terraces_maintenance = {
+			icon_type = building_type
+			icon = terraces
+			salt = 0.1
+			category = building_maintenance
+		}
+	}
+	construction_demand = terraces_construction
+
+	modifier = {
+		#MnT removed: local_monthly_food_modifier = monthly_food_productivity_unique_bonus
+	}
+}
+
+REPLACE:tambo = {
+	audio_tier = 2
+	is_special = yes
+	is_foreign = no
+	max_levels = 1
+	pop_type = soldiers
+	forbidden_for_estates = yes
+
+	category = infrastructure_category
+	employment_size = tiny_rural_peasant_produce_employment
+
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	location_potential = {
+		num_roads > 0
+	}
+
+	build_time = infrastructure_build_time
+
+	unique_production_methods = {
+		MnT_tambo_maintenance = {
+			icon_type = building_type
+			icon = tambo
+			wool = 0.1
+			wheat = 0.05 #MnT from maize
+			category = building_maintenance
+		}
+	}
+
+	construction_demand = tambo_construction
+
+	modifier = {
+		local_garrison_growth = 0.005
+		local_max_control = 0.05
+	}
+}
+
+REPLACE:incamisana = {
+	audio_tier = 3
+	is_special = yes
+	is_foreign = no
+	max_levels = 1
+	pop_type = clergy
+
+	category = infrastructure_category
+	employment_size = tiny_rural_peasant_produce_employment
+
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	location_potential = {
+	}
+
+	build_time = rural_build_time
+
+	possible_production_methods = {
+		incamisana_maintennace
+	}
+	construction_demand = incamisana_construction
+
+	modifier = {
+		local_population_capacity = 0.25
+		#MnT removed: local_monthly_food_modifier = monthly_food_productivity_severe_bonus
+		local_pop_conversion_speed = 0.01
+	}
+}
+
+REPLACE:bund = {
+	audio_tier = 4
+	is_special = yes
+	is_foreign = no
+	max_levels = bund_cap
+	pop_type = laborers
+
+	category = infrastructure_category
+	employment_size = small_peasant_employment
+
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	location_potential = {
+		OR = {
+			has_river = yes
+			is_adjacent_to_lake = yes
+		}
+	}
+
+	build_time = infrastructure_build_time
+
+	unique_production_methods = {
+		MnT_bund_maintenance = {
+			icon_type = building_type
+			icon = bund
+			tools = 0.1
+			category = building_maintenance
+		}
+	}
+
+	construction_demand = village_construction
+
+	modifier = {
+		local_population_capacity = 0.5
+		#MnT removed: local_monthly_food_modifier = monthly_food_productivity_mild_bonus
+	}
+}
+
+REPLACE:khmer_baray = {
+	audio_tier = 4
+	is_special = yes
+	is_foreign = no
+	pop_type = laborers
+	max_levels = 1
+	employment_size = special_medium_peasant_building
+	category = infrastructure_category
+	rural_settlement = no
+	town = yes
+	city = yes
+	megalopolis = yes
+	expensive = yes
+	location_potential = {
+		dominant_culture ?= culture:khmer_culture
+	}
+	country_potential = {
+		OR = {
+			tag = KHM
+			culture ?= culture:khmer_culture
+		}
+	}
+	build_time = huge_unique_build_time
+	modifier = {
+		local_population_capacity = 2
+		#MnT removed: local_monthly_food_modifier = monthly_food_productivity_extreme_bonus
+	}
+	capital_country_modifier = {
+		global_monthly_prosperity = 0.001
+	}
+	possible_production_methods = {
+		khmer_baray_maintenance
+	}
+	construction_demand = khmer_baray_construction
+}
