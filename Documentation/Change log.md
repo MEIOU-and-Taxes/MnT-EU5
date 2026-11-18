@@ -1,5 +1,9 @@
 ﻿# Release
 
+#### Compatibility
+- 1.4.9 compatibility
+- Fixed urban rights impact on marketplace caps
+
 #### Balancing
 - Remove location building limit
 - Changes to industry-specialization urban rights
