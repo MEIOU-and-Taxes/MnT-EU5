@@ -3,7 +3,7 @@
 #### Balancing
 - Increase iron output by 40% across all iron mine and bog iron smelter production methods.
 - Remove the tools requirement from Logging Camp construction.
-- Logging Camps produce 0.50 Lumber without upkeep goods. The Mills advance unlocks Timber Works from 1400. Timber Works produce 1.75 Lumber with Tools.
+- Logging Camps produce 0.50 Lumber without upkeep goods. The Mills advance unlocks Timber Works. Timber Works produce 1.75 Lumber with Tools.
 - Remove location building limit
 - Changes to industry-specialization urban rights
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
