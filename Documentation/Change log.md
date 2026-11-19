@@ -7,7 +7,6 @@
   - The Borough Privileges advance, which unlocks generic specialization Urban Rights, has been moved from the Age of Discovery to the Age of Renaissance (banking tree) so it is available earlier
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
 - Buildings that only boost the output of goods in their location, without producing anything themselves, are now Infrastructure buildings: mercury patios, smelters, windmills, sawmills and the special buildings doing the same. They are no longer left unstaffed by employment systems that staff the most profitable buildings first, and they moved out of other building categories, which also affects the categories' triggers.
-- Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
 
 ### Initial test-release v0.1
 
@@ -737,3 +736,8 @@ Date: 21/05/2026
 
 ### Features
 - Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
+
+##### 0.2.14
+
+### Fixes
+- Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
