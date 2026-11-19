@@ -742,3 +742,6 @@ Date: 21/05/2026
 ### Compatibility
 - 1.4.9 compatibility
 - Fixed urban rights impact on marketplace caps
+
+### Fixes
+- Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
