@@ -1,6 +1,7 @@
 ﻿# Release
 
 #### Balancing
+- Increase iron output by 40% across all iron mine and bog iron smelter production methods.
 - Remove location building limit
 - Changes to industry-specialization urban rights
   - Urban Rights for industry specialization now completely uncap their associated industry levels rather than giving inherent production bonuses/maluses
