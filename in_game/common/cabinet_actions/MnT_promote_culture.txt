@@ -34,19 +34,9 @@
 		}
 		default_sort = culture_percentage_in_country
 		visible = {
-			scope:actor = {
-				OR = {
-					is_ai = no
-					OR = {
-						culture_percentage_in_country = {
-							culture = root
-							value >= 0.01
-						}
-						root = {
-							is_primary_in = scope:actor
-						}
-					}
-				}
+			OR = {
+				scope:actor = { is_ai = no }
+				is_primary_in = scope:actor
 			}
 		}
 		enabled = {
@@ -91,7 +81,10 @@
 						limit = { this = scope:actor.capital.province }
 						scope:target = scope:actor.culture
 					}
-					any_location_in_province = { naturally_assimilating_culture = scope:target }
+					OR = {
+						scope:target = scope:actor.culture
+						any_location_in_province = { naturally_assimilating_culture = scope:target }
+					}
 					trigger_if = {
 						limit = { exists = dominant_culture }
 						OR = {
@@ -123,10 +116,16 @@
 
 	is_finished = {
 		scope:target_1 = {
-			"culture_percentage(scope:target)" >= 0.95
-			not = {
-				any_location_in_province = {
-					NOT = { dominant_culture = scope:target }
+			OR = {
+				"culture_percentage(scope:target)" >= 1.0
+				AND = {
+					"culture_percentage(scope:target)" >= 0.95
+					"province_pop_type_population(pop_type:tribesmen)" > 0
+					not = {
+						any_location_in_province = {
+							NOT = { dominant_culture = scope:target }
+						}
+					}
 				}
 			}
 		}
@@ -174,6 +173,16 @@
 	}
 
 	ai_will_do = {
+		add = {
+			desc = "Wrong culture"
+			if = {
+				limit = {
+					exists = scope:target
+					scope:target != scope:actor.culture
+				}
+				value = -1000
+			}
+		}
 		if = {
 			limit = { scope:target_1 = { NOT = { dominant_culture = scope:target } } }
 			if = {
