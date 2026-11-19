@@ -6,33 +6,34 @@ Report generated 2026-11-19 by the vanilla mirror at `C:\Dev\Projects\paradox\eu
 |---|---|
 | Range | `v1.4.0-open-beta` (2026-10-01) → `v1.4.9` (2026-11-18) |
 | Updates | 9 |
-| Updates with at least one hit | 8 |
+| Updates with at least one hit | 7 |
 | Mod checked | `MnT-EU5`, branch `fix/1.4.9` |
 | Whole-file overrides affected | 21 distinct files |
-| Key-level overrides affected | 175 distinct keys |
+| Key-level overrides affected | 171 distinct keys |
 | Method | `tools/vanilla.py impact --since 1.4.0-open-beta` followed by inspection of every file and key group |
 
-The key count is deliberately inflated by two patterns: M&T's `INJECT:`-only building caps
-(one hit per changed building type) and M&T's intentional wholesale rebalances of child
-traits/dhimmi privileges. Those are separated from real actions below.
+`on_action` keys are additive: `monthly_country_pulse`, `yearly_country_pulse`,
+`on_game_start` and `on_location_changed_owner` can be defined by M&T and by every submod
+at the same time. The engine merges their `on_actions`/effect lists, so they are not
+overrides and are excluded from the key counts below. This was verified against the
+assimilation and centers-of-importance submods, both of which define the same keys.
 
 ## Priority summary
 
 | # | Area | Update | Priority | Action |
 |---|---|---|---|---|
-| 1 | `on_action` overrides drop vanilla additions | 1.4.2 / 1.4.5 / 1.4.7 | **High** | merge HRE setup, cardinal transfer, D009 pulses, Irish pulse |
-| 2 | `location_window.gui` / `production_lateralview.gui` | 1.4.1–1.4.8 | **High** | rebase the GUI copies; several UI features break |
-| 3 | `promote_culture` rewrite | 1.4.2 | **High** | port visible/finish/AI changes |
-| 4 | malaria climate triggers | 1.4.4 | **High** | add semi-arid/subpolar cases |
-| 5 | camel mercenary composition | 1.4.8 | **High** | port nobles/tribesmen split |
-| 6 | `increase_control_*` Noblesse Oblige gate | 1.4.8 | **High** | add `NOT = { has_reform = ... }` |
-| 7 | subject-type changes | 1.4.1 | Medium | add tariff exemptions, cancel flag, diplomatic reputation |
-| 8 | `ayuntamientos` sign flip | 1.4.2 | Medium | port `-0.05` + decentralization |
-| 9 | dhimmi privilege power nerfs | 1.4.3 | Medium | decide whether to follow vanilla 0.1/0.2/0.33 |
-| 10 | `location_templates.txt` raw-material shuffles | 1.4.1 / 1.4.2 / 1.4.3 / 1.4.8 | Medium | M&T full copy masks all of it; decide whether to merge |
-| 11 | societal subject loyalty 30 → 15 | 1.4.2 | Medium | decide whether M&T keeps 30 |
-| 12 | building `graphical_tags` / category / audio | 1.4.1 / 1.4.2 | Low | add graphical tags to full copies |
-| 13 | 1.4.9 six keys | 1.4.9 | Mostly fixed | verify remaining `SimpleContextualFast...` sites |
+| 1 | `location_window.gui` / `production_lateralview.gui` | 1.4.1–1.4.8 | **High** | rebase the GUI copies; several UI features break |
+| 2 | `promote_culture` rewrite | 1.4.2 | **High** | port visible/finish/AI changes |
+| 3 | malaria climate triggers | 1.4.4 | **High** | add semi-arid/subpolar cases |
+| 4 | camel mercenary composition | 1.4.8 | **High** | port nobles/tribesmen split |
+| 5 | `increase_control_*` Noblesse Oblige gate | 1.4.8 | **High** | add `NOT = { has_reform = ... }` |
+| 6 | subject-type changes | 1.4.1 | Medium | add tariff exemptions, cancel flag, diplomatic reputation |
+| 7 | `ayuntamientos` sign flip | 1.4.2 | Medium | port `-0.05` + decentralization |
+| 8 | dhimmi privilege power nerfs | 1.4.3 | Medium | decide whether to follow vanilla 0.1/0.2/0.33 |
+| 9 | `location_templates.txt` raw-material shuffles | 1.4.1 / 1.4.2 / 1.4.3 / 1.4.8 | Medium | M&T full copy masks all of it; decide whether to merge |
+| 10 | societal subject loyalty 30 → 15 | 1.4.2 | Medium | decide whether M&T keeps 30 |
+| 11 | building `graphical_tags` / category / audio | 1.4.1 / 1.4.2 | Low | add graphical tags to full copies |
+| 12 | 1.4.9 six keys | 1.4.9 | Mostly fixed | verify remaining `SimpleContextualFast...` sites |
 
 ## 1.4.0 → 1.4.1
 
@@ -117,7 +118,7 @@ Actual key-level actions are the subject types above and the GUI/subject file ov
 
 ## 1.4.1 → 1.4.2
 
-4 whole-file overrides, 29 keys.
+4 whole-file overrides, 27 keys.
 
 ### No action
 
@@ -135,16 +136,6 @@ Actual key-level actions are the subject types above and the GUI/subject file ov
 
 ### Action
 
-**`on_game_start` + `on_location_changed_owner` (High).** M&T defines these keys directly
-in `MnT_pulse.txt`, replacing vanilla's entire list. Vanilla added:
-
-- HRE setup: `hre_set_ai_diplo_action_cooldown` fan-out for every HRE member.
-- Cardinal transfer rewrite: move only a cardinal actually seated in the conquered
-  location, and only to a Catholic winner; otherwise clear cardinal variables.
-
-Because M&T replaces the key, neither addition runs. Merge the vanilla effects into
-M&T's `on_actions`/effect blocks, or convert the M&T definitions to an additive pattern.
-
 **`ayuntamientos` (Medium).** M&T still has the old:
 
 ```diff
@@ -160,6 +151,21 @@ participation.
 finish conditions and AI scoring. M&T's `REPLACE:promote_culture` still uses the old
 `culture_percentage_in_country >= 0.01` visibility and the old 0.95 finish test. Port the
 new block; otherwise AI/visibility behavior diverges.
+
+**`societal_values` (Medium).** Vanilla lowers `subject_loyalty` 30 → 15. M&T still has 30.
+Decide whether this is an intentional M&T balance choice.
+
+### No action: additive `on_action` keys
+
+**`on_game_start` + `on_location_changed_owner`.** M&T defines these keys directly in
+`MnT_pulse.txt`, but `on_action` definitions are additive: the engine merges M&T's
+`on_actions` lists with vanilla's effect blocks. This is the same pattern used by the
+assimilation and centers-of-importance submods, which define `on_game_start`,
+`on_location_changed_owner` and `yearly_country_pulse` alongside M&T. Vanilla's HRE
+setup and cardinal-transfer additions therefore still run. No action.
+
+M&T's additional `on_actions` entries remain the only thing it contributes; they do not
+replace vanilla's list.
 
 **`dhimmi_estate` (No action).** Vanilla adds
 `ignores_culture_religion_penalties = yes`; M&T already has it.
@@ -227,20 +233,10 @@ the zero-multiplier group.
 
 ## 1.4.4 → 1.4.5
 
-Two keys: `monthly_country_pulse`, `yearly_country_pulse`.
-
-D009 adds new files that define both keys:
-
-```text
-monthly_country_pulse = { random_events = { d009_sephardi_catastrophe.8/9 } }
-yearly_country_pulse = { random_events = { goods_camels.*, d009_* ... } }
-```
-
-M&T also defines both keys in `MnT_pulse.txt`. If M&T's definition wins, all D009 pulses
-are suppressed; if the game merges, they may be duplicated.
-
-**Action (High):** merge the D009 events into M&T's pulse lists, or restructure M&T to use
-additive on_action entries so DLC pulses survive.
+No key impact. D009 adds new files that define `monthly_country_pulse` and
+`yearly_country_pulse`, but those keys are additive: D009's `random_events` and M&T's
+`on_actions` lists are merged, not replaced. The same pattern is used by the assimilation
+and centers-of-importance submods. No action; no D009 pulses are suppressed.
 
 ## 1.4.5 → 1.4.6
 
@@ -248,18 +244,18 @@ No file or key impact.
 
 ## 1.4.6 → 1.4.7
 
-One file, one key.
+One file; the `yearly_country_pulse` key is additive.
 
 - `yearly_country_pulse`: vanilla adds `yearly_flavor_ire_pulse` and moves the five
-  `ireland.10–50` events into it. M&T's yearly pulse list does not include the new pulse,
-  so those Irish events stop firing.
+  `ireland.10–50` events into it. M&T's yearly list and vanilla's list merge, so the new
+  pulse still runs.
 - `location_window.gui`: 51/6-line UI change; rebase with the other GUI updates.
 
-**Action:** add `yearly_flavor_ire_pulse` to M&T's yearly list; rebase GUI.
+**Action:** rebase GUI only.
 
 ## 1.4.7 → 1.4.8
 
-5 files, 18 keys.
+5 files, 17 keys.
 
 - **Camel units (High):** all camel unit types change mercenary composition from
   `tribesmen × 0.3` to `nobles × 0.3` plus `tribesmen × 0.01`. M&T's full
@@ -270,9 +266,9 @@ One file, one key.
   reform that is supposed to disable it.
 - **`appanage` (Low):** vanilla wraps `nav_appanage_rights_granted` in a custom tooltip
   in three places. M&T copy lacks the wrappers.
-- **`on_location_changed_owner` (High):** 1.4.8 adds cardinal `employer` handling and
-  `cardinal_awaiting_new_owner`; M&T's plain key override does not run it. Merge with the
-  1.4.2 cardinal changes.
+- **`on_location_changed_owner` (No action):** 1.4.8 adds cardinal `employer` handling and
+  `cardinal_awaiting_new_owner`. The key is additive, so vanilla's effect and M&T's
+  `on_actions` list both run.
 - **`location_window.gui` / `map_markers.gui` / `location_templates.txt`:** rebase/mask as
   above.
 - **`dhimmi_abrahamic_communities`:** vanilla changes it again; M&T copy should be checked
@@ -297,9 +293,6 @@ No further action needed for the six key hits beyond the optional fast-tooltip c
 
 ## Checklist
 
-- [ ] Merge HRE setup + cardinal transfer into M&T's `on_game_start` / `on_location_changed_owner`
-- [ ] Merge D009 monthly/yearly pulses into M&T's pulse lists
-- [ ] Add `yearly_flavor_ire_pulse` to M&T's yearly list
 - [ ] Rebase `location_window.gui` and `production_lateralview.gui`
 - [ ] Port the 1.4.2 `promote_culture` rewrite
 - [ ] Add semi-arid/subpolar climates to malaria
