@@ -8,6 +8,8 @@
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
 - Buildings that only boost the output of goods in their location, without producing anything themselves, are now Infrastructure buildings: mercury patios, smelters, windmills, sawmills and the special buildings doing the same. They are no longer left unstaffed by employment systems that staff the most profitable buildings first, and they moved out of other building categories, which also affects the categories' triggers.
 
+- Centers of Importance: cabinet actions to appoint an inspector of manufactures in a production centre and later elevate the office to a board, plus oversee construction and patronize the guilds.
+
 ### Initial test-release v0.1
 
 Date: 21/05/2026 

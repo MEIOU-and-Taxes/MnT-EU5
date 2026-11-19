@@ -1,0 +1,37 @@
+﻿# Centers of Importance - production centre status loss hook
+#
+# Called once per year for a location that actually lost its production centre (marked during
+# the strip and not cleared by an award). Rolls a yearly chance to open the inquiry; the
+# ten-year cooldown starts only when the event is answered.
+
+on_center_of_production_status_loss = {
+	if = {
+		limit = {
+			has_owner = yes
+			OR = {
+				has_building = building_type:mnt_office_textile
+				has_building = building_type:mnt_office_ceramics
+				has_building = building_type:mnt_office_metalwork
+				has_building = building_type:mnt_office_naval
+				has_building = building_type:mnt_office_learning
+				has_building = building_type:mnt_office_luxury
+				has_building = building_type:mnt_office_sundries
+				has_building = building_type:mnt_office_textile_board
+				has_building = building_type:mnt_office_ceramics_board
+				has_building = building_type:mnt_office_metalwork_board
+				has_building = building_type:mnt_office_naval_board
+				has_building = building_type:mnt_office_learning_board
+				has_building = building_type:mnt_office_luxury_board
+				has_building = building_type:mnt_office_sundries_board
+			}
+			NOT = { has_variable = mnt_office_inquiry_cooldown }
+		}
+		random_list = {
+			20 = {
+				trigger_event_non_silently = { id = mnt_offices.1 }
+			}
+			80 = {
+			}
+		}
+	}
+}

@@ -1,6 +1,9 @@
 ﻿# Calculates the total value of urban manufactured goods output for a single location.
 calc_urban_goods_value_produced_location = {
 	save_scope_as = target_location
+	# Reset the cached top industry; calc_top_industry_location overwrites it for contenders
+	set_variable = { name = mnt_top_good value = 0 }
+	set_variable = { name = mnt_top_good_value value = 0 }
 
 	set_variable = {
 		name = mnt_urban_goods_value
@@ -92,6 +95,20 @@ calc_urban_goods_value_produced_location = {
 	set_variable = { name = mnt_gv_cannons value = { value = "goods_output(goods:cannons)" multiply = "goods:cannons.price_in_market(scope:target_location.market)" } }
 	set_variable = { name = mnt_gv_leather value = { value = "goods_output(goods:leather)" multiply = "goods:leather.price_in_market(scope:target_location.market)" } }
 	set_variable = { name = mnt_gv_beer value = { value = "goods_output(goods:beer)" multiply = "goods:beer.price_in_market(scope:target_location.market)" } }
+
+	# Top-good pass, only for locations that can clear the local production threshold
+	# (production score = value x 10, so the gate is the local threshold / 10). Every
+	# production centre passes this gate, so a location targeted by an office action
+	# always has mnt_top_good written by the latest pass.
+	if = {
+		limit = {
+			var:mnt_urban_goods_value >= {
+				value = center_production_local_threshold
+				divide = 10
+			}
+		}
+		calc_top_industry_location = yes
+	}
 }
 
 # Calculates the total value of rural/raw goods output for a single location.
