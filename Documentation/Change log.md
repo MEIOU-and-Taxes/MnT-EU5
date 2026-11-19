@@ -1,9 +1,5 @@
 ﻿# Release
 
-#### Compatibility
-- 1.4.9 compatibility
-- Fixed urban rights impact on marketplace caps
-
 #### Balancing
 - Remove location building limit
 - Changes to industry-specialization urban rights
@@ -740,3 +736,9 @@ Date: 21/05/2026
 
 ### Features
 - Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
+
+##### 0.2.14
+
+### Compatibility
+- 1.4.9 compatibility
+- Fixed urban rights impact on marketplace caps
