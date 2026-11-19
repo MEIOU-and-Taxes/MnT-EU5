@@ -1,11 +1,22 @@
 ﻿import os
 import re
+from pathlib import Path
 
 from tools.generators_from_game_data.parsing_logic.utils import find_matching_brace
 
-GOODS_RELATIVE_PATH = r'\game\in_game\common\goods'
-ADVANCES_RELATIVE_PATH = r'\game\in_game\common\advances'
-BUILDINGS_RELATIVE_PATH = r'\game\in_game\common\building_types'
+# Folders inside the game's 'game' folder. Join them with game_path, which works on Windows and Linux.
+GOODS_RELATIVE_PATH = Path('in_game', 'common', 'goods')
+ADVANCES_RELATIVE_PATH = Path('in_game', 'common', 'advances')
+BUILDINGS_RELATIVE_PATH = Path('in_game', 'common', 'building_types')
+
+
+def game_path(game_directory, relative_path):
+	"""A folder inside the game. game_directory can be the install folder or its 'game' folder."""
+	configured = Path(game_directory).expanduser()
+	for game in (configured, configured / 'game'):
+		if (game / relative_path).is_dir():
+			return str(game / relative_path)
+	return str(configured / 'game' / relative_path)
 
 DEFAULT_AGE = 'age_1_traditions'
 
@@ -167,28 +178,3 @@ def parse_building_file_content(content, building_unlocks):
 			all_pms.append(pm_data)
 
 	return all_pms
-
-
-def extract_raw_materials(folder_path):
-	"""Scans goods folder for goods categorized as 'raw_material'."""
-	raw_materials = set()
-	if not os.path.isdir(folder_path): return []
-
-	good_start_pattern = re.compile(r'^(\w+)\s*=\s*\{', re.MULTILINE)
-	category_pattern = re.compile(r'^\s*category\s*=\s*raw_material', re.MULTILINE)
-
-	for filename in os.listdir(folder_path):
-		filepath = os.path.join(folder_path, filename)
-		if os.path.isfile(filepath):
-			try:
-				with open(filepath, 'r', encoding='utf-8-sig') as f: content = f.read()
-				for match in good_start_pattern.finditer(content):
-					good_name = match.group(1)
-					start_brace = match.end()
-					end_brace = find_matching_brace(content, start_brace)
-					if end_brace != -1:
-						good_block = content[start_brace:end_brace]
-						if category_pattern.search(good_block):
-							raw_materials.add(good_name)
-			except Exception as e: print(f"Error in {filename}: {e}")
-	return sorted(list(raw_materials))

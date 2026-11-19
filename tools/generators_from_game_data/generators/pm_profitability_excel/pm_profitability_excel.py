@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 
 from tools.generators_from_game_data.parsing_logic.file_parser import extract_building_unlocks, extract_goods_and_prices, \
-	parse_building_file_content, GOODS_RELATIVE_PATH, ADVANCES_RELATIVE_PATH, BUILDINGS_RELATIVE_PATH
+	parse_building_file_content, game_path, GOODS_RELATIVE_PATH, ADVANCES_RELATIVE_PATH, BUILDINGS_RELATIVE_PATH
 from tools.shared.fetch_logs import get_from_config
 
 OUTPUT_FILENAME = 'production_methods.xlsx'
@@ -14,9 +14,9 @@ if __name__ == '__main__':
 	Main function to orchestrate the parsing and Excel generation.
 		"""
 	game_dir = get_from_config('Paths', 'game_directory')
-	goods_folder = game_dir + GOODS_RELATIVE_PATH
-	advances_folder = game_dir + ADVANCES_RELATIVE_PATH
-	buildings_folder = game_dir + BUILDINGS_RELATIVE_PATH
+	goods_folder = game_path(game_dir, GOODS_RELATIVE_PATH)
+	advances_folder = game_path(game_dir, ADVANCES_RELATIVE_PATH)
+	buildings_folder = game_path(game_dir, BUILDINGS_RELATIVE_PATH)
 
 	print(f"Scanning for goods and prices in '{goods_folder}'...")
 	goods_with_prices = extract_goods_and_prices(goods_folder)
