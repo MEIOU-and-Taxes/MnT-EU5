@@ -101,38 +101,32 @@ appoint_inspector_of_manufactures = {
 	}
 
 	on_fully_activated = {
-		scope:target = { set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 } }
-
-		if = {
-			limit = {
-				scope:target = {
+		# Everything happens on the target location; scope:actor is still reachable inside.
+		scope:target = {
+			# The leading industry comes from the goods-value caches, so no market lookups run here.
+			calc_top_industry_location = yes
+			set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 }
+			if = {
+				limit = {
 					OR = {
 						var:mnt_top_good = 1
 						var:mnt_top_good = 2
 					}
 				}
-			}
-			scope:target = {
 				change_building_level_in_location = { building = building_type:mnt_office_textile value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = {
-				scope:target = {
+			else_if = {
+				limit = {
 					OR = {
 						var:mnt_top_good = 4
 						var:mnt_top_good = 9
 						var:mnt_top_good = 10
 					}
 				}
-			}
-			scope:target = {
 				change_building_level_in_location = { building = building_type:mnt_office_ceramics value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = {
-				scope:target = {
+			else_if = {
+				limit = {
 					OR = {
 						var:mnt_top_good = 11
 						var:mnt_top_good = 13
@@ -140,56 +134,44 @@ appoint_inspector_of_manufactures = {
 						var:mnt_top_good = 15
 					}
 				}
-			}
-			scope:target = {
 				change_building_level_in_location = { building = building_type:mnt_office_metalwork value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { var:mnt_top_good = 7 } }
-			scope:target = {
+			else_if = {
+				limit = {
+					var:mnt_top_good = 7
+				}
 				change_building_level_in_location = { building = building_type:mnt_office_naval value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = {
-				scope:target = {
+			else_if = {
+				limit = {
 					OR = {
 						var:mnt_top_good = 8
 						var:mnt_top_good = 12
 					}
 				}
-			}
-			scope:target = {
 				change_building_level_in_location = { building = building_type:mnt_office_learning value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = {
-				scope:target = {
+			else_if = {
+				limit = {
 					OR = {
 						var:mnt_top_good = 3
 						var:mnt_top_good = 5
 						var:mnt_top_good = 6
 					}
 				}
-			}
-			scope:target = {
 				change_building_level_in_location = { building = building_type:mnt_office_luxury value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = {
-				scope:target = {
+			else_if = {
+				limit = {
 					OR = {
 						var:mnt_top_good = 16
 						var:mnt_top_good = 17
 					}
 				}
-			}
-			scope:target = {
 				change_building_level_in_location = { building = building_type:mnt_office_sundries value = 1 owner = scope:actor }
 			}
+			remove_variable = mnt_top_good
+			remove_variable = mnt_top_good_value
 		}
 	}
 
@@ -299,53 +281,41 @@ elevate_office_of_manufactories = {
 	}
 
 	on_fully_activated = {
-		scope:target = { set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 } }
-
-		if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_textile } }
-			scope:target = {
+		# Everything happens on the target location; scope:actor is still reachable inside.
+		scope:target = {
+			set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 }
+			if = {
+				limit = { has_building = building_type:mnt_office_textile }
 				change_building_level_in_location = { building = building_type:mnt_office_textile value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_textile_board value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_ceramics } }
-			scope:target = {
+			else_if = {
+				limit = { has_building = building_type:mnt_office_ceramics }
 				change_building_level_in_location = { building = building_type:mnt_office_ceramics value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_ceramics_board value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_metalwork } }
-			scope:target = {
+			else_if = {
+				limit = { has_building = building_type:mnt_office_metalwork }
 				change_building_level_in_location = { building = building_type:mnt_office_metalwork value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_metalwork_board value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_naval } }
-			scope:target = {
+			else_if = {
+				limit = { has_building = building_type:mnt_office_naval }
 				change_building_level_in_location = { building = building_type:mnt_office_naval value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_naval_board value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_learning } }
-			scope:target = {
+			else_if = {
+				limit = { has_building = building_type:mnt_office_learning }
 				change_building_level_in_location = { building = building_type:mnt_office_learning value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_learning_board value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_luxury } }
-			scope:target = {
+			else_if = {
+				limit = { has_building = building_type:mnt_office_luxury }
 				change_building_level_in_location = { building = building_type:mnt_office_luxury value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_luxury_board value = 1 owner = scope:actor }
 			}
-		}
-		else_if = {
-			limit = { scope:target = { has_building = building_type:mnt_office_sundries } }
-			scope:target = {
+			else_if = {
+				limit = { has_building = building_type:mnt_office_sundries }
 				change_building_level_in_location = { building = building_type:mnt_office_sundries value = -1 }
 				change_building_level_in_location = { building = building_type:mnt_office_sundries_board value = 1 owner = scope:actor }
 			}
