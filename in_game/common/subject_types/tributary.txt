@@ -75,12 +75,15 @@ tributary = {
 			scope:actor ?= {
 				is_subject_of = scope:recipient
 			}
-			scope:target ?= {
-				OR = {
-					NOT = { is_subject_of = scope:recipient }
-					AND = {
-						is_subject_of = scope:recipient
-						NOT = { is_subject_type = tributary }
+			trigger_if = {
+				limit = { exists = scope:target }
+				scope:target = {
+					OR = {
+						NOT = { is_subject_of = scope:recipient }
+						AND = {
+							is_subject_of = scope:recipient
+							NOT = { is_subject_type = tributary }
+						}
 					}
 				}
 			}

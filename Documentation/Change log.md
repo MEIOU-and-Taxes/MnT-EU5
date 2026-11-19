@@ -735,3 +735,26 @@ Date: 21/05/2026
 
 ### Fixes
 - Add missing stab cost efficiency malus to new subject types
+- halved AI/trade order minimum trade profit to match halved goods prices.
+- Remove the wartime commander requirement from Legacy of Osman.
+- Taper AI food construction weight smoothly as surplus rises relative to consumption, and apply the scaled starvation penalty as a province modifier on the monthly update.
+
+### Balance
+- Further rebalanced trade routes to actually cost more at long distances. And shifted age 4 trade maintanance bonus to be less overpowering.
+- Subsistence agriculture output: 0.8 → 1.1. Double the food production bonuses from five agricultural advances.
+- Add 27 researched production methods for food RGO buildings.
+- Increase AI construction priority for food RGO buildings and Irrigation in provinces with low food surpluses. AI Irrigation requires at least 40 local food production.
+- Scale the population growth and life expectancy penalties from starvation with the estimated local food shortfall.
+- Add basic PM for most RGO buildings and make sure there is an input for those generating 1 unit.
+
+### Features
+- Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
+
+##### 0.2.14
+
+### Compatibility
+- 1.4.9 compatibility
+- Fixed urban rights impact on marketplace caps
+
+### Fixes
+- Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.

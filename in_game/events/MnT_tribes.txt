@@ -1,28 +1,103 @@
 ﻿namespace = mnt_tribes
 
-# Maintenance event for refreshing tribal pastures to always be at their building cap, whatever that may be
+# Called in location scope. BUILDING is the selected building type ID.
+scripted_effect mnt_apply_tribal_livelihood = {
+	save_temporary_scope_value_as = {
+		name = mnt_tribal_livelihood_level_change
+		value = {
+			value = mnt_tribal_livelihood_cap
+			floor = yes
+		}
+	}
+
+	# Read the current level directly from the building scope.
+	every_buildings_in_location = {
+		limit = { building_type = { mnt_is_tribal_livelihood = yes } }
+		if = {
+			limit = { building_type = { this = building_type:$BUILDING$ } }
+			save_temporary_scope_value_as = {
+				name = mnt_tribal_livelihood_level_change
+				value = {
+					value = scope:mnt_tribal_livelihood_level_change
+					subtract = building_level
+				}
+			}
+		}
+		else = {
+			location = { destroy_building = prev }
+		}
+	}
+	if = {
+		limit = { scope:mnt_tribal_livelihood_level_change != 0 }
+		change_building_level_in_location = {
+			building = building_type:$BUILDING$
+			value = scope:mnt_tribal_livelihood_level_change
+		}
+	}
+}
+
+# Choose one livelihood per location and bring its levels up to the shared cap.
 mnt_tribes.1 = {
-    type = country_event
-    title = hidden_event.t
-    hidden = yes
-	
+	type = country_event
+	title = hidden_event.t
+	hidden = yes
+
 	trigger = {
 		country_exists_and_can_own_locations = yes
 		num_pop_type_in_country:tribesmen > 0
 	}
-	
+
 	immediate = {
 		every_owned_location = {
-			limit = { 
-				num_pop_type:tribesmen > 0
+			limit = { num_pop_type:tribesmen >= 1 }
+
+			if = {
+				limit = { mnt_tribal_reedbed = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = reedbed_hunting_camps }
 			}
-			change_building_level_in_location = {
-				building = building_type:transhumant_wool_pasture
-				value = {
-					value = transhumant_wool_pasture_cap # start at the cap
-					subtract = "location_building_level(building_type:transhumant_wool_pasture)" # Account for existing building levels
-					floor = yes	#round down to make sure we don't accidentally go over the cap
-				}
+			else_if = {
+				limit = { mnt_tribal_caravan_herding = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = caravan_herding_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_steppe_horse_herding = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = steppe_horse_herding_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_steppe_herding = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = steppe_herding_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_cold_dryland_herding = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = cold_dryland_herding_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_boreal_trapping = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = boreal_trapping_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_tropical_foraging = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = forest_foraging_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_savanna_herding = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = savanna_herding_camps }
+			}
+			else_if = {
+				limit = { mnt_tribal_upland_pasture = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = upland_summer_pastures }
+			}
+			else_if = {
+				limit = { mnt_tribal_wood_pasture = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = wood_pastures }
+			}
+			else_if = {
+				limit = { mnt_tribal_forest_hunting = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = forest_hunting_lodges }
+			}
+			else_if = {
+				limit = { mnt_tribal_wool_pasture = yes }
+				mnt_apply_tribal_livelihood = { BUILDING = transhumant_wool_pasture }
 			}
 		}
 	}
