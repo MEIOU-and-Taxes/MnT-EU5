@@ -1,11 +1,25 @@
 import configparser
 import os
+import re
 import sys
 from pathlib import Path
 
 # Next to this module, so every tool finds the same file whatever folder it is run from
 CONFIG_FILE = str(Path(__file__).resolve().parent / "config.ini")
 DEFAULT_PATH = ''
+
+
+def _for_this_system(path):
+	"""One config.ini serves Windows and WSL: /mnt/d/... and D:/... name the same folder."""
+	if os.name == "nt":
+		match = re.match(r"^/mnt/([a-zA-Z])/(.*)$", path)
+		if match:
+			return f"{match.group(1).upper()}:/{match.group(2)}"
+	elif os.path.isdir("/mnt"):
+		match = re.match(r"^([a-zA-Z]):[\\/](.*)$", path)
+		if match:
+			return f"/mnt/{match.group(1).lower()}/" + match.group(2).replace("\\", "/")
+	return path
 
 def _create_default_config():
 	"""Creates a new, default configuration file if one does not exist."""
@@ -49,7 +63,7 @@ def get_from_config(section, option):
 		if value[0] in "\"'" or value[-1] in "\"'":
 			print(f"ERROR: {option} is wrapped in quotes. Remove them, a path is written here without quotes:\n  {CONFIG_FILE}")
 			sys.exit(1)
-		return value
+		return _for_this_system(value)
 	except (configparser.NoSectionError, configparser.NoOptionError):
 		# This handles cases where the file exists but is empty or malformed.
 		print(f"ERROR: Config file at '{CONFIG_FILE}' is missing the required {section} section or {option} key")
