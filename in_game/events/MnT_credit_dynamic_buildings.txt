@@ -1,0 +1,71 @@
+﻿namespace = credit_dynamic_buildings
+
+credit_dynamic_buildings.1 = {
+    type = country_event
+    title = hidden_event.t
+    hidden = yes
+    trigger = { great_power_ranking = 1 }
+    immediate = {
+        every_market_in_world = {
+            save_temporary_scope_as = mnt_credit_building_market
+            set_local_variable = { name = mkt_pasture_credit_demand value = 0 }
+            every_location_in_market = {
+                limit = { modifier:local_credit_demand > 0 }
+                change_local_variable = { name = mkt_pasture_credit_demand add = modifier:local_credit_demand }
+            }
+            set_local_variable = { name = mkt_previous_pasture_demand value = -1 }
+            location = {
+                if = {
+                    limit = {
+                        has_variable = mnt_credit_market_pasture_demand
+                        var:mnt_credit_building_demand_market ?= scope:mnt_credit_building_market
+                    }
+                    set_local_variable = { name = mkt_previous_pasture_demand value = var:mnt_credit_market_pasture_demand }
+                }
+                set_variable = { name = mnt_credit_building_demand_market value = scope:mnt_credit_building_market }
+                set_variable = { name = mnt_credit_market_pasture_demand value = local_var:mkt_pasture_credit_demand }
+            }
+            # Reuse the permanent demand entry while the pasture total stays the same.
+            if = {
+                limit = {
+                    local_var:mkt_pasture_credit_demand > 0
+                    OR = {
+                        local_var:mkt_previous_pasture_demand != local_var:mkt_pasture_credit_demand
+                        NOR = {
+                            has_temporary_demand = demand:mnt_credit_building_demand1
+                            has_temporary_demand = demand:mnt_credit_building_demand2
+                        }
+                    }
+                }
+                if = {
+                    limit = { has_temporary_demand = demand:mnt_credit_building_demand1 }
+                    remove_temporary_demand = demand:mnt_credit_building_demand1
+                    add_temporary_demand = {
+                        type = demand:mnt_credit_building_demand2
+                        months = -1
+                        scale = local_var:mkt_pasture_credit_demand
+                    }
+                }
+                else = {
+                    remove_temporary_demand = demand:mnt_credit_building_demand2
+                    add_temporary_demand = {
+                        type = demand:mnt_credit_building_demand1
+                        months = -1
+                        scale = local_var:mkt_pasture_credit_demand
+                    }
+                }
+            }
+            else_if = {
+                limit = {
+                    local_var:mkt_pasture_credit_demand <= 0
+                    OR = {
+                        has_temporary_demand = demand:mnt_credit_building_demand1
+                        has_temporary_demand = demand:mnt_credit_building_demand2
+                    }
+                }
+                remove_temporary_demand = demand:mnt_credit_building_demand1
+                remove_temporary_demand = demand:mnt_credit_building_demand2
+            }
+        }
+    }
+}
