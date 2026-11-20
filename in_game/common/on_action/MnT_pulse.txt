@@ -228,7 +228,7 @@ hide_buildings_on_start = {
 }
 
 on_location_changed_owner = {
-	on_actions = { aut_on_location_conquered }
+	on_actions = { aut_on_location_conquered MnT_centers_owner_changed }
 }
 
 MnT_food_monthly_response = {
@@ -236,4 +236,24 @@ MnT_food_monthly_response = {
         delay = { days = 2 }
         mnt_food.4
     }
+}
+
+
+MnT_centers_owner_changed = {
+	trigger = {
+		exists = scope:winner
+		OR = {
+			has_location_modifier = mnt_center_culture_local
+			has_location_modifier = mnt_center_culture_regional
+			has_location_modifier = mnt_center_culture_continental
+			has_location_modifier = mnt_center_culture_world
+		}
+	}
+	effect = {
+		scope:winner = { mnt_center_culture_tier_recalc = yes }
+		if = {
+			limit = { exists = scope:loser }
+			scope:loser = { mnt_center_culture_tier_recalc = yes }
+		}
+	}
 }

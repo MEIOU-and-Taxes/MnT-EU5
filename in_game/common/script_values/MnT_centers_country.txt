@@ -1,0 +1,22 @@
+﻿# M&T Centers of Importance - culture centre scale per tier
+# Multiplier for `scales_with`; bases are the world values (prestige 0.1, capacity 1), so scale 1 = world:
+#   prestige 0.01 / 0.025 / 0.05 / 0.1   (M&T's own ladder)
+#   capacity 0.1  / 0.25  / 0.5  / 1     (rides the same scale, deliberately richer than M&T's fractions)
+# Driven by mnt_center_culture_tier, written by the yearly pass and refreshed when a centre changes hands.
+
+center_culture_scale = {
+	value = 0
+	if = { limit = { var:mnt_center_culture_tier = 4 } value = 1 }
+	else_if = { limit = { var:mnt_center_culture_tier = 3 } value = 0.5 }
+	else_if = { limit = { var:mnt_center_culture_tier = 2 } value = 0.25 }
+	else_if = { limit = { var:mnt_center_culture_tier = 1 } value = 0.1 }
+}
+
+# Highest culture centre tier the location holds, 0 when it holds none.
+mnt_culture_center_level = {
+	value = 0
+	if = { limit = { has_location_modifier = mnt_center_culture_world } value = 4 }
+	else_if = { limit = { has_location_modifier = mnt_center_culture_continental } value = 3 }
+	else_if = { limit = { has_location_modifier = mnt_center_culture_regional } value = 2 }
+	else_if = { limit = { has_location_modifier = mnt_center_culture_local } value = 1 }
+}

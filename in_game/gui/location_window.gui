@@ -1075,7 +1075,7 @@ types LocationWindowTypes
 					size = { 63 63 }
 					# UPGRADE RANK
 					button_regular = {
-						visible = "[Location.GetOwner.IsPlayer]"
+						visible = "[Or(Location.GetOwner.IsPlayer, Location.GetOwner.GetDiplomacy.IsSubjectOf(GetPlayer))]"
 						size = { 100% 100% }
 						position = {0 1}
 
@@ -1117,14 +1117,14 @@ types LocationWindowTypes
 					}
 
 					icon = {
-						visible = "[Location.GetOwner.IsPlayer]"
+						visible = "[Or(Location.GetOwner.IsPlayer, Location.GetOwner.GetDiplomacy.IsSubjectOf(GetPlayer))]"
 						size = { 40 40 }
 						parentanchor = center
 						texture = "[Location.GetRankIcon]"
 					}
 
 					icon = {
-						visible = "[Not(Location.GetOwner.IsPlayer)]"
+						visible = "[Not(Or(Location.GetOwner.IsPlayer, Location.GetOwner.GetDiplomacy.IsSubjectOf(GetPlayer)))]"
 						size = { 40 40 }
 						parentanchor = center
 						texture = "[Location.GetRankIcon]"
@@ -1140,9 +1140,7 @@ types LocationWindowTypes
 					}
 				}
 
-				widget = {
-					using = location_card_town_rights
-				}
+				block "location_card_town_rights_vertical_slot" {}
 			}
 
 			vbox = {
@@ -1178,6 +1176,7 @@ types LocationWindowTypes
 						button = {
 							visible = "[And(Location.IsColonized, Location.GetOwner.IsPlayer)]"
 							size = { 22 22 }
+							tooltipwidget = { BasicFunctionalTooltip = {} }
 							action_tooltip = {
 								click_type = left
 								click_mode = single
@@ -1434,7 +1433,7 @@ types LocationWindowTypes
 							# layoutpolicy_horizontal = expanding
 							# size = { -1 28 }
 
-							size = { 90 28 }
+							size = { 70 28 }
 
 							action_tooltip = {
 								click_type = left
@@ -2429,7 +2428,7 @@ types LocationWindowTypes
 
 template location_card_market_button_body {
 	block "location_card_market_size" {
-		size = { 90 28 }
+		size = { 70 28 }
 	}
 
 	datacontext = "[Location.GetMarket]"
@@ -2534,7 +2533,7 @@ template location_card_market_button_body {
 
 template location_card_population_button_body {
 	block "location_card_population_size" {
-		size = { 120 28 }
+		size = { 100 28 }
 	}
 
 	block "location_card_population_click" {
@@ -2930,6 +2929,47 @@ template location_card_town_rights {
 
 	block "location_town_rights_sort_highlight" {}
 }
+
+template location_card_town_rights_vertical {
+	block "location_card_town_rights_size" {
+		size = { 33 33 }
+	}
+	visible = "[Or(GreaterThan_int32(GetDataModelSize(Location.GetTownRights), '(int32)0'), And(Location.GetOwner.IsPlayer, Not(Location.GetRank.IsDefault)))]"
+	block "location_card_town_rights_enabled" {
+		enabled = "[And(ShowGrantLocationTownRights(Location.Self), Not(Location.GetRank.IsDefault))]"
+	}
+
+	block "location_card_town_rights_empty_button" {
+		button_townrights = {
+			using = location_card_town_rights_empty_body
+		}
+	}
+
+	block "location_card_town_rights_empty_extra" {}
+
+	# ONE TOWN RIGHT SELECTED
+	hbox = {
+		block "location_card_town_rights_single_visible" {
+			visible = "[EqualTo_int32(GetDataModelSize(Location.GetTownRights), '(int32)1')]"
+		}
+		datamodel = "[Location.GetTownRights]"
+		item = {
+			widget = {
+				using = layoutpolicy_expanding
+				block "location_card_town_rights_item_visible" {}
+
+				block "location_card_town_rights_item_button" {
+					button_townrights = {
+						size = { 100% 100% }
+						using = location_card_town_rights_item_body
+					}
+				}
+			}
+		}
+	}
+	block "location_town_rights_sort_highlight" {}
+}
+
 
 template location_fort_status {
 	hbox = {
@@ -4076,6 +4116,12 @@ lateralview = {
 
 							blockoverride "location_card_town_rights_slot" {}
 
+							blockoverride "location_card_town_rights_vertical_slot" {
+								widget = {
+									using = location_card_town_rights_vertical
+								}
+							}
+
 							blockoverride "location_card_core_icon_size" {
 								size = { 28 28 }
 							}
@@ -4286,6 +4332,7 @@ lateralview = {
 										blockoverride "market_contextmenu_post_entries" {
 											ContextMenuEntry = {
 												visible = "[And(Not(IsLobbyOpen), Not(Location.IsMarketCenter))]"
+												enabled = "[Location.CanCreateMarket]"
 
 												blockoverride "entry_button" {
 													button = {
@@ -9597,7 +9644,7 @@ lateralview = {
 										fontsize = 13
 										align = right|nobaseline
 										visible = "[And(HasMigrationIntelOn(Location.Self), Not(StringIsEmpty(LocationView.GetLocation.GetMigrationInformation)))]"
-										raw_text = "[LocationView.GetLocation.GetMigrationChange]@population!   |"
+										raw_text = "[LocationView.GetLocation.GetMigrationChangeCompact]@population!   |"
 									}
 									text_single = {
 										fontsize = 13
@@ -9631,7 +9678,7 @@ lateralview = {
 										fontsize = 13
 										align = right|nobaseline
 										visible = "[And(HasMigrationIntelOn(Location.Self), Not(StringIsEmpty(LocationView.GetLocation.GetMigrationInformation)))]"
-										raw_text = "[LocationView.GetLocation.GetMigrationChange]@population!   |"
+										raw_text = "[LocationView.GetLocation.GetMigrationChangeCompact]@population!   |"
 									}
 									text_single = {
 										fontsize = 13
@@ -10247,7 +10294,7 @@ lateralview = {
 												widget = {
 													size = { 28 28 }
 													icon = {
-														visible = "[Not(LocationView.GetLocation.CanAssimilate)]"
+														visible = "[And(Not(LocationView.GetLocation.CanAssimilate), Not(LocationView.GetLocation.IsAssimilatingToCulture(PopCultureItem.GetCulture)))]"
 														size = { 28 28 }
 														texture = "gfx/interface/icons/location_icons/new/cannot_assimilate.dds"
 														tooltipwidget = {
@@ -10566,7 +10613,7 @@ lateralview = {
 											widget = {
 												size = { 28 28 }
 												icon = {
-													visible = "[Not(LocationView.GetLocation.CanConvert)]"
+													visible = "[And(Not(LocationView.GetLocation.CanConvert), Not(LocationView.GetLocation.IsConvertingToReligion(PopReligionItem.GetReligion)))]"
 													size = { 28 28 }
 													texture = "gfx/interface/icons/location_icons/new/cannot_convert.dds"
 													tooltipwidget = {

@@ -724,6 +724,7 @@ Date: 21/05/2026
 - Add missing stab cost efficiency malus to new subject types
 - halved AI/trade order minimum trade profit to match halved goods prices.
 - Remove the wartime commander requirement from Legacy of Osman.
+- Taper AI food construction weight smoothly as surplus rises relative to consumption, and apply the scaled starvation penalty as a province modifier on the monthly update.
 
 ### Balance
 - Further rebalanced trade routes to actually cost more at long distances. And shifted age 4 trade maintanance bonus to be less overpowering.
@@ -735,3 +736,12 @@ Date: 21/05/2026
 
 ### Features
 - Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
+
+##### 0.2.14
+
+### Compatibility
+- 1.4.9 compatibility
+- Fixed urban rights impact on marketplace caps
+
+### Fixes
+- Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
