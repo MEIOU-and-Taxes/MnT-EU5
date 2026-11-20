@@ -1144,6 +1144,50 @@ select_menu_left = {
 	}
 }
 
+template market_burgher_trade_capacity {
+	ContextualTooltipType = {
+		blockoverride "title_icon" {
+			icon = {
+				size = { 32 32 }
+				texture = "[GetConceptTexture('burgher_trade')]"
+			}
+		}
+		blockoverride "title_text" {
+			text = "BURGHERS_TRADE_CAPACITY"
+		}
+
+		blockoverride "concept_link" {
+			text = [trade|e]
+		}
+
+		blockoverride "tooltip_content" {
+			TooltipListBase = {
+				visible = "[Market.GetCenterLocation.MakeScope.GetVariable('mnt_credit_burgher_trade_demand_applied').IsSet]"
+				TooltipTableField = {
+					blockoverride "field_content" {
+						margin = { 10 0 }
+						spacing = 8
+						text_single = {
+							layoutpolicy_horizontal = expanding
+							text = "mnt_credit_burgher_trade_monthly_demand_label"
+						}
+						text_single = {
+							text = "mnt_credit_burgher_trade_monthly_demand_value"
+						}
+						icon = {
+							size = { 20 20 }
+							texture = "gfx/interface/icons/trade_goods/icon_goods_credit.dds"
+						}
+					}
+				}
+			}
+			TooltipStringPairList = {
+				textcontext = "[Market.GetBurgherTradeInfo(GetPlayer.Self)]"
+			}
+		}
+	}
+}
+
 template GoodsDemandInfo_tooltip {
 	ContextualTooltipType = {
 		blockoverride "title_text" {
@@ -1157,6 +1201,12 @@ template GoodsDemandInfo_tooltip {
 		blockoverride "title_icon" {
 			icon = {
 				using = tooltip_title_icon_size
+				visible = "[EqualTo_string(GoodsDemand.GetNameWithNoTooltip, Localize('mnt_credit_loan_demand1'))]"
+				texture = "gfx/interface/icons/trade_goods/icon_goods_credit.dds"
+			}
+			icon = {
+				using = tooltip_title_icon_size
+				visible = "[Not(EqualTo_string(GoodsDemand.GetNameWithNoTooltip, Localize('mnt_credit_loan_demand1')))]"
 				texture = "gfx/interface/icons/production_methods/_default.dds"
 			}
 		}
@@ -1164,14 +1214,14 @@ template GoodsDemandInfo_tooltip {
 		blockoverride "tooltip_content" {
 			TooltipTextBlock = {
 				visible = "[EqualTo_string(GoodsDemand.GetNameWithNoTooltip, Localize('mnt_credit_loan_demand1'))]"
-				datacontext = "[GetLocationByKey(GetVariableSystem.Get('mnt_credit_loan_market_location')).GetMarket]"
+				datacontext = "[GetLocationByKey(GetVariableSystem.Get('mnt_credit_demand_market_location')).GetMarket]"
 				blockoverride "text" {
 					text = "mnt_credit_loan_demand_desc"
 				}
 			}
 			TooltipListBase = {
 				visible = "[EqualTo_string(GoodsDemand.GetNameWithNoTooltip, Localize('mnt_credit_loan_demand1'))]"
-				datacontext = "[GetLocationByKey(GetVariableSystem.Get('mnt_credit_loan_market_location'))]"
+				datacontext = "[GetLocationByKey(GetVariableSystem.Get('mnt_credit_demand_market_location'))]"
 				blockoverride "block_title" {
 					visible = yes
 					text = "mnt_credit_loan_borrowers_title"
@@ -1330,7 +1380,7 @@ template DemandsOnMarket_tooltip {
 			widget = {
 				size = { 0 0 }
 				textcontext = "[DemandsOnMarketWrap.GetMarket.GetCenterLocation.GetTag]"
-				ontextcontextchanged = "[GetVariableSystem.Set('mnt_credit_loan_market_location', DemandsOnMarketWrap.GetMarket.GetCenterLocation.GetTag)]"
+				ontextcontextchanged = "[GetVariableSystem.Set('mnt_credit_demand_market_location', DemandsOnMarketWrap.GetMarket.GetCenterLocation.GetTag)]"
 			}
 			block "mnt_demand_tooltip_list" {
 				TooltipScrolledStringPairList = {

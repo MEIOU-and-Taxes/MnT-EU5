@@ -1,8 +1,10 @@
 ﻿# Release
 
 #### Credit
+- Burgher Trade Capacity generates Credit demand in each market, shown in the Burghers Trades tooltip. The local Credit price adjusts Burgher Trade Capacity from −70% at the price ceiling to +300% at the price floor.
 - Replace random AI borrowing with affordable construction loans and cheaper refinancing, limited to one debt operation per six months; lengthen the AI debt-saving horizon to ten years.
 - Show loan demand in a readable table of clickable borrower countries, outstanding debt, and Credit used, with goods icons and totals.
+- Goods-producing buildings can use Credit in a separate method to produce a small amount of extra goods. Service buildings use Credit for upkeep. Institutional lenders produce Credit through production methods. Local peasant enfranchisement adjusts all Credit output around a neutral point of 50%.
 - Add a compact capital-market Credit display with balance, supply, demand, price, and the interest formula underneath.
 - Refresh loan demand and lending rates immediately after borrowing, renewal, repayment, or bankruptcy, including while paused; use a responsive Credit supply-and-demand quote separately from the slower goods price.
 - Banking countries start new games with 1,000 gold.

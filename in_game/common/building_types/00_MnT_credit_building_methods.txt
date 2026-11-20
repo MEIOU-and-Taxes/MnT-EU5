@@ -1,0 +1,443 @@
+﻿# The Local Venture has its own upkeep method. Other satellite buildings keep theirs.
+REPLACE:trade_company_local_venture = {
+	audio_tier = 3
+	is_foreign = yes
+	want_foreign_pop_created = no
+	max_levels = trade_company_building_max_level
+	pop_type = burghers
+	own_or_overlord_relation_needed = trade_access
+	category = trade_category
+	employment_size = large_foreign_trade_employment
+	pop_size_created = large_foreign_trade_employment
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+	build_time = trade_company_build_time
+	possible_production_methods = {
+		mnt_local_venture_maintenance
+	}
+	location_potential = {
+		scope:actor = {
+			has_variable_list = trade_company_regions
+			is_target_in_variable_list = {
+				name = trade_company_regions
+				target = root.region
+			}
+		}
+	}
+	country_potential = {
+		OR = {
+			total_effective_building_levels:trade_company_headquarters > 0
+			any_subject = {
+				total_effective_building_levels:trade_company_headquarters > 0
+			}
+		}
+	}
+	allow = {
+		market = { in_trade_range_of = scope:actor }
+		can_build_satellite_trade_building = { BUILDING_TYPE = trade_company_local_venture }
+	}
+	custom_tags = { trade_company_building satellite_trade_building }
+	modifier = {
+		local_raw_material_output = 0.33
+	}
+	on_built = {
+		owner = {
+			if = {
+				limit = { NOT = { has_variable = trade_company_home_region } }
+				save_temporary_scope_as = owner_scope
+				random_in_list = {
+					variable = trade_company_subjects
+					limit = {
+						has_variable = trade_company_home_region
+						var:trade_company_home_region = {
+							save_temporary_scope_as = target_region
+						}
+						scope:owner_scope = {
+							is_target_in_variable_list = {
+								name = trade_company_regions
+								target = scope:target_region
+							}
+						}
+					}
+					save_scope_as = trade_company_country
+				}
+				if = {
+					limit = { exists = scope:trade_company_country }
+					root = { change_building_owner = scope:trade_company_country }
+				}
+				else = {
+					root.location = { destroy_building = root }
+				}
+			}
+		}
+	}
+}
+
+# Service buildings with Credit added to their existing upkeep.
+REPLACE:trade_company_headquarters = {
+	audio_tier = 4
+	is_foreign = yes
+	max_levels = trade_company_headquarters_max_level
+	pop_type = burghers
+	own_or_overlord_relation_needed = trade_access
+	category = trade_category
+	employment_size = huge_foreign_trade_employment
+	pop_size_created = huge_foreign_trade_employment
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+	expensive = yes
+	country_potential = {
+		total_effective_building_levels:trade_company_headquarters < 1
+
+		custom_tooltip = {
+			text = building_trade_hq_only_one
+			NOT = { has_variable = building_trade_hq }
+		}
+
+		num_relations_above_limit <= 0
+
+	}
+
+
+	allow = {
+		market = { in_trade_range_of = scope:actor }
+		scope:actor = {
+			OR = {
+				NOT = { has_variable_list = trade_company_regions }
+				NOT = {
+					is_target_in_variable_list = {
+						name = trade_company_regions
+						target = root.region
+					}
+				}
+			}
+		}
+	}
+	build_time = trade_company_headquarters_time
+	unique_production_methods = {
+		trade_company_headquarters_requirements = {
+			credit = 0.015
+			icon_type = building_type
+			icon = trade_company_headquarters
+			paper = 0.1
+			category = building_maintenance
+		}
+	}
+	modifier = {
+		merchant_capacity_from_building = 0.2
+		building_owner_maritime_presence = 0.02
+		scaled_gold_to_building_owner = 0.2
+		building_owner_overlord_maritime_presence = 0.05
+		scaled_gold_to_building_owner_overlord = 0.5
+		local_crown_estate_power = -0.2
+	}
+	capital_to_overlord_modifier = {
+		number_of_satellite_trade_buildings = 3
+	}
+	raw_modifier = {
+		local_monthly_development = 0.01
+		local_monthly_prosperity = 0.001
+		local_build_buildings_efficiency = 0.2
+	}
+	custom_tags = { trade_company_building }
+
+	on_construction_started = {
+		owner = {
+			set_variable = {
+				name = building_trade_hq
+				value = 1
+			}
+		}
+	}
+
+	on_construction_ended = {
+		owner = {
+			remove_variable = building_trade_hq
+		}
+	}
+
+
+	on_built = {
+		owner = { save_scope_as = overlord }
+		location = {
+			save_scope_as = capital
+			create_building_country_in_location = {
+				save_scope_as = trade_company_tag
+
+				hidden_effect = {
+					change_government_type = government_type:republic
+					change_heir_selection = heir_selection:bank_selection
+					make_subject_of = {
+						target = scope:overlord
+						type = subject_type:trade_company
+					}
+				}
+			}
+			if = {
+				limit = { exists = scope:trade_company_tag }
+				root = { change_building_owner = scope:trade_company_tag }
+				scope:trade_company_tag = {
+					set_capital = scope:capital
+					set_variable = { name = trade_company_home_region value = scope:capital.region }
+					if = {
+						limit = {
+							OR = {
+								NOT = { has_variable_list = trade_company_regions }
+								NOT = {
+									is_target_in_variable_list = {
+										name = trade_company_regions
+										target = root.region
+									}
+								}
+							}
+						}
+						add_to_variable_list = {
+							name = trade_company_regions
+							target = scope:capital.region
+						}
+					}
+				}
+			}
+		}
+		scope:overlord = {
+			if = {
+				limit = {
+					exists = scope:capital
+					exists = scope:trade_company_tag
+					OR = {
+						NOT = { has_variable_list = trade_company_regions }
+						NOT = {
+							is_target_in_variable_list = {
+								name = trade_company_regions
+								target = scope:capital.region
+							}
+						}
+					}
+				}
+				add_to_variable_list = {
+					name = trade_company_regions
+					target = scope:capital.region
+				}
+				add_to_variable_list = {
+					name = trade_company_subjects
+					target = scope:trade_company_tag
+				}
+			}
+		}
+	}
+
+}
+
+REPLACE:polders = {
+	audio_tier = 3
+	is_special = yes
+	is_foreign = no
+	pop_type = laborers
+	max_levels = polders_max_level
+
+	employment_size = village_employment_size
+
+
+	build_time = infrastructure_build_time
+
+	category = infrastructure_category
+
+	rural_settlement = yes
+	town = yes
+	city = yes
+	megalopolis = yes
+
+	location_potential = {
+		OR = {
+			is_coastal = yes
+			is_adjacent_to_lake = yes
+		}
+		topography = wetlands
+	}
+
+	modifier = {
+		local_population_capacity_modifier = 0.025
+		local_road_building_time = -0.05
+		local_monthly_development_modifier = 0.025
+		local_monthly_food_modifier = monthly_food_productivity_weak_bonus
+	}
+
+	unique_production_methods = {
+		polders_maintenance = {
+			credit = 0.008
+			icon_type = building_type
+			icon = polders
+			clay = 0.5
+			tools = 0.05
+
+			category = building_maintenance
+		}
+	}
+	construction_demand = polders_construction
+}
+
+REPLACE:shipyard = {
+	audio_tier = 3
+	is_foreign = no
+	max_levels = 1
+	pop_type = soldiers
+	forbidden_for_estates = yes
+
+	category = naval_category
+	obsolete = dry_dock
+
+	employment_size = shipyard_employment
+
+	location_potential = {
+		is_port = yes
+	}
+
+
+	town = yes
+	city = yes
+	megalopolis = yes
+
+
+	build_time = large_port_building_time
+
+
+
+	unique_production_methods = {
+		shipyard_maintenance = {
+			credit = 0.004
+			icon_type = building_type
+			icon = shipyard
+			tar = 0.8
+			naval_supplies = 0.4
+			tools = 0.8
+			lumber = 0.8
+			cloth = 0.4
+			category = building_maintenance
+		}
+
+	}
+
+
+	construction_demand = port_building_construction
+
+
+	modifier = {
+		max_ships_built_at_same_time = 4
+		local_sailors = 0.064
+		can_build_ships_in_this_location = yes
+		harbor_suitability = 0.2
+		local_repair_speed = 0.06
+	}
+}
+
+REPLACE:dry_dock = {
+	audio_tier = 2
+	is_foreign = no
+	max_levels = 1
+	pop_type = soldiers
+	forbidden_for_estates = yes
+
+	category = naval_category
+	obsolete = dock
+
+	location_potential = {
+		is_port = yes
+	}
+
+
+	employment_size = dry_dock_employment
+
+	town = yes
+	city = yes
+	megalopolis = yes
+
+
+	build_time = medium_port_building_time
+
+
+
+	unique_production_methods = {
+		dry_dock_maintenance = {
+			credit = 0.005
+			icon_type = building_type
+			icon = dry_dock
+			tar = 0.4
+			naval_supplies = 0.2
+			tools = 0.4
+			lumber = 0.4
+			cloth = 0.2
+			category = building_maintenance
+		}
+
+	}
+
+
+	construction_demand = port_building_construction
+
+
+	modifier = {
+		max_ships_built_at_same_time = 2
+		local_sailors = 0.032
+		can_build_ships_in_this_location = yes
+		harbor_suitability = 0.15
+		local_repair_speed = 0.04
+	}
+}
+
+REPLACE:grand_shipyard = {
+	audio_tier = 4
+	is_foreign = no
+	max_levels = 1
+	pop_type = soldiers
+	forbidden_for_estates = yes
+
+	category = naval_category
+
+	obsolete = shipyard
+
+	employment_size = grand_shipyard_employment
+
+	location_potential = {
+		is_port = yes
+	}
+
+	town = yes
+	city = yes
+	megalopolis = yes
+
+
+	build_time = large_port_building_time
+
+
+
+	unique_production_methods = {
+		grand_shipyard_maintenance = {
+			credit = 0.008
+			icon_type = building_type
+			icon = grand_shipyard
+			tar = 1.6
+			naval_supplies = 0.8
+			tools = 1.6
+			lumber = 1.6
+			cloth = 0.8
+			category = building_maintenance
+		}
+
+	}
+
+
+	construction_demand = port_building_construction
+
+
+	modifier = {
+		max_ships_built_at_same_time = 8
+		local_sailors = 0.125
+		can_build_ships_in_this_location = yes
+		harbor_suitability = 0.25
+		local_repair_speed = 0.08
+	}
+}

@@ -3,6 +3,16 @@
 	multiply = 5
 }
 
+# Location scope. Pop counts are already expressed in thousands.
+mnt_credit_burgher_trade_rate = {
+	value = 1
+	add = modifier:local_trades_per_burgher
+	if = {
+		limit = { exists = owner }
+		add = owner.modifier:global_trades_per_burgher
+	}
+}
+
 # Monthly Credit per unit of debt: 1 per 1,000, falling to 0.5 with advances.
 mnt_credit_loan_demand_multiplier = {
 	if = { limit = { has_advance = clearing_house_advance }
@@ -79,44 +89,6 @@ mnt_credit_lending_quote = {
 	min = 0.01
 }
 
-# Calculate final supply contribution of a single location
-mnt_location_dynamic_credit_supply_calc = {
-    value = modifier:local_credit_supply
-
-    # Peasant enfranchisement penalty
-    if = { limit = { exists = owner }
-        multiply = { value = 0 add = { value = peasant_enfranchisment } } # ∈ [0.1, 1]
-    }
-
-    # Combined societal values impact
-    if = { limit = { exists = owner }
-        multiply = { value = 1.0 add = "owner.modifier:global_credit_supply_rate" min = 0 }
-    }
-}
-
-# Calculate final demand contribution of a single location
-mnt_location_dynamic_credit_demand_calc = {
-    value = modifier:local_credit_demand
-
-    # Impact from societal values
-    if = { limit = { exists = owner }
-        multiply = { value = 1.0 add = "owner.modifier:global_credit_demand_rate" min = 0 }
-    }
-}
-
-# Safe helper: returns 0 if the market hasn't calculated dynamic supply yet
-mnt_credit_market_building_supply_safe = {
-    if = { limit = {
-            exists = capital.market.location
-            capital.market.location = {
-                has_variable = mnt_credit_market_building_supply
-            }
-        }
-        value = "capital.market.location.var:mnt_credit_market_building_supply"
-    }
-    else = { value = 0 }
-}
-
 # All interest tooltip inputs come from the calculation that was actually applied.
 # Fallbacks keep old saves readable until their first refresh.
 mnt_credit_lending_demand = {
@@ -131,13 +103,6 @@ mnt_credit_tooltip_market_supply = {
         value = var:mnt_credit_rate_supply
     }
     else = { value = mnt_credit_current_market_supply }
-}
-
-mnt_credit_tooltip_building_supply = {
-    if = { limit = { has_variable = mnt_credit_rate_building_supply }
-        value = var:mnt_credit_rate_building_supply
-    }
-    else = { value = mnt_credit_market_building_supply_safe }
 }
 
 mnt_credit_tooltip_market_balance = {

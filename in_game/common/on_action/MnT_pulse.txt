@@ -147,13 +147,6 @@ on_game_start_MnT = {
 		location:al_hajr.market = { destroy_market = { } }
 		location:urgench.market = { destroy_market = { } }
 		every_market_in_world = {
-			# Make sure vars exist at game start
-			location = {
-				if = { limit = { NOT = { has_variable = mnt_credit_market_building_supply } }
-					set_variable = { name = mnt_credit_market_building_supply value = 0 } }
-				if = { limit = { NOT = { has_variable = mnt_credit_market_building_demand } }
-					set_variable = { name = mnt_credit_market_building_demand value = 0 } }
-			}
 			add_goods_supply = { # Helicopter-tools to make the world go vroom
 				goods = goods:tools
 				amount = 250
@@ -319,7 +312,7 @@ MnT_credit_yearly_interest = {
 	}
 }
 
-# One global monthly sequence; no yearly or per-country building aggregation.
+# Refresh Credit demand before the native market tick, then apply its economic effects.
 MnT_credit_monthly_loan_demand = {
 	on_actions = {
 		# Match the other monthly demand aggregators, then wait for a native tick.
@@ -336,6 +329,7 @@ MnT_credit_monthly_prepare = {
 			limit = { great_power_ranking = 1 }
 			trigger_event_silently = { id = credit_dynamic_buildings.1 }
 		}
+		mnt_refresh_burgher_trade_credit_demand = yes
 		mnt_aggregate_credit_loan_demand_world = yes
 		every_country = {
 			limit = { is_human = yes has_global_variable = mnt_credit_debug }
@@ -346,7 +340,10 @@ MnT_credit_monthly_prepare = {
 }
 
 MnT_credit_monthly_finish = {
-	effect = { mnt_refresh_credit_interest_world = yes }
+	effect = {
+		mnt_refresh_burgher_trade_capacity_from_credit = yes
+		mnt_refresh_credit_interest_world = yes
+	}
 }
 
 # Only human players need synchronous quotes between loans while paused.

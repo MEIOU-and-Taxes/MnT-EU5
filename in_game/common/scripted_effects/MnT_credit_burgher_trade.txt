@@ -1,0 +1,165 @@
+﻿# Reserve one Credit per 1,000 Burgher Trade Capacity in each market.
+# The scripting API exposes the rate and population, but not burgher cargo turnover.
+mnt_refresh_burgher_trade_credit_demand = {
+	every_market_in_world = {
+		set_local_variable = { name = mnt_credit_trade_financing value = 0 }
+		every_location_in_market = {
+			limit = { num_pop_type:burghers > 0 }
+			change_local_variable = {
+				name = mnt_credit_trade_financing
+				add = {
+					value = { value = mnt_credit_burgher_trade_rate min = 0 }
+					multiply = num_pop_type:burghers
+				}
+			}
+		}
+		change_local_variable = { name = mnt_credit_trade_financing multiply = 0.001 }
+		location = {
+			set_variable = {
+				name = mnt_credit_burgher_trade_demand_applied
+				value = local_var:mnt_credit_trade_financing
+			}
+		}
+
+		if = {
+			limit = { local_var:mnt_credit_trade_financing > 0 }
+			if = {
+				limit = { has_temporary_demand = demand:mnt_credit_merchant_trade_demand1 }
+				remove_temporary_demand = demand:mnt_credit_merchant_trade_demand1
+				add_temporary_demand = {
+					type = demand:mnt_credit_merchant_trade_demand2
+					months = -1
+					scale = local_var:mnt_credit_trade_financing
+				}
+			}
+			else = {
+				remove_temporary_demand = demand:mnt_credit_merchant_trade_demand2
+				add_temporary_demand = {
+					type = demand:mnt_credit_merchant_trade_demand1
+					months = -1
+					scale = local_var:mnt_credit_trade_financing
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_temporary_demand = demand:mnt_credit_merchant_trade_demand1
+					has_temporary_demand = demand:mnt_credit_merchant_trade_demand2
+				}
+			}
+			remove_temporary_demand = demand:mnt_credit_merchant_trade_demand1
+			remove_temporary_demand = demand:mnt_credit_merchant_trade_demand2
+		}
+	}
+}
+
+# Credit has a base price of 1. Price impacts are offsets from that base.
+mnt_refresh_burgher_trade_capacity_from_credit = {
+	every_market_in_world = {
+		save_temporary_scope_as = mnt_credit_burgher_market
+		set_local_variable = { name = mnt_credit_burgher_price value = "goods:credit.price_in_market(scope:mnt_credit_burgher_market)" }
+		set_local_variable = { name = mnt_credit_burgher_capacity_adjustment value = 0 }
+
+		if = {
+			limit = {
+				local_var:mnt_credit_burgher_price > 0
+				local_var:mnt_credit_burgher_price < 1
+			}
+			set_local_variable = {
+				name = mnt_credit_burgher_discount_fraction
+				value = {
+					value = 1
+					subtract = local_var:mnt_credit_burgher_price
+					divide = {
+						value = "define:NMarket|MIN_PRICE_IMPACT"
+						multiply = -1
+						min = 0.01
+					}
+					max = 1
+				}
+			}
+			# Square the discount fraction so the largest bonuses occur near the price floor.
+			set_local_variable = {
+				name = mnt_credit_burgher_capacity_adjustment
+				value = {
+					value = local_var:mnt_credit_burgher_discount_fraction
+					multiply = local_var:mnt_credit_burgher_discount_fraction
+					multiply = 3
+				}
+			}
+		}
+		else_if = {
+			limit = { local_var:mnt_credit_burgher_price > 1 }
+			set_local_variable = {
+				name = mnt_credit_burgher_capacity_adjustment
+				value = {
+					value = 1
+					subtract = local_var:mnt_credit_burgher_price
+					divide = { value = "define:NMarket|MAX_PRICE_IMPACT" min = 0.01 }
+					multiply = 0.7
+					min = -0.7
+				}
+			}
+		}
+
+		every_location_in_market = {
+			limit = {
+				OR = {
+					num_pop_type:burghers > 0
+					has_location_modifier = mnt_credit_burgher_trade_capacity
+					has_location_modifier = mnt_credit_merchant_capacity
+				}
+			}
+			# Existing saves can still have the previous country-trade modifier.
+			if = {
+				limit = { has_location_modifier = mnt_credit_merchant_capacity }
+				remove_location_modifier = mnt_credit_merchant_capacity
+			}
+
+			set_local_variable = { name = mnt_credit_burgher_capacity_size value = 0 }
+			if = {
+				limit = {
+					num_pop_type:burghers > 0
+					local_var:mnt_credit_burgher_capacity_adjustment != 0
+				}
+				set_local_variable = {
+					name = mnt_credit_burgher_capacity_size
+					value = {
+						value = {
+							value = mnt_credit_burgher_trade_rate
+							# Recover the baseline before applying this month's price adjustment.
+							if = {
+								limit = {
+									has_location_modifier = mnt_credit_burgher_trade_capacity
+									has_variable = mnt_credit_burgher_capacity_applied
+								}
+								subtract = var:mnt_credit_burgher_capacity_applied
+							}
+							min = 0
+						}
+						multiply = local_var:mnt_credit_burgher_capacity_adjustment
+					}
+				}
+			}
+			if = {
+				limit = { local_var:mnt_credit_burgher_capacity_size != 0 }
+				add_location_modifier = {
+					modifier = mnt_credit_burgher_trade_capacity
+					months = 2
+					mode = replace
+					size = local_var:mnt_credit_burgher_capacity_size
+				}
+				set_variable = {
+					name = mnt_credit_burgher_capacity_applied
+					value = local_var:mnt_credit_burgher_capacity_size
+				}
+			}
+			else_if = {
+				limit = { has_location_modifier = mnt_credit_burgher_trade_capacity }
+				remove_location_modifier = mnt_credit_burgher_trade_capacity
+				remove_variable = mnt_credit_burgher_capacity_applied
+			}
+		}
+	}
+}
