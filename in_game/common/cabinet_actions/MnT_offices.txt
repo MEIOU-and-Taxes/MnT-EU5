@@ -1,0 +1,347 @@
+﻿# Centers of Importance - Offices of Manufactories
+#
+# Two cabinet actions:
+#   appoint_inspector_of_manufactures  (Renaissance)  -> Office building, +10%
+#   elevate_office_of_manufactories    (Reformation)  -> Board building, +20%
+#
+# Tier 1 can be established in any production centre (local or above). Tier 2 can only be
+# established where the centre has been promoted to regional or above. A city holds one
+# office (tier 1 or its board), never both. Several cities may hold offices over a campaign,
+# but only one appointment runs at a time.
+#
+# The industry is taken from the location's mnt_top_good, written by the yearly centres pass.
+
+appoint_inspector_of_manufactures = {
+	ability = adm
+	allow_multiple = no
+	helps_with = "location"
+	icon = develop_province
+
+	potential = {
+		current_age_or_later = { age = age_2_renaissance }
+		num_locations > 0
+		any_owned_location = {
+			OR = {
+				has_location_modifier = mnt_center_production_local
+				has_location_modifier = mnt_center_production_regional
+				has_location_modifier = mnt_center_production_continental
+				has_location_modifier = mnt_center_production_world
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = location
+		source = actor
+		target_flag = target
+		name = "appoint_inspector_select_location"
+		none_available_msg_key = "appoint_inspector_no_locations"
+		column = {
+			data = name
+		}
+		column = {
+			data = development
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			is_city = yes
+			OR = {
+				has_location_modifier = mnt_center_production_local
+				has_location_modifier = mnt_center_production_regional
+				has_location_modifier = mnt_center_production_continental
+				has_location_modifier = mnt_center_production_world
+			}
+			NOT = {
+				OR = {
+					has_building = building_type:mnt_office_textile
+					has_building = building_type:mnt_office_ceramics
+					has_building = building_type:mnt_office_metalwork
+					has_building = building_type:mnt_office_naval
+					has_building = building_type:mnt_office_learning
+					has_building = building_type:mnt_office_luxury
+					has_building = building_type:mnt_office_sundries
+					has_building = building_type:mnt_office_textile_board
+					has_building = building_type:mnt_office_ceramics_board
+					has_building = building_type:mnt_office_metalwork_board
+					has_building = building_type:mnt_office_naval_board
+					has_building = building_type:mnt_office_learning_board
+					has_building = building_type:mnt_office_luxury_board
+					has_building = building_type:mnt_office_sundries_board
+					has_building = building_type:mnt_office_ceramics_board
+					has_building = building_type:mnt_office_metalwork_board
+					has_building = building_type:mnt_office_naval_board
+					has_building = building_type:mnt_office_learning_board
+					has_building = building_type:mnt_office_luxury_board
+					has_building = building_type:mnt_office_sundries_board
+				}
+			}
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = appoint_inspector_of_manufactures interaction_target = target } }
+		}
+		map_color = define:NMapColors|MAP_COLOR_HIGH
+	}
+
+	location_modifier = {
+		local_production_efficiency = small_production_efficiency_bonus
+	}
+
+	years = 5
+
+	is_finished = {
+		cabinet_action:appoint_inspector_of_manufactures = {
+			is_fully_implemented_in = root
+		}
+	}
+
+	progress = {
+		cabinet_action:appoint_inspector_of_manufactures = {
+			value = "implementation_progress_percentage(scope:actor)"
+		}
+	}
+
+	on_fully_activated = {
+		# Everything happens on the target location; scope:actor is still reachable inside.
+		scope:target = {
+			# The leading industry comes from the goods-value caches, so no market lookups run here.
+			calc_top_industry_location = yes
+			set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 }
+			if = {
+				limit = {
+					OR = {
+						var:mnt_top_good = 1
+						var:mnt_top_good = 2
+					}
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_textile value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						var:mnt_top_good = 4
+						var:mnt_top_good = 9
+						var:mnt_top_good = 10
+					}
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_ceramics value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						var:mnt_top_good = 11
+						var:mnt_top_good = 13
+						var:mnt_top_good = 14
+						var:mnt_top_good = 15
+					}
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_metalwork value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = {
+					var:mnt_top_good = 7
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_naval value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						var:mnt_top_good = 8
+						var:mnt_top_good = 12
+					}
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_learning value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						var:mnt_top_good = 3
+						var:mnt_top_good = 5
+						var:mnt_top_good = 6
+					}
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_luxury value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						var:mnt_top_good = 16
+						var:mnt_top_good = 17
+					}
+				}
+				change_building_level_in_location = { building = building_type:mnt_office_sundries value = 1 owner = scope:actor }
+			}
+			remove_variable = mnt_top_good
+			remove_variable = mnt_top_good_value
+		}
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+
+	ai_will_do = {
+		# MAGIC NUMBERS: uncalibrated, may need revision after an observer game.
+		# Base 0 keeps the engine's need logic in charge; the bonuses only break ties.
+		value = 0
+
+		scope:actor = {
+			# A single chartered city is proportionally huge for a small realm.
+			if = {
+				limit = { num_locations <= 3 }
+				add = 30
+			}
+
+			if = {
+				limit = { at_war = no }
+				add = 10
+			}
+		}
+	}
+}
+
+elevate_office_of_manufactories = {
+	ability = adm
+	allow_multiple = no
+	helps_with = "location"
+	icon = reduced_paperwork
+
+	potential = {
+		current_age_or_later = { age = age_4_reformation }
+		num_locations > 0
+		any_owned_location = {
+			OR = {
+				has_location_modifier = mnt_center_production_regional
+				has_location_modifier = mnt_center_production_continental
+				has_location_modifier = mnt_center_production_world
+			}
+			OR = {
+				has_building = building_type:mnt_office_textile
+				has_building = building_type:mnt_office_ceramics
+				has_building = building_type:mnt_office_metalwork
+				has_building = building_type:mnt_office_naval
+				has_building = building_type:mnt_office_learning
+				has_building = building_type:mnt_office_luxury
+				has_building = building_type:mnt_office_sundries
+			}
+		}
+	}
+
+	select_trigger = {
+		looking_for_a = location
+		source = actor
+		target_flag = target
+		name = "elevate_office_select_location"
+		none_available_msg_key = "elevate_office_no_locations"
+		column = {
+			data = name
+		}
+		column = {
+			data = development
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			is_city = yes
+			OR = {
+				has_location_modifier = mnt_center_production_regional
+				has_location_modifier = mnt_center_production_continental
+				has_location_modifier = mnt_center_production_world
+			}
+			OR = {
+				has_building = building_type:mnt_office_textile
+				has_building = building_type:mnt_office_ceramics
+				has_building = building_type:mnt_office_metalwork
+				has_building = building_type:mnt_office_naval
+				has_building = building_type:mnt_office_learning
+				has_building = building_type:mnt_office_luxury
+				has_building = building_type:mnt_office_sundries
+			}
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = elevate_office_of_manufactories interaction_target = target } }
+		}
+		map_color = define:NMapColors|MAP_COLOR_HIGH
+	}
+
+	location_modifier = {
+		local_production_efficiency = small_production_efficiency_bonus
+	}
+
+	years = 5
+
+	is_finished = {
+		cabinet_action:elevate_office_of_manufactories = {
+			is_fully_implemented_in = root
+		}
+	}
+
+	progress = {
+		cabinet_action:elevate_office_of_manufactories = {
+			value = "implementation_progress_percentage(scope:actor)"
+		}
+	}
+
+	on_fully_activated = {
+		# Everything happens on the target location; scope:actor is still reachable inside.
+		scope:target = {
+			set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 }
+			if = {
+				limit = { has_building = building_type:mnt_office_textile }
+				change_building_level_in_location = { building = building_type:mnt_office_textile value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_textile_board value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = { has_building = building_type:mnt_office_ceramics }
+				change_building_level_in_location = { building = building_type:mnt_office_ceramics value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_ceramics_board value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = { has_building = building_type:mnt_office_metalwork }
+				change_building_level_in_location = { building = building_type:mnt_office_metalwork value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_metalwork_board value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = { has_building = building_type:mnt_office_naval }
+				change_building_level_in_location = { building = building_type:mnt_office_naval value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_naval_board value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = { has_building = building_type:mnt_office_learning }
+				change_building_level_in_location = { building = building_type:mnt_office_learning value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_learning_board value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = { has_building = building_type:mnt_office_luxury }
+				change_building_level_in_location = { building = building_type:mnt_office_luxury value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_luxury_board value = 1 owner = scope:actor }
+			}
+			else_if = {
+				limit = { has_building = building_type:mnt_office_sundries }
+				change_building_level_in_location = { building = building_type:mnt_office_sundries value = -1 }
+				change_building_level_in_location = { building = building_type:mnt_office_sundries_board value = 1 owner = scope:actor }
+			}
+		}
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+
+	ai_will_do = {
+		# MAGIC NUMBERS: uncalibrated, may need revision after an observer game.
+		# Base 0 keeps the engine's need logic in charge; the bonuses only break ties.
+		value = 0
+
+		scope:actor = {
+			# A single chartered city is proportionally huge for a small realm.
+			if = {
+				limit = { num_locations <= 3 }
+				add = 30
+			}
+
+			if = {
+				limit = { at_war = no }
+				add = 10
+			}
+		}
+	}
+}

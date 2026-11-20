@@ -1,0 +1,52 @@
+﻿# Centers of Importance - Oversee Construction
+#
+# A standing province assignment. Speed only, no cost reduction: the seat compresses time,
+# not the treasury. Also covers RGO upgrades and roads, so it doubles as an infrastructure
+# action for tall play.
+
+oversee_construction = {
+	ability = adm
+	allow_multiple = yes
+	helps_with = "location"
+	icon = soldiers_as_workforce
+
+	potential = {
+		num_locations > 0
+	}
+
+	select_trigger = {
+		looking_for_a = province
+		source = actor
+		target_flag = target
+		name = "oversee_construction_select_province"
+		none_available_msg_key = "oversee_construction_no_provinces"
+		column = {
+			data = name
+		}
+		column = {
+			data = development
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			any_location_in_province = {
+				is_city = yes
+			}
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = oversee_construction interaction_target = target } }
+		}
+		map_color = define:NMapColors|MAP_COLOR_HIGH
+	}
+
+	location_modifier = {
+		local_construction_speed = 0.35
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+
+	ai_will_do = {
+		value = 5
+	}
+}

@@ -1,0 +1,66 @@
+﻿namespace = mnt_offices
+
+# Fired three years after a city with an office lost its production centre, and only if it
+# has not regained one by then. The crown can keep the office alive with a large subvention
+# or let it dissolve.
+mnt_offices.1 = {
+	type = location_event
+	outcome = neutral
+	immediate = { save_scope_as = mnt_office_location }
+	title = mnt_offices.1.title
+	desc = mnt_offices.1.desc
+
+	trigger = {
+		NOT = {
+			OR = {
+				has_location_modifier = mnt_center_production_local
+				has_location_modifier = mnt_center_production_regional
+				has_location_modifier = mnt_center_production_continental
+				has_location_modifier = mnt_center_production_world
+			}
+		}
+		OR = {
+			has_building = building_type:mnt_office_textile
+			has_building = building_type:mnt_office_ceramics
+			has_building = building_type:mnt_office_metalwork
+			has_building = building_type:mnt_office_naval
+			has_building = building_type:mnt_office_learning
+			has_building = building_type:mnt_office_luxury
+			has_building = building_type:mnt_office_sundries
+			has_building = building_type:mnt_office_textile_board
+			has_building = building_type:mnt_office_ceramics_board
+			has_building = building_type:mnt_office_metalwork_board
+			has_building = building_type:mnt_office_naval_board
+			has_building = building_type:mnt_office_learning_board
+			has_building = building_type:mnt_office_luxury_board
+			has_building = building_type:mnt_office_sundries_board
+		}
+	}
+
+	option = {
+		name = mnt_offices.1.a
+		trigger = {
+			owner = { gold >= mnt_office_subvention }
+		}
+		owner = {
+			add_gold = { value = mnt_office_subvention multiply = -1 }
+		}
+		set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 }
+		ai_chance = {
+			base = 0
+			modifier = {
+				add = 100
+				owner = { gold >= { value = mnt_office_subvention multiply = 2 } }
+			}
+		}
+	}
+
+	option = {
+		name = mnt_offices.1.b
+		mnt_dissolve_office = yes
+		set_variable = { name = mnt_office_inquiry_cooldown value = 1 years = 10 }
+		ai_chance = {
+			base = 50
+		}
+	}
+}
