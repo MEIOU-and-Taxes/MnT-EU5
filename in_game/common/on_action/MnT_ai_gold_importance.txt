@@ -1,0 +1,33 @@
+﻿# Pulses for AI gold importance. The world average updates yearly, the AI multiplier monthly.
+
+MnT_avg_tax_base_per_location_on_game_start = {
+	effect = {
+		# change_global_variable fails on a variable that does not exist yet.
+		set_global_variable = { name = MnT_world_tax_base_this_year value = 0 }
+		set_global_variable = { name = MnT_world_locations_this_year value = 0 }
+		every_country = { MnT_add_to_world_tax_base = yes }
+		MnT_update_avg_tax_base_per_location = yes
+	}
+}
+
+MnT_add_to_world_tax_base_yearly = {
+	effect = { MnT_add_to_world_tax_base = yes }
+}
+
+# Runs in the weather pulse every January, after every country added its yearly share.
+MnT_avg_tax_base_per_location_yearly = {
+	trigger = { current_month = 1 }
+	effect = { MnT_update_avg_tax_base_per_location = yes }
+}
+
+MnT_ai_gold_importance_monthly = {
+	trigger = {
+		is_ai = yes
+		OR = {
+			num_locations > 0
+			country_tax_base > 0
+		}
+		global_var:MnT_avg_tax_base_per_location > 0 # The thresholds are 0 until the average has data, and treasury would divide by 0
+	}
+	effect = { MnT_ai_gold_importance_update = yes }
+}
