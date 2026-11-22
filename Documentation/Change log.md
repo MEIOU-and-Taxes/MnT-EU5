@@ -8,6 +8,12 @@
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
 - Buildings that only boost the output of goods in their location, without producing anything themselves, are now Infrastructure buildings: mercury patios, smelters, windmills, sawmills and the special buildings doing the same. They are no longer left unstaffed by employment systems that staff the most profitable buildings first, and they moved out of other building categories, which also affects the categories' triggers.
 
+#### AI
+- AI gold importance now tracks each country's finances. Countries with a low income or a small treasury value gold more, save, and favor buildings that pay back well. Rich countries value gold less and spend on infrastructure such as bridges, libraries and universities. Income and treasury are measured against the world average tax base, scaled to the country's size.
+- The AI builds more iron, coal and lumber production and more tools production, which were short across the world and held back construction.
+- The AI now compares building costs to 10 years of tax base instead of 1, so it no longer rejects buildings as too expensive eeven when it has the money to build them.
+- The AI builds production for missing goods inputs at a minimum of 5% profit instead of 20%.
+
 ### Initial test-release v0.1
 
 Date: 21/05/2026 
@@ -741,3 +747,12 @@ Date: 21/05/2026
 
 ### Features
 - Split Transhumant Wool Pasture into tribal livelihood buildings with different production methods based on local climate and terrain.
+
+##### 0.2.14
+
+### Compatibility
+- 1.4.9 compatibility
+- Fixed urban rights impact on marketplace caps
+
+### Fixes
+- Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
