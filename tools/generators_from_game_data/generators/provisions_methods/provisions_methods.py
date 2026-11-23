@@ -48,8 +48,10 @@ SCRIPT_VALUE_FOLDERS = ["main_menu/common/script_values", "in_game/common/script
 PROVISIONS = "provisions"
 # A recipe entry with no input good: food the method makes from nothing, such as milk
 MILK = "milk"
-GENERAL_SETTINGS = ("food_per_unit", "milk_food", "efficiency", "min_profit", "max_profit", "round_food_inputs", "round_percent_inputs", "fixed")
-BUILDING_SETTINGS = ("efficiency",)
+GENERAL_SETTINGS = ("food_per_unit", "milk_food", "efficiency", "min_profit", "max_profit", "round_food_inputs", "round_percent_inputs", "fixed",
+                    "spare_labor_output")
+SPARE_LABOR = "spare_labor"
+BUILDING_SETTINGS = ("efficiency", SPARE_LABOR)
 METHOD_SETTINGS = ("food_out", "recipe", "recipe_fixed", "other", "other_percent", "efficiency", "min_profit", "max_profit", "fixed")
 MAX_PROFIT_LINE = "debug_max_profit"
 # Written on the first line of every method the script manages
@@ -79,11 +81,15 @@ SETTINGS_HEADER = """\
 #     round_food_inputs  Optional, 5 when left out. Decimals the food input amounts round to.
 #                     With fewer decimals the input food can be a little off the output food.
 #     round_percent_inputs  Optional, 5 when left out. Decimals the other_percent amounts round to.
+#     spare_labor_output  Output of every spare_labor method. Needed when a building sets spare_labor.
 #     fixed           Optional, output when left out. Which side stays when food values change:
 #                     output keeps food_out and works out the inputs, inputs keeps the inputs and works
 #                     out food_out. A method can set its own.
 # A section named like a building sets that building's methods:
 #     efficiency      Food conversion efficiency for the building's methods that do not set their own.
+#     spare_labor     Optional. A method name, like wheat_no_provisions. The script writes that method into the
+#                     provisions slot: the building's own good with no inputs, at spare_labor_output from
+#                     [general]. It adds the method when it is missing.
 # One section per method, named like the method:
 #     food_out        Food the method makes per building level. 10 food is 1 provisions.
 #     recipe          Each good's percent of the input food. The total must be 100.
@@ -201,7 +207,7 @@ def read_game():
                            if key in goods and isinstance(value, str) and re.fullmatch(r"[0-9.]+", value)}
         entry["output"] = float(get(entry["block"], "output") or 0)
         entry["max_profit"] = get(entry["block"], MAX_PROFIT_LINE)
-    return set(goods), set(buildings), prices, food_per_provisions, methods
+    return set(goods), buildings, prices, food_per_provisions, methods
 
 
 def read_script_values():
@@ -590,7 +596,7 @@ def report(prices, food_per_provisions, methods, food_per_unit, settings, script
         print(warning(f"{press('Apply', '--apply')} to write {methods_text(len(to_change))}"))
     if not not_in_settings and not to_change:
         print(method_name("all methods match"))
-    return to_change
+    return to_change, results
 
 
 def method_line(result, width, food_per_unit):
@@ -668,7 +674,7 @@ def details(result):
 
 # ------------------------------------------------------------------ apply
 
-def apply(results, goods, food_per_unit, into=None):
+def apply(results, goods, food_per_unit, into=None, spare=()):
     """Works out every file's new text first, so a problem stops the run before anything is written."""
     texts = {}
     for result in results:
@@ -680,9 +686,111 @@ def apply(results, goods, food_per_unit, into=None):
             raise Problem(f"{result['name']} is no longer defined once in {path.name}. Nothing was written.")
         start, end = spans[0]
         texts[path] = texts[path][:start] + rewrite(texts[path][start:end], result, goods, food_per_unit) + texts[path][end:]
+    # After the provisions methods, so an added spare labor method goes after their new text
+    for plan in spare:
+        path = plan["path"]
+        if path not in texts:
+            texts[path] = path.read_text(encoding="utf-8-sig")
+        text = texts[path]
+        if plan["old_output"] is None:
+            spans = block_span(text, plan["after"])
+            if len(spans) != 1:
+                raise Problem(f"{plan['after']} is no longer defined once in {path.name}. Nothing was written.")
+            start = end = spans[0][1]
+            indent = re.match(r"[ \t]*", text[spans[0][0]:]).group(0)
+            block = "\n\n" + spare_block(plan, indent)
+        else:
+            spans = block_span(text, plan["name"])
+            if len(spans) != 1:
+                raise Problem(f"{plan['name']} is no longer defined once in {path.name}. Nothing was written.")
+            start, end = spans[0]
+            block = spare_block(plan, re.match(r"[ \t]*", text[start:]).group(0))
+        texts[path] = text[:start] + block + text[end:]
+    names = [result["name"] for result in results] + [plan["name"] for plan in spare]
     contents = {path: ("﻿" + text).encode("utf-8") for path, text in texts.items()}
-    folder = write_with_backup(contents, "apply", [result["name"] for result in results], into)
-    print(method_name(f"wrote {methods_text(len(results))} in {files_text(len(texts))}") + quiet(f"   backup {folder.name}"))
+    folder = write_with_backup(contents, "apply", names, into)
+    print(method_name(f"wrote {methods_text(len(names))} in {files_text(len(texts))}") + quiet(f"   backup {folder.name}"))
+
+
+def spare_block(plan, indent):
+    return "\n".join([
+        f"{indent}{plan['name']} = {{ {NOTE}",
+        f"{indent}\t# Extra harvest with no inputs, so the AI margin check on the last slot always passes.",
+        f"{indent}\tproduced = {plan['good']}",
+        f"{indent}\toutput = {number(plan['output'])}",
+        f"{indent}\tcategory = building_maintenance",
+        f"{indent}}}"])
+
+
+# ------------------------------------------------------------------ spare labor
+
+def primary_good(block, goods):
+    """The good of the building's first method slot."""
+    for key, _, value in block:
+        if key in ("unique_production_methods", "possible_production_methods") and isinstance(value, list):
+            for _, _, method in value:
+                good = get(method, "produced") if isinstance(method, list) else None
+                if good in goods and good != PROVISIONS:
+                    return good
+            return None
+    return None
+
+
+def spare_labor(buildings, goods, prices, results):
+    """Reports each spare_labor method and returns the ones Apply writes."""
+    wanted = {}
+    for name, section in read_settings_file(SETTINGS_FILE).items():
+        method = section.get(SPARE_LABOR, "").strip()
+        if method and method.lower() != "none":
+            if not re.fullmatch(r"\w+", method):
+                raise Problem(f'In [{name}], spare_labor must be a method name, but it is "{method}".')
+            wanted[name] = method
+    if not wanted:
+        return []
+    general = next(section for name, section in read_settings_file(SETTINGS_FILE).items() if name.lower() == "general")
+    spare_output = read_number("general", "spare_labor_output", general.get("spare_labor_output", ""), above_zero=True)
+    if spare_output is None:
+        raise Problem("A building sets spare_labor, so [general] needs spare_labor_output.")
+    places = locate(list(wanted.values()))
+    plans = []
+    print()
+    print(title("spare labor"))
+    for building, name in wanted.items():
+        good = primary_good(buildings[building][0], goods)
+        if not prices.get(good):
+            raise Problem(f"[{building}] sets spare_labor, but its first method slot makes no good with a price.")
+        output = spare_output
+        plan = {"name": name, "good": good, "output": output, "old_output": None}
+        found = places[name]
+        if len(found) > 1:
+            raise Problem(f"{name} is defined {len(found)} times. Remove the copies first.")
+        if found:
+            path, start, _ = found[0]
+            text = path.read_text(encoding="utf-8-sig")
+            end = next(span_end for span_start, span_end in block_span(text, name) if span_start == start)
+            old = text[start:end]
+            match = re.search(r"(?m)^[ \t]*output\s*=\s*([0-9.]+)", old)
+            plan["old_output"] = float(match.group(1)) if match else 0.0
+            plan["path"] = path
+            changed = (differs(plan["old_output"], output) or re.search(r"(?m)^[ \t]*produced\s*=\s*" + good + r"\b", old) is None
+                       or NOTE not in old)
+        else:
+            anchors = [result for result in results if building in result["owners"] and len(result["places"]) == 1]
+            if not anchors:
+                raise Problem(f"[{building}] sets spare_labor, but none of its provisions methods is in the mod files.")
+            path = anchors[0]["places"][0][0]
+            last = max((result["places"][0][1], result["name"]) for result in anchors if result["places"][0][0] == path)
+            plan["path"], plan["after"] = path, last[1]
+            changed = True
+        line = f"{pad(building_name(building), 28)} {pad(method_name(name), 26)} {good} {number(output)}"
+        if not changed:
+            print(line)
+            continue
+        print(line + "  " + warning("+ new method" if plan["old_output"] is None else f"output {number(plan['old_output'])} → {number(output)}"))
+        plans.append(plan)
+    print()
+    print(warning(f"{press('Apply', '--apply')} to write {methods_text(len(plans))}") if plans else method_name("all spare labor methods match"))
+    return plans
 
 
 def rewrite(block, result, goods, food_per_unit):
@@ -950,10 +1058,11 @@ def main():
     if not SETTINGS_FILE.exists():
         raise Problem("There is no settings file yet. Run with --import to make it from today's methods.")
     food_per_unit, settings = read_settings(goods, building_names, methods, script_values)
-    to_change = report(prices, food_per_provisions, methods, food_per_unit, settings, script_values)
-    if arguments.apply and to_change:
+    to_change, results = report(prices, food_per_provisions, methods, food_per_unit, settings, script_values)
+    spare = spare_labor(building_names, goods, prices, results)
+    if arguments.apply and (to_change or spare):
         print()
-        apply(to_change, goods, food_per_unit, arguments.into_backup)
+        apply(to_change, goods, food_per_unit, arguments.into_backup, spare)
 
 
 if __name__ == "__main__":

@@ -13,8 +13,12 @@
 #     efficiency      Food conversion efficiency. Optional, 100 when left out. Percent of the input food
 #                     that becomes output food.
 #     min_profit      Optional. The min_profit for every method that does not set its own.
+#     spare_labor_output  Output of every spare_labor method. Needed when a building sets spare_labor.
 # A section named like a building sets that building's methods:
 #     efficiency      Food conversion efficiency for the building's methods that do not set their own.
+#     spare_labor     Optional. A method name, like PM_RGO_wheat_spare_labor. The script writes that method into the
+#                     provisions slot: the building's own good with no inputs, at spare_labor_output from
+#                     [general]. It adds the method when it is missing.
 # One section per method, named like the method:
 #     food_out        Food the method makes per building level. 10 food is 1 provisions.
 #     recipe          Each good's percent of the input food. The total must be 100.
@@ -45,15 +49,16 @@ food_per_unit = {
 milk_food = { "camels": 2, "horses": 2, "livestock": 5, "wool": 5 }
 round_food_inputs = 2
 fixed = inputs
+spare_labor_output = 0.15
 
 
 # RGO_building_camels (in_game/common/building_types/RGO_buildings.txt)
-[camels_provisions_milking]
+[PM_RGO_camels_provisions_milking]
 food_out = 1
 recipe = { "milk_camels": 1 }
 fixed = inputs
 
-[camels_provisions_slaughter]
+[PM_RGO_camels_provisions_slaughter]
 food_out = 2.2
 recipe = { "camels": 0.2, "milk_camels": 0.8 }
 other = { "salt": 0.004 }
@@ -61,42 +66,40 @@ fixed = inputs
 
 
 # RGO_building_fish (in_game/common/building_types/RGO_buildings.txt)
-[fish_provisions_salted]
+[RGO_building_fish]
+spare_labor = PM_RGO_fish_spare_labor
+
+[PM_RGO_fish_provisions_salted]
 food_out = 2.4
 recipe = { "fish": 0.2 }
 other = { "salt": 0.004 }
 fixed = inputs
 
-[fish_provisions_smoked]
+[PM_RGO_fish_provisions_smoked]
 food_out = 2.4
 recipe = { "fish": 0.2 }
 other = { "lumber": 0.02 }
 fixed = inputs
 
 
-# RGO_building_fruit (in_game/common/building_types/RGO_buildings.txt)
-[fruit_provisions]
-food_out = 1
-recipe = { "fruit": 0.2 }
-max_profit = rural_profit_margin
-fixed = inputs
-
-
 # RGO_building_legumes (in_game/common/building_types/RGO_buildings.txt)
-[legumes_provisions]
+[RGO_building_legumes]
+spare_labor = PM_RGO_legumes_spare_labor
+
+[PM_RGO_legumes_provisions]
 food_out = 2
 recipe = { "legumes": 0.2 }
 fixed = inputs
 
 
 # RGO_building_livestock (in_game/common/building_types/RGO_buildings.txt)
-[livestock_provisions_salted]
+[PM_RGO_livestock_provisions_salted]
 food_out = 2.2
 recipe = { "livestock": 0.2, "milk_livestock": 0.8 }
 other = { "salt": 0.004 }
 fixed = inputs
 
-[livestock_provisions_smoked]
+[PM_RGO_livestock_provisions_smoked]
 efficiency = 100
 food_out = 1.98
 recipe = { "livestock": 0.2, "milk_livestock": 0.8 }
@@ -104,37 +107,35 @@ other = { "lumber": 0.02 }
 fixed = inputs
 
 
-# RGO_building_olives (in_game/common/building_types/RGO_buildings.txt)
-[olives_provisions]
-food_out = 0.8
-recipe = { "olives": 0.2 }
-max_profit = rural_profit_margin
-fixed = inputs
-
-
 # RGO_building_wheat (in_game/common/building_types/RGO_buildings.txt)
-[wheat_provisions]
+[RGO_building_wheat]
+spare_labor = PM_RGO_wheat_spare_labor
+
+[PM_RGO_wheat_provisions]
 food_out = 2.8
 recipe = { "wheat": 0.2 }
 fixed = inputs
 
 
 # RGO_building_wild_game (in_game/common/building_types/RGO_buildings.txt)
-[wild_game_provisions]
+[RGO_building_wild_game]
+spare_labor = PM_RGO_wild_game_spare_labor
+
+[PM_RGO_wild_game_provisions]
 food_out = 1.8
 recipe = { "wild_game": 0.2 }
 fixed = inputs
 
 
 # RGO_building_wool (in_game/common/building_types/RGO_buildings.txt)
-[wool_provisions_salted]
+[PM_RGO_wool_provisions_salted]
 food_out = 2.2
 recipe = { "wool": 0.2, "milk_wool": 0.8 }
 other = { "salt": 0.004 }
 max_profit = None
 fixed = inputs
 
-[wool_provisions_smoked]
+[PM_RGO_wool_provisions_smoked]
 efficiency = 100
 food_out = 1.98
 recipe = { "wool": 0.2, "milk_wool": 0.8 }
@@ -276,12 +277,12 @@ recipe = { "wild_game": 100 }
 fixed = output
 
 
-[livestock_provisions_milking]
+[PM_RGO_livestock_provisions_milking]
 food_out = 0
 recipe = { "milk_livestock": 1 }
 
 
-[wool_provisions_milking]
+[PM_RGO_wool_provisions_milking]
 food_out = 0
 recipe = { "milk_wool": 1 }
 
