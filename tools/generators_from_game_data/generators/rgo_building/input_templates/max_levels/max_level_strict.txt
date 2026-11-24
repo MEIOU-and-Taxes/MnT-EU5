@@ -1,17 +1,39 @@
 rgo_$GOOD$_max_level = {
 	if = {
 		limit = { has_owner = yes }
-		add = { desc = "MNT_RGO_BASE_IDEAL_$GOOD_UPPER$"
-			value = modifier:mnt_rgo_$METHOD$_size
-			add = modifier:mnt_rgo_$GOOD$_size
-			save_temporary_value_as = base_before_ideal
-			value = 1
-			add = modifier:local_raw_material_output
-			add = owner.modifier:global_raw_material_output
-			multiply = scope:base_before_ideal
+		add = {
+			desc = "MNT_RGO_BASE_IDEAL_$GOOD_UPPER$"
+			add = { desc = "MNT_RGO_SIZE_$METHOD_UPPER$" value = modifier:mnt_rgo_$METHOD$_size }
+			add = { desc = "MNT_RGO_SIZE_$GOOD_UPPER$" value = modifier:mnt_rgo_$GOOD$_size }
+			#Work out each amount first, so the tooltip shows it as one row instead of one row per step.
+			save_temporary_value_as = {
+				name = ideal_area_local_amount
+				value = {
+					value = modifier:mnt_rgo_$METHOD$_size
+					add = modifier:mnt_rgo_$GOOD$_size
+					multiply = modifier:local_raw_material_output
+				}
+			}
+			add = { desc = "MNT_IDEAL_AREA_LOCAL_SIZE_MODIFIER" value = scope:ideal_area_local_amount }
+			save_temporary_value_as = {
+				name = ideal_area_amount
+				value = {
+					value = modifier:mnt_rgo_$METHOD$_size
+					add = modifier:mnt_rgo_$GOOD$_size
+					multiply = owner.modifier:global_raw_material_output
+				}
+			}
+			add = { desc = "MNT_IDEAL_AREA_SIZE_MODIFIER" value = scope:ideal_area_amount }
 		}
 		save_temporary_value_as = base_value
-		add = mnt_rgo_size_modifiers
-		min = 1
+		if = {
+			limit = { mnt_rgo_size_modifiers != 0 }
+			add = mnt_rgo_size_modifiers
+		}
+		save_temporary_value_as = mnt_rgo_level
+		if = {
+			limit = { scope:mnt_rgo_level < 1 }
+			min = { desc = "MNT_RGO_MINIMUM_LEVEL" value = 1 }
+		}
 	}
 }

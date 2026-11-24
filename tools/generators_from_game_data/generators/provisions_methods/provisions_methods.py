@@ -52,7 +52,8 @@ GENERAL_SETTINGS = ("food_per_unit", "milk_food", "efficiency", "min_profit", "m
                     "spare_labor_output")
 SPARE_LABOR = "spare_labor"
 BUILDING_SETTINGS = ("efficiency", SPARE_LABOR)
-METHOD_SETTINGS = ("food_out", "recipe", "recipe_fixed", "other", "other_percent", "efficiency", "min_profit", "max_profit", "fixed")
+METHOD_SETTINGS = ("food_out", "recipe", "recipe_fixed", "other", "other_percent", "efficiency", "min_profit", "max_profit", "fixed",
+                   "round_food_inputs", "round_percent_inputs")
 MAX_PROFIT_LINE = "debug_max_profit"
 # Written on the first line of every method the script manages
 NOTE = "# generated: tools/generators_from_game_data/generators/provisions_methods"
@@ -102,6 +103,7 @@ SETTINGS_HEADER = """\
 #     min_profit      Optional. The report flags the method when its profit is lower.
 #     max_profit      Optional. The report flags the method when its profit is higher. The script writes it
 #                     into the method as debug_max_profit.
+#     round_food_inputs, round_percent_inputs  Optional. Override the [general] rounding for this method.
 # Profit is the percent of the output's value left after buying the inputs at base prices.
 # A profit is a percent (20 = 20%, -10 = -10%) or a script value name like rural_profit_margin.
 # A method you remove from this file is no longer managed; the report lists it as not in settings.
@@ -296,12 +298,13 @@ def read_efficiency(section, text):
     return None if value is None else value / 100
 
 
-def read_decimals(general, key):
-    """A rounding setting in [general]: 0 to 5 decimals, 5 when not set."""
+def read_decimals(general, key, section_name="general", default=5):
+    """A rounding setting: 0 to 5 decimals, the default when not set."""
     text = general.get(key, "").strip()
-    text = "5" if text.lower() in ("", "none") else text
+    if text.lower() in ("", "none"):
+        return default
     if not re.fullmatch(r"[0-5]", text):
-        raise Problem(f'In [general], {key} must be a whole number from 0 to 5, but it is "{text}".')
+        raise Problem(f'In [{section_name}], {key} must be a whole number from 0 to 5, but it is "{text}".')
     return int(text)
 
 
@@ -401,7 +404,9 @@ def read_settings(goods, building_names, methods, script_values):
             raise Problem(f"In [{name}], recipe_fixed holds {number(fixed_food)} food, more than the "
                           f"{number(food_out / efficiency)} input food. Lower the amounts or raise food_out.")
         settings[name] = {"fixed": fixed,"food_out": food_out, "recipe": recipe, "recipe_fixed": recipe_fixed, "other": other, "other_percent": other_percent,
-                          "efficiency": efficiency, "round_food": food_decimals, "round_percent": percent_decimals,
+                          "efficiency": efficiency,
+                          "round_food": read_decimals(section, "round_food_inputs", name, food_decimals),
+                          "round_percent": read_decimals(section, "round_percent_inputs", name, percent_decimals),
                           "min_profit": read_profit(name, "min_profit", section.get("min_profit"), script_values) or default_min_profit,
                           "max_profit": read_profit(name, "max_profit", section.get("max_profit"), script_values) or default_max_profit}
     return food_per_unit, settings

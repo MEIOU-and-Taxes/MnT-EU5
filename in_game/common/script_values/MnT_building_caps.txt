@@ -43,9 +43,28 @@ mnt_tribal_livelihood_cap = {
 	}
 	subtract = {
 		desc = "BUILDING_LEVEL_LAND"
-		value = num_pop_type:tribesmen
+		# Only settlers crowd out tribal land, so the tribal share of the population does not count
+		value = 1
+		subtract = modifier:tribal_building_max_level_multiplier
+		multiply = location_population_percentage
+		multiply = num_pop_type:tribesmen
+	}
+	min = 0
+}
+
+# Game start copy of mnt_tribal_livelihood_cap. The tribesmen count and the tribal share
+# are stale on the day mnt_tribes.2 changes pop types, so this counts the pops directly.
+mnt_tribal_livelihood_start_cap = {
+	value = 1
+	subtract = {
+		value = 1
+		subtract = {
+			value = mnt_count_tribesmen
+			divide = mnt_count_population
+		}
 		multiply = location_population_percentage
 	}
+	multiply = mnt_count_tribesmen
 	min = 0
 }
 

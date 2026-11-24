@@ -1,11 +1,11 @@
 ﻿namespace = mnt_tribes
 
-# Called in location scope. BUILDING is the selected building type ID.
+# Called in location scope. BUILDING is the selected building type ID. CAP is the level cap script value.
 scripted_effect mnt_apply_tribal_livelihood = {
 	save_temporary_scope_value_as = {
 		name = mnt_tribal_livelihood_level_change
 		value = {
-			value = mnt_tribal_livelihood_cap
+			value = $CAP$
 			floor = yes
 		}
 	}
@@ -36,59 +36,59 @@ scripted_effect mnt_apply_tribal_livelihood = {
 	}
 }
 
-# Called in location scope. Picks one livelihood per location. Hunting grounds are the
-# fallback where no other livelihood fits, so every tribal location produces food.
+# Called in location scope. Picks one livelihood per location; the first match wins. CAP is passed to the apply.
 scripted_effect mnt_choose_tribal_livelihood = {
 	if = {
 		limit = { mnt_tribal_reedbed = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = reedbed_hunting_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = reedbed_hunting_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_caravan_herding = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = caravan_herding_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = caravan_herding_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_steppe_horse_herding = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = steppe_horse_herding_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = steppe_horse_herding_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_steppe_herding = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = steppe_herding_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = steppe_herding_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_cold_dryland_herding = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = cold_dryland_herding_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = cold_dryland_herding_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_boreal_trapping = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = boreal_trapping_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = boreal_trapping_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_tropical_foraging = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = forest_foraging_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = forest_foraging_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_savanna_herding = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = savanna_herding_camps }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = savanna_herding_camps }
 	}
 	else_if = {
 		limit = { mnt_tribal_upland_pasture = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = upland_summer_pastures }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = upland_summer_pastures }
 	}
 	else_if = {
 		limit = { mnt_tribal_wood_pasture = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = wood_pastures }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = wood_pastures }
 	}
 	else_if = {
 		limit = { mnt_tribal_forest_hunting = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = forest_hunting_lodges }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = forest_hunting_lodges }
 	}
 	else_if = {
 		limit = { mnt_tribal_wool_pasture = yes }
-		mnt_apply_tribal_livelihood = { BUILDING = transhumant_wool_pasture }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = transhumant_wool_pasture }
 	}
-	else = {
-		mnt_apply_tribal_livelihood = { BUILDING = tribesmen_hunting_grounds }
+	else_if = {
+		limit = { mnt_tribal_open_country_hunting = yes }
+		mnt_apply_tribal_livelihood = { CAP = $CAP$ BUILDING = open_country_hunting_camps }
 	}
 }
 
@@ -106,7 +106,7 @@ mnt_tribes.1 = {
 	immediate = {
 		every_owned_location = {
 			limit = { num_pop_type:tribesmen >= 1 }
-			mnt_choose_tribal_livelihood = yes
+			mnt_choose_tribal_livelihood = { CAP = mnt_tribal_livelihood_cap }
 		}
 	}
 }
@@ -235,7 +235,7 @@ mnt_tribes.3 = {
 	immediate = {
 		every_owned_location = {
 			limit = { mnt_count_tribesmen > 0 }
-			mnt_choose_tribal_livelihood = yes
+			mnt_choose_tribal_livelihood = { CAP = mnt_tribal_livelihood_start_cap }
 		}
 	}
 }

@@ -1006,7 +1006,8 @@ class ProvisionsMethods:
             return ["food_per_unit", "milk_food", "efficiency", "min_profit", "max_profit", "round_food_inputs", "round_percent_inputs", "fixed"]
         if self.is_building(name):
             return ["efficiency"]
-        return ["food_out", "recipe", "recipe_fixed", "other", "other_percent", "efficiency", "min_profit", "max_profit", "fixed"]
+        return ["food_out", "recipe", "recipe_fixed", "other", "other_percent", "efficiency", "min_profit", "max_profit", "fixed",
+                "round_food_inputs", "round_percent_inputs"]
 
     def groups(self, settings_file):
         """Methods under the building that uses them, as the report shows them."""
@@ -2901,7 +2902,7 @@ class MethodCard:
             self.other += [[good, tk.StringVar(value=share), True]
                            for good, share in parse_map(values.get("other_percent", "None")) or []]
             self.small = {key: tk.StringVar(value="" if values.get(key, "None").lower() == "none" else values[key])
-                          for key in ("efficiency", "min_profit", "max_profit")}
+                          for key in ("efficiency", "min_profit", "max_profit", "round_food_inputs", "round_percent_inputs")}
             self.fixed = "" if values.get("fixed", "None").lower() == "none" else values["fixed"].lower()
             self.food_out.trace_add("write", lambda *_: self.touch("food_out"))
             for key, variable in self.small.items():
@@ -2987,11 +2988,15 @@ class MethodCard:
         canvas, terms = self.equation, []
         inherited = self.inherited()
         for key, label, width in (("efficiency", "food conversion efficiency %", 5), ("min_profit", "min profit", 16),
-                                  ("max_profit", "max profit", 16)):
+                                  ("max_profit", "max profit", 16), ("round_food_inputs", "round food inputs", 2),
+                                  ("round_percent_inputs", "round percent inputs", 2)):
             terms.append({"kind": "text", "text": label, "color": FAINT, "gap": 4})
             options = {"placeholder": inherited.get(key, ("not set", None))[0], "justify": "left", "pad": (4, 2)}
             segments = [("amount", self.small[key], width, options)]
-            if key != "efficiency":
+            if key.startswith("round_"):
+                # Overrides the [general] rounding for this method only
+                options["choices"] = [(str(decimals), str(decimals), None) for decimals in range(6)]
+            elif key != "efficiency":
                 values = self.app.names.get("profit_values", {})
                 options["choices"] = [(f"{name}   {profit_number(name, values)}", name, None) for name in self.app.names.get("profit", [])]
                 segments += [("live", "value " + key, MUTED, None, "small"), ("gap", 4)]
