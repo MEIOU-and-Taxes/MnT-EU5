@@ -1,7 +1,7 @@
 ﻿# Release
 
 #### Balancing
-- Increase iron output by 40% across all iron mine and bog iron smelter production methods, and lower the iron mine per-level expansion surcharge from 50% to 10%.
+- Increase iron output by 40% across all iron mine and bog iron smelter production methods, lower the iron mine per-level expansion surcharge from 50% to 10%, and split Iron Mines into an input-free baseline method (0.7 Iron) plus a second method using Tools and Coal/Lumber (bringing totals to 1.4 / 1.96 / 2.8 Iron).
 - Remove the tools requirement from Logging Camp construction.
 - Logging Camps produce 0.75 Lumber without upkeep goods. The Mills advance unlocks Timber Works, which produce 1.125 Lumber without inputs. A second production method brings total output to 1.75 with Tools or 2.25 with Tools and draft animals.
 - Remove location building limit
