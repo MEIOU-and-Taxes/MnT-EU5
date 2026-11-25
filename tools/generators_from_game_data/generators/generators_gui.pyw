@@ -119,8 +119,8 @@ HELP = {
     "max_profit": "Flag methods above this profit. Also sets debug_max_profit.",
     "food_out": "Food made per level. 10 food is 1 provisions.",
     "recipe": "Each good's percent of the input food. Must total 100.",
-    "recipe_fixed": "Food goods at a fixed amount. The recipe shares divide the food left.",
-    "other": "Extra inputs in fixed amounts.",
+    "recipe_fixed": "Food goods at a flat amount. The recipe percents divide the food left.",
+    "other": "Extra inputs in flat amounts.",
 }
 
 YES_NO = {"kind": "choice", "choices": ["yes", "no"]}
@@ -2836,6 +2836,11 @@ class Hint:
 # ------------------------------------------------------------------ provisions: live check, icons and names
 
 MILK = "milk"  # A recipe share of food from the herd. It is not a good and needs no input.
+# Hover text for the flat and % units. A food percent and an other-input percent count from different totals.
+FOOD_UNIT_HINTS = {"flat": "A flat amount of this good. The % goods make up the rest of the food.",
+                   "%": "This good's percent of the input food. Flat goods are counted first."}
+OTHER_UNIT_HINTS = {"flat": "A flat amount. It stays the same when food values change.",
+                    "%": "A percent of the provisions made."}
 MILK_CHOICE = "milk (no input)"
 HEALTH_ORDER = {"bad": 3, "warn": 2, "good": 1, "none": 0}
 HEALTH_COLOR = {"bad": BAD, "warn": WARN, "good": GOOD, "none": FAINT}
@@ -3629,6 +3634,9 @@ class EquationCanvas(tk.Canvas):
         pad_x, pad_y = options.get("pad", (0, 0))
         # A Tk entry's text sits inside its highlight, border and one more pixel
         width = self.fit_width(segment) if self.fits_value(segment) else segment[2] * lines["zero"]
+        if options.get("placeholder"):
+            # A narrow box still holds its whole placeholder, such as "not set"
+            width = max(width, self.fonts["normal"].measure(options["placeholder"]) + lines["zero"] // 2)
         width += 2 * (2 + pad_x)
         return width + (13 if options.get("choices") else 0), lines["normal"] + 2 * (2 + pad_y)
 
@@ -3962,7 +3970,7 @@ class MethodCard:
         else:
             values = {setting["key"]: document.file.value(setting) for setting in self.section["settings"]}
             self.food_out = tk.StringVar(value="" if values.get("food_out", "None").lower() == "none" else values["food_out"])
-            # Each food input: good, number, and whether the number is a fixed amount or a share
+            # Each food input: good, number, and whether the number is a flat amount or a percent
             self.recipe = [[good, tk.StringVar(value=share), False] for good, share in parse_map(values.get("recipe", "None")) or []]
             self.recipe += [[good, tk.StringVar(value=amount), True]
                             for good, amount in parse_map(values.get("recipe_fixed", "None")) or []]
@@ -4096,11 +4104,9 @@ class MethodCard:
                 else self.good_segments(good)
             remove = lambda rows=self.recipe if in_recipe else self.other, row=row: self.remove_good(rows, row)
             if in_recipe and row[2] and not inputs_fixed:
-                # A fixed food good: the number is the amount. A click on "share" turns it back into a share.
-                segments += [("amount", row[1], 6, {}), ("gap", 4),
-                             ("toggle", "share", lambda row=row: self.swap_recipe_unit(row), False,
-                              "Use a share of the food left after the fixed goods."), ("gap", 0),
-                             ("text", "fixed", TEXT, None)]
+                # A flat food good: the number is the amount. A click on "%" turns it back into a percent.
+                segments += [("amount", row[1], 6, {}), ("gap", 0), ("text", "flat", TEXT, FOOD_UNIT_HINTS["flat"]), ("gap", 0),
+                             ("toggle", "%", lambda row=row: self.swap_recipe_unit(row), False, FOOD_UNIT_HINTS["%"])]
                 segments += ([] if milk_source(good) else self.gold_segments(good)) + [("button", "✕", remove)]
                 row[1].trace_add("write", lambda *_: self.touch("recipe"))
                 terms.append({"kind": "chip", "background": HOVER, "segments": segments})
@@ -4114,16 +4120,18 @@ class MethodCard:
                 continue
             if in_recipe:
                 if show_share:
-                    segments += [("amount", row[1], 6, {}), ("gap", 0), ("text", "%", FAINT if milk else MUTED, None, "small")]
+                    segments += [("amount", row[1], 6, {})]
                     row[1].trace_add("write", lambda *_: self.touch("recipe"))
                 if milk:
-                    segments += [("text", "no input", FAINT, None, "small"), ("button", "✕", remove)]
+                    # Milk is always a percent, so it has no flat choice
+                    segments += ([("gap", 0), ("text", "%", FAINT, FOOD_UNIT_HINTS["%"], "small")] if show_share else []) \
+                        + [("text", "no input", FAINT, None, "small"), ("button", "✕", remove)]
                     terms.append({"kind": "chip", "background": BG, "outline": FAINT, "padding": (7, 4, 7, 4), "segments": segments})
                     continue
-                hint = 'This amount is set by "food out"' + (" and its share." if show_share else ".")
-                segments += [("gap", 4), ("text", "share", TEXT, None), ("gap", 0),
-                             ("toggle", "fixed", lambda row=row: self.swap_recipe_unit(row), False,
-                              "Use a fixed amount. The other shares divide the food left.")]
+                hint = 'This amount is set by "food out"' + (" and its percent." if show_share else ".")
+                segments += [("gap", 0 if show_share else 4),
+                             ("toggle", "flat", lambda row=row: self.swap_recipe_unit(row), False, FOOD_UNIT_HINTS["flat"]),
+                             ("gap", 0), ("text", "%", TEXT, FOOD_UNIT_HINTS["%"])]
                 # Milk is not bought, so it has no gold
                 segments += [("live", "in " + good, MUTED, hint, "small")] + ([] if milk_source(good) else self.gold_segments(good)) \
                     + [("button", "✕", remove)]
@@ -4131,10 +4139,10 @@ class MethodCard:
             else:
                 # Both units show. The one in use is plain text; a click on the other switches to it.
                 swap = lambda row=row: self.swap_unit(row)
-                units = [("flat", "Use a fixed amount.", not row[2]), ("%", "Use a percent of the provisions made.", row[2])]
                 segments += [("amount", row[1], 6, {})]
-                for unit, hint, in_use in units:
-                    segments += [("gap", 0), ("text", unit, TEXT, None) if in_use else ("toggle", unit, swap, False, hint)]
+                for unit, in_use in (("flat", not row[2]), ("%", row[2])):
+                    hint = OTHER_UNIT_HINTS[unit]
+                    segments += [("gap", 0), ("text", unit, TEXT, hint) if in_use else ("toggle", unit, swap, False, hint)]
                 if row[2]:
                     segments += [("gap", 4), ("live", "in " + good, MUTED, 'This amount is set by "food out" and its percent.', "small")]
                     self.amount_labels[good] = LiveText(canvas, "in " + good)
@@ -4390,7 +4398,7 @@ class MethodCard:
             self.show_gold(result["inputs"], "provisions", result["output"])
             total = self.share_total()
             needs_total = self.fixed_side() == "output" and self.recipe and abs(total - 100) >= 0.05
-            self.total_warning.configure(text=f"shares total {total:g}%, need 100%" if needs_total else "")
+            self.total_warning.configure(text=f"percents total {total:g}%, need 100%" if needs_total else "")
 
     def show_flag_line(self, text):
         if text:
