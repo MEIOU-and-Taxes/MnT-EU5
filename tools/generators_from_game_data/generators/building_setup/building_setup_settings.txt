@@ -8,8 +8,9 @@
 #
 # [all buildings] sets defaults. A named section like [victualling_house] overrides what it sets;
 # None drops a setting. A distribution_group section shares one computed level round-robin among
-# its building types (such as all valid villages getting 10 collective levels). fixed_level bypasses
-# the normal base+multiplier calculation.
+# its building types (such as all valid villages getting 10 collective levels). A word before the fixed_level
+# value says how it joins the base+multiplier calculation: final (or no word) replaces it, base adds to the
+# base level, minimum is the lowest level the calculation can give.
 # Values: yes/no, number (25 = 25%), None, list [ "SWE" ], or map { "flatland": 1, "hills": 0.5 }.
 # rgo_setup_settings.txt lists the names each multiplier map accepts.
 
@@ -58,13 +59,13 @@ report_building_types = [                         # Every building type the data
 ]
 # Many pops change type while the game sets up, through setup rules and promotion into jobs,
 # so the count of one pop type at game start can be unreliable. all is the steadiest measure.
-pop_types_for_levels = [ "all" ]   # The pops counted for levels. Choose from: burghers clergy laborers nobles peasants slaves soldiers tribesmen, or all for every pop type
+pop_types_counted_for_levels = [ "all" ]   # The pops counted for levels. Choose from: burghers clergy laborers nobles peasants slaves soldiers tribesmen, or all for every pop type
 respect_technology = yes                          # yes: no building the owner cannot build yet, like a gun smith before its advance.
 
 [all buildings]
 place = yes                                # yes: this building type is placed at all.
 destroy_vanilla_building_levels_before_counting = yes # yes: the levels this building type starts the game with are removed, so the level here is the whole level.
-base_level_by_location_rank = {            # Base level by the location's rank at the start. A rank left out adds nothing.
+fixed_level = base {                       # Levels by the location's rank at the start, or one number for every location. A rank left out gives nothing. final: it is the level. base: it is added to the base level, before the multipliers. minimum: the level is at least this.
     "town": 1,
     "city": 2,
     "megalopolis": 3,
@@ -97,8 +98,13 @@ fixed_level = { "city": 1, "megalopolis": 2 }
 destroy_vanilla_building_levels_before_counting = no
 
 [provisions_market]
-fixed_level = { "town": 1, "city": 1, "megalopolis": 1 }
+fixed_level = minimum { "town": 1, "city": 1, "megalopolis": 1 }
 destroy_vanilla_building_levels_before_counting = no
+thousand_pops_per_level = 50
+additive_multiplier_per_development = None
+additive_multiplier_per_population = None
+topography_multiplier = None
+vegetation_multiplier = None
 
 [urban_amenities]
 fixed_level = { "town": 2, "city": 6, "megalopolis": 10 }
@@ -132,49 +138,49 @@ destroy_vanilla_building_levels_before_counting = no
 # Luxury goods: the base level comes from development instead of rank, grows faster with development,
 # and is multiplied by rank, so they go in the richer towns and most cities
 [fine_cloth_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [jewelry_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [lacquerware_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [porcelain_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [glass_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [dyes_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [furniture_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
 
 [scriptorium]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
@@ -189,7 +195,7 @@ coastal_multiplier = 1.3
 lake_multiplier = 1.3
 
 [naval_supplies_guild]
-base_level_by_location_rank = None
+fixed_level = None
 development_per_level = 30
 additive_multiplier_per_development = 0.04
 location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 1.5 }
@@ -198,8 +204,8 @@ location_rank_multiplier = { "rural_settlement": 0, "town": 0.5, "megalopolis": 
 # Note: multipliers per climate, vegetation and topoography are ai generated placeholders as of 9/15/26 and not really 
 # based on anything a human verified. It should give a starting point for balancing at least.
 [tar_kiln]
-base_level_by_location_rank = None
-pops_per_level = 20
+fixed_level = None
+thousand_pops_per_level = 20
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 vegetation_multiplier = { "forest": 1.2, "woods": 1, "jungle": 0.4 }
@@ -220,15 +226,15 @@ climate_multiplier = {
 }
 
 [stone_quarry]
-base_level_by_location_rank = None
-pops_per_level = 20
+fixed_level = None
+thousand_pops_per_level = 20
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 topography_multiplier = { "mountains": 1.3, "hills": 1.2, "plateau": 1.1 }
 
 [fiber_crops_farm]
-base_level_by_location_rank = None
-pops_per_level = 20
+fixed_level = None
+thousand_pops_per_level = 20
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 vegetation_multiplier = { "farmland": 1.2, "sparse": 0.7 }
@@ -236,8 +242,8 @@ climate_multiplier = { "oceanic_climate": 1.1, "continental_climate": 1.1, "mons
 river_multiplier = { "1": 1.05, "2": 1.1, "3": 1.15, "4": 1.2, "5": 1.25 }
 
 [rural_glassmaker]
-base_level_by_location_rank = None
-pops_per_level = 250
+fixed_level = None
+thousand_pops_per_level = 250
 development_per_level = 35
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
@@ -245,31 +251,31 @@ vegetation_multiplier = { "desert": 1.2, "sparse": 1.1 }
 coastal_multiplier = 1.1
 
 [rural_clothmaker]
-base_level_by_location_rank = None
-pops_per_level = 250
+fixed_level = None
+thousand_pops_per_level = 250
 development_per_level = 35
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 vegetation_multiplier = { "forest": 0.8, "jungle": 0.7 }
 
 [bog_iron_smelter]
-base_level_by_location_rank = None
-pops_per_level = 20
+fixed_level = None
+thousand_pops_per_level = 20
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 topography_multiplier = { "wetlands": 1.3, "mountains": 1.1 }
 vegetation_multiplier = { "forest": 1.1 }
 
 [charcoal_maker]
-base_level_by_location_rank = None
-pops_per_level = 20
+fixed_level = None
+thousand_pops_per_level = 20
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 vegetation_multiplier = { "forest": 1.2, "woods": 1, "jungle": 0.8 }
 
 [salt_collector]
-base_level_by_location_rank = None
-pops_per_level = 20
+fixed_level = None
+thousand_pops_per_level = 20
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 coastal_multiplier = 1.2
@@ -280,8 +286,8 @@ climate_multiplier = { "hot_desert_climate": 1.2, "hot_steppe_climate": 1.2, "bo
 # can build, none past 35% of its max level
 [villages]
 distribution_group = [ "market_village", "farming_village", "forest_village", "fishing_village" ]
-pops_per_level = 10
-base_level_by_location_rank = None
+thousand_pops_per_level = 10
+fixed_level = None
 additive_multiplier_per_development = None
 additive_multiplier_per_population = None
 topography_multiplier = None
