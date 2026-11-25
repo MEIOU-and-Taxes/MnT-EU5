@@ -1,0 +1,61 @@
+﻿# Centers of Importance - Patronize the Guilds
+#
+# A standing province assignment that raises production efficiency. Available in any
+# province: the guilds do not need a centre to be worth patronising, they only need a
+# minister's attention.
+#
+# Base value is medium_production_efficiency_bonus (2.5%), multiplied by the cabinet skill:
+# a 100-ability minister at +100% cabinet efficiency displays 5%.
+
+patronize_guilds = {
+	ability = adm
+	allow_multiple = yes
+	helps_with = "location"
+	icon = reduced_paperwork
+
+	potential = {
+		num_locations > 0
+	}
+
+	select_trigger = {
+		looking_for_a = province
+		source = actor
+		target_flag = target
+		name = "patronize_guilds_select_province"
+		none_available_msg_key = "patronize_guilds_no_provinces"
+		column = {
+			data = name
+		}
+		column = {
+			data = development
+		}
+		column = {
+			data = population
+		}
+		visible = {
+			NOT = { cabinet_already_performing_same_task_on_target = { cabinet_action = patronize_guilds interaction_target = target } }
+		}
+		map_color = {
+			lerp = {
+				min_color = define:NMapColors|MAP_COLOR_LOW
+				max_color = define:NMapColors|MAP_COLOR_HIGH
+				factor = {
+					value = province.province_average_development
+					divide = 100
+				}
+			}
+		}
+	}
+
+	location_modifier = {
+		local_production_efficiency = medium_production_efficiency_bonus
+	}
+
+	map_marker = {
+		show_for_owner = yes
+	}
+
+	ai_will_do = {
+		value = 10
+	}
+}

@@ -751,3 +751,6 @@ Date: 21/05/2026
 
 ### Fixes
 - Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
+
+### Features
+- Centers of Importance: cabinet actions to appoint an inspector of manufactures in a production centre and later elevate the office to a board, plus oversee construction and patronize the guilds.
