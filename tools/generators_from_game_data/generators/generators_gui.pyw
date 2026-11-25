@@ -9,9 +9,11 @@ Edits keep the files' own layout and notes: only the values you change are rewri
 Names in lists and maps come from the game files, so they are picked, not typed.
 """
 
+import collections
 import difflib
 import importlib.util
 import itertools
+import json
 import os
 import queue
 import re
@@ -43,6 +45,7 @@ HERE = Path(__file__).resolve().parent
 MOD_ROOT = HERE.parents[2]
 BUILDING_SETUP = HERE / "building_setup" / "building_setup.py"
 PROVISIONS = HERE / "provisions_methods" / "provisions_methods.py"
+UNIT_MAINTENANCE = HERE / "unit_maintenance" / "unit_maintenance.py"
 # Outside the repo, so a bug seen once in normal use stays on record after its dialog closes
 ERROR_LOG = Path.home() / ".cache" / "mnt-generators" / "errors.log"
 
@@ -77,18 +80,17 @@ ANSI = re.compile(r"\033\[([0-9;]*)m")
 # The window shows these instead of the longer notes in the settings files
 HELP = {
     "report_building_types": "Building types the data dump reports.",
-    "pop_types_for_levels": "Pop types that count toward levels.",
+    "pop_types_counted_for_levels": "Pop types that count toward levels.",
     "respect_technology": "Skip building types the owner cannot build yet.",
     "place_secondary_rgos": "Also place secondary RGO buildings.",
     "max_secondary_rgos_per_location": "Most secondary RGO building types in one location.",
     "place": "No: this building type is not placed.",
     "place_as_secondary": "This building type can be a secondary RGO.",
-    "secondary_priority": "Higher wins ties between secondary RGO building types.",
-    "ideal_rgo_multiplier": "Multiplies the level of the location's main RGO building.",
+    "secondary_rgo_priority": "Higher wins ties between secondary RGO building types.",
+    "main_rgo_multiplier": "Multiplies the level of the location's main RGO building.",
     "destroy_vanilla_building_levels_before_counting": "Remove this building type's vanilla levels first.",
-    "pops_per_level": "Thousand pops per level.",
+    "thousand_pops_per_level": "One level per this many thousand counted pops. 20 means one level per 20,000.",
     "development_per_level": "One level per this much development.",
-    "base_level_by_location_rank": "Levels added by location rank.",
     "additive_multiplier_per_development": "Added per development. 0.02 at 20 development gives 1.4x.",
     "additive_multiplier_per_population": "Added per thousand pops. 0.01 at 20,000 pops gives 1.2x.",
     "lake_multiplier": "Multiplier next to a lake.",
@@ -101,9 +103,10 @@ HELP = {
     "final_level_multiplier": "Multiplies the final level.",
     "round_levels": "How levels round.",
     "percentage_of_building_max_level": "Level cap, as a percent of the building type's max level.",
-    "fixed_level": "Replaces the calculated level.",
-    "fixed_level_floor": "Lowest level.",
-    "fixed_level_ceiling": "Highest level.",
+    "fixed_level": "Levels by location rank, or one level everywhere. Final: it is the level. Added to base: it is "
+                   "added to the base level, before the multipliers. Minimum: the level is at least this.",
+    "level_floor": "The lowest level, after every other setting.",
+    "level_ceiling": "The highest level, after every other setting.",
     "distribution_group": "Building types that share this level.",
     "food_per_unit": "Food in one unit of each good.",
     "milk_food": "Food in one unit of each milk type. Recipes use milk as an input with no good and no cost.",
@@ -123,14 +126,13 @@ HELP = {
 YES_NO = {"kind": "choice", "choices": ["yes", "no"]}
 BUILDING_FIELDS = {
     "report_building_types": {"kind": "list", "names": "buildings"},
-    "pop_types_for_levels": {"kind": "list", "names": "pop_types"},
+    "pop_types_counted_for_levels": {"kind": "list", "names": "pop_types"},
     "respect_technology": YES_NO,
     "place_secondary_rgos": YES_NO,
     "place": YES_NO,
     "place_as_secondary": YES_NO,
     "destroy_vanilla_building_levels_before_counting": YES_NO,
     "round_levels": {"kind": "choice", "choices": ["up", "down", "nearest"]},
-    "base_level_by_location_rank": {"kind": "map", "names": "location_rank"},
     "river_multiplier": {"kind": "map", "names": "river"},
     "location_rank_multiplier": {"kind": "map", "names": "location_rank"},
     "topography_multiplier": {"kind": "map", "names": "topography"},
@@ -197,6 +199,8 @@ def load_names(tool=None):
         step("the building types", buildings)
         if getattr(tool, "names_from_loc", False):
             step("the English names", lambda: tool.loc.load(game[0]))
+    if hasattr(tool, "load_data"):
+        step("the unit data", lambda: tool.load_data(names))
     names["river"] = list(building_setup.RIVER_SIZES)
 
     def provisions():
@@ -265,7 +269,7 @@ class SettingsFile:
             key, equals, value = text.partition("=")
             if equals and current is not None:
                 value, end = value.strip(), index
-                closer = {"{": "}", "[": "]"}.get(value[:1])
+                closer = {"{": "}", "[": "]"}.get(split_fixed_level(value)[1][:1])
                 if closer and not value.endswith(closer):
                     end = index + 1
                     while end < len(self.lines) - 1 and not split_note(self.lines[end])[0].strip().endswith(closer):
@@ -379,7 +383,13 @@ def short_name(name):
     return name[len("RGO_building_"):] if name.startswith("RGO_building_") else name
 
 
-TITLES = {"efficiency": "Food conversion efficiency", "fixed": "Fixed Inputs/Outputs"}
+TITLES = {"efficiency": "Food conversion efficiency", "fixed": "Fixed Inputs/Outputs", "food_per_strength": "Daily Food Consumption (per 1k)",
+          "manpower_maintenance": "Manpower maintenance (per 1k)", "soldier_salary": "Soldier salary (per 1k)",
+          "base_regiment_price_scale": "Regiment price scale", "levy_maintenance_factor": "Levy maintenance",
+          "max_food_consumption_penalty": "Food penalty cap", "mercenary_monthly_maintenance_multiplier": "Mercenary fee",
+          "mercenary_prisoner_monthly_maintenance_multiplier": "Prisoner mercenary fee",
+          "base_scale_ship_double_per_age": "Ship price age scale", "mothball_maintenance_factor": "Mothball maintenance",
+          "mothball_percent": "Mothball crew"}
 
 
 def setting_title(key):
@@ -453,7 +463,7 @@ class ChoiceEditor(Editor):
             choices.append(value)
         unset = value in ("", "None") and spec.get("hint") == "default"
         self.variable = tk.StringVar(value="default" if unset else value or "None")
-        box = ttk.Combobox(self.frame, state="readonly", values=choices, textvariable=self.variable, width=12)
+        box = ttk.Combobox(self.frame, state="readonly", values=choices, textvariable=self.variable, width=spec.get("width", 12))
         box.bind("<<ComboboxSelected>>", self.touch)
         box.pack(side="left")
 
@@ -461,14 +471,49 @@ class ChoiceEditor(Editor):
         return self.variable.get()
 
 
+class PickerEditor(Editor):
+    """A button with the chosen name. A click opens a list with a search field.
+    spec: items() gives [(text, value)], show(value) gives the button text, title and prompt head the list."""
+
+    def __init__(self, parent, app, value, spec, on_change):
+        super().__init__(parent, app, value, spec, on_change)
+        self.value = value
+        self.button = ttk.Button(self.frame, command=self.pick, width=spec.get("width", 40))
+        self.button.pack(side="left")
+        self.show()
+
+    def show(self):
+        self.button.configure(text=self.spec["show"](self.value) + "   ▾")
+
+    def pick(self):
+        result = ListDialog(self.app, self.spec.get("title", "Choose"), self.spec.get("prompt", ""), self.spec["items"]()).result
+        if result and result != self.value:
+            self.value = result
+            self.show()
+            self.touch()
+
+    def get(self):
+        return self.value
+
+
+def scaled_text(value, scale):
+    """A number setting times scale, for a field that shows another unit than the file, such as per 1,000 men."""
+    try:
+        return f"{round(float(value) * scale, 9):.9f}".rstrip("0").rstrip(".")
+    except ValueError:
+        return value
+
+
 class NumberEditor(Editor):
-    """An empty field writes None."""
+    """An empty field writes None. spec scale shows the file's number times scale, and writes it back divided."""
 
     hint = "not set"
 
     def __init__(self, parent, app, value, spec, on_change):
         super().__init__(parent, app, value, spec, on_change)
-        self.variable = tk.StringVar(value="" if value.lower() == "none" else value)
+        self.scale = spec.get("scale", 1)
+        shown = "" if value.lower() == "none" else value
+        self.variable = tk.StringVar(value=scaled_text(shown, self.scale) if shown and self.scale != 1 else shown)
         entry = self.field()
         entry.pack(side="left")
         placeholder(entry, self.variable, spec.get("hint", self.hint))
@@ -478,7 +523,8 @@ class NumberEditor(Editor):
         return ttk.Entry(self.frame, textvariable=self.variable, width=12)
 
     def get(self):
-        return self.variable.get().strip() or "None"
+        text = self.variable.get().strip()
+        return (scaled_text(text, 1 / self.scale) if self.scale != 1 else text) if text else "None"
 
 
 def profit_number(text, values):
@@ -640,6 +686,8 @@ class MapEditor(Editor):
     def __init__(self, parent, app, value, spec, on_change):
         super().__init__(parent, app, value, spec, on_change)
         self.rows, self.multiline = [], "\n" in value
+        # spec price(good) gives a good's price, so each row shows its gold and the total shows the sum
+        self.price_labels, self.fixed = {}, None
         self.tool = spec.get("tool") if spec.get("names") in ("goods", "recipe") else None
         # Every row's name is as wide as the longest name, so the numbers line up and no name is cut
         self.name_width = max([len(self.shown(name)) for name, _ in parse_map(value) or []] +
@@ -670,9 +718,39 @@ class MapEditor(Editor):
             ttk.Label(row, text=self.shown(name), image=image or "", compound="left" if image else "none",
                       width=self.name_width).pack(side="left")
         ttk.Entry(row, textvariable=number_variable, width=9, justify="right").pack(side="left", padx=6)
+        if self.spec.get("price"):
+            self.add_price_label(row)
         ttk.Button(row, text="✕", style="Icon.TButton", command=lambda: self.remove_row(entry)).pack(side="left")
         number_variable.trace_add("write", lambda *_: (self.touch(), self.refresh()))
         self.rows.append(entry)
+
+    def add_fixed_row(self, name, number, on_type):
+        """A row that is not part of the map, such as provisions that follow from another setting.
+        Typing in it calls on_type with the text. Returns the row's number variable."""
+        row = ttk.Frame(self.rows_frame)
+        row.pack(anchor="w", pady=2)
+        variable = tk.StringVar(value=number)
+        image = self.tool.icons.good(name, 16) if self.tool else None
+        ttk.Label(row, text=" " + ((self.tool.loc.name(name) if self.tool else None) or name), image=image or "",
+                  compound="left" if image else "none", width=24).pack(side="left")
+        ttk.Entry(row, textvariable=variable, width=9, justify="right").pack(side="left", padx=6)
+        if self.spec.get("price"):
+            self.add_price_label(row)
+        self.fixed = (row, tk.StringVar(value=name), variable)
+        variable.trace_add("write", lambda *_: (on_type(variable.get()), self.refresh()))
+        self.refresh()
+        return variable
+
+    def add_price_label(self, row):
+        """× price = gold, each with a gold icon right of it."""
+        gold = self.tool.icons.get("icons/resources/gold.dds", 14) if self.tool else None
+        holder = ttk.Frame(row, width=190, height=22)
+        holder.pack_propagate(False)
+        holder.pack(side="left", padx=(4, 6))
+        labels = [ttk.Label(holder, style="Muted.TLabel", image=gold or "", compound="right", padding=0) for _ in range(2)]
+        for label in labels:
+            label.pack(side="left")
+        self.price_labels[row] = labels
 
     def remove_row(self, entry):
         entry[0].destroy()
@@ -712,6 +790,25 @@ class MapEditor(Editor):
             self.total.configure(text=self.spec.get("hint", ""), foreground=FAINT)
         elif not self.spec.get("total"):
             self.total.configure(text="")
+        if self.spec.get("price"):
+            gold = 0.0
+            for row, name, number in self.rows + ([self.fixed] if self.fixed else []):
+                price = self.spec["price"](name.get())
+                try:
+                    amount = float(number.get())
+                except ValueError:
+                    amount = None
+                price_label, gold_label = self.price_labels[row]
+                if price is None or amount is None:
+                    price_label.configure(text="", compound="none")
+                    gold_label.configure(text="", compound="none")
+                    continue
+                gold += amount * price
+                price_label.configure(text=f"× {short_number(price)} ", compound="right")
+                gold_label.configure(text=f"  =  {short_number(amount * price)} ", compound="right")
+            if self.rows or self.fixed:
+                image = self.tool.icons.get("icons/resources/gold.dds", 14) if self.tool else None
+                self.total.configure(text=f"total {short_number(gold)} ", image=image or "", compound="right", foreground=MUTED)
         if self.spec.get("total"):
             total = self.numbers()
             good = abs(total - 100) < 0.001
@@ -780,19 +877,32 @@ class ListEditor(Editor):
         return list_text(self.chosen, self.multiline)
 
 
+def split_fixed_level(text):
+    """(use, levels) of a fixed_level value such as base { "town": 1 }. No word before the levels means final."""
+    text = text.strip()
+    match = re.match(r"(final|base|minimum)\s+", text, re.I)
+    return (match[1].lower(), text[match.end():].strip()) if match else ("final", text)
+
+
 class NumberOrMapEditor(Editor):
-    """fixed_level: not set, one level everywhere, or a level per location rank."""
+    """fixed_level: not set, one level everywhere, or a level per location rank, and how the level is used."""
 
     MODES = ["not set", "same everywhere", "by location rank"]
+    USES = {"final": "Final level", "base": "Added to base level", "minimum": "Minimum level"}
 
     def __init__(self, parent, app, value, spec, on_change):
         super().__init__(parent, app, value, spec, on_change)
-        self.value = value
-        mode = 0 if value.lower() in ("", "none") else 2 if value.startswith("{") else 1
-        self.mode = ttk.Combobox(self.frame, state="readonly", values=self.MODES, width=18)
+        use, self.value = split_fixed_level(value)
+        mode = 0 if self.value.lower() in ("", "none") else 2 if self.value.startswith("{") else 1
+        top = ttk.Frame(self.frame)
+        top.pack(anchor="w")
+        self.mode = ttk.Combobox(top, state="readonly", values=self.MODES, width=18)
         self.mode.current(mode)
         self.mode.bind("<<ComboboxSelected>>", lambda _: (self.show(), self.touch()))
-        self.mode.pack(anchor="w")
+        self.mode.pack(side="left")
+        self.use = ttk.Combobox(top, state="readonly", values=list(self.USES.values()), width=20)
+        self.use.current(list(self.USES).index(use))
+        self.use.bind("<<ComboboxSelected>>", lambda _: self.touch())
         self.inner = None
         self.show()
 
@@ -801,6 +911,10 @@ class NumberOrMapEditor(Editor):
             self.inner.frame.destroy()
             self.inner = None
         mode = self.mode.current()
+        if mode:
+            self.use.pack(side="left", padx=(8, 0))
+        else:
+            self.use.pack_forget()
         start = self.value if (mode == 2) == self.value.startswith("{") else "None"
         if mode == 1:
             self.inner = NumberEditor(self.frame, self.app, start, self.spec, self.touch)
@@ -810,7 +924,23 @@ class NumberOrMapEditor(Editor):
             self.inner.frame.pack(anchor="w", pady=(6, 0))
 
     def get(self):
-        return self.inner.get() if self.inner else "None"
+        if not self.inner:
+            return "None"
+        use = list(self.USES)[self.use.current()]
+        return self.inner.get() if use == "final" else f"{use} {self.inner.get()}"
+
+
+def gray_out(widget):
+    """Turns an editor off: fields show grayed, and its buttons and click targets (+ Add, ×) are hidden."""
+    if isinstance(widget, ttk.Button) or widget.bind("<Button-1>"):
+        {"pack": widget.pack_forget, "grid": widget.grid_remove, "place": widget.place_forget}.get(widget.winfo_manager(), lambda: None)()
+        return
+    if isinstance(widget, (ttk.Entry, ttk.Combobox)):
+        widget.state(["disabled"])
+    elif isinstance(widget, ttk.Label):
+        widget.configure(foreground=MUTED)
+    for child in widget.winfo_children():
+        gray_out(child)
 
 
 def make_editor(parent, app, value, spec, on_change):
@@ -819,10 +949,12 @@ def make_editor(parent, app, value, spec, on_change):
         return MapEditor(parent, app, value, spec, on_change)
     if kind == "list" and parse_list(value) is not None:
         return ListEditor(parent, app, value, spec, on_change)
-    if kind == "number_or_map" and (not value.startswith("{") or parse_map(value) is not None):
+    if kind == "number_or_map" and (not split_fixed_level(value)[1].startswith("{") or parse_map(split_fixed_level(value)[1]) is not None):
         return NumberOrMapEditor(parent, app, value, spec, on_change)
     if kind == "choice":
         return ChoiceEditor(parent, app, value, spec, on_change)
+    if kind == "pick":
+        return PickerEditor(parent, app, value, spec, on_change)
     if kind == "profit":
         return ProfitEditor(parent, app, value, spec, on_change)
     if kind == "number" and "\n" not in value and not value.startswith(("{", "[")):
@@ -846,12 +978,15 @@ class BuildingSetup:
     files = [("RGO building types", HERE / "building_setup" / "rgo_setup_settings.txt", "rgo"),
              ("Other building types", HERE / "building_setup" / "building_setup_settings.txt", "other")]
     none_turns_off = True  # A missing setting uses the default section; None turns the default off
+    # The generator needs a value for these, so Nullify Global Settings leaves them alone
+    keep_on_nullify = ("place", "place_as_secondary", "destroy_vanilla_building_levels_before_counting",
+                       "final_level_multiplier", "round_levels", "thousand_pops_per_level", "development_per_level")
     actions = [
         ("Restore Backup Data", "restore", None, "Restore a backup version, Apply always creates one before running", False),
-        ("Run with data dump", ["--setup-data-dump"],
-         "This deletes the generated setup files and turns on the data dump.\n\nThen deploy the mod, start a new game "
-         "in debug mode, open the country screen, close the game, and press Apply.\n\nContinue?",
-         "Get new game data, after a patch for example.", False),
+        ("Gather Foundational Building Setup Data", "game data", None,
+         "To avoid completely overriding the existing setup files, this tool gathers a report on the buildings present "
+         "at each location by default so it can account for them when setting up our custom building levels. This is "
+         "non-destructive and a walkthrough prompt will direct you through the steps to do it correctly.", False),
     ]
     console_hint = ""
 
@@ -868,7 +1003,7 @@ class BuildingSetup:
         self.icons = Icons(game_folder)
 
     def placed(self):
-        """{building type: buildings in the setup files}, read again when a setup file changes."""
+        """{building type: (locations, building levels) in the setup files}, read again when a setup file changes."""
         paths = (self.module.RGO_OUTPUT_FILE, self.module.BUILDING_OUTPUT_FILE)
         stamp = tuple(path.stat().st_mtime if path.is_file() else 0 for path in paths)
         if getattr(self, "placed_stamp", None) != stamp:
@@ -876,22 +1011,32 @@ class BuildingSetup:
             for path in paths:
                 if path.is_file():
                     for building, locations in self.module.placed_levels(path.read_bytes()).items():
-                        self.placed_counts[building] = len(locations)
+                        self.placed_counts[building] = (len(locations), sum(locations.values()))
         return self.placed_counts
 
     def file_count(self, settings_file):
-        """Buildings the setup files place for the building types of one settings file."""
+        """Locations / building levels the setup files place for the building types of one settings file."""
         rgo = self.module.RGO_PREFIX
-        total = sum(count for building, count in self.placed().items() if building.startswith(rgo) == (settings_file.kind == "rgo"))
-        return f"{total:,}" if total else ""
+        counts = [count for building, count in self.placed().items() if building.startswith(rgo) == (settings_file.kind == "rgo")]
+        return f"{sum(count[0] for count in counts):,} / {sum(count[1] for count in counts):,}" if counts else ""
 
-    def count(self, settings_file, name):
-        """Buildings the setup files place for a building type, or for every member of a distribution group."""
+    def placed_totals(self, settings_file, name):
+        """(locations, building levels) the setup files place for a building type, or for every member of a
+        distribution group. None when they place none."""
         placed = self.placed()
         members = self.group_members(settings_file).get(name)
-        if members is not None:
-            return f"{sum(placed.get(member, 0) for member in members):,}"
-        return f"{placed[name]:,}" if name in placed else ""
+        counts = [placed[member] for member in (members if members is not None else [name]) if member in placed]
+        if members is None and not counts:
+            return None
+        return sum(count[0] for count in counts), sum(count[1] for count in counts)
+
+    def count(self, settings_file, name):
+        totals = self.placed_totals(settings_file, name)
+        return f"{totals[0]:,} / {totals[1]:,}" if totals else ""
+
+    def count_hint(self, settings_file, name):
+        totals = self.placed_totals(settings_file, name)
+        return f"{totals[0]:,} locations / {totals[1]:,} building levels in the setup files" if totals else ""
 
     def label(self, name, size=16):
         """(text, icon) for a section: a building type's English name and icon, other sections as named."""
@@ -906,7 +1051,7 @@ class BuildingSetup:
         """A warning above the form while the data dump is on."""
         path = self.module.DUMP_EFFECT_FILE
         if path.is_file() and DUMP_ON.search(path.read_text(encoding="utf-8-sig")):
-            return "Data dump is on. Deploy the mod, start a new game in debug mode, close it at the country screen, then press Apply."
+            return "Gathering the foundational building setup data is not finished. Click here to continue."
         return None
 
     def group_members(self, settings_file):
@@ -1003,9 +1148,10 @@ class ProvisionsMethods:
 
     def allowed(self, settings_file, name):
         if name.lower() == "general":
-            return ["food_per_unit", "milk_food", "efficiency", "min_profit", "max_profit", "round_food_inputs", "round_percent_inputs", "fixed"]
+            return ["food_per_unit", "milk_food", "efficiency", "min_profit", "max_profit", "round_food_inputs", "round_percent_inputs", "fixed",
+                    "spare_labor_output"]
         if self.is_building(name):
-            return ["efficiency"]
+            return ["efficiency", "spare_labor"]
         return ["food_out", "recipe", "recipe_fixed", "other", "other_percent", "efficiency", "min_profit", "max_profit", "fixed",
                 "round_food_inputs", "round_percent_inputs"]
 
@@ -1055,7 +1201,377 @@ class ProvisionsMethods:
         return [("efficiency", "100")]
 
 
-TOOLS = {"provisions": ProvisionsMethods, "buildings": BuildingSetup}
+class UnitMaintenance:
+    title = "Unit maintenance"
+    purpose = "Goods, food, gold, manpower and sailors each unit type needs."
+    script = UNIT_MAINTENANCE
+    files = [("Units", HERE / "unit_maintenance" / "unit_settings.txt", "units"),
+             ("Maintenance demands", HERE / "unit_maintenance" / "demand_settings.txt", "demands")]
+    none_turns_off = False  # None and a missing setting both use the category's value
+    actions = [
+        ("Sync From Files", ["--import"], "Sync From Files replaces both settings files with the values in the game files now. "
+         "Settings that differ from the game files are lost.\n\nContinue?", "Write the settings files from the game files as they are now", False),
+        ("Restore Backup Data", "restore", None, "Restore a backup version, Apply always creates one before running", False),
+    ]
+    console_hint = ""
+    names_from_loc = True  # load_names reads the English names into self.loc
+    inherit_in_place = True  # A unit page shows every field, filled with its category's value until it sets its own
+    show_file_label = False
+    groups_start_open = False
+    NOT_USED = "Not used"  # The sidebar group of demands that no unit type uses
+    GLOBAL_TITLES = {"all_land_units": "All land units", "all_ships": "All ships"}
+    # What each game define on the All land units and All ships pages does
+    help = {
+        "base_regiment_price_scale": "Men per regiment price, in thousands.",
+        "levy_maintenance_factor": "Share of maintenance that levies pay.",
+        "max_food_consumption_penalty": "Cap on extra food eaten over the supply limit, as a share of normal food. 0 is no cap.",
+        "mercenary_monthly_maintenance_multiplier": "Mercenary monthly fee, as a multiple of maintenance.",
+        "mercenary_prisoner_monthly_maintenance_multiplier": "Monthly fee of mercenaries hired from prisoners, as a multiple of maintenance.",
+        "base_scale_ship_double_per_age": "Ship price multiplier in the first age. It doubles each age.",
+        "mothball_maintenance_factor": "Share of maintenance that mothballed ships pay.",
+        "mothball_percent": "Share of crew that mothballed ships keep.",
+    }
+
+    def __init__(self, app):
+        self.app, self.document = app, None
+        self.module = load_module(UNIT_MAINTENANCE, "unit_maintenance_for_window")
+        self.loc = Localization()
+        english = HERE.parents[2] / "main_menu" / "localization" / "english"
+        self.loc.new_names, self.loc.replace_names = english / "MnT_units_l_english.yml", english / "replace" / "MnT_units_l_english.yml"
+        try:
+            game_folder = load_module(BUILDING_SETUP, "building_setup_for_units_window").find_game_folder()
+        except Exception:  # Icons then come from the mod only
+            game_folder = None
+        self.icons = Icons(game_folder)
+        self.plans, self.plan_problem = {}, None
+
+    def load_data(self, names):
+        names["unit_game"] = self.module.read_game(written=False)
+
+    def categories(self):
+        """{category: army or navy}, army first."""
+        if getattr(self, "category_cache", (None,))[0] is not self.game:
+            kinds = self.module.category_kinds(self.game)
+            self.category_cache = (self.game, {name: kinds[name] for name in sorted(kinds, key=lambda name: (kinds[name] == "navy", name))})
+        return self.category_cache[1]
+
+    @property
+    def game(self):
+        return self.app.names.get("unit_game")
+
+    @property
+    def fields(self):
+        return {"maintenance_demand": {"kind": "pick", "items": self.demand_items, "show": lambda name: self.label(name)[0],
+                                       "title": "Maintenance demand", "prompt": "Choose the demand. The number is how many unit types use it now."},
+                "soldier_salary": {"kind": "number", "scale": self.module.MEN_PER_STRENGTH,
+                                   "show": lambda value: scaled_text(value, self.module.MEN_PER_STRENGTH)},
+                "goods": {"kind": "map", "names": "goods", "new_value": "0.01",
+                          "price": lambda good: self.game["prices_of_goods"].get(good) if self.game else None}}
+
+    def demand_items(self):
+        """(name and user count, demand) for the demand picker, sorted by name."""
+        plan = self.plan() or {"units": {}}
+        users = collections.Counter(item["demand"] for item in plan["units"].values())
+        names = self.document.files[1][1].names()
+        return sorted(((f"{self.label(name)[0]}   ({users[name]})", name) for name in names), key=lambda item: item[0].lower())
+
+    # -------------------------------------------------------------- the plan behind the numbers
+
+    def sections(self, settings_file, edits=None):
+        """{section: {key: value}} of a settings file. edits = (section, {key: value}) puts the page's values in."""
+        result = {section["name"]: {setting["key"]: settings_file.value(setting) for setting in section["settings"]}
+                  for section in settings_file.sections}
+        if edits and edits[0] in result:
+            result[edits[0]].update(edits[1])
+        return result
+
+    def plan(self, units_edits=None, demand_edits=None):
+        """The generator's plan for the settings in the window, or None with plan_problem set."""
+        if not self.game or not self.document:
+            self.plan_problem = "Reading the game files..."
+            return None
+        units_file, demands_file = self.document.files[0][1], self.document.files[1][1]
+        key = (units_file.content(), demands_file.content(), repr(units_edits), repr(demand_edits))
+        # A page asks for the plan with and without its edits, so the last few plans stay
+        if key not in self.plans:
+            if len(self.plans) >= 4:
+                self.plans.pop(next(iter(self.plans)))
+            try:
+                self.plans[key] = (self.module.plan(self.game, self.sections(units_file, units_edits),
+                                                    self.sections(demands_file, demand_edits)), None)
+            except Exception as problem:  # The page shows why there are no numbers
+                self.plans[key] = (None, str(problem))
+        plan, self.plan_problem = self.plans[key]
+        return plan
+
+    def main_category(self, demand):
+        """The category whose unit types use the demand most, or None."""
+        plan = self.plan()
+        if plan is None:
+            return None
+        if getattr(self, "main_key", None) is not plan:
+            users = {}
+            for item in plan["units"].values():
+                users.setdefault(item["demand"], collections.Counter())[item["category"]] += 1
+            self.main_key, self.main_categories = plan, {name: counter.most_common(1)[0][0] for name, counter in users.items()}
+        return self.main_categories.get(demand)
+
+    def kind(self, settings_file, name):
+        """global, category, unit, demand or other."""
+        game = self.game or {}
+        if settings_file.kind == "demands":
+            return "demand"
+        if name in self.GLOBAL_TITLES:
+            return "global"
+        if name in (self.categories() if game else ()) or (not game and name.startswith(("army_", "navy_"))):
+            return "category"
+        return "unit" if not game or name in game["units"] else "other"
+
+    def is_army(self, settings_file, name):
+        game = self.game
+        if not game:
+            return True
+        if settings_file.kind == "demands":
+            plan = self.plan()
+            users = [item for item in (plan or {}).get("units", {}).values() if item["demand"] == name]
+            return not users or any(item["army"] for item in users)
+        if name in game["units"]:
+            return game["units"][name]["army"]
+        if name in self.GLOBAL_TITLES:
+            return name == "all_land_units"
+        return self.categories().get(name, "army") == "army"
+
+    # -------------------------------------------------------------- the sidebar and the page
+
+    def is_fixed_section(self, settings_file, name):
+        return self.kind(settings_file, name) in ("category", "global")
+
+    FIELD_ICONS = {"maintenance_demand": "icons/unit_types/maintenance.dds", "manpower_maintenance": "icons/resources/manpower.dds",
+                   "sailor_maintenance": "icons/resources/sailors.dds", "soldier_salary": "icons/resources/gold.dds",
+                   "sailor_salary": "icons/resources/gold.dds", "food_per_strength": "icons/unit_types/food_consumption_per_strength.dds"}
+
+    def field_icon(self, key, size=16):
+        return self.icons.get(self.FIELD_ICONS[key], size) if key in self.FIELD_ICONS else None
+
+    def category_icon(self, category, size=16):
+        return self.icons.get(f"icons/unit_category/{category}.dds", size)
+
+    def label(self, name, size=16):
+        """A category shows its icon, a unit type its category's icon, and a demand the icon of the category that uses it most."""
+        if name in self.GLOBAL_TITLES:
+            return self.GLOBAL_TITLES[name], self.icons.get("icons/unit_types/maintenance.dds", size)
+        text = self.loc.name(name)
+        if text:
+            # The game's name commands, such as [ShowShortAgeNameWithNoTooltip('age_1_traditions')], show the named key's name
+            text = re.sub(r"\[Show\w*NameWithNoTooltip\('(\w+)'\)\]", lambda match: self.loc.name(match[1]) or match[1], text)
+            # A $key$ shows that key's name
+            text = re.sub(r"\$(\w+)\$", lambda match: self.loc.name(match[1]) or match[0], text)
+        text = text if text and "$" not in text and "[" not in text else name
+        if not self.game:
+            return text, None
+        units = self.game["units"]
+        if name in units:
+            return text, self.category_icon(units[name]["category"], size)
+        if name in self.categories():
+            return text, self.category_icon(name, size)
+        category = self.main_category(name)
+        return text, self.category_icon(category, size) if category else None
+
+    def group_members(self, settings_file):
+        """{category section: its unit type sections}."""
+        if settings_file.kind != "units" or not self.game:
+            return {}
+        names = tuple(settings_file.names())
+        if getattr(self, "members_key", None) != (id(self.game), names):
+            members = {category: [] for category in self.categories() if category in names}
+            for name in names:
+                category = self.game["units"].get(name, {}).get("category")
+                if category in members:
+                    members[category].append(name)
+            self.members_key, self.members = (id(self.game), names), members
+        return self.members
+
+    def groups(self, settings_file):
+        names = settings_file.names()
+        if settings_file.kind == "demands":
+            # Each demand goes under the category that uses it most
+            if self.plan() is None:
+                return [(None, None, names)]
+            by_category = {}
+            for name in names:
+                by_category.setdefault(self.main_category(name) or self.NOT_USED, []).append(name)
+            order = [category for category in self.categories() if category in by_category]
+            return [(category, None, by_category[category]) for category in order + ([self.NOT_USED] if self.NOT_USED in by_category else [])]
+        groups = self.group_members(settings_file)
+        globals_ = [name for name in self.GLOBAL_TITLES if name in names]
+        placed = set(groups) | {name for members in groups.values() for name in members} | set(globals_)
+        result = ([(None, None, globals_)] if globals_ else []) + [(self.label(category)[0], category, members) for category, members in groups.items()]
+        rest = [name for name in names if name not in placed]
+        return result + ([(None, None, rest)] if rest else [])
+
+    def allowed(self, settings_file, name):
+        if self.kind(settings_file, name) == "global":
+            return list(self.module.GLOBAL_SECTIONS[name])
+        kind = "army" if self.is_army(settings_file, name) else "navy"
+        return (self.module.DEMAND_SETTINGS if settings_file.kind == "demands" else self.module.UNIT_SETTINGS)[kind]
+
+    def default_chain(self, settings_file, name):
+        if self.kind(settings_file, name) != "unit" or not self.game:
+            return []
+        return [self.game["units"][name]["category"]]
+
+    def describe(self, settings_file, name):
+        return "" if self.kind(settings_file, name) in ("demand", "unit", "category", "global") else "Not a unit type or category in the game."
+
+    def section_choices(self, settings_file):
+        if settings_file.kind != "units" or not self.game:
+            return []
+        return sorted(self.game["units"]) + sorted(self.categories())
+
+    def new_section_settings(self, name):
+        return [("goods", "None")] if self.game and name not in self.game["units"] else []
+
+    def notice(self):
+        return None
+
+    def count(self, settings_file, name):
+        plan = self.plan()
+        if not plan:
+            return ""
+        kind = self.kind(settings_file, name)
+        if kind == "demand":
+            return str(sum(item["demand"] == name for item in plan["units"].values()))
+        if kind == "category":
+            return str(len(plan["categories"][name]["units"])) if name in plan["categories"] else ""
+        item = plan["units"].get(name)
+        if not item:
+            return ""
+        return short_number(item["value"] + item["salary"]) if item["army"] else short_number(item["game_gold"])
+
+    def count_icon(self, settings_file, name):
+        """Gold right of a unit type's cost."""
+        return self.icons.get("icons/resources/gold.dds", 14) if self.kind(settings_file, name) == "unit" else None
+
+    def count_hint(self, settings_file, name):
+        kind = self.kind(settings_file, name)
+        return {"demand": "unit types that use it", "category": "unit types",
+                "unit": "base cost in gold a month, per 1,000 men for land units"}.get(kind, "")
+
+    def file_count(self, settings_file):
+        return ""
+
+    def cost(self, item):
+        """A unit's gold a month: per 1,000 men for land units, per ship for ships."""
+        return item["value"] + item["salary"] if item["army"] else item["game_gold"]
+
+    def summary(self, settings_file, name, edits):
+        """The lines at the top of the page. A line is (text, style, icon, hint), ("grid", rows, style) with cells
+        (text, icon) or (text, icon, command) and a bold last row when total is true, or ("button", text, command).
+        A grid line is ("grid", rows, style, total). ("below", line) puts a line under the settings.
+        ("field", text, icon, value, change, unit) is a number field. ("row", [(text, icon right of it)], style) is one line. A cell or field with a change dict
+        {"group", "scale", "set"} is a field: fields of one group show base × scale, and Enter calls set(base)."""
+        kind = self.kind(settings_file, name)
+        if kind == "global":
+            return []
+        plan = self.plan(edits if settings_file.kind == "units" else None, edits if settings_file.kind == "demands" else None)
+        if plan is None:
+            return [(self.plan_problem, "Warn.TLabel" if self.game else "Help.TLabel")]
+        lines, icon, prices = [], self.icons.get, self.game["prices_of_goods"]
+        coin = icon("icons/resources/gold.dds", 14)  # Right of every cost
+        gold, food = icon("icons/resources/gold.dds", 16), icon("icons/unit_types/food_consumption_per_strength.dds", 16)
+
+        def demand_goods(demand):
+            goods = dict(plan["demands"][demand]["goods"])
+            if plan["provisions"].get(demand):
+                goods[self.module.PROVISIONS] = plan["provisions"][demand]
+            return goods
+
+        # Provisions per daily food: the food field and the provisions row change each other
+        per_food = self.module.DAYS_PER_MONTH / self.game["food_per_provisions"] if self.game.get("food_per_provisions") else None
+
+        def food_field(demand, army):
+            provisions = plan["provisions"].get(demand)
+            if not provisions or not per_food:
+                return None
+            change = {"group": self.module.PROVISIONS, "scale": 1 / per_food,
+                      "set": lambda amount: self.document.change_good(demand, self.module.PROVISIONS, amount)}
+            per = " (per 1k)" if army else " (per ship)"
+            return ("field", f"Daily food consumption{per}", food, short_number(provisions / per_food), change, "")
+
+        def goods_table(demand, army, salary=0):
+            """Each good of the demand with its amount and default price. Land demands also show the gold and the total.
+            Ship gold does not come from the goods, so ship demands show no gold."""
+            per = " (per 1k)" if army else " (per ship)"
+            rows = [[("Good", None), (f"Demand{per}", None), ("Default price", None)] + ([(f"Gold{per}", None)] if army else [])]
+            total = 0
+            for good, amount in demand_goods(demand).items():
+                price = prices.get(good, 0)
+                total += amount * price
+                # The amount and gold cells are fields. A change to one changes the other, and Enter writes it to the demand.
+                change = {"group": good, "scale": 1, "set": lambda amount, good=good: self.document.change_good(demand, good, amount)}
+                rows.append([(self.loc.name(good) or good, self.icons.good(good, 16)),
+                             (short_number(amount), None, None, change), (short_number(price), None, None, None, coin)] +
+                            ([(short_number(amount * price), None, None, dict(change, scale=price, icon=coin))] if army and price else
+                             [("", None)] if army else []))
+            if army and salary:
+                rows.append([("Soldier salary", gold), ("", None), ("", None), (short_number(salary), None, None, None, coin)])
+                total += salary
+            if army:
+                rows.append([("Total", None), ("", None), ("", None), (short_number(total), None, None, None, coin)])
+            return ("grid", rows, "TLabel", army)
+
+        if kind == "demand":
+            users = sorted((unit for unit, item in plan["units"].items() if item["demand"] == name), key=lambda unit: self.label(unit)[0])
+            below = [("button", "+ Add unit types", lambda: self.document.add_unit_types(name))]
+            if users:
+                before = self.plan() or plan
+                changed = any(abs(self.cost(before["units"][unit]) - self.cost(plan["units"][unit])) > 1e-9 for unit in users)
+                per = " (per 1k)" if any(plan["units"][unit]["army"] for unit in users) else " (per ship)"
+                rows = [[("Unit type", None), ("Category", None), (f"Cost{per}", None)] + ([("New cost", None), ("Change", None)] if changed else [])]
+                for unit in users:
+                    old, new = self.cost(before["units"][unit]), self.cost(plan["units"][unit])
+                    category = plan["units"][unit]["category"]
+                    row = [(self.label(unit)[0], None, lambda unit=unit: self.document.open_unit(unit)),
+                           (self.label(category)[0], self.category_icon(category)), (short_number(old), None, None, None, coin)]
+                    if changed:
+                        row += [(short_number(new), None, None, None, coin),
+                                ((("+" if new > old else "") + short_number(new - old), None, None, None, coin) if new != old else ("", None))]
+                    rows.append(row)
+                below.append(("grid", rows, "TLabel", False))
+            else:
+                below.append(("No unit type uses this demand.", "Muted.TLabel"))
+            lines += [("below", line) for line in below]
+        elif kind == "category":
+            army = plan["categories"][name]["kind"] == "army"
+            demand = (edits[1].get("maintenance_demand") if edits and edits[0] == name else None) or \
+                self.sections(settings_file).get(name, {}).get("maintenance_demand")
+            if demand in plan["demands"]:
+                lines += [line for line in (goods_table(demand, army), food_field(demand, army)) if line]
+            if not army:
+                # Each unit type's cost after the game's age multiplier
+                members = sorted(plan["categories"][name]["units"], key=lambda unit: (plan["units"][unit]["age_factor"], self.label(unit)[0]))
+                rows = [[("Unit type", None), ("Age", None), ("Multiplier", None), ("Cost (per ship)", None)]]
+                for unit in members:
+                    item = plan["units"][unit]
+                    rows.append([(self.label(unit)[0], None, lambda unit=unit: self.document.open_unit(unit)),
+                                 (self.loc.name(item["age"] or "") or "First", None), (f"× {item['age_factor']}", None),
+                                 (short_number(item["game_gold"]), None, None, None, coin)])
+                lines.append(("below", ("grid", rows, "TLabel", False)))
+        elif kind == "unit" and name in plan["units"]:
+            item = plan["units"][name]
+            lines.append(goods_table(item["demand"], item["army"], item["salary"] if item["army"] else 0))
+            if food_field(item["demand"], item["army"]):
+                lines.append(food_field(item["demand"], item["army"]))
+            if not item["army"]:
+                parts = [("Cost (per ship)", None), (short_number(item["game_gold"]), coin), ("= price", None),
+                         (short_number(item["gold"] or 0), coin), (f"× {item['age_factor']} for the {self.loc.name(item['age'] or '') or 'first'} age", None)]
+                if item["salary"]:
+                    parts += [(", salary", None), (short_number(item["salary"]), coin), ("included", None)]
+                lines.append(("row", parts, "TLabel"))
+                lines.append((f"Crew {item['crew']} sailors.", "Muted.TLabel", icon("icons/unit_types/crew_size.dds", 16)))
+        return lines
+
+TOOLS = {"provisions": ProvisionsMethods, "buildings": BuildingSetup, "units": UnitMaintenance}
 
 
 # ------------------------------------------------------------------ the tool's files in the window
@@ -1137,6 +1653,7 @@ class Document:
         self.status = ttk.Label(header, style="Faint.TLabel")
         self.status.pack(side="right", padx=(0, 14))
         self.notice = ttk.Label(self.main, style="Notice.TLabel", padding=(28, 8), wraplength=900, justify="left")
+        self.notice.bind("<Button-1>", lambda _: self.notice_clicked())
         ttk.Separator(self.main).pack(fill="x")
 
         self.panes = ttk.PanedWindow(self.main, orient="vertical")
@@ -1212,6 +1729,9 @@ class Document:
         closed = self.console_bar.winfo_reqheight() + self.app.mono.metrics("linespace") + 34
         self.panes.sashpos(0, height // 2 if self.console_open else max(100, height - closed))
 
+    def notice_clicked(self):
+        pass
+
     def update_notice(self):
         text = self.tool.notice()
         if text:
@@ -1221,6 +1741,16 @@ class Document:
             self.notice.pack_forget()
 
     # -------------------------------------------------------------- sections
+
+    def build_heading(self, top, name, text, image):
+        """The page title. Returns the text it shows."""
+        ttk.Label(top, text=" " + text if image else text, image=image or "", compound="left", style="Heading.TLabel").pack(side="left")
+        return text
+
+    def field_icon(self, key):
+        """The tool's game icon for a setting, or None."""
+        icon = getattr(self.tool, "field_icon", None)
+        return icon(key) if icon else None
 
     def side_label(self, name, size=16):
         label = getattr(self.tool, "label", None)
@@ -1327,6 +1857,10 @@ class Document:
             self.commit()
             self.show_section(settings_file, name)
 
+    def is_default_section(self, name):
+        fixed = getattr(self.tool, "is_fixed_section", None)
+        return name.lower() in DEFAULT_SECTIONS or bool(fixed and fixed(self.file, name))
+
     def show_section(self, settings_file, name):
         self.file, self.section_name = settings_file, name
         self.path_label.configure(text=settings_file.path.name)
@@ -1342,17 +1876,34 @@ class Document:
         top = ttk.Frame(self.form)
         top.grid(row=0, column=0, columnspan=3, sticky="ew")
         text, image = self.side_label(name, 24) if getattr(self.tool, "label", None) else ("General" if name.lower() == "general" else name, None)
-        ttk.Label(top, text=" " + text if image else text, image=image or "", compound="left",
-                  style="Heading.TLabel").pack(side="left")
+        text = self.build_heading(top, name, text, image)
         if text.lower() != name.lower():
             ttk.Label(top, text=name, style="Faint.TLabel").pack(side="left", padx=(10, 0), pady=(4, 0))
-        if len(self.files) > 1:
+        if len(self.files) > 1 and getattr(self.tool, "show_file_label", True):
             label = next(label for label, other in self.files if other is settings_file)
             ttk.Label(top, text="·  " + label, style="Muted.TLabel").pack(side="left", padx=(10, 0), pady=(4, 0))
-        if name.lower() not in DEFAULT_SECTIONS:
+        self.section_buttons(top, name)
+        description = self.tool.describe(self.file, name)
+        if description:
+            ttk.Label(self.form, text=description, style="Muted.TLabel").grid(row=1, column=0, columnspan=3, sticky="w", pady=(2, 0))
+        self.fill_page(section, name)
+        self.swap_form(shown)
+        self.canvas.yview_moveto(0)
+        self.mark_selected()
+
+    def section_buttons(self, top, name):
+        """The buttons right of the page title."""
+        if not self.is_default_section(name):
             ttk.Button(top, text="Delete section", style="Danger.TButton", command=self.remove_section).pack(side="right")
-        ttk.Label(self.form, text=self.tool.describe(self.file, name), style="Muted.TLabel").grid(
-            row=1, column=0, columnspan=3, sticky="w", pady=(2, 0))
+            if self.nullable_settings(name):
+                nullify = ttk.Button(top, text="Nullify Global Settings", style="Ghost.TButton", command=self.nullify_settings)
+                nullify.pack(side="right", padx=(0, 6))
+                Hint(nullify, "Sets each setting this building takes from " + " and ".join(
+                    f"[{section}]" for section in self.tool.default_chain(self.file, name)) + " to None, so only its "
+                    "own settings apply. Settings the generator needs a value for stay.")
+
+    def fill_page(self, section, name):
+        """The page under the title: notes, the tool's rows and the settings."""
         row = 2
         if section["notes"]:
             ttk.Label(self.form, text="\n".join(section["notes"]), style="Faint.TLabel", wraplength=760,
@@ -1364,7 +1915,12 @@ class Document:
         used = {setting["key"] for setting in section["settings"]}
         allowed = self.tool.allowed(self.file, name)
         chain = self.tool.default_chain(self.file, name)
-        if chain:
+        # inherit_in_place: every setting has its row, filled with the value from above until the section sets its own
+        in_place = bool(chain) and getattr(self.tool, "inherit_in_place", False)
+        if in_place:
+            by_key = {setting["key"]: setting for setting in section["settings"]}
+            rows = [(key, by_key.get(key)) for key in allowed] + [(key, setting) for key, setting in by_key.items() if key not in allowed]
+        elif chain:
             rows = [(setting["key"], setting) for setting in section["settings"]]
         else:
             # [general] and the default sections keep one fixed order
@@ -1372,7 +1928,7 @@ class Document:
             rows = [(key, by_key[key]) for key in allowed if key in by_key] + [(key, setting) for key, setting in by_key.items() if key not in allowed]
         added = [key for key in self.added_keys.get((id(self.file), name), []) if key not in used]
         rows += [(key, None) for key in added]
-        left = [key for key in allowed if key not in used and key not in added]
+        left = [] if in_place else [key for key in allowed if key not in used and key not in added]
         if not rows:
             ttk.Label(self.form, text="This section sets nothing. It uses the defaults.", style="Faint.TLabel").grid(
                 row=row, column=0, columnspan=3, sticky="w", pady=(0, 14))
@@ -1388,33 +1944,108 @@ class Document:
             spec = dict(self.tool.fields.get(key, {"kind": "number"}), hint=hint, tool=self.tool)
             label = ttk.Frame(self.form)
             label.grid(row=row, column=0, sticky="nw", padx=(0, 28), pady=14)
-            ttk.Label(label, text=setting_title(key), style="Setting.TLabel" if setting else "Unset.TLabel").pack(anchor="w")
-            help_text = HELP.get(key) or self.file.help.get(key)
+            image = self.field_icon(key)
+            icon_label(label, image, (" " if image else "") + setting_title(key), style="Setting.TLabel" if setting else "Unset.TLabel").pack(anchor="w")
+            help_text = HELP.get(key) or getattr(self.tool, "help", {}).get(key) or self.file.help.get(key)
             if help_text:
                 ttk.Label(label, text=help_text, style="Help.TLabel", wraplength=250, justify="left").pack(anchor="w", pady=(3, 0))
-            if default:
+            if in_place:
+                if default and setting:
+                    line = ttk.Frame(label)
+                    line.pack(anchor="w", pady=(3, 0))
+                    shown_default = spec["show"](self.inherited_value(chain, key)) if spec.get("show") else default[1]
+                    source = ttk.Label(line, text=self.side_label(default[0])[0], style="Link.TLabel", cursor="hand2", font=self.app.small, padding=0)
+                    source.pack(side="left")
+                    source.bind("<Button-1>", lambda _, name=default[0]: self.open_section(self.file, name))
+                    ttk.Label(line, text=f": {shown_default}  ·", style="Help.TLabel", padding=0).pack(side="left")
+                    reset = ttk.Label(line, text="reset", style="Link.TLabel", cursor="hand2", font=self.app.small)
+                    reset.pack(side="left", padx=(4, 0))
+                    reset.bind("<Button-1>", lambda _, key=key: self.remove_setting(key))
+                elif default:
+                    line = ttk.Frame(label)
+                    line.pack(anchor="w", pady=(3, 0))
+                    ttk.Label(line, text="From ", style="Help.TLabel").pack(side="left")
+                    source = ttk.Label(line, text=self.side_label(default[0])[0], style="Link.TLabel", cursor="hand2", font=self.app.small, padding=0)
+                    source.pack(side="left")
+                    source.bind("<Button-1>", lambda _, name=default[0]: self.open_section(self.file, name))
+            elif default:
                 ttk.Label(label, text=f"Default ({default[0]}): {default[1]}", style="Help.TLabel", wraplength=250,
                           justify="left").pack(anchor="w", pady=(3, 0))
-            if setting and default and self.tool.none_turns_off:
+            if in_place:
+                pass
+            elif setting and default and self.tool.none_turns_off:
                 # Here an empty value turns the default off, so going back to the default takes the line out
                 back = ttk.Label(label, text="use default", style="Link.TLabel", cursor="hand2", font=self.app.small)
                 back.pack(anchor="w", pady=(4, 0))
                 back.bind("<Button-1>", lambda _, key=key: self.remove_setting(key))
-            editor = make_editor(self.form, self.app, self.file.value(setting) if setting else "None", spec, self.edited)
+            elif not self.is_default_section(name):
+                remove = ttk.Label(label, text="remove setting", style="Link.TLabel", cursor="hand2", font=self.app.small)
+                remove.pack(anchor="w", pady=(4, 0))
+                remove.bind("<Button-1>", lambda _, key=key: self.remove_setting(key))
+            value = self.file.value(setting) if setting else (self.inherited_value(chain, key) if in_place else "None")
+            editor = make_editor(self.form, self.app, value, spec, self.edited)
             editor.frame.grid(row=row, column=1, sticky="w", pady=14)
             self.editors.append((setting, key, editor))
-            row += 1
+            row += 1 + self.after_field(key, editor, label, row)
         if rows:
             ttk.Separator(self.form).grid(row=row, column=0, columnspan=3, sticky="ew")
             row += 1
         if left:
             adder = ttk.Button(self.form, text="+ Add setting", style="Ghost.TButton")
             adder.configure(command=lambda: ChoicePopup(adder, adder.winfo_rootx(), adder.winfo_rooty() + adder.winfo_height(),
-                                                        [(setting_title(key), key, None) for key in left], self.show_setting))
+                                                        [(setting_title(key), key, self.field_icon(key)) for key in left], self.show_setting))
             adder.grid(row=row, column=0, sticky="w", pady=12)
-        self.swap_form(shown)
-        self.canvas.yview_moveto(0)
-        self.mark_selected()
+            row += 1
+        if not in_place:
+            self.inherited_rows(chain, [key for key in allowed if key not in used and key not in added], row)
+
+    def after_field(self, key, editor, label, row):
+        """Extra controls for one setting row. Returns how many grid rows it added under row."""
+        return 0
+
+    def inherited_value(self, chain, key):
+        """The value of the nearest section in chain that sets key, as the file has it. None when no section does."""
+        for section_name in chain:
+            section = next((section for section in self.file.sections if section["name"].lower() == section_name.lower()), None)
+            setting = next((setting for setting in section["settings"] if setting["key"] == key), None) if section else None
+            if setting:
+                return self.file.value(setting)
+        return "None"
+
+    def inherited_rows(self, chain, keys, row):
+        """The settings this section takes from the sections above it, grayed out. They change only there."""
+        inherited, names = [], [next((other for other in self.file.names() if other.lower() == name.lower()), name) for name in chain]
+        for key in keys:
+            for section_name in chain:
+                section = next((section for section in self.file.sections if section["name"].lower() == section_name.lower()), None)
+                setting = next((setting for setting in section["settings"] if setting["key"] == key), None) if section else None
+                if setting:
+                    if self.file.value(setting).lower() != "none":
+                        inherited.append((key, section["name"], setting))
+                    break
+        if not inherited:
+            return
+        ttk.Label(self.form, text="Global settings", style="Setting.TLabel").grid(
+            row=row, column=0, columnspan=3, sticky="w", pady=(24, 0))
+        ttk.Label(self.form, text="This section uses these from " + " and ".join(f"[{name}]" for name in names) + ".",
+                  style="Muted.TLabel").grid(row=row + 1, column=0, columnspan=3, sticky="w", pady=(2, 10))
+        row += 2
+        for key, source, setting in inherited:
+            ttk.Separator(self.form).grid(row=row, column=0, columnspan=3, sticky="ew")
+            label = ttk.Frame(self.form)
+            label.grid(row=row + 1, column=0, sticky="nw", padx=(0, 28), pady=14)
+            image = self.field_icon(key)
+            icon_label(label, image, (" " if image else "") + setting_title(key), style="Unset.TLabel").pack(anchor="w")
+            ttk.Label(label, text=f"From [{source}]", style="Help.TLabel").pack(anchor="w", pady=(3, 0))
+            override = ttk.Label(label, text="override", style="Link.TLabel", cursor="hand2", font=self.app.small)
+            override.pack(anchor="w", pady=(4, 0))
+            override.bind("<Button-1>", lambda _, key=key, setting=setting: self.override_setting(key, setting))
+            spec = dict(self.tool.fields.get(key, {"kind": "number"}), hint="", tool=self.tool)
+            editor = make_editor(self.form, self.app, self.file.value(setting), spec, lambda: None)
+            editor.frame.grid(row=row + 1, column=1, sticky="w", pady=14)
+            gray_out(editor.frame)
+            row += 2
+        ttk.Separator(self.form).grid(row=row, column=0, columnspan=3, sticky="ew")
 
     def show_setting(self, key):
         """Shows one more setting on this page. It goes into the file once it has a value."""
@@ -1503,11 +2134,50 @@ class Document:
         if self.section_name:
             self.show_section(self.file, self.section_name)
 
-    def remove_setting(self, key):
+    def nullable_settings(self, name):
+        """The settings this section takes from the sections above it that it can turn off with None."""
+        keep = getattr(self.tool, "keep_on_nullify", None)
+        if keep is None:
+            return []
+        own = {setting["key"] for setting in self.file.section(name)["settings"]}
+        allowed = self.tool.allowed(self.file, name)
+        inherited = []
+        for section_name in self.tool.default_chain(self.file, name):
+            section = self.file.section(next((other for other in self.file.names() if other.lower() == section_name.lower()), ""))
+            for setting in section["settings"] if section else []:
+                key = setting["key"]
+                if (key in allowed and key not in keep and key not in own and key not in inherited
+                        and self.file.value(setting).lower() != "none"):
+                    inherited.append(key)
+        return inherited
+
+    def nullify_settings(self):
         self.commit()
         section = self.file.section(self.section_name)
-        self.file.remove_setting(next(setting for setting in section["settings"] if setting["key"] == key))
+        for key in self.nullable_settings(self.section_name):
+            self.file.add_setting(section, key, "None")
+            section = self.file.section(self.section_name)
         self.file.dirty = True
+        self.refresh()
+
+    def override_setting(self, key, inherited):
+        """Copies a setting from the sections above into this section, where it can be changed."""
+        self.commit()
+        self.file.add_setting(self.file.section(self.section_name), key, self.file.value(inherited))
+        self.file.dirty = True
+        self.refresh()
+
+    def remove_setting(self, key):
+        """Takes the setting off this page, and out of the file when it is there."""
+        self.commit()
+        added = self.added_keys.get((id(self.file), self.section_name), [])
+        if key in added:
+            added.remove(key)
+        section = self.file.section(self.section_name)
+        setting = next((setting for setting in section["settings"] if setting["key"] == key), None)
+        if setting:
+            self.file.remove_setting(setting)
+            self.file.dirty = True
         self.refresh()
 
     def new_section(self):
@@ -1564,6 +2234,8 @@ class Document:
             return
         if arguments == "restore":
             self.choose_backup()
+        elif arguments == "game data":
+            self.open_game_data_guide()
         else:
             self.run(arguments + self.backup_arguments(arguments))
 
@@ -1746,6 +2418,380 @@ class ListDialog:
             return
         self.window.destroy()
 
+class NameDialog:
+    """Asks for one name. result is the typed name, or None."""
+
+    def __init__(self, app, title, prompt, suggestion=""):
+        self.result = None
+        self.window = window = tk.Toplevel(app.root, background=BG)
+        window.title(title)
+        window.transient(app.root)
+        window.geometry(f"+{app.root.winfo_rootx() + 260}+{app.root.winfo_rooty() + 160}")
+        app.dark_title_bar(window)
+        frame = ttk.Frame(window, padding=18)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=title, style="Heading.TLabel").pack(anchor="w")
+        ttk.Label(frame, text=prompt, style="Muted.TLabel", wraplength=460, justify="left").pack(anchor="w", pady=(4, 12))
+        self.name = tk.StringVar(value=suggestion)
+        entry = ttk.Entry(frame, textvariable=self.name, width=50)
+        entry.pack(fill="x")
+        entry.focus_set()
+        entry.select_range(0, "end")
+        self.problem = ttk.Label(frame, style="Warn.TLabel")
+        self.problem.pack(anchor="w", pady=(6, 0))
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(10, 0))
+        ttk.Button(buttons, text="OK", style="Accent.TButton", command=self.done).pack(side="right")
+        ttk.Button(buttons, text="Cancel", style="Ghost.TButton", command=window.destroy).pack(side="right", padx=6)
+        window.bind("<Return>", lambda _: self.done())
+        window.bind("<Escape>", lambda _: window.destroy())
+        window.grab_set()
+        window.wait_window()
+
+    def done(self):
+        name = self.name.get().strip()
+        if not re.fullmatch(r"\w+", name):
+            self.problem.configure(text="Use only letters, numbers and _.")
+            return
+        self.result = name
+        self.window.destroy()
+
+
+class ImpactDialog:
+    """Shows a list of names and a choice of actions. result is the chosen action key, or None."""
+
+    def __init__(self, app, title, prompt, names, actions):
+        self.result = None
+        self.window = window = tk.Toplevel(app.root, background=BG)
+        window.title(title)
+        window.transient(app.root)
+        window.geometry(f"+{app.root.winfo_rootx() + 240}+{app.root.winfo_rooty() + 100}")
+        app.dark_title_bar(window)
+        frame = ttk.Frame(window, padding=18)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=title, style="Heading.TLabel").pack(anchor="w")
+        ttk.Label(frame, text=prompt, style="Muted.TLabel", wraplength=520, justify="left").pack(anchor="w", pady=(4, 10))
+        text = tk.Text(frame, height=min(14, len(names)), width=60, background=FIELD, foreground=TEXT, relief="flat",
+                       borderwidth=0, highlightthickness=0, padx=8, pady=6, font=app.small)
+        text.insert("1.0", "\n".join(names))
+        text.configure(state="disabled")
+        text.pack(fill="both", expand=True)
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(14, 0))
+        ttk.Button(buttons, text="Cancel", style="Ghost.TButton", command=window.destroy).pack(side="right")
+        for index, (key, label) in enumerate(reversed(actions)):
+            ttk.Button(buttons, text=label, style="Accent.TButton" if index == len(actions) - 1 else "TButton",
+                       command=lambda key=key: self.choose(key)).pack(side="right", padx=(0, 6))
+        window.bind("<Escape>", lambda _: window.destroy())
+        window.grab_set()
+        window.wait_window()
+
+    def choose(self, key):
+        self.result = key
+        self.window.destroy()
+
+
+class CheckDialog:
+    """A list of tick boxes with a search field. result is the ticked values, or None."""
+
+    def __init__(self, app, title, prompt, items):
+        self.items, self.result = items, None
+        self.ticked = {value: tk.BooleanVar(value=False) for _, value in items}
+        self.window = window = tk.Toplevel(app.root, background=BG)
+        window.title(title)
+        window.transient(app.root)
+        window.geometry(f"560x620+{app.root.winfo_rootx() + 200}+{app.root.winfo_rooty() + 60}")
+        app.dark_title_bar(window)
+        frame = ttk.Frame(window, padding=18)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=title, style="Heading.TLabel").pack(anchor="w")
+        ttk.Label(frame, text=prompt, style="Muted.TLabel", wraplength=520, justify="left").pack(anchor="w", pady=(4, 12))
+        self.filter = tk.StringVar()
+        entry = ttk.Entry(frame, textvariable=self.filter)
+        entry.pack(fill="x", pady=(0, 8))
+        placeholder(entry, self.filter, "Search")
+        entry.focus_set()
+        self.filter.trace_add("write", lambda *_: self.fill())
+        holder = ttk.Frame(frame)
+        holder.pack(fill="both", expand=True)
+        self.canvas = tk.Canvas(holder, background=BG, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(holder, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.inner = ttk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
+        self.inner.bind("<Configure>", lambda _: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.bind("<MouseWheel>", lambda event: self.canvas.yview_scroll(-1 if event.delta > 0 else 1, "units"))
+        self.boxes = {value: ttk.Checkbutton(self.inner, text=text, variable=self.ticked[value]) for text, value in items}
+        self.count = ttk.Label(frame, style="Muted.TLabel")
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(14, 0))
+        self.count.pack(in_=buttons, side="left")
+        ttk.Button(buttons, text="OK", style="Accent.TButton", command=self.done).pack(side="right")
+        ttk.Button(buttons, text="Cancel", style="Ghost.TButton", command=window.destroy).pack(side="right", padx=6)
+        for variable in self.ticked.values():
+            variable.trace_add("write", lambda *_: self.count.configure(text=f"{len(self.chosen())} ticked"))
+        window.bind("<Escape>", lambda _: window.destroy())
+        self.fill()
+        window.grab_set()
+        window.wait_window()
+
+    def fill(self):
+        words = self.filter.get().lower().split()
+        for box in self.boxes.values():
+            box.pack_forget()
+        for text, value in self.items:
+            if all(word in text.lower() for word in words):
+                self.boxes[value].pack(anchor="w", pady=1)
+        self.canvas.yview_moveto(0)
+
+    def chosen(self):
+        return [value for _, value in self.items if self.ticked[value].get()]
+
+    def done(self):
+        self.result = self.chosen()
+        self.window.destroy()
+
+
+class GameDataGuide:
+    """Walks the person through getting new game data for the building setup generator, one step at a time.
+    The steps follow the files: the dump effect's gate, debug.log and the saved CSV files."""
+
+    POLL_MS = 2000
+    STEAM_APP_ID = "3450310"
+    PLAYSET = "MnT Building Setup Data"
+
+    def __init__(self, document):
+        self.document, self.module = document, document.tool.module
+        self.finished, self.running, self.log_seen, self.report = False, False, None, ("waiting", 0)
+        self.gathering, self.gather_problem, self.previous_playset = False, "", None
+        app = document.app
+        self.window = window = tk.Toplevel(app.root, background=BG)
+        window.title("Gather Foundational Building Setup Data")
+        window.transient(app.root)
+        window.geometry(f"600x660+{app.root.winfo_rootx() + 160}+{app.root.winfo_rooty() + 60}")
+        app.dark_title_bar(window)
+        frame = ttk.Frame(window, padding=(24, 20, 24, 18))
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text="Gather Foundational Building Setup Data", style="Heading.TLabel").pack(anchor="w")
+        ttk.Label(frame, text="Do these steps in order.", style="Muted.TLabel").pack(anchor="w", pady=(4, 2))
+        self.data_age = ttk.Label(frame, style="Faint.TLabel")
+        self.data_age.pack(anchor="w", pady=(0, 14))
+
+        self.steps = []
+        texts = [
+            ("Prepare the mod",
+             "Turns on a data report in the mod and removes the old setup files, so the game starts with only "
+             "the base game buildings.",
+             [], "Prepare"),
+            ("Gather the data",
+             "Starts the game with only this mod. When the game sets up a new game, it writes a report about "
+             "every location to its log. Then this window closes the game. Your playsets stay as they are.",
+             [], "Gather"),
+            ("Write the setup files",
+             "Reads the report, saves it as the new building setup data, and writes the setup files from it. "
+             "This also turns the data report off.",
+             [], "Write"),
+        ]
+        for number, (title, why, text, button_text) in enumerate(texts, 1):
+            row = ttk.Frame(frame)
+            row.pack(fill="x", pady=(0, 16))
+            badge = tk.Label(row, text=str(number), width=3, font=app.bold, background=BORDER, foreground=TEXT)
+            badge.pack(side="left", anchor="n", padx=(0, 14), ipady=3)
+            body = ttk.Frame(row)
+            body.pack(side="left", fill="x", expand=True)
+            heading = ttk.Label(body, text=title, style="Setting.TLabel")
+            heading.pack(anchor="w")
+            ttk.Label(body, text=why, style="Muted.TLabel", wraplength=470, justify="left").pack(anchor="w", pady=(2, 0))
+            if text:
+                ttk.Label(body, text="\n".join(f"\u2022  {line}" for line in text),
+                          wraplength=470, justify="left").pack(anchor="w", pady=(6, 0))
+            status = tk.Label(body, background=BG, foreground=FAINT, anchor="w",
+                              justify="left", wraplength=520)
+            button = ttk.Button(body, text=button_text, style="Accent.TButton") if button_text else None
+            self.steps.append({"badge": badge, "heading": heading, "status": status, "button": button})
+        self.steps[0]["button"].configure(command=self.prepare)
+        self.steps[1]["button"].configure(command=self.gather)
+        self.steps[2]["button"].configure(command=self.read_and_write)
+
+        bottom = ttk.Frame(frame)
+        bottom.pack(fill="x", side="bottom")
+        ttk.Button(bottom, text="Close", style="Ghost.TButton", command=self.close).pack(side="right")
+        window.bind("<Escape>", lambda _: self.close())
+        window.protocol("WM_DELETE_WINDOW", self.close)
+        self.update()
+
+    # -------------------------------------------------------------- state
+
+    def dump_on(self):
+        path = self.module.DUMP_EFFECT_FILE
+        return path.is_file() and bool(DUMP_ON.search(path.read_text(encoding="utf-8-sig")))
+
+    def read_report(self):
+        """("waiting" | "writing" | "ready" | "problem", locations or text) for the debug.log written after Prepare.
+        debug.log is read again only when it changed."""
+        try:
+            log = self.module.find_debug_log()
+        except self.module.Problem as problem:
+            return "problem", str(problem)
+        prepared = self.module.DUMP_EFFECT_FILE.stat().st_mtime
+        if log is None or log.stat().st_mtime <= prepared:
+            self.log_seen = None
+            return "waiting", 0
+        seen = (log.stat().st_mtime, log.stat().st_size)
+        if seen != self.log_seen:
+            self.log_seen = seen
+            text = log.read_text(encoding="utf-8", errors="replace")
+            prefix = self.module.DUMP_PREFIX
+            start = text.rfind(f"{prefix}record=start;version={self.module.DUMP_VERSION}")
+            end = text.find(prefix + "record=end", start) if start >= 0 else -1
+            if start < 0:
+                self.report = ("started", 0)
+            elif end < 0:
+                self.report = ("writing", text.count(prefix + "record=location;", start))
+            else:
+                self.report = ("ready", text.count(prefix + "record=location;", start, end))
+        return self.report
+
+    def update(self):
+        if not self.window.winfo_exists():
+            return
+        saved = self.module.LOCATIONS_FILE
+        self.data_age.configure(text=f"Building setup data in use: from {time.strftime('%d %B %Y, %H:%M', time.localtime(saved.stat().st_mtime))}"
+                                if saved.is_file() else "There is no building setup data yet.")
+        dump_on = self.dump_on()
+        report, detail = self.read_report() if dump_on else ("waiting", 0)
+        # Steam takes a while to start the game, so an early check would find no game yet
+        if self.gathering and (report == "ready" or time.time() - self.started_at > 60 and not self.game_running()):
+            self.end_game()
+            if report != "ready":
+                self.gather_problem = "The game closed before the report was finished."
+        if self.finished:
+            current = 4
+        elif not dump_on:
+            current = 1
+        else:
+            current = 3 if report == "ready" else 2
+        step_status = {
+            1: "Done." if current > 1 else "",
+            2: "Done." if current > 2 else f"Cannot find debug.log: {detail}" if report == "problem"
+               else f"Reading locations: {detail:,}" if self.gathering and report == "writing"
+               else "Starting the game. This takes a minute or two." if self.gathering
+               else self.gather_problem if current == 2 else "",
+            3: "Done. You can close this window." if current > 3 else "",
+        }
+        for number, step in enumerate(self.steps, 1):
+            done, active = number < current, number == current
+            step["badge"].configure(text="✓" if done else str(number), background=GOOD if done else ACCENT if active else BORDER,
+                                    foreground=BG if done or active else MUTED)
+            step["heading"].configure(style="Setting.TLabel" if active or done else "Unset.TLabel")
+            text = step_status[number]
+            step["status"].configure(text=text, foreground=GOOD if done else WARN if number == 2 and (report == "problem" or self.gather_problem) else MUTED)
+            step["status"].pack_forget()
+            if text:
+                step["status"].pack(anchor="w", pady=(4, 0))
+            # Only the current step shows its button, so there is one thing to click
+            if step["button"]:
+                step["button"].pack_forget()
+                if active:
+                    step["button"].pack(anchor="w", pady=(8, 0))
+                    step["button"].state(["disabled"] if self.running or self.gathering else ["!disabled"])
+        self.window.after(self.POLL_MS, self.update)
+
+    # -------------------------------------------------------------- the game
+
+    def playsets_file(self):
+        """playsets.json sits in the game's user folder, the parent of the logs folder."""
+        logs = Path(self.module.get_from_config("Paths", "log_directory")).expanduser()
+        return (logs if logs.is_dir() else logs.parent).parent / "playsets.json"
+
+    def game_running(self):
+        out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq eu5.exe", "/FO", "CSV", "/NH"], capture_output=True,
+                             text=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout
+        return "eu5.exe" in out.lower()
+
+    def gather(self):
+        if self.game_running():
+            messagebox.showinfo("Gather the data", "Close Europa Universalis V, then click Gather.", parent=self.window)
+            return
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as key:
+                steam = winreg.QueryValueEx(key, "SteamExe")[0]
+        except OSError:
+            messagebox.showerror("Gather the data", "Cannot find Steam. The game starts through Steam.", parent=self.window)
+            return
+        path = self.playsets_file()
+        shutil.copy2(path, Path(tempfile.gettempdir()) / "playsets_before_building_setup.json")
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        playsets = [playset for playset in data["playsets"] if playset["name"] != self.PLAYSET]
+        active = next((playset for playset in playsets if playset.get("isActive")), None)
+        self.previous_playset = active["name"] if active else None
+        for playset in playsets:
+            playset.pop("isActive", None)
+        playsets.append({"name": self.PLAYSET, "isActive": True, "isAutomaticallySorted": True,
+                         "orderedListMods": [{"path": MOD_ROOT.as_posix() + "/", "isEnabled": True}],
+                         "DLC": active["DLC"] if active else []})
+        data["playsets"] = playsets
+        path.write_text(json.dumps(data, indent="\t"), encoding="utf-8")
+        # Through Steam, because a game started without Steam turns off store DLC in every playset.
+        # -play opens the country selection screen at once, and the report is written before it shows.
+        subprocess.Popen([steam, "-applaunch", self.STEAM_APP_ID, "-debug_mode", "-play=FRA"],
+                         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.gathering, self.gather_problem = True, ""
+        self.started_at = time.time()
+
+    def end_game(self):
+        """Closes the game and puts the playsets back as they were."""
+        self.gathering = False
+        subprocess.run(["taskkill", "/F", "/IM", "eu5.exe"], capture_output=True,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        for _ in range(40):
+            if not self.game_running():
+                break
+            time.sleep(0.25)
+        path = self.playsets_file()
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        data["playsets"] = [playset for playset in data["playsets"] if playset["name"] != self.PLAYSET]
+        for playset in data["playsets"]:
+            if playset["name"] == self.previous_playset:
+                playset["isActive"] = True
+        path.write_text(json.dumps(data, indent="\t"), encoding="utf-8")
+
+    def close(self):
+        if self.gathering:
+            self.end_game()
+        self.window.destroy()
+
+    # -------------------------------------------------------------- runs
+
+    def start(self, arguments, then):
+        self.running = True
+        self.update_buttons()
+
+        def done(output, code):
+            self.running = False
+            then(code)
+            if self.window.winfo_exists():
+                self.update_buttons()
+        self.document.run(arguments, done)
+
+    def update_buttons(self):
+        for step in self.steps:
+            if step["button"] and self.running:
+                step["button"].state(["disabled"])
+
+    def prepare(self):
+        self.finished = False
+        self.start(["--setup-data-dump"], lambda code: None)
+
+    def read_and_write(self):
+        def then(code):
+            self.document.after_apply("", code)
+            self.finished = code == 0
+        self.start(self.document.settings_arguments(), then)
+
 
 class Hint:
     """A small note under the mouse pointer after a short wait."""
@@ -1826,6 +2872,10 @@ def diff_lines(old, new, context=2):
 
 def number_text(value):
     return f"{value:.5f}".rstrip("0").rstrip(".") if value is not None else ""
+
+
+def short_number(value):
+    return number_text(round(value, 3)) or "0"
 
 
 # Values outside the settings that the provisions system depends on, and the mod files that hold them
@@ -2033,6 +3083,7 @@ class ProvisionsModel:
         self.food_per_unit = {}
         self.added = set()  # Production methods that Apply adds to the building files
         self.converted = set()  # Other production methods that Apply turns into provisions methods
+        self.army_eaters, self.army_pending = {}, []  # Army maintenance demands whose provisions line Apply writes
         self.temp = Path(tempfile.gettempdir()) / "mnt_provisions_live_settings.txt"
 
     def game_folder(self):
@@ -2048,6 +3099,7 @@ class ProvisionsModel:
                      "places": module.locate(list(methods) + list(others)), "slots": slots, "others": others,
                      "slot_of": slot_of, "fields": self.fields}
         self.values = read_game_values(module.MOD_FOLDER)
+        self.army_eaters = module.army_food()
 
     def read_slots(self, goods, methods):
         """Each production methods block in a building is one slot: one of its production methods runs at a time.
@@ -2113,6 +3165,7 @@ class ProvisionsModel:
             self.problem = str(problem)
             return
         self.problem = None
+        self.army_pending = [plan for plan in module.army_plans(self.army_eaters, food_per_provisions) if plan["changed"]]
         self.results, self.raw = {}, {}
         for name, method in game["methods"].items():
             result = module.check(name, method, settings.get(name), game["places"].get(name, []), self.food_per_unit,
@@ -2229,10 +3282,14 @@ class Localization:
     def __init__(self):
         # renames: {old key: new key}. Apply writes the new key on the old key's line and its _desc line.
         self.names, self.where, self.pending, self.renames = {}, {}, {}, {}
+        # A tool can set its own files. replace_names takes edits of names that only the game defines.
+        self.vanilla, self.new_names, self.replace_names = set(), self.NEW_NAMES, None
 
     def load(self, game_folder):
-        names, where = {}, {}
+        names, where, vanilla = {}, {}, set()
         roots = [(Path(game_folder) / "main_menu" / "localization" / "english", False)] if game_folder else []
+        # Each DLC has its own localization folder
+        roots += [(path, False) for path in sorted(Path(game_folder).glob("dlc/*/main_menu/localization/english"))] if game_folder else []
         roots.append((HERE.parents[2] / "main_menu" / "localization" / "english", True))
         for root, in_mod in roots:
             if not root.is_dir():
@@ -2247,17 +3304,23 @@ class Localization:
                     match = LOC_LINE.match(line)
                     if match:
                         names[match[2]] = match[4]
+                        if not in_mod:
+                            vanilla.add(match[2])
                         if in_mod:
                             where[match[2]] = (path, index)
                         else:
                             where.pop(match[2], None)
-        self.names, self.where = names, where
+        self.names, self.where, self.vanilla = names, where, vanilla
 
     def name(self, key):
         return self.pending.get(key, self.names.get(key))
 
     def editable(self, key):
         return key in self.where
+
+    def writable(self, key):
+        """True when Apply can write the name: a mod name, a new name, or a game name through replace_names."""
+        return self.editable(key) or self.addable(key) or bool(self.replace_names and key in self.vanilla)
 
     def addable(self, key):
         """True when no file defines the name, so Apply can add it to NEW_NAMES."""
@@ -2274,7 +3337,8 @@ class Localization:
         """({path: (bom, lines)}, {new key: (path, index)}) with the pending names put in. Writes nothing."""
         by_file, files, placed = {}, {}, {}
         for key, text in self.pending.items():
-            path, index = self.where.get(key, (self.NEW_NAMES, None))
+            new_file = self.replace_names if self.replace_names and key in self.vanilla else self.new_names
+            path, index = self.where.get(key, (new_file, None))
             by_file.setdefault(path, []).append((index, key, text))
         for old in self.renames:
             for key in (old, old + "_desc"):
@@ -2282,7 +3346,7 @@ class Localization:
                     path, index = self.where[key]
                     by_file.setdefault(path, []).append((index, key, None))
         for path, edits in by_file.items():
-            raw = path.read_bytes()
+            raw = path.read_bytes() if path.is_file() else b"\xef\xbb\xbfl_english:\n"
             lines = raw.decode("utf-8-sig").split("\n")
             cr = "\r" if lines[0].endswith("\r") else ""
             for index, key, text in edits:
@@ -2307,10 +3371,15 @@ class Localization:
                 return new + key[len(old):]
         return key
 
-    def save(self):
+    def save(self, write=None):
+        """Writes the pending names. write takes {path: bytes} in place of a plain write, such as a write with a backup."""
         files, placed = self.new_lines()
-        for path, (bom, lines) in files.items():
-            path.write_bytes((b"\xef\xbb\xbf" if bom else b"") + "\n".join(lines).encode("utf-8"))
+        contents = {path: (b"\xef\xbb\xbf" if bom else b"") + "\n".join(lines).encode("utf-8") for path, (bom, lines) in files.items()}
+        if write and contents:
+            write(contents)
+        for path, content in ({} if write else contents).items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
         self.where.update(placed)
         self.names.update(self.pending)
         for key in list(self.where) + list(self.names):
@@ -3580,7 +4649,8 @@ class ApplyDocument(Document):
             self.action_buttons.append(button)
         self.busy = ttk.Label(bar, style="Faint.TLabel")
         self.busy.pack(side="left", padx=10)
-        ttk.Button(bar, text="Clear", style="Ghost.TButton", command=self.close_console).pack(side="right")
+        clear = ttk.Button(self.output.master.master, text="Clear", style="ConsoleGhost.TButton", command=self.close_console)
+        clear.place(relx=1.0, x=-28, y=6, anchor="ne")
 
     def swap_view(self):
         self.code_changes.set(not self.code_changes.get())
@@ -3623,6 +4693,24 @@ class BuildingDocument(ApplyDocument):
         super().__init__(app, tool)
         self.build_apply_header()
         self.update_status()
+        self.guide = None
+        self.notice.configure(cursor="hand2")
+
+    def place_sash(self):
+        """The console hides until a run."""
+        height = self.panes.winfo_height()
+        if height > 100:
+            self.panes.sashpos(0, height // 2 if self.console_open else height)
+
+    def open_game_data_guide(self):
+        if self.guide and self.guide.window.winfo_exists():
+            self.guide.window.deiconify()
+            self.guide.window.lift()
+        else:
+            self.guide = GameDataGuide(self)
+
+    def notice_clicked(self):
+        self.open_game_data_guide()
 
     # -------------------------------------------------------------- sidebar
     # A drawn list, as in the provisions window. Hover changes only the colors of two rows, so it stays fast.
@@ -3654,13 +4742,19 @@ class BuildingDocument(ApplyDocument):
         self.list.bind("<Button-1>", self.list_click)
         self.list.bind("<Up>", lambda _: self.step_section(-1))
         self.list.bind("<Down>", lambda _: self.step_section(1))
-        ttk.Button(self.side, text="+   New section", style="Side.TButton", command=self.new_section).pack(fill="x", padx=14, pady=12)
+        self.new_button = ttk.Button(self.side, text="+   New section", style="Side.TButton", command=self.new_section)
+        self.new_button.pack(fill="x", padx=14, pady=12)
 
     def wheel_canvases(self):
         return [self.canvas, self.list]
 
     def is_open(self, key, searching):
-        return searching or self.expanded.get(key, True)
+        # A file's panel starts open. A group starts as the tool says.
+        return searching or self.expanded.get(key, key[0] == "file" or getattr(self.tool, "groups_start_open", True))
+
+    def group_key(self, index, label, head):
+        """The key of a group's open state. A group with no section of its own is a folder."""
+        return (index, head) if head else (index, ("folder", label))
 
     def draw_list(self):
         canvas = self.list
@@ -3675,17 +4769,20 @@ class BuildingDocument(ApplyDocument):
 
         y = 4
         for index, (file_label, settings_file) in enumerate(self.files):
-            rows = []  # (kind, name, indent)
+            rows = []  # (kind, name, indent or a folder's member count, searching)
             for label, head, members in self.tool.groups(settings_file):
                 if label is None:
-                    rows += [("section", name, 0) for name in self.side_order(members) if matches(name)]
+                    rows += [("section", name, 0, bool(words)) for name in self.side_order(members) if matches(name)]
                     continue
-                shown = members if matches(label) else [name for name in members if matches(name)]
-                if not shown and not matches(label):
+                # A search opens a group only for members that match by their own name
+                hits = [name for name in members if matches(name)] if words else []
+                if words and not hits and not matches(label):
                     continue
-                rows.append(("group" if shown else "section", head or label, 0))
-                if self.is_open((index, head or label), bool(words)):
-                    rows += [("member", name, 1) for name in self.side_order(shown)]
+                key = self.group_key(index, label, head)
+                kind = "folder" if not head else "group" if members else "section"
+                rows.append((kind, head or label, 0, bool(hits)) if head else (kind, label, len(members), bool(hits)))
+                if members and self.is_open(key, bool(hits)):
+                    rows += [("member", name, 1, bool(words)) for name in self.side_order(hits or members)]
             if words and not rows:
                 continue
             open_ = self.is_open(("file", index), bool(words))
@@ -3693,13 +4790,20 @@ class BuildingDocument(ApplyDocument):
             if not open_:
                 continue
             guide_top = None
-            for kind, name, indent in rows:
+            for kind, name, indent, searching in rows:
+                if kind == "folder":
+                    # A folder row carries its member count where the others carry their indent
+                    if guide_top is not None:
+                        canvas.create_line(14, guide_top, 14, y - self.ROW / 2 - 4, fill=BORDER, width=2)
+                        guide_top = None
+                    y = self.draw_folder(index, name, indent, y, width, searching)
+                    continue
                 if kind == "member" and guide_top is None:
                     guide_top = y - 2
                 if kind != "member" and guide_top is not None:
                     canvas.create_line(14, guide_top, 14, y - self.ROW / 2 - 4, fill=BORDER, width=2)
                     guide_top = None
-                y = self.draw_section(index, settings_file, kind, name, indent, y, width, bool(words))
+                y = self.draw_section(index, settings_file, kind, name, indent, y, width, searching)
             if guide_top is not None:
                 canvas.create_line(14, guide_top, 14, y - self.ROW / 2 - 2, fill=BORDER, width=2)
             y += 8
@@ -3744,15 +4848,49 @@ class BuildingDocument(ApplyDocument):
         label = canvas.create_text(x, middle, text=text, anchor="w", fill=color, font=self.app.bold if default else None)
         texts.append((label, color))
         count = self.side_count(settings_file, name)[0]
-        room = x1 - 10 - x - (self.app.small.measure(count) + 10 if count else 0)
+        count_icon = getattr(self.tool, "count_icon", lambda *_: None)(settings_file, name) if count else None
+        right = x1 - 10 - (18 if count_icon else 0)
+        room = right - x - (self.app.small.measure(count) + 10 if count else 0)
         self.clip_text(label, room)
+        if count_icon:
+            canvas.create_image(x1 - 8, middle, image=count_icon, anchor="e")
         if count:
-            counted = canvas.create_text(x1 - 10, middle, text=count, anchor="e", fill=FAINT, font=self.app.small)
+            counted = canvas.create_text(right, middle, text=count, anchor="e", fill=FAINT, font=self.app.small)
             texts.append((counted, FAINT))
         self.side_rows.append({"top": y, "bottom": y + self.ROW, "kind": kind, "index": index, "name": name,
                                "file": settings_file, "background": background, "base": base, "texts": texts,
                                "open": kind == "group" and self.is_open((index, name), searching)})
         return y + self.ROW + 2
+
+    def draw_folder(self, index, label, count, y, width, searching):
+        """A group row with no section of its own. A click anywhere on it opens or closes it."""
+        canvas, x0, x1 = self.list, 4, width - 6
+        background = canvas.create_rectangle(x0, y, x1, y + self.ROW, fill=SIDEBAR, outline="")
+        middle, x = y + self.ROW / 2, x0 + 12
+        open_ = self.is_open(self.group_key(index, label, None), searching)
+        texts = [(canvas.create_text(x, middle, text="▾" if open_ else "▸", anchor="w", fill=MUTED), MUTED)]
+        x += 16
+        text, image = self.side_label(label)
+        if image:
+            canvas.create_image(x, middle, image=image, anchor="w")
+            x += 22
+        item = canvas.create_text(x, middle, text=text, anchor="w", fill=TEXT, font=self.app.bold)
+        texts.append((item, TEXT))
+        self.clip_text(item, x1 - 10 - x - self.app.small.measure(str(count)) - 10)
+        texts.append((canvas.create_text(x1 - 10, middle, text=str(count), anchor="e", fill=FAINT, font=self.app.small), FAINT))
+        self.side_rows.append({"top": y, "bottom": y + self.ROW, "kind": "folder", "index": index, "name": label, "file": None,
+                               "background": background, "base": SIDEBAR, "texts": texts, "open": open_})
+        return y + self.ROW + 2
+
+    def reveal(self, settings_file, name):
+        """Opens the file panel and the group that hold a section, so the selected row shows."""
+        index = next((index for index, (_, other) in enumerate(self.files) if other is settings_file), None)
+        if index is None:
+            return
+        self.expanded[("file", index)] = True
+        for label, head, members in self.tool.groups(settings_file):
+            if label is not None and name in members:
+                self.expanded[self.group_key(index, label, head)] = True
 
     def clip_text(self, item, room):
         """Cuts a canvas text to the room it has, with ... at the end."""
@@ -3783,9 +4921,9 @@ class BuildingDocument(ApplyDocument):
         row = self.row_at(event)
         self.set_hover(row)
         tip = ""
-        if row and row["kind"] != "file" and row["name"].lower() not in DEFAULT_SECTIONS:
-            count = self.side_count(row["file"], row["name"])[0]
-            tip = row["name"] + (f"\n{count} in the setup files" if count else "")
+        if row and row["kind"] not in ("file", "folder") and row["name"].lower() not in DEFAULT_SECTIONS:
+            hint = self.tool.count_hint(row["file"], row["name"])
+            tip = row["name"] + (f"\n{hint}" if hint else "")
         self.tip.show_later(tip, event.x_root, event.y_root)
 
     def list_click(self, event):
@@ -3796,6 +4934,10 @@ class BuildingDocument(ApplyDocument):
             return
         if row["kind"] == "file":
             self.expanded[("file", row["index"])] = not row["open"]
+            self.draw_list()
+            return
+        if row["kind"] == "folder":
+            self.expanded[self.group_key(row["index"], row["name"], None)] = not row["open"]
             self.draw_list()
             return
         if row["kind"] == "group" and event.x < 30:
@@ -3814,7 +4956,7 @@ class BuildingDocument(ApplyDocument):
         self.see_selected()
 
     def section_rows(self):
-        return [row for row in self.side_rows if row["kind"] != "file"]
+        return [row for row in self.side_rows if row["kind"] not in ("file", "folder")]
 
     def step_section(self, step):
         rows = self.section_rows()
@@ -3845,6 +4987,8 @@ class BuildingDocument(ApplyDocument):
 
     def mark_selected(self):
         if hasattr(self, "list"):
+            if self.section_name:
+                self.reveal(self.file, self.section_name)
             self.draw_list()
             self.see_selected()
 
@@ -5280,7 +6424,7 @@ class ProvisionsDocument(ApplyDocument):
     def update_status(self):
         dirty = self.dirty
         results = self.tool.model.results.values() if self.tool.model.results else []
-        waiting = dirty or any(result["pending"] for result in results)
+        waiting = dirty or any(result["pending"] for result in results) or bool(self.tool.model.army_pending)
         self.status.configure(text="Not applied" if waiting else "Applied", foreground=WARN if waiting else FAINT)
         self.save_button.state(["!disabled"] if waiting else ["disabled"])
         self.undo_button.state(["!disabled"] if dirty else ["disabled"])
@@ -5350,6 +6494,432 @@ class ProvisionsDocument(ApplyDocument):
 
 # ------------------------------------------------------------------ the window
 
+class UnitDocument(BuildingDocument):
+    """Unit maintenance: the building setup form, with what the settings give shown at the top of each page."""
+
+    OPTIONS = {"units": "--unit-settings", "demands": "--demand-settings"}
+
+    def __init__(self, app, tool):
+        tool.document = self
+        self.summary_frame = None
+        super().__init__(app, tool)
+        self.new_button.configure(text="+   New demand")
+
+    def extra_rows(self, section_name, row):
+        self.below_frame = None
+        self.summary_frame = ttk.Frame(self.form)
+        self.summary_frame.grid(row=row, column=0, columnspan=3, sticky="ew", pady=(0, 14))
+        self.update_summary()
+        return row + 1
+
+    def page_edits(self):
+        """(section, {key: value}) of the values on the page that are not in the file yet."""
+        return (self.section_name, {key: editor.get() for _, key, editor in self.editors if editor.changed})
+
+    def fill_page(self, section, name):
+        super().fill_page(section, name)
+        # The lines that belong under the settings, such as the unit types that use a demand
+        self.below_frame = ttk.Frame(self.form)
+        self.below_frame.grid(row=999, column=0, columnspan=3, sticky="ew", pady=(18, 0))
+        self.update_summary()
+        editors = {key: editor for _, key, editor in self.editors}
+        if isinstance(editors.get("goods"), MapEditor) and isinstance(editors.get("food_per_strength"), NumberEditor):
+            self.link_provisions(editors["goods"], editors["food_per_strength"])
+
+    def link_provisions(self, goods, food):
+        """Shows provisions as a row of the goods. The provisions and the daily food consumption set each other."""
+        module = self.tool.module
+        per_food = module.DAYS_PER_MONTH / self.tool.game["food_per_provisions"]
+        busy = [False]
+
+        def provisions_text(text):
+            try:
+                return module.number(float(text) * per_food)
+            except ValueError:
+                return ""
+
+        def from_provisions(text):
+            if busy[0]:
+                return
+            try:
+                value = float(text)
+            except ValueError:
+                return
+            busy[0] = True
+            food.variable.set(module.number(value / per_food))
+            busy[0] = False
+
+        variable = goods.add_fixed_row(module.PROVISIONS, provisions_text(food.get()), from_provisions)
+
+        def from_food(*_):
+            if not busy[0]:
+                busy[0] = True
+                variable.set(provisions_text(food.variable.get()))
+                busy[0] = False
+
+        food.variable.trace_add("write", from_food)
+
+    def update_summary(self):
+        if self.summary_frame is None or not self.summary_frame.winfo_exists():
+            return
+        below = getattr(self, "below_frame", None)
+        below = below if below is not None and below.winfo_exists() else None
+        for frame in (self.summary_frame, below):
+            for child in frame.winfo_children() if frame else []:
+                child.destroy()
+        groups = {}  # The linked number fields of each group, such as provisions amount, gold and daily food
+        for line in self.tool.summary(self.file, self.section_name, self.page_edits()):
+            target = self.summary_frame
+            if line[0] == "below":
+                if below is None:
+                    continue
+                target, line = below, line[1]
+            if line[0] == "grid":  # A table. The first row is the header, and the last row is bold when it is a total.
+                _, rows, style, total = line
+                grid = ttk.Frame(target)
+                grid.pack(anchor="w", pady=(2, 10))
+                for row_index, row in enumerate(rows):
+                    cell_style = "Faint.TLabel" if row_index == 0 else "Setting.TLabel" if total and row_index == len(rows) - 1 else style
+                    for column, cell in enumerate(row):
+                        text, part_image, command, change, after = (cell + (None, None, None))[:5]
+                        if after:  # An icon right of the text, such as gold right of a cost
+                            ttk.Label(grid, text=text + " ", image=after, compound="right", style=cell_style).grid(
+                                row=row_index, column=column, sticky="e", padx=(0, 28), pady=1)
+                            continue
+                        if change:
+                            self.number_cell(grid, text, change, groups, lambda entry, row=row_index, column=column:
+                                             entry.grid(row=row, column=column, sticky="e", padx=(0, 28), pady=1))
+                            continue
+                        label = icon_label(grid, part_image, (" " + text) if part_image else text,
+                                           style="Link.TLabel" if command else cell_style)
+                        label.grid(row=row_index, column=column, sticky="w" if column < 2 else "e", padx=(0, 28), pady=1)
+                        if command:
+                            label.configure(cursor="hand2")
+                            label.bind("<Button-1>", lambda _, command=command: command())
+                continue
+            if line[0] == "row":
+                row = ttk.Frame(target)
+                row.pack(anchor="w", pady=(0, 6))
+                for text, after in line[1]:
+                    ttk.Label(row, text=text + " ", image=after or "", compound="right" if after else "none", style=line[2],
+                              padding=0).pack(side="left", padx=(0, 4))
+                continue
+            if line[0] == "field":
+                _, text, image, value, change, unit = line
+                row = ttk.Frame(target)
+                row.pack(anchor="w", pady=(0, 6))
+                icon_label(row, image, " " + text, style="TLabel").pack(side="left", padx=(0, 10))
+                self.number_cell(row, value, change, groups, lambda entry: entry.pack(side="left"))
+                ttk.Label(row, text=unit, style="Muted.TLabel").pack(side="left", padx=(8, 0))
+                continue
+            if line[0] == "button":
+                ttk.Button(target, text=line[1], style="Ghost.TButton", command=line[2]).pack(anchor="w", pady=(0, 6))
+                continue
+            text, style, image, hint = (line + (None, None))[:4]
+            label = icon_label(target, image, (" " + text) if image else text, style=style, wraplength=820, justify="left")
+            label.pack(anchor="w", pady=(0, 3))
+            if hint:
+                Hint(label, hint)
+
+    def number_cell(self, parent, text, change, groups, place):
+        """A number field of the summary. Typing in it sets the other fields of its group.
+        Enter or leaving the field writes the change."""
+        variable = tk.StringVar(value=text)
+        if change.get("icon"):  # A gold icon right of a cost field
+            holder = ttk.Frame(parent)
+            place(holder)
+            entry = ttk.Entry(holder, textvariable=variable, width=8, justify="right")
+            entry.pack(side="left")
+            ttk.Label(holder, image=change["icon"]).pack(side="left", padx=(4, 0))
+        else:
+            entry = ttk.Entry(parent, textvariable=variable, width=8, justify="right")
+            place(entry)
+        cell = {"variable": variable, "scale": change["scale"], "busy": False}
+        group = groups.setdefault(change["group"], [])
+        group.append(cell)
+
+        def base():
+            try:
+                return float(variable.get()) / cell["scale"]
+            except (ValueError, ZeroDivisionError):
+                return None
+
+        def typed(*_):
+            value = base()
+            if cell["busy"] or value is None:
+                return
+            for other in group:
+                if other is not cell:
+                    other["busy"] = True
+                    other["variable"].set(short_number(value * other["scale"]))
+                    other["busy"] = False
+
+        def done(_=None, now=False):
+            if variable.get() == text or cell.get("sent"):
+                return
+            value = base()
+            if value is None:
+                variable.set(text)
+                return
+            for other in group:
+                other["sent"] = True
+            write = lambda: change["set"](round(value, self.tool.module.AMOUNT_DECIMALS))
+            write() if now else self.app.root.after_idle(write)
+
+        variable.trace_add("write", typed)
+        entry.bind("<Return>", done)
+        entry.bind("<FocusOut>", done)
+        entry.write_now = lambda: done(now=True)  # Ctrl+S writes the number before it applies
+
+    def change_good(self, demand, good, amount):
+        """Writes a new amount of one good to a demand. When other unit types use the demand,
+        the person chooses between all of them and a new demand for this section only."""
+        owner = self.section_name
+        self.commit()
+        plan = self.tool.plan()
+        if plan is None or demand not in plan["demands"]:
+            return self.refresh()
+        users = sorted((unit for unit, item in plan["units"].items() if item["demand"] == demand), key=lambda unit: self.side_label(unit)[0])
+        if len(users) > 1:
+            choice = ImpactDialog(self.app, "Change a shared demand",
+                                  f"{len(users)} unit types use {self.side_label(demand)[0]}. The change applies to all of them.",
+                                  [f"{self.side_label(unit)[0]}   ({self.side_label(plan['units'][unit]['category'])[0]})" for unit in users],
+                                  [("all", f"Change all {len(users)}"), ("custom", f"New demand for {self.side_label(owner)[0]} only")]).result
+            if choice is None:
+                return self.refresh()
+            if choice == "custom":
+                demand = self.copy_demand(demand, owner)
+        module = self.tool.module
+        if good == module.PROVISIONS:
+            food = amount * self.tool.game["food_per_provisions"] / module.DAYS_PER_MONTH
+            self.set_demand_value(demand, "food_per_strength", module.number(food))
+        else:
+            goods = dict(plan["demands"][demand]["goods"]) if demand in plan["demands"] else \
+                dict(self.tool.plan()["demands"][demand]["goods"])
+            if amount:
+                goods[good] = amount
+            else:
+                goods.pop(good, None)
+            self.set_demand_value(demand, "goods", module.goods_map(goods))
+        self.refresh(self.file, owner)
+
+    def set_demand_value(self, demand, key, value):
+        section = self.demands.section(demand)
+        setting = next((setting for setting in section["settings"] if setting["key"] == key), None)
+        if setting:
+            self.demands.set_value(setting, value)
+            self.demands.parse()
+        else:
+            self.demands.add_setting(section, key, value)
+        self.demands.dirty = True
+
+    def copy_demand(self, demand, owner):
+        """Copies a demand under the name <owner>_maintenance, gives it to the owner section, and returns the name."""
+        name, number = f"{owner}_maintenance", 2
+        while name in self.demands.names():
+            name, number = f"{owner}_maintenance_{number}", number + 1
+        source = self.demands.section(demand)
+        settings = [(setting["key"], self.demands.value(setting)) for setting in source["settings"]] if source else []
+        self.demands.add_section(name, settings or self.tool.new_section_settings(name))
+        self.demands.dirty = True
+        self.tool.loc.set(name, f"{self.side_label(owner)[0]} Maintenance")
+        self.set_demand(owner, name)
+        return name
+
+    def edited(self):
+        super().edited()
+        if not getattr(self, "summary_pending", False):
+            self.summary_pending = True
+            self.app.root.after(300, self.summary_later)
+
+    def summary_later(self):
+        self.summary_pending = False
+        self.update_summary()
+
+    def build_heading(self, top, name, text, image):
+        """The English name in a field. Apply writes it to the mod's localization."""
+        loc = self.tool.loc
+        if name in self.tool.GLOBAL_TITLES:
+            super().build_heading(top, name, text, image)
+            return name  # The page shows no section key
+        if not loc.writable(name):
+            return super().build_heading(top, name, text, image)
+        if image:
+            ttk.Label(top, image=image).pack(side="left", padx=(0, 8))
+        title = tk.StringVar(value=loc.name(name) or "")
+        # A faint line under the field shows that the name can be edited
+        holder = tk.Frame(top, background=BORDER)
+        holder.pack(side="left")
+        entry = ttk.Entry(holder, textvariable=title, width=max(24, len(title.get()) + 2), style="Name.TEntry", font=self.app.heading)
+        entry.pack(pady=(0, 1))
+        Hint(entry, "The English name. Apply writes it to the mod's localization files.")
+        title.trace_add("write", lambda *_: (loc.set(name, title.get().strip()) if title.get().strip() or loc.editable(name)
+                                             else loc.pending.pop(name, None), self.loc_edited()))
+        return ""
+
+    def loc_edited(self):
+        self.update_status()
+        self.draw_list()
+
+    @property
+    def dirty(self):
+        return super().dirty or bool(self.tool.loc.pending)
+
+    def settings_arguments(self):
+        self.backup_before = self.newest_backup()  # So save_names finds the backup this run makes
+        return super().settings_arguments()
+
+    def newest_backup(self):
+        found = self.tool.module.backups()
+        return found[0] if found else None
+
+    def save_names(self):
+        """Writes the English names into the backup the generator just made, so Restore takes them back too."""
+        newest = self.newest_backup()
+        into = newest if newest != self.backup_before else None
+        self.tool.loc.save(lambda contents: self.tool.module.setup.write_with_backup(contents, "apply", into))
+
+    def after_apply(self, output, code):
+        if code == 0:
+            self.save_names()
+        super().after_apply(output, code)
+
+    def finish_before_close(self):
+        if not super().finish_before_close():
+            return False
+        self.save_names()
+        return True
+
+    def revert(self):
+        if self.dirty and not messagebox.askyesno("Undo changes", "Undo the changes you have not applied?"):
+            return
+        self.tool.loc.pending = {}
+        for _, settings_file in self.files:
+            settings_file.load()
+        self.refresh()
+
+    # -------------------------------------------------------------- unit and demand actions
+
+    @property
+    def units(self):
+        return self.files[0][1]
+
+    @property
+    def demands(self):
+        return self.files[1][1]
+
+    def ask_demand_name(self, title, suggestion):
+        """A new demand name from the person, or None. A name that is taken is asked again."""
+        prompt = "The key of the new maintenance demand. You can give it an English name on its page."
+        while True:
+            name = NameDialog(self.app, title, prompt, suggestion).result
+            if name is None or name not in self.demands.names():
+                return name
+            prompt, suggestion = f"{name} is taken. Choose another key.", name
+
+    def new_section(self):
+        name = self.ask_demand_name("New demand", "")
+        if not name:
+            return
+        self.commit()
+        self.demands.add_section(name, self.tool.new_section_settings(name))
+        self.demands.dirty = True
+        self.search.set("")
+        self.refresh(self.demands, name)
+
+    def set_demand(self, unit, demand):
+        """Gives a unit type section its own maintenance_demand."""
+        section = self.units.section(unit)
+        if section is None:
+            self.units.add_section(unit, [("maintenance_demand", demand)])
+        else:
+            setting = next((setting for setting in section["settings"] if setting["key"] == "maintenance_demand"), None)
+            if setting:
+                self.units.set_value(setting, demand)
+                self.units.parse()
+            else:
+                self.units.add_setting(section, "maintenance_demand", demand)
+        self.units.dirty = True
+
+    def copy_to_new_demand(self, editor):
+        """Copies the unit's demand under a new name, gives it to this unit, and opens it."""
+        unit, current = self.section_name, editor.get()
+        name = self.ask_demand_name("Copy to new demand", f"{unit}_maintenance")
+        if not name:
+            return
+        self.commit()
+        source = self.demands.section(current)
+        settings = [(setting["key"], self.demands.value(setting)) for setting in source["settings"]] if source else []
+        self.demands.add_section(name, settings or self.tool.new_section_settings(name))
+        self.demands.dirty = True
+        self.tool.loc.set(name, f"{self.side_label(unit)[0]} Maintenance")
+        self.set_demand(unit, name)
+        self.search.set("")
+        self.refresh(self.demands, name)
+
+    def add_unit_types(self, demand):
+        """Ticks unit types in a list and gives each one this demand."""
+        plan = self.tool.plan() or {"units": {}}
+        users = [item for item in plan["units"].values() if item["demand"] == demand]
+        army = None if not users else any(item["army"] for item in users)
+        items = sorted(((f"{self.side_label(unit)[0]}   ({self.side_label(item['category'])[0]})", unit)
+                        for unit, item in plan["units"].items() if item["demand"] != demand and (army is None or item["army"] == army)),
+                       key=lambda item: item[0].lower())
+        result = CheckDialog(self.app, "Add unit types", f"Tick the unit types that use {self.side_label(demand)[0]}.", items).result
+        if not result:
+            return
+        self.commit()
+        for unit in result:
+            self.set_demand(unit, demand)
+        self.refresh(self.demands, demand)
+
+    def open_unit(self, unit):
+        self.open_section(self.units, unit)
+
+    def reset_to_category(self):
+        """Takes every setting out of the unit type section, so it uses its category's values."""
+        self.commit()
+        while self.file.section(self.section_name)["settings"]:
+            self.file.remove_setting(self.file.section(self.section_name)["settings"][-1])
+        self.file.dirty = True
+        self.refresh()
+
+    def section_buttons(self, top, name):
+        kind = self.tool.kind(self.file, name)
+        if kind == "unit":
+            button = ttk.Button(top, text="Reset to category", style="Ghost.TButton", command=self.reset_to_category)
+            button.pack(side="right")
+            if not self.file.section(name)["settings"]:
+                button.state(["disabled"])
+        elif kind == "demand":
+            button = ttk.Button(top, text="Delete section", style="Danger.TButton", command=self.remove_section)
+            button.pack(side="right")
+            plan = self.tool.plan()
+            users = sum(item["demand"] == name for item in plan["units"].values()) if plan else 0
+            if users:
+                button.state(["disabled"])
+                Hint(button, f"{users} unit types use this demand. Give them another demand first.")
+        elif kind != "category":
+            super().section_buttons(top, name)
+
+    def after_field(self, key, editor, label, row):
+        """The demand field links to the demand page. On a unit page it can copy the demand for this unit.
+        """
+        if key in ("soldier_salary", "sailor_salary"):
+            ttk.Label(editor.frame, image=self.tool.icons.get("icons/resources/gold.dds", 14)).pack(side="left", padx=(6, 0))
+            return 0
+        if key != "maintenance_demand":
+            return 0
+        link = ttk.Label(label, text="open demand", style="Link.TLabel", cursor="hand2", font=self.app.small)
+        link.pack(anchor="w", pady=(4, 0))
+        link.bind("<Button-1>", lambda _: self.open_section(self.demands, editor.get()) if editor.get() in self.demands.names() else None)
+        if self.tool.kind(self.file, self.section_name) == "unit":
+            copy = ttk.Button(editor.frame, text="Copy to new demand", style="Ghost.TButton", command=lambda: self.copy_to_new_demand(editor))
+            copy.pack(side="left", padx=(8, 0))
+            Hint(copy, "Copies this demand under a new name, gives it to this unit type only, and opens it")
+        return 0
+
+
 class App:
     def __init__(self, tool_class):
         if os.name == "nt":
@@ -5387,19 +6957,29 @@ class App:
         self.main_stack.columnconfigure(0, weight=1)
 
         tool = tool_class(self)
-        self.current = (ProvisionsDocument if isinstance(tool, ProvisionsMethods) else BuildingDocument)(self, tool)
+        documents = {ProvisionsMethods: ProvisionsDocument, UnitMaintenance: UnitDocument}
+        self.current = documents.get(tool_class, BuildingDocument)(self, tool)
         self.current.show()
 
         self.root.bind_all("<MouseWheel>", self.wheel)
         # Scrolling the form must not change the dropdown under the pointer
         self.root.unbind_class("TCombobox", "<MouseWheel>")
-        self.root.bind("<Control-s>", lambda _: self.current.primary())
+        self.root.bind("<Control-s>", self.save_shortcut)
         self.root.bind("<Control-f>", lambda _: self.current.search_entry.focus_set())
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self.root.report_callback_exception = self.problem
         self.root.after(200, self.current.place_sash)
         threading.Thread(target=lambda: self.inbox.put(load_names(self.current.tool)), daemon=True).start()
         self.wait_for_names()
+
+    def save_shortcut(self, _=None):
+        # A summary field writes its number only on Enter or when it loses the focus, so Ctrl+S writes it first
+        try:
+            focused = self.root.focus_get()
+        except KeyError:  # The focus is in a dropdown's list, which tkinter cannot name
+            focused = None
+        getattr(focused, "write_now", lambda: None)()
+        self.current.primary()
 
     def wheel(self, event):
         # The path as Tk gives it. tkinter cannot name a dropdown's list, and that list scrolls itself.
@@ -5518,8 +7098,9 @@ class App:
                   bordercolor=[("focus", ACCENT), ("hover", FAINT)], lightcolor=[("focus", FIELD), ("hover", FIELD)])
         style.configure("Small.TCombobox", padding=(4, 2))
         style.configure("TCombobox", background=FIELD, arrowcolor=MUTED)
-        style.map("TCombobox", fieldbackground=[("readonly", FIELD)], foreground=[("readonly", TEXT)],
-                  selectbackground=[("readonly", FIELD)], selectforeground=[("readonly", TEXT)],
+        style.map("TCombobox", fieldbackground=[("readonly", FIELD)], foreground=[("disabled", FAINT), ("readonly", TEXT)],
+                  selectbackground=[("readonly", FIELD)], selectforeground=[("disabled", FAINT), ("readonly", TEXT)],
+                  arrowcolor=[("disabled", FAINT)],
                   background=[("active", HOVER), ("readonly", FIELD)], bordercolor=[("focus", ACCENT)])
         style.configure("Add.TCombobox", fieldbackground=BG, background=BG, bordercolor=BORDER, lightcolor=BG, darkcolor=BG)
         style.map("Add.TCombobox", fieldbackground=[("readonly", BG)], foreground=[("readonly", ACCENT)],
@@ -5593,7 +7174,7 @@ def main():
     tool = TOOLS.get(sys.argv[1] if len(sys.argv) > 1 else "")
     if tool is None:
         tk.Tk().withdraw()
-        messagebox.showerror("MnT Generators", "Open MnT Provisions.bat or MnT Building Setup.bat in the tools folder.")
+        messagebox.showerror("MnT Generators", "Open MnT Provisions.bat, MnT Building Setup.bat or MnT Unit Maintenance.bat in the tools folder.")
         return
     threading.excepthook = lambda error: log_error(
         "".join(traceback.format_exception(error.exc_type, error.exc_value, error.exc_traceback)), "background thread")

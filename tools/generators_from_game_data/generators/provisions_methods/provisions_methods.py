@@ -6,7 +6,8 @@ provisions_methods_settings.txt. For each method the settings give the food it m
 each good's percent of the input food, and the percent of the input food that becomes output food.
 The script works out the amounts. It writes only the input amounts, the output line,
 debug_max_profit and a short note on the method's first line; everything else in the building
-files stays as written by hand.
+files stays as written by hand. It also sets the provisions line of each army maintenance demand
+in army_demands.txt from the food_consumption_per_strength of the units that use it.
 
     python3 provisions_methods.py              report only, changes nothing
     python3 provisions_methods.py --import     add every method missing from the settings, with today's numbers
@@ -679,7 +680,7 @@ def details(result):
 
 # ------------------------------------------------------------------ apply
 
-def apply(results, goods, food_per_unit, into=None, spare=()):
+def apply(results, goods, food_per_unit, into=None, spare=(), army=()):
     """Works out every file's new text first, so a problem stops the run before anything is written."""
     texts = {}
     for result in results:
@@ -691,19 +692,19 @@ def apply(results, goods, food_per_unit, into=None, spare=()):
             raise Problem(f"{result['name']} is no longer defined once in {path.name}. Nothing was written.")
         start, end = spans[0]
         texts[path] = texts[path][:start] + rewrite(texts[path][start:end], result, goods, food_per_unit) + texts[path][end:]
-    # After the provisions methods, so an added spare labor method goes after their new text
+    # After the provisions methods, so an added spare labor method goes in front of their new text
     for plan in spare:
         path = plan["path"]
         if path not in texts:
             texts[path] = path.read_text(encoding="utf-8-sig")
         text = texts[path]
         if plan["old_output"] is None:
-            spans = block_span(text, plan["after"])
+            spans = block_span(text, plan["before"])
             if len(spans) != 1:
-                raise Problem(f"{plan['after']} is no longer defined once in {path.name}. Nothing was written.")
-            start = end = spans[0][1]
+                raise Problem(f"{plan['before']} is no longer defined once in {path.name}. Nothing was written.")
             indent = re.match(r"[ \t]*", text[spans[0][0]:]).group(0)
-            block = "\n\n" + spare_block(plan, indent)
+            start = end = spans[0][0] + len(indent)
+            block = spare_block(plan, indent)[len(indent):] + "\n\n" + indent
         else:
             spans = block_span(text, plan["name"])
             if len(spans) != 1:
@@ -711,10 +712,21 @@ def apply(results, goods, food_per_unit, into=None, spare=()):
             start, end = spans[0]
             block = spare_block(plan, re.match(r"[ \t]*", text[start:]).group(0))
         texts[path] = text[:start] + block + text[end:]
-    names = [result["name"] for result in results] + [plan["name"] for plan in spare]
+    for plan in army:
+        path = plan["path"]
+        if path not in texts:
+            texts[path] = path.read_text(encoding="utf-8-sig")
+        spans = block_span(texts[path], plan["name"])
+        if len(spans) != 1:
+            raise Problem(f"{plan['name']} is no longer defined once in {path.name}. Nothing was written.")
+        start, end = spans[0]
+        texts[path] = texts[path][:start] + army_block(texts[path][start:end], plan) + texts[path][end:]
+    methods = [result["name"] for result in results] + [plan["name"] for plan in spare]
+    names = methods + [plan["name"] for plan in army]
     contents = {path: ("﻿" + text).encode("utf-8") for path, text in texts.items()}
     folder = write_with_backup(contents, "apply", names, into)
-    print(method_name(f"wrote {methods_text(len(names))} in {files_text(len(texts))}") + quiet(f"   backup {folder.name}"))
+    wrote = methods_text(len(methods)) + (f" and {len(army)} army demands" if army else "")
+    print(method_name(f"wrote {wrote} in {files_text(len(texts))}") + quiet(f"   backup {folder.name}"))
 
 
 def spare_block(plan, indent):
@@ -784,8 +796,9 @@ def spare_labor(buildings, goods, prices, results):
             if not anchors:
                 raise Problem(f"[{building}] sets spare_labor, but none of its provisions methods is in the mod files.")
             path = anchors[0]["places"][0][0]
-            last = max((result["places"][0][1], result["name"]) for result in anchors if result["places"][0][0] == path)
-            plan["path"], plan["after"] = path, last[1]
+            # The first method in a slot is the default, so a method with no inputs goes first
+            first = min((result["places"][0][1], result["name"]) for result in anchors if result["places"][0][0] == path)
+            plan["path"], plan["before"] = path, first[1]
             changed = True
         line = f"{pad(building_name(building), 28)} {pad(method_name(name), 26)} {good} {number(output)}"
         if not changed:
@@ -796,6 +809,107 @@ def spare_labor(buildings, goods, prices, results):
     print()
     print(warning(f"{press('Apply', '--apply')} to write {methods_text(len(plans))}") if plans else method_name("all spare labor methods match"))
     return plans
+
+
+# ------------------------------------------------------------------ army demands
+
+ARMY_DEMAND_FILE = "in_game/common/goods_demand/army_demands.txt"
+# food_consumption_per_strength is food a day; the demand is a month
+DAYS_PER_MONTH = 30
+
+
+def load_with_dlc(relative, game, mod):
+    """One database folder from the game, its DLC folders and the mod. DLC keys load before the game's."""
+    entries = {}
+    for dlc in sorted((Path(game) / "dlc").glob("*")):
+        entries.update(load_folder(relative, str(dlc), str(dlc / "no_mod")))
+    entries.update(load_folder(relative, game, mod))
+    return entries
+
+
+def army_food():
+    """{maintenance demand: {food a day per 1,000 men: [unit types]}} for every army unit type."""
+    game, mod = get_from_config("Paths", "game_directory"), str(MOD_FOLDER)
+    types = load_with_dlc("in_game/common/unit_types", game, mod)
+    categories = load_with_dlc("in_game/common/unit_categories", game, mod)
+
+    def values_of(name, seen=()):
+        # A type takes its copy_from type's values, then its own values win
+        block = types[name][0]
+        base = get(block, "copy_from")
+        values = values_of(base, seen + (name,)) if base in types and base not in seen else {}
+        values.update({key: value for key, _, value in block if isinstance(value, str)})
+        return values
+
+    eaters = {}
+    for name in types:
+        values = values_of(name)
+        category = categories.get(values.get("category"))
+        if not category or get(category[0], "is_army") != "yes":
+            continue
+        demand = values.get("maintenance_demand") or get(category[0], "maintenance_demand")
+        # The unit type's food_consumption_per_strength adds to its category's
+        food = float(get(category[0], "food_consumption_per_strength") or 0) + float(values.get("food_consumption_per_strength") or 0)
+        eaters.setdefault(demand, {}).setdefault(round(food, 5), []).append(name)
+    return eaters
+
+
+def army_plans(eaters, food_per_provisions):
+    """Each maintenance demand's provisions line as the units' food asks for it. Demands not in the mod file have no path."""
+    path = MOD_FOLDER / ARMY_DEMAND_FILE
+    text = path.read_text(encoding="utf-8-sig")
+    plans = []
+    for demand, foods in sorted(eaters.items()):
+        # A demand that units with different food share follows the most units, and the lower food on a tie
+        food = min(foods, key=lambda value: (-len(foods[value]), value))
+        plan = {"name": demand, "food": food, "foods": foods, "provisions": round(food * DAYS_PER_MONTH / food_per_provisions, 5),
+                "path": None, "old": None, "changed": False}
+        spans = block_span(text, demand)
+        if len(spans) > 1:
+            raise Problem(f"{demand} is defined {len(spans)} times in {path.name}. Remove the copies first.")
+        if spans:
+            start, end = spans[0]
+            match = re.search(r"(?m)^[ \t]*provisions\s*=\s*([0-9.]+)", text[start:end])
+            plan["path"] = path
+            plan["old"] = float(match.group(1)) if match else None
+            plan["changed"] = plan["old"] is None or differs(plan["old"], plan["provisions"])
+        plans.append(plan)
+    return plans
+
+
+def army_report(plans):
+    """Reports each army maintenance demand and returns the ones Apply writes."""
+    print()
+    print(title("army provisions") + quiet("   food a day and provisions a month, per 1,000 men"))
+    width = max((len(plan["name"]) for plan in plans), default=0) + 2
+    for plan in plans:
+        line = f"{pad(method_name(plan['name']), width)} {pad(number(plan['food']) + ' food', 12)} provisions {number(plan['provisions'])}"
+        if plan["path"] is None:
+            line += "  " + quiet("only in vanilla, copy it into the mod first")
+        elif plan["changed"]:
+            line += "  " + warning("+ new line" if plan["old"] is None else f"was {number(plan['old'])}")
+        print(line)
+        if len(plan["foods"]) > 1:
+            shares = "; ".join(f"{number(food)} food: {', '.join(names)}" for food, names in sorted(plan["foods"].items()))
+            print(quiet("    ") + warning("units with different food share it. " + shares))
+    to_write = [plan for plan in plans if plan["changed"]]
+    print()
+    print(warning(f"{press('Apply', '--apply')} to write {len(to_write)} army demands") if to_write
+          else method_name("all army demands match"))
+    return to_write
+
+
+def army_block(block, plan):
+    """The demand block with its provisions line set. Other lines stay."""
+    line = f"provisions = {number(plan['provisions'])}"
+    match = re.search(r"(?m)^([ \t]*)provisions\s*=.*$", block)
+    if match:
+        return block[:match.start()] + match.group(1) + line + block[match.end():]
+    lines = block.split("\n")
+    if len(lines) < 3:
+        raise Problem(f"{plan['name']} is written on one line. Write it over several lines first.")
+    indent = re.match(r"[ \t]*", lines[1]).group(0) or "\t"
+    return "\n".join([lines[0], indent + line] + lines[1:])
 
 
 def rewrite(block, result, goods, food_per_unit):
@@ -1065,9 +1179,10 @@ def main():
     food_per_unit, settings = read_settings(goods, building_names, methods, script_values)
     to_change, results = report(prices, food_per_provisions, methods, food_per_unit, settings, script_values)
     spare = spare_labor(building_names, goods, prices, results)
-    if arguments.apply and (to_change or spare):
+    army = army_report(army_plans(army_food(), food_per_provisions))
+    if arguments.apply and (to_change or spare or army):
         print()
-        apply(to_change, goods, food_per_unit, arguments.into_backup, spare)
+        apply(to_change, goods, food_per_unit, arguments.into_backup, spare, army)
 
 
 if __name__ == "__main__":

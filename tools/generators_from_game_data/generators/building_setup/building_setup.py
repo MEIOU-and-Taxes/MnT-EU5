@@ -61,9 +61,9 @@ RGO_PREFIX = "RGO_building_"
 
 # The [general] settings each settings file takes
 RGO_GENERAL_SETTINGS = [
-    "pop_types_for_levels", "respect_technology", "place_secondary_rgos", "max_secondary_rgos_per_location",
+    "pop_types_counted_for_levels", "respect_technology", "place_secondary_rgos", "max_secondary_rgos_per_location",
 ]
-BUILDING_GENERAL_SETTINGS = ["report_building_types", "pop_types_for_levels", "respect_technology"]
+BUILDING_GENERAL_SETTINGS = ["report_building_types", "pop_types_counted_for_levels", "respect_technology"]
 # [general] settings that may be left out or set to None
 OPTIONAL_SETTINGS = {"report_building_types"}
 # Each multiplier setting maps to the location fact it looks up
@@ -84,15 +84,17 @@ FACT_CHECKS = {
     "climate": "climate = {key}",
     "location_rank": "location_rank = location_rank:{key}",
 }
-# Setting names grouped by role in the level calculation. fixed_level is an alternative to the
-# base+multiplier pipeline; when it is set, the pipeline settings are ignored.
-BASE_LEVEL_SETTINGS = ["pops_per_level", "development_per_level", "base_level_by_location_rank"]
+# Setting names grouped by role in the level calculation. A word before the fixed_level value says how it joins
+# the base+multiplier pipeline: final (or no word) replaces the pipeline, base adds to the base level,
+# minimum raises the result.
+BASE_LEVEL_SETTINGS = ["thousand_pops_per_level", "development_per_level"]
+FIXED_LEVEL_MODE = re.compile(r"(final|base|minimum)\s+", re.I)
 POP_STEP_SETTINGS = (BASE_LEVEL_SETTINGS + ["final_level_multiplier", "additive_multiplier_per_development", "additive_multiplier_per_population",
                                             "lake_multiplier", "coastal_multiplier"]
                      + list(LIST_SETTINGS) + ["round_levels", "percentage_of_building_max_level"])
-LEVEL_SETTINGS = POP_STEP_SETTINGS + ["fixed_level", "fixed_level_floor", "fixed_level_ceiling"]
+LEVEL_SETTINGS = POP_STEP_SETTINGS + ["fixed_level", "level_floor", "level_ceiling"]
 # Which settings are valid in each kind of section, used to catch typos and misplaced settings
-RGO_BUILDING_SETTINGS = ["place", "place_as_secondary", "secondary_priority", "ideal_rgo_multiplier", "destroy_vanilla_building_levels_before_counting"] + LEVEL_SETTINGS
+RGO_BUILDING_SETTINGS = ["place", "place_as_secondary", "secondary_rgo_priority", "main_rgo_multiplier", "destroy_vanilla_building_levels_before_counting"] + LEVEL_SETTINGS
 OTHER_BUILDING_SETTINGS = ["place", "destroy_vanilla_building_levels_before_counting"] + LEVEL_SETTINGS
 # A building in a distribution group gets its level from the group, so it can only set its own limits
 GROUP_SETTING = "distribution_group"
@@ -201,6 +203,13 @@ def read_name_list(section, key, text):
     return [name.strip().strip("\"'") for name in text[1:-1].replace("\n", ",").split(",") if name.strip().strip("\"'")]
 
 
+def split_fixed_level(text):
+    """(mode, levels) of a fixed_level value such as base { "town": 1 }. No mode word means final."""
+    text = text.strip()
+    match = FIXED_LEVEL_MODE.match(text)
+    return (match[1].lower(), text[match.end():].strip()) if match else ("final", text)
+
+
 def read_settings_file(path):
     """Returns {section: {setting: text}}. A value that opens with { runs on to the line that ends with }."""
     try:
@@ -236,7 +245,7 @@ def read_settings_file(path):
             raise Problem(f"Line {number}: {key} comes before any [section].")
         if key in sections[section_name]:
             raise Problem(f"Line {number}: {key} is already set further up in [{section_name}].")
-        closer = {"{": "}", "[": "]"}.get(value[:1])
+        closer = {"{": "}", "[": "]"}.get(split_fixed_level(value)[1][:1])
         if closer and not value.endswith(closer):
             open_list = (key, number, [value], closer)
         else:
@@ -269,12 +278,12 @@ def read_general(sections, allowed):
 
     general = {
         # all counts every pop type, filled in once the game data is loaded
-        "pop_types_for_levels": ["all"] if text_of("pop_types_for_levels").strip().lower() == "all" else
-                                [pop_type.lower() for pop_type in read_name_list("general", "pop_types_for_levels", text_of("pop_types_for_levels"))],
+        "pop_types_counted_for_levels": ["all"] if text_of("pop_types_counted_for_levels").strip().lower() == "all" else
+                                [pop_type.lower() for pop_type in read_name_list("general", "pop_types_counted_for_levels", text_of("pop_types_counted_for_levels"))],
         "respect_technology": read_yes_no("general", "respect_technology", text_of("respect_technology")),
     }
-    if not general["pop_types_for_levels"]:
-        raise Problem("In [general], pop_types_for_levels needs at least one pop type, for example: peasants")
+    if not general["pop_types_counted_for_levels"]:
+        raise Problem("In [general], pop_types_counted_for_levels needs at least one pop type, for example: peasants")
     if "report_building_types" in allowed:
         general["report_building_types"] = read_name_list("general", "report_building_types", text_of("report_building_types"))
     if "place_secondary_rgos" in allowed:
@@ -356,14 +365,17 @@ def filled(sections, section_name, key):
 
 
 def check_conflicting_settings(sections):
-    """Stops on a section that sets fixed_level as well as the settings fixed_level replaces."""
+    """Stops on a section that sets a final fixed_level as well as the settings it replaces."""
     for section_name in sections:
         if section_name == "general" or not filled(sections, section_name, "fixed_level"):
+            continue
+        if split_fixed_level(sections[section_name]["fixed_level"])[0] != "final":
             continue
         replaced = [key for key in POP_STEP_SETTINGS if filled(sections, section_name, key)]
         if replaced:
             raise Problem(f"In [{shown(section_name)}], fixed_level cannot be used together with {' and '.join(replaced)}: "
-                          "fixed_level gives the level directly, so steps 1 to 3 would do nothing. Set one side to None.")
+                          "a final fixed_level gives the level directly, so steps 1 to 3 would do nothing. "
+                          "Set one side to None, or write base or minimum before the fixed_level value.")
 
 
 def listed_names(sections):
@@ -375,9 +387,9 @@ def listed_names(sections):
         where = shown(section_name)
         for setting in LIST_SETTINGS:
             listed += [(where, setting, name) for name in read_multipliers(where, setting, section.get(setting, ""))]
-        for setting in ("fixed_level", "base_level_by_location_rank"):
-            if section.get(setting, "").strip().startswith("{"):
-                listed += [(where, setting, name) for name in read_multipliers(where, setting, section[setting])]
+        levels = split_fixed_level(section.get("fixed_level", ""))[1]
+        if levels.startswith("{"):
+            listed += [(where, "fixed_level", name) for name in read_multipliers(where, "fixed_level", levels)]
     return listed
 
 
@@ -395,9 +407,15 @@ class SectionChain:
                       + [default_section])
         self.not_used = self.settings_turned_off()
 
+    def fixed_level_mode(self):
+        return split_fixed_level(self.sections[self.where("fixed_level")].get("fixed_level", ""))[0]
+
     def settings_turned_off(self):
-        """fixed_level replaces the settings that work a level out from the location, so the nearest section to
-        set either side decides which side this building type uses. With neither set, fixed_level is dropped."""
+        """A final fixed_level replaces the settings that work a level out from the location, so the nearest section
+        to set either side decides which side this building type uses. With neither set, fixed_level is dropped.
+        In base and minimum mode, fixed_level works together with those settings."""
+        if self.fixed_level_mode() != "final":
+            return set()
         for section_name in self.chain:
             if filled(self.sections, section_name, "fixed_level"):
                 return set(POP_STEP_SETTINGS)
@@ -420,7 +438,7 @@ class SectionChain:
         value = read_number(shown(self.where(key)), key, self.text(key), **rules)
         if value is None and required:
             raise Problem(f"[{self.building}] has no {key}. Fill it in under [{shown(self.default_section)}], "
-                          "or use fixed_level instead of steps 1 to 3.")
+                          "or use a final fixed_level instead of steps 1 to 3.")
         return value
 
     def multipliers(self, key):
@@ -441,9 +459,9 @@ class SectionChain:
 
     def fixed_level(self):
         """One whole number for every location, or a list of whole numbers by location rank."""
-        text = self.text("fixed_level")
+        text = split_fixed_level(self.text("fixed_level"))[1]
         if not text.startswith("{"):
-            return self.number("fixed_level", whole=True)
+            return read_number(shown(self.where("fixed_level")), "fixed_level", text, whole=True)
         levels = read_multipliers(shown(self.where("fixed_level")), "fixed_level", text)
         for rank, level in levels.items():
             if level != int(level):
@@ -466,13 +484,12 @@ def building_rules(sections, placeable, default_section, group_of=None):
     rules_by_building = {}
     for building in placeable:
         chain = SectionChain(sections, building, default_section, group_of)
-        uses_pop_steps = "fixed_level" in chain.not_used
+        uses_pop_steps = not set(POP_STEP_SETTINGS) <= chain.not_used
         rules = {
             "place": chain.yes_no("place"),
             "destroy_vanilla_building_levels_before_counting": chain.yes_no("destroy_vanilla_building_levels_before_counting"),
-            "pops_per_level": chain.number("pops_per_level", above_zero=True),
+            "thousand_pops_per_level": chain.number("thousand_pops_per_level", above_zero=True),
             "development_per_level": chain.number("development_per_level", above_zero=True),
-            "base_level_by_location_rank": chain.multipliers("base_level_by_location_rank"),
             "final_level_multiplier": chain.number("final_level_multiplier", required=uses_pop_steps),
             "additive_multiplier_per_development": chain.number("additive_multiplier_per_development"),
             "additive_multiplier_per_population": chain.number("additive_multiplier_per_population"),
@@ -482,19 +499,19 @@ def building_rules(sections, placeable, default_section, group_of=None):
             "round_levels": chain.rounding(uses_pop_steps),
             "percentage_of_building_max_level": chain.number("percentage_of_building_max_level"),
             "fixed_level": chain.fixed_level(),
-            "fixed_level_floor": chain.number("fixed_level_floor", whole=True),
-            "fixed_level_ceiling": chain.number("fixed_level_ceiling", whole=True),
+            "fixed_level_mode": chain.fixed_level_mode(),
+            "level_floor": chain.number("level_floor", whole=True),
+            "level_ceiling": chain.number("level_ceiling", whole=True),
         }
         # A building type in a distribution group gets its level from the group
-        if (uses_pop_steps and rules["place"] and building not in group_of and rules["pops_per_level"] is None
-                and rules["development_per_level"] is None and not rules["base_level_by_location_rank"]):
-            raise Problem(f"[{building}] has no base level. Fill in pops_per_level, development_per_level or base_level_by_location_rank, "
-                          f"or use fixed_level instead of steps 1 to 3.")
+        if (uses_pop_steps and rules["place"] and building not in group_of and rules["thousand_pops_per_level"] is None
+                and rules["development_per_level"] is None and rules["fixed_level"] is None):
+            raise Problem(f"[{building}] has no base level. Fill in thousand_pops_per_level, development_per_level or fixed_level.")
         if default_section == RGO_DEFAULT_SECTION:
             rules["place_as_secondary"] = chain.yes_no("place_as_secondary")
-            rules["secondary_priority"] = chain.number("secondary_priority") or 0
-            ideal_rgo_multiplier = chain.number("ideal_rgo_multiplier")
-            rules["ideal_rgo_multiplier"] = 1 if ideal_rgo_multiplier is None else ideal_rgo_multiplier
+            rules["secondary_rgo_priority"] = chain.number("secondary_rgo_priority") or 0
+            main_rgo_multiplier = chain.number("main_rgo_multiplier")
+            rules["main_rgo_multiplier"] = 1 if main_rgo_multiplier is None else main_rgo_multiplier
         rules_by_building[building] = rules
     return rules_by_building, listed_names(sections)
 
@@ -867,7 +884,7 @@ def get_game_data():
 
 def check_list_names(listed, fact_keys):
     """Stops on a name a list uses that the game does not define."""
-    choices = {"river_multiplier": RIVER_SIZES, "fixed_level": fact_keys["location_rank"], "base_level_by_location_rank": fact_keys["location_rank"]}
+    choices = {"river_multiplier": RIVER_SIZES, "fixed_level": fact_keys["location_rank"]}
     for setting, fact in LIST_SETTINGS.items():
         if setting not in choices:
             choices[setting] = fact_keys[fact]
@@ -880,12 +897,12 @@ def check_list_names(listed, fact_keys):
 def check_pop_types(general, locations):
     """Stops on a pop type the game data does not have, and turns all into every pop type it has."""
     known_pop_types = sorted(key[len("pop_"):] for key in next(iter(locations.values())) if key.startswith("pop_"))
-    if "all" in general["pop_types_for_levels"]:
-        general["pop_types_for_levels"] = known_pop_types
+    if "all" in general["pop_types_counted_for_levels"]:
+        general["pop_types_counted_for_levels"] = known_pop_types
         return
-    for pop_type in general["pop_types_for_levels"]:
+    for pop_type in general["pop_types_counted_for_levels"]:
         if pop_type not in known_pop_types:
-            raise Problem(f'In [general], pop_types_for_levels has "{pop_type}", which is not a pop type. Pop types you can use:\n  ' + " ".join(known_pop_types))
+            raise Problem(f'In [general], pop_types_counted_for_levels has "{pop_type}", which is not a pop type. Pop types you can use:\n  ' + " ".join(known_pop_types))
 
 
 def check_named_locations(locations):
@@ -897,10 +914,21 @@ def check_named_locations(locations):
                           "Make a new dump with the current mod.")
 
 
+def final_fixed_level(rules):
+    return rules["fixed_level"] is not None and rules["fixed_level_mode"] == "final"
+
+
+def fixed_level_at(rules, facts):
+    """fixed_level for this location, or None when it gives none here."""
+    if isinstance(rules["fixed_level"], dict):
+        return rules["fixed_level"].get(facts["location_rank"])
+    return rules["fixed_level"]
+
+
 def location_multiplier(rules, facts, pops):
     """final_level_multiplier times every location multiplier that applies to this location."""
-    if rules["fixed_level"] is not None:
-        # fixed_level replaces steps 1 to 4, the multipliers included
+    if final_fixed_level(rules):
+        # A final fixed_level replaces steps 1 to 4, the multipliers included
         return 1
     multiplier = rules["final_level_multiplier"]
     if rules["additive_multiplier_per_development"] is not None:
@@ -923,10 +951,10 @@ def round_level(rules, value):
 
 
 def base_level(rules, pops, facts):
-    """The base level from pops, development and rank, whichever are set."""
-    base = rules["base_level_by_location_rank"].get(facts["location_rank"], 0)
-    if rules["pops_per_level"] is not None:
-        base += pops / rules["pops_per_level"]
+    """The base level from pops, development and a base fixed_level, whichever are set."""
+    base = (fixed_level_at(rules, facts) or 0) if rules["fixed_level_mode"] == "base" else 0
+    if rules["thousand_pops_per_level"] is not None:
+        base += pops / rules["thousand_pops_per_level"]
     if rules["development_per_level"] is not None:
         base += facts["development"] / rules["development_per_level"]
     return base
@@ -934,24 +962,26 @@ def base_level(rules, pops, facts):
 
 def building_level(rules, pops, facts, multiplier, game_max_level, existing):
     """How many levels to add on top of the levels already in the location. 0 means none."""
-    if isinstance(rules["fixed_level"], dict):
+    fixed = fixed_level_at(rules, facts)
+    if final_fixed_level(rules):
         # A rank the list leaves out gets no building, whatever the floor says
-        if facts["location_rank"] not in rules["fixed_level"]:
+        if fixed is None:
             return 0
-        added = rules["fixed_level"][facts["location_rank"]]
-    elif rules["fixed_level"] is not None:
-        added = rules["fixed_level"]
+        added = fixed
     else:
         added = round_level(rules, base_level(rules, pops, facts) * multiplier)
     # The limits apply to the total, so the levels already there count against them
     total = existing + added
-    if rules["fixed_level"] is None and rules["percentage_of_building_max_level"] is not None and game_max_level is not None:
+    if not final_fixed_level(rules) and rules["percentage_of_building_max_level"] is not None and game_max_level is not None:
         total = min(total, round_level(rules, game_max_level * rules["percentage_of_building_max_level"] / 100))
+    # A minimum fixed_level comes after the percentage, as the floor does
+    if rules["fixed_level_mode"] == "minimum" and fixed is not None:
+        total = max(total, existing + fixed)
     # The floor and ceiling come after the percentage, so they override it
-    if rules["fixed_level_floor"] is not None:
-        total = max(total, rules["fixed_level_floor"])
-    if rules["fixed_level_ceiling"] is not None:
-        total = min(total, rules["fixed_level_ceiling"])
+    if rules["level_floor"] is not None:
+        total = max(total, rules["level_floor"])
+    if rules["level_ceiling"] is not None:
+        total = min(total, rules["level_ceiling"])
     # The game only allows whole levels up to its max, so its max is rounded down
     if game_max_level is not None:
         total = min(total, math.floor(game_max_level))
@@ -965,7 +995,7 @@ def owned_locations(game_data, general, cannot_build):
         owner = facts["owner"]
         if owner is None:
             continue
-        pops = sum(facts[f"pop_{pop_type}"] for pop_type in general["pop_types_for_levels"])
+        pops = sum(facts[f"pop_{pop_type}"] for pop_type in general["pop_types_counted_for_levels"])
         blocked = cannot_build.get(owner, set()) if general["respect_technology"] else set()
         yield location, facts, owner, pops, blocked
 
@@ -1020,7 +1050,7 @@ class Placement:
 
 
 def place_rgo_buildings(game_data, general, rules, cannot_build):
-    """Places the main RGO building (matching the location's raw material, boosted by ideal_rgo_multiplier)
+    """Places the main RGO building (matching the location's raw material, boosted by main_rgo_multiplier)
     and then picks the best secondary RGO buildings, each capped one level below the main."""
     setup = Placement(rules)
     for location, facts, owner, pops, blocked in owned_locations(game_data, general, cannot_build):
@@ -1030,8 +1060,8 @@ def place_rgo_buildings(game_data, general, rules, cannot_build):
         main_building = RGO_PREFIX + str(facts["raw_material"])
         main_level = 0
         if main_building in rules:
-            # The main building is the ideal RGO building for the location's raw material
-            ideal_multiplier = location_multiplier(rules[main_building], facts, pops) * rules[main_building]["ideal_rgo_multiplier"]
+            # The main building is the RGO building for the location's raw material
+            ideal_multiplier = location_multiplier(rules[main_building], facts, pops) * rules[main_building]["main_rgo_multiplier"]
             main_level = building_level(rules[main_building], pops, facts, ideal_multiplier, facts["main_rgo_max_level"],
                                         setup.counted_levels(facts, main_building))
             if rules[main_building]["place"] and main_level >= 1:
@@ -1055,11 +1085,10 @@ def place_rgo_buildings(game_data, general, rules, cannot_build):
                                        setup.counted_levels(facts, building)), main_level - 1)
             if level >= 1:
                 # Picked by the level before rounding and limits, so the multipliers decide between buildings that round to the same level
-                fixed = rules[building]["fixed_level"]
-                unrounded = level if fixed is not None else base_level(rules[building], pops, facts) * multiplier
+                unrounded = level if final_fixed_level(rules[building]) else base_level(rules[building], pops, facts) * multiplier
                 candidates.append((building, level, unrounded))
-        # The largest come first, then the highest secondary_priority, then the key in alphabetical order. Nothing is random.
-        candidates.sort(key=lambda candidate: (-candidate[2], -rules[candidate[0]]["secondary_priority"], candidate[0]))
+        # The largest come first, then the highest secondary_rgo_priority, then the key in alphabetical order. Nothing is random.
+        candidates.sort(key=lambda candidate: (-candidate[2], -rules[candidate[0]]["secondary_rgo_priority"], candidate[0]))
         for building, level, _ in candidates[:general["max_secondary_rgos_per_location"]]:
             setup.settle(facts, owner, location, building, level)
             setup.counts["secondary buildings"] += 1
@@ -1069,7 +1098,7 @@ def place_rgo_buildings(game_data, general, rules, cannot_build):
 def group_member_room(rules, game_max_level, counted):
     """How many levels a building type in a distribution group can still take, or None when nothing limits it."""
     limits = []
-    if rules["fixed_level"] is None and rules["percentage_of_building_max_level"] is not None and game_max_level is not None:
+    if not final_fixed_level(rules) and rules["percentage_of_building_max_level"] is not None and game_max_level is not None:
         limits.append(round_level(rules, game_max_level * rules["percentage_of_building_max_level"] / 100))
     if game_max_level is not None:
         limits.append(math.floor(game_max_level))
@@ -1227,20 +1256,24 @@ def backup_files(folder, part):
     return {path.relative_to(root): path for path in root.rglob("*") if path.is_file()} if root.is_dir() else {}
 
 
-def write_with_backup(contents, label):
+def write_with_backup(contents, label, into=None):
     """Writes {path: bytes}, and deletes each path whose bytes are None. Saves each file before and after the
-    write, then keeps the newest backups."""
+    write, then keeps the newest backups.
+
+    into is a backup that the same Apply made a moment before. The files go into it, so that one Apply is one
+    backup. A file it already holds keeps its "before" copy, which is the older one."""
     stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    folder, count = long_path(BACKUP_FOLDER) / stamp, 1
-    while folder.exists():
+    folder, count = long_path(Path(into) if into else BACKUP_FOLDER / stamp), 1
+    while not into and folder.exists():
         folder, count = long_path(BACKUP_FOLDER) / f"{stamp}_{count}", count + 1
     for path in contents:
         saved = folder / "before" / path.relative_to(MOD_FOLDER)
         saved.parent.mkdir(parents=True, exist_ok=True)
-        if path.exists():
+        if path.exists() and not saved.exists():
             shutil.copy2(path, saved)
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "info.txt").write_text(label + "\n", encoding="utf-8")
+    if not into:
+        (folder / "info.txt").write_text(label + "\n", encoding="utf-8")
     for path, content in contents.items():
         if content is None:
             path.unlink(missing_ok=True)
