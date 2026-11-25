@@ -1,0 +1,153 @@
+﻿# Sets how much AI countries value gold, from their income and treasury compared to the world average.
+
+MnT_update_avg_tax_base_per_location = {
+	# Landless countries add tax base but no locations.
+	set_local_variable = { name = total_tax_base value = 0 }
+	set_local_variable = { name = total_colonized_locations value = 0 }
+	every_country = {
+		change_local_variable = { name = total_tax_base add = country_tax_base }
+		change_local_variable = { name = total_colonized_locations add = num_locations }
+	}
+	if = {
+		limit = { local_var:total_colonized_locations > 0 }
+		set_global_variable = {
+			name = MnT_avg_tax_base_per_location
+			value = {
+				value = local_var:total_tax_base
+				divide = local_var:total_colonized_locations
+			}
+		}
+	}
+}
+
+MnT_ai_gold_importance_update = {
+	# The ai handles gold poorly, these effects help it behave more intelligently based on its current finances.
+	# Two factors: treasury size and monthly balance, measured against a global average scaled by location count,
+	# determine how much the ai values gold. If it values gold less it will spend more freely and expect lower
+	# returns on investment, if it values gold more it will save more and prioritize higher ROI investments.
+	#
+	# The goal of this is to help the ai build more infrastructure rather than wasting money on buildings with pathetic margins.
+	
+	# Expected tax base: world average tax base per location times the country's number of locations.
+	set_local_variable = {
+		name = expected_tax_base
+		value = {
+			value = global_var:MnT_avg_tax_base_per_location
+			multiply = num_locations
+		}
+	}
+	if = {
+		limit = { num_locations = 0 } # Landless countries use their actual tax base instead.
+		set_local_variable = { name = expected_tax_base value = country_tax_base }
+	}
+	
+	# Income: a country should earn 40% of its expected tax base every month.
+	# Earning half of that or less doubles how much it values gold. This helps ai focus on prioritizing 
+	# high value investments when its income is low, and investments that have less monetary return
+	# like bridges, libraries, and universities, when its income is high.
+	set_local_variable = {
+		name = expected_profit
+		value = {
+			value = local_var:expected_tax_base
+			multiply = 0.4
+		}
+	}
+	set_local_variable = {
+		name = half_expected_profit
+		value = {
+			value = local_var:expected_profit
+			multiply = 0.5
+		}
+	}
+	set_local_variable = { name = profit_multiplier value = 2 } # Income raises gold importance by expected profit / monthly balance. Countries earning half the expected profit or less get a flat 2 instead, because that division explodes as it approaches zero.
+	if = {
+		limit = { monthly_balance > local_var:half_expected_profit }
+		set_local_variable = {
+			name = profit_multiplier
+			value = {
+				value = local_var:expected_profit
+				divide = monthly_balance
+			}
+		}
+	}
+	# Treasury: a country should hold 10 months of its expected tax base, accounting for its debt.
+	# Below half of that, the value of gold rises linearly. The idea is to reduce the value of gold 
+	# when treasuries are large to encourage spending and to encourage a bit of saving before investing
+	# to encourage better.
+	set_local_variable = {
+		name = treasury_reference
+		value = {
+			value = local_var:expected_tax_base
+			multiply = 10
+		}
+	}
+	set_local_variable = {
+		name = half_treasury_reference
+		value = {
+			value = local_var:treasury_reference
+			multiply = 0.5
+		}
+	}
+	set_local_variable = {
+		name = treasury
+		value = {
+			value = gold
+			subtract = total_debt
+		}
+	}
+	# Piecewise function: hyperbolic above half treasury(doubling the treasury halves the multiplier)
+	if = {
+		limit = { local_var:treasury >= local_var:half_treasury_reference }
+		set_local_variable = {
+			name = treasury_multiplier # 1 at the reference, 2 at half of it, below 1 above it
+			value = {
+				value = local_var:treasury_reference 
+				divide = local_var:treasury
+			}
+		}
+	}
+	# linear below half treasury
+	else = {
+		set_local_variable = {
+			name = treasury_multiplier # 4 - 4 x treasury / reference: 2 at half the reference, 4 at zero, above 4 in debt
+			value = {
+				value = local_var:treasury
+				divide = local_var:treasury_reference
+				multiply = -4 
+				add = 4
+			}
+		}
+	}
+	# Scale both factors together and clamp to a reasonable range.
+	set_local_variable = {
+		name = target_multiplier
+		value = {
+			value = local_var:profit_multiplier
+			multiply = local_var:treasury_multiplier
+			min = 0.1
+			max = 10
+		}
+	}
+	# Target multiplier is intended to multiply the existing gold importance modifier so we need to 
+	# do some stuff to avoid self reference. We have a dummy secondary modifier on the automodifier 
+	# so the applied amount can be read back. We subtract that from the current gold importance modifier 
+	# to get the unmodified amount. 
+	set_local_variable = {
+		name = other_gold_importance
+		value = {
+			value = modifier:gold_importance_modifier
+			subtract = modifier:mnt_ai_gold_importance_applied
+			add = 1 # The modifiers are bonuses on a base of 1
+		}
+	}
+	
+	# This gets read by MnT_ai_gold_importance
+	set_variable = {
+		name = MnT_ai_gold_importance_scalar
+		value = {
+			value = local_var:target_multiplier
+			subtract = 1 # Gold importance ends at other_gold_importance + scalar = other_gold_importance x target_multiplier
+			multiply = local_var:other_gold_importance
+		}
+	}
+}
