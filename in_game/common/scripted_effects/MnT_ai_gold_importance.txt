@@ -1,26 +1,23 @@
 ﻿# Sets how much AI countries value gold, from their income and treasury compared to the world average.
 
-MnT_add_to_world_tax_base = {
-	# Landless countries add tax base but no locations.
-	change_global_variable = { name = MnT_world_tax_base_this_year add = country_tax_base }
-	change_global_variable = { name = MnT_world_locations_this_year add = num_locations }
-}
-
 MnT_update_avg_tax_base_per_location = {
-	# Each country adds its tax base and locations to the this_year sums once a year, in its yearly pulse.
-	# Every January this sets the average from those sums and clears them. Countries use it for the next year.
+	# Landless countries add tax base but no locations.
+	set_local_variable = { name = total_tax_base value = 0 }
+	set_local_variable = { name = total_colonized_locations value = 0 }
+	every_country = {
+		change_local_variable = { name = total_tax_base add = country_tax_base }
+		change_local_variable = { name = total_colonized_locations add = num_locations }
+	}
 	if = {
-		limit = { global_var:MnT_world_locations_this_year > 0 }
+		limit = { local_var:total_colonized_locations > 0 }
 		set_global_variable = {
 			name = MnT_avg_tax_base_per_location
 			value = {
-				value = global_var:MnT_world_tax_base_this_year
-				divide = global_var:MnT_world_locations_this_year
+				value = local_var:total_tax_base
+				divide = local_var:total_colonized_locations
 			}
 		}
 	}
-	set_global_variable = { name = MnT_world_tax_base_this_year value = 0 }
-	set_global_variable = { name = MnT_world_locations_this_year value = 0 }
 }
 
 MnT_ai_gold_importance_update = {
