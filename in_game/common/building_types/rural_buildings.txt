@@ -162,6 +162,11 @@ farming_village = {
 		}
 	}
 
+	possible_production_methods = {
+		rural_brewery
+		rural_distillery
+	}
+
 	unique_production_methods = {
 		farming_village_wheat = {
 			produced = wheat
@@ -213,11 +218,11 @@ forest_village = {
 		}
 	}
 
-	# possible_production_methods = {
-	# 	forest_tannery
-	# 	rural_weaponmaker
-	# 	rural_blacksmith
-	# }
+	possible_production_methods = {
+		forest_tannery
+		forest_beekeeping
+		forest_tar_burning
+	}
 
 	unique_production_methods = {
 		forest_village_game = {
@@ -267,11 +272,9 @@ market_village = {
 
 	rural_settlement = yes
 	possible_production_methods = {
-		rural_blacksmith
-		rural_millet_brewery
+		rural_wooden_toolmaker
 		rural_weaponmaker
 		rural_jewelry_carver
-		rural_pottery_maker
 	}
 
 	modifier = {
@@ -319,10 +322,90 @@ rural_glassmaker = {
 		rural_glassmaker_maintenance = {
 			icon_type = building_type
 			icon = rural_glassmaker
-			sand = 1.0
+			sand = 0.625
 
 			produced = glass
 			output = 0.2
+
+			debug_max_profit = rural_profit_margin
+			category = guild_input
+		}
+	}
+
+	construction_demand = village_construction
+}
+
+rural_blacksmith = {
+	audio_tier = 1
+	is_foreign = no
+	pop_type = laborers
+	max_levels = guild_max_level
+	startup_ramp_target = rural_startup_ramp_target
+
+	forbidden_for_estates = yes
+
+	category = basic_industry_category
+
+	employment_size = rural_peasant_produce_employment
+
+	rural_settlement = yes
+
+	town = no
+	city = no
+
+	location_potential = {
+		OR = {
+			is_produced_in_location_market = goods:iron
+			is_produced_in_location_market = goods:copper
+			is_produced_in_location_market = goods:stone
+		}
+	}
+
+	build_time = rural_build_time
+
+	unique_production_methods = {
+		rural_blacksmith_iron = {
+			icon_type = goods
+			icon = iron
+			iron = 0.417
+
+			produced = tools
+			output = 0.5
+
+			debug_max_profit = rural_profit_margin
+			category = guild_input
+		}
+		rural_blacksmith_stone = {
+			icon_type = goods
+			icon = stone
+			stone = 0.333
+
+			produced = tools
+			output = 0.2
+
+			debug_max_profit = rural_profit_margin
+			category = guild_input
+		}
+		rural_blacksmith_copper = {
+			# unlocked by copperworking advance
+			icon_type = goods
+			icon = copper
+			copper = 0.25
+
+			produced = tools
+			output = 0.3
+
+			debug_max_profit = rural_profit_margin
+			category = guild_input
+		}
+		rural_blacksmith_bronze = {
+			icon_type = goods
+			icon = tin
+			copper = 0.3
+			tin = 0.033
+
+			produced = tools
+			output = 0.4
 
 			debug_max_profit = rural_profit_margin
 			category = guild_input
@@ -374,7 +457,7 @@ rural_clothmaker = {
 		rural_cotton_clothmaker = {
 			icon_type = goods
 			icon = cotton
-			cotton = 0.4
+			cotton = 0.4167
 			
 			produced = cloth
 			output = 0.5
@@ -746,6 +829,11 @@ sheep_farms = {
 	}
 
 	unique_production_methods = {
+		sheep_farm_provisions_milking = { # generated: tools/generators_from_game_data/generators/provisions_methods
+			produced = provisions
+			output = 0.25 # input food 2.5, output food 2.5
+		}
+
 		sheep_farm_provisions_salted = { # generated: tools/generators_from_game_data/generators/provisions_methods
 			wool = 0.1
 			salt = 0.002
@@ -764,11 +852,6 @@ sheep_farms = {
 			output = 0.279 # input food 3.1, output food 2.79
 
 			category = building_maintenance
-		}
-
-		sheep_farm_provisions_milking = { # generated: tools/generators_from_game_data/generators/provisions_methods
-			produced = provisions
-			output = 0.25 # input food 2.5, output food 2.5
 		}
 	}
 
@@ -997,6 +1080,8 @@ reedbed_hunting_camps = {
 	}
 
 	unique_production_methods = {
+		PM_reedbed_hunting_camps_no_provisions = { }
+
 		PM_reedbed_hunting_camps_provisions = { # generated: tools/generators_from_game_data/generators/provisions_methods
 			fish = 0.01
 
@@ -1005,8 +1090,6 @@ reedbed_hunting_camps = {
 
 			category = building_maintenance
 		}
-
-		PM_reedbed_hunting_camps_no_provisions = { }
 	}
 
 	build_time = rural_build_time
@@ -1322,6 +1405,8 @@ boreal_trapping_camps = {
 	}
 
 	unique_production_methods = {
+		PM_boreal_trapping_camps_no_provisions = { }
+
 		PM_boreal_trapping_camps_provisions = { # generated: tools/generators_from_game_data/generators/provisions_methods
 			wild_game = 0.004
 
@@ -1330,8 +1415,6 @@ boreal_trapping_camps = {
 
 			category = building_maintenance
 		}
-
-		PM_boreal_trapping_camps_no_provisions = { }
 	}
 
 	build_time = rural_build_time
@@ -1629,6 +1712,8 @@ forest_hunting_lodges = {
 	}
 
 	unique_production_methods = {
+		PM_forest_hunting_lodges_no_provisions = { }
+
 		PM_forest_hunting_lodges_provisions = { # generated: tools/generators_from_game_data/generators/provisions_methods
 			wild_game = 0.006
 
@@ -1637,8 +1722,6 @@ forest_hunting_lodges = {
 
 			category = building_maintenance
 		}
-
-		PM_forest_hunting_lodges_no_provisions = { }
 	}
 
 	build_time = rural_build_time
@@ -1696,6 +1779,8 @@ open_country_hunting_camps = {
 	}
 
 	unique_production_methods = {
+		tribesmen_hunting_no_provisions = { }
+
 		tribesmen_hunting_provisions = { # generated: tools/generators_from_game_data/generators/provisions_methods
 			wild_game = 0.011
 
@@ -1704,8 +1789,6 @@ open_country_hunting_camps = {
 
 			category = building_maintenance
 		}
-
-		tribesmen_hunting_no_provisions = { }
 	}
 	
 	build_time = rural_build_time
