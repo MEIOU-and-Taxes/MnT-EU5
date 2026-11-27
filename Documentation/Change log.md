@@ -751,3 +751,8 @@ Date: 21/05/2026
 
 ### Fixes
 - Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
+
+### Balance
+- Increase bog iron smelter output by 40%, lower the iron mine per-level expansion surcharge from 50% to 10%, and split Iron Mines into an input-free baseline method (1 Iron) plus a second method using Tools and Coal/Lumber (bringing totals to 1.7 / 2.26 / 3.1 Iron).
+- Remove the tools requirement from Logging Camp construction.
+- Logging Camps produce 0.75 Lumber without upkeep goods. The Mills advance unlocks Timber Works, which produce 1.125 Lumber without inputs. A second production method brings total output to 1.75 with Tools or 2.25 with Tools and draft animals.
