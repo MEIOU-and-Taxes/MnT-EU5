@@ -48,7 +48,6 @@ Date: 21/05/2026
 - Fix diplomatic spending not transferring gold to nobles estate
 - Stability map mode works
 - Backend error fixes 
-- AI will now consider producing a good in a rural location even if it can be built in a urban location in the same province instead
 
 #### Balancing
 
@@ -751,6 +750,7 @@ Date: 21/05/2026
 - Fixed urban rights impact on marketplace caps
 
 ### Fixes
+- AI will now consider producing a good in a rural location even if it can be built in a urban location in the same province instead
 - Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
 
 ### Balance
