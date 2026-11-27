@@ -8,11 +8,6 @@
 - Change scaling production efficiency to 1% per additional building level, not modified by current age
 - Buildings that only boost the output of goods in their location, without producing anything themselves, are now Infrastructure buildings: mercury patios, smelters, windmills, sawmills and the special buildings doing the same. They are no longer left unstaffed by employment systems that staff the most profitable buildings first, and they moved out of other building categories, which also affects the categories' triggers.
 
-#### AI
-- AI gold importance now tracks each country's finances. Countries with a low income or a small treasury value gold more, save, and favor buildings that pay back well. Rich countries value gold less and spend on infrastructure such as bridges, libraries and universities. Income and treasury are measured against the world average tax base, scaled to the country's size.
-- The AI builds more iron, coal and lumber production and more tools production, which were short across the world and held back construction.
-- The AI now compares building costs to 10 years of tax base instead of 1, so it no longer rejects buildings as too expensive eeven when it has the money to build them.
-- The AI builds production for missing goods inputs at a minimum of 5% profit instead of 20%.
 
 ### Initial test-release v0.1
 
@@ -750,6 +745,8 @@ Date: 21/05/2026
 - Fixed urban rights impact on marketplace caps
 
 ### Fixes
+- Add missing climate icons and frames (tinted frame with the corresponding koppen color code
+  and gave a frame background for topography)
 - AI will now consider producing a good in a rural location even if it can be built in a urban location in the same province instead
 - Centers of Importance: fixed regional promotion at exactly the threshold and the world tier modifier duration, moved the culture centre country effects to a scaled auto modifier, and rescaled production centre efficiency to vanilla constants.
 
@@ -757,3 +754,9 @@ Date: 21/05/2026
 - Increase bog iron smelter output by 40%, lower the iron mine per-level expansion surcharge from 50% to 10%, and split Iron Mines into an input-free baseline method (1 Iron) plus a second method using Tools and Coal/Lumber (bringing totals to 1.7 / 2.26 / 3.1 Iron).
 - Remove the tools requirement from Logging Camp construction.
 - Logging Camps produce 0.75 Lumber without upkeep goods. The Mills advance unlocks Timber Works, which produce 1.125 Lumber without inputs. A second production method brings total output to 1.75 with Tools or 2.25 with Tools and draft animals.
+
+#### AI
+- AI gold importance now tracks each country's finances. Countries with a low income or a small treasury value gold more, save, and favor buildings that pay back well. Rich countries value gold less and spend on infrastructure such as bridges, libraries and universities. Income and treasury are measured against the world average tax base, scaled to the country's size.
+- The AI builds more iron, coal and lumber production and more tools production, which were short across the world and held back construction.
+- The AI now compares building costs to 10 years of tax base instead of 1, so it no longer rejects buildings as too expensive eeven when it has the money to build them.
+- The AI builds production for missing goods inputs at a minimum of 5% profit instead of 20%.
